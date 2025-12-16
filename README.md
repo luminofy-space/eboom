@@ -20,3 +20,5 @@ The project features is:
 - The Ai that can guide me in financial planning and reviewing the financial part of the life
 
 As the money or asset transactions can by multi currency, the platform should handle the data related to the asset and money converts ( for example, convert rate, convert fee, which currency or asset converted to another currency or asset ). also the Payment of the job in the income part may have currency converts.  
+
+just testing
