@@ -49,8 +49,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const user = userData?.user?.userMetadata;
 
-  console.log(user);
-
   // return (
   //   <Sidebar collapsible="icon" {...props}>
   //     <SidebarHeader>
