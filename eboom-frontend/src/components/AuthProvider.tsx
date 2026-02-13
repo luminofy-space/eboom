@@ -48,14 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const publicRoutes = ['/login', '/signup', '/forgot-password'];
     const isPublic = publicRoutes.includes(pathname);
     const authed = isAuthenticated;
-    console.log('test 3', isAuthenticated)
 
     if (!authed && !isPublic) {
       // remember the intended route so we can send the user back after login
       if (typeof window !== 'undefined') {
         localStorage.setItem('redirectAfterLogin', pathname);
       }
-      console.log('test 2')
       router.push('/login');
     }
   }, [loading, pathname, router, isAuthenticated]);
