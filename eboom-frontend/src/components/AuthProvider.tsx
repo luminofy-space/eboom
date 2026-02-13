@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import supabase from '@/utils/useSupabaseClient'
 import { useAuth } from '../hooks/useAuth'
-import { useLocalStorage } from '../hooks/useLocalStorage'
 
 interface AuthContextType {
   loading: boolean
@@ -21,10 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const { refresh, loading, logout } = useAuth();
+  const { refresh, loading, logout, accessToken } = useAuth();
 
-  const { getItem } = useLocalStorage();
-  const isAuthenticated = !!getItem("accessToken");
+  const isAuthenticated = !!accessToken;
 
   useEffect(() => {
     // Only guard client routes after the initial load
