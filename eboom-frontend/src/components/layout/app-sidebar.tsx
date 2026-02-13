@@ -12,9 +12,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthContext } from "../AuthProvider";
 
 // This is sample data.
 const data = {
@@ -38,16 +37,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userData, isLoading } = useQueryApi<any>(
-    API_ROUTES.USERS_GET_ME,
-    {
-      queryKey: ["user"],
-      hasToken: true,
-    }
-  );
-
-  const user = userData?.user;
+  const { user, userLoading: isLoading } = useAuthContext();
 
   // return (
   //   <Sidebar collapsible="icon" {...props}>
