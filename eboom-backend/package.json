@@ -8,12 +8,12 @@
         "start": "node dist/app.js",
         "dev": "nodemon",
         "type-check": "tsc --noEmit",
-        "db:generate": "drizzle-kit generate:pg",
+        "db:generate": "drizzle-kit push",
         "db:migrate": "tsx src/db/migrate.ts",
-        "db:seed": "tsx src/db/seed.ts",
-        "db:seed:safe": "tsx src/db/seed-safe.ts",
-        "db:seed:hybrid": "tsx src/db/seed-hybrid.ts",
-        "db:seed:specific": "tsx src/db/seed-specific.ts",
+        "db:seed": "tsx src/db/seed/seed.ts",
+        "db:seed:safe": "tsx src/db/seed/seed-safe.ts",
+        "db:seed:hybrid": "tsx src/db/seed/seed-hybrid.ts",
+        "db:seed:specific": "tsx src/db/seed/seed-specific.ts",
         "db:studio": "drizzle-kit studio",
         "db:push": "drizzle-kit push:pg",
         "db:drop": "drizzle-kit drop",
@@ -48,6 +48,7 @@
         "@types/uuid": "^9.0.8",
         "nodemon": "^2.0.22",
         "ts-node": "^10.9.2",
+        "tsx": "^4.21.0",
         "typescript": "^5.9.3"
     }
 }
