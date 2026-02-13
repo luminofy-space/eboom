@@ -11,7 +11,9 @@ import {
   passwordResetRateLimiter,
   emailVerificationRateLimiter,
 } from "../middleware/rateLimiter";
-import { TUser } from "../types/TUser";
+import { db } from "../db/client";
+import { User, users } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 const router = express.Router();
 
@@ -19,6 +21,32 @@ interface TokenData {
   userId: string;
   email: string;
   expiresAt: Date;
+}
+
+// Helper function to fetch user details from users table by appUserId
+async function getUserByAppUserId(appUserId: number): Promise<User | null> {
+  try {
+    const [appUser] = await db.select().from(users).where(eq(users.id, appUserId));
+    if (!appUser) return null;
+
+    return appUser;
+  } catch (error) {
+    console.error('Error fetching user from users table:', error);
+    return null;
+  }
+}
+
+function formatUserResponse(appUser: User): Partial<User> {
+  return {
+    id: appUser.id,
+    email: appUser.email,
+    firstName: appUser.firstName,
+    lastName: appUser.lastName,
+    age: appUser.age,
+    photoUrl: appUser.photoUrl,
+    phone: appUser.phone,
+    emailVerified: appUser.emailVerified || false,
+  };
 }
 
 const resetTokens = new Map<string, TokenData>();
@@ -38,17 +66,6 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-supabase.from("users").insert({
-  id: "sdsdffwefwefwefewfe",
-  email: "test@test.com",
-  first_name: "John",
-  last_name: "Doe",
-  age: 20,
-  photo_url: "https://example.com/photo.jpg",
-  role: "user",
-  created_at: new Date().toISOString(),
-});
-
 router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, first_name, last_name, age, photo_url } = req.body;
@@ -65,16 +82,23 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
         .json({ error: "Password must be at least 8 characters long" });
     }
 
+    const [appUser] = await db.insert(users).values({
+      email,
+      firstName: first_name,
+      lastName: last_name,
+      age,
+      photoUrl: photo_url,
+      emailVerified: false,
+      createdBy: null,
+      createdAt: new Date(),
+    }).returning();
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          first_name: first_name || "",
-          last_name: last_name || "",
-          age: age || null,
-          photo_url: photo_url || null,
-          role: "user",
+          appUserId: appUser.id,
         },
         emailRedirectTo: `${
           process.env.APP_URL || "http://localhost:3000"
@@ -105,14 +129,10 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
       console.error("Failed to send verification email:", emailError);
     }
 
-    const user: TUser = {
-      id: data.user.id,
-      email: data.user.email!,
-      first_name: data.user.user_metadata?.first_name || first_name || "",
-      last_name: data.user.user_metadata?.last_name || last_name || "",
-      age: data.user.user_metadata?.age || age || undefined,
-      photo_url: data.user.user_metadata?.photo_url || photo_url || undefined,
-    };
+    console.log("Verification token created and email sent");
+
+    // Format user response using the app user data
+    const user = formatUserResponse(appUser);
 
     console.log("data.session", data.session);
 
@@ -160,14 +180,18 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    const user: TUser = {
-      id: data.user.id,
-      email: data.user.email!,
-      first_name: data.user.user_metadata?.first_name || "",
-      last_name: data.user.user_metadata?.last_name || "",
-      age: data.user.user_metadata?.age || undefined,
-      photo_url: data.user.user_metadata?.photo_url || undefined,
-    };
+    // Fetch user details from users table using appUserId
+    const appUserId = data.user.user_metadata?.appUserId;
+    if (!appUserId) {
+      return res.status(500).json({ error: "User profile not found" });
+    }
+
+    const appUser = await getUserByAppUserId(appUserId);
+    if (!appUser) {
+      return res.status(500).json({ error: "User profile not found" });
+    }
+
+    const user = formatUserResponse(appUser);
 
     res.json({
       message: "Login successful",
@@ -473,11 +497,11 @@ router.get(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.user || !req.appUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-
-      const { data: { user } } = await supabase.auth.getUser()
+      console.log('appUser:', req.appUser)
+      const user = formatUserResponse(req.appUser);
 
       res.json({
         user,
@@ -492,14 +516,29 @@ router.get(
 router.post("/change-photo", authMiddleware, async (req: Request, res: Response) => {
   try {
     const { photo_url } = req.body;
-    console.log(req)
     if (!photo_url) {
       return res.status(400).json({ error: "Photo URL is required" });
     }
+
+    if (!req.user || !req.appUser) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Middleware already fetched appUser, use its ID directly
+    await db
+      .update(users)
+      .set({
+        photoUrl: photo_url,
+        lastModifiedAt: new Date(),
+      })
+      .where(eq(users.id, req.appUser.id));
+
+    // Also update in Supabase for backward compatibility
     const { error } = await supabase.auth.updateUser({
       data: { photo_url },
     });
     if (error) throw error;
+
     res.json({ message: "Photo updated successfully" });
   } catch (error) {
     console.error("Change photo error:", error);

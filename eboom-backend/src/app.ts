@@ -25,7 +25,21 @@ app.get('/', (req, res) => res.json({ ok: true, service: 'pfm-backend' }));
 
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`PFM backend listening at http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`PFM backend listening at http://localhost:${PORT}`);
+
+  // Check if testing mode is enabled
+  const TEST_USER_ID = process.env.TEST_USER_ID;
+  if (TEST_USER_ID) {
+    console.log('\n');
+    console.log('========================================');
+    console.log('WARNING: TESTING MODE ENABLED');
+    console.log(`Bypassing authentication for user ID: ${TEST_USER_ID}`);
+    console.log('Remove TEST_USER_ID from .env in production!');
+    console.log('========================================');
+    console.log('\n');
+  }
+});
 
 
 module.exports = app;

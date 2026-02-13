@@ -7,6 +7,16 @@ import { IHasId } from "../types/hasId";
 
 const hasWindow = typeof window !== "undefined";
 
+const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === "true";
+const MOCK_ACCESS_TOKEN = "test-mode-access-token";
+const MOCK_REFRESH_TOKEN = "test-mode-refresh-token";
+
+// Display test mode warning
+if (isTestMode && hasWindow) {
+  console.log("%cTESTING MODE ENABLED", "color: orange; font-weight: bold; font-size: 16px");
+  console.log("%cAuto-logged in with test user. All API calls will use test user data.", "color: orange");
+}
+
 type AuthResponse = {
   accessToken: string;
   refreshToken: string;
@@ -15,6 +25,15 @@ type AuthResponse = {
 const getStoredToken = (key: string) => {
   if (!hasWindow) {
     return null;
+  }
+
+  // In test mode, always return mock tokens if nothing is stored
+  if (isTestMode) {
+    const stored = window.localStorage.getItem(key);
+    if (!stored) {
+      return key === "accessToken" ? MOCK_ACCESS_TOKEN : MOCK_REFRESH_TOKEN;
+    }
+    return stored;
   }
 
   return window.localStorage.getItem(key);
