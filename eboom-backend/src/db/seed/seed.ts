@@ -9,21 +9,20 @@ async function executeSqlFile(filePath: string) {
   console.log(`📄 Executing: ${fileName}`);
 
   try {
-    const sqlContent = fs.readFileSync(filePath, 'utf-8');
-    
-    // Split by semicolons but be careful with strings
-    // For complex SQL, you might want to use a proper SQL parser
-    const statements = sqlContent
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+    const rawSql = fs.readFileSync(filePath, 'utf-8')
+      .replace(/^\s*BEGIN\s*;/gim, '')
+      .replace(/^\s*COMMIT\s*;/gim, '')
+      .trim();
 
-    for (const statement of statements) {
-      if (statement) {
-        await pgSql.unsafe(statement);
-      }
-    }
+    // Split into individual statements, add ON CONFLICT DO NOTHING to all INSERTs
+    const statements = rawSql
+      .split(/;\s*\n/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .map(s => /^INSERT\s+INTO/i.test(s) ? s + '\nON CONFLICT DO NOTHING' : s)
+      .join(';\n\n') + ';';
 
+    await pgSql.begin(tx => tx.unsafe(statements));
     console.log(`✅ Completed: ${fileName}`);
   } catch (error) {
     console.error(`❌ Failed: ${fileName}`, error);
@@ -54,15 +53,13 @@ async function seed() {
     console.log('\n✅ All seeds completed successfully');
   } catch (error) {
     console.error('\n❌ Seeding failed:', error);
-    process.exit(1);
-  } finally {
-    await pgSql.end();
+    throw error;
   }
 }
 
 // Run if executed directly
 if (require.main === module) {
-  seed();
+  seed().finally(() => pgSql.end());
 }
 
 export default seed;
