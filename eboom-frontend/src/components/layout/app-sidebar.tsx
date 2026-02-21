@@ -9,9 +9,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { CanvasSwitcher } from "../canvas/CanvasSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "../AuthProvider";
 
@@ -63,6 +65,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // );
   return (
     <Sidebar collapsible="offcanvas" {...props}>
+      <SidebarHeader>
+        <CanvasSwitcher />
+      </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
