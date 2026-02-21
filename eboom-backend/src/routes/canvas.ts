@@ -115,13 +115,26 @@ router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const { name, description, canvasType, photoUrl } = req.body;
+  const { name, description, canvasType, photoUrl, baseCurrencyId } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: "Canvas name is required" });
   }
 
+  if (!baseCurrencyId) {
+    return res.status(400).json({ error: "Base currency is required" });
+  }
+
   try {
+    const [selectedCurrency] = await db
+      .select({ id: currencies.id })
+      .from(currencies)
+      .where(eq(currencies.id, Number(baseCurrencyId)));
+
+    if (!selectedCurrency) {
+      return res.status(400).json({ error: "Invalid base currency" });
+    }
+
     const [newCanvas] = await db
       .insert(canvases)
       .values({
@@ -134,12 +147,10 @@ router.post("/", async (req: Request, res: Response) => {
       })
       .returning();
 
-    const defaultCurrencyId = 1;
-
     await db.insert(canvasMembers).values({
       canvasId: newCanvas.id,
       userId: user.id,
-      baseCurrencyId: defaultCurrencyId,
+      baseCurrencyId: selectedCurrency.id,
       isOwner: true,
       createdBy: user.id,
       lastModifiedBy: user.id,

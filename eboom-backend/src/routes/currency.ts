@@ -1,16 +1,14 @@
 import express from "express";
 const router = express.Router();
-import supabase from "../supabaseClient";
+import { db } from "../db/client";
+import { currencies } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 router.get("/", async (req, res) => {
-  const user = req.user;
+  const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
   try {
-    const { data, error } = await supabase
-      .from('currencies')
-      .select('*');
-
-    if (error) throw error;
+    const data = await db.select().from(currencies).where(eq(currencies.isActive, true));
     res.json({ currencies: data });
   } catch (err) {
     console.error(err);
