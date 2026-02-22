@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
 
 import {
@@ -18,19 +17,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
 import { NewCanvasModal } from "./NewCanvasModal";
 import { parseCanvasIcon } from "./canvasUtils";
-
-interface Canvas {
-  id: number;
-  name: string;
-  description?: string;
-  canvasType?: string;
-  photoUrl?: string;
-  isOwner?: boolean;
-}
+import { useState, useMemo } from "react";
+import { useCanvas } from "@/src/hooks/useCanvas";
 
 function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" | "md" }) {
   const { emoji, color } = parseCanvasIcon(photoUrl);
@@ -47,26 +37,16 @@ function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" 
 
 export function CanvasSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeCanvas, setActiveCanvas] = React.useState<Canvas | null>(null);
-  const [modalOpen, setModalOpen] = React.useState(false);
+  
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const { data, isLoading, refetch } = useQueryApi<{ canvases: Canvas[] }>(
-    API_ROUTES.CANVASES_LIST,
-    {
-      queryKey: ["canvases"],
-      hasToken: true,
-    }
+  const { canvases, canvas, isQueryLoading, selectCanvas, refetch } = useCanvas();
+  const activeCanvas = useMemo(
+    () => canvases.find((c) => c.id === canvas) ?? null,
+    [canvases, canvas]
   );
 
-  const canvases = React.useMemo(() => data?.canvases ?? [], [data?.canvases]);
-
-  React.useEffect(() => {
-    if (canvases.length > 0 && !activeCanvas) {
-      setActiveCanvas(canvases[0]);
-    }
-  }, [canvases, activeCanvas]);
-
-  if (isLoading) {
+  if (isQueryLoading) {
     return <Skeleton className="h-12 w-full" />;
   }
 
@@ -80,7 +60,7 @@ export function CanvasSwitcher() {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <CanvasIcon photoUrl={activeCanvas?.photoUrl} size="md" />
+                <CanvasIcon photoUrl={activeCanvas?.photoUrl ?? undefined} size="md" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">
                     {activeCanvas?.name ?? "Select a canvas"}
@@ -111,10 +91,10 @@ export function CanvasSwitcher() {
                 canvases.map((canvas) => (
                   <DropdownMenuItem
                     key={canvas.id}
-                    onClick={() => setActiveCanvas(canvas)}
+                    onClick={() => selectCanvas(canvas.id)}
                     className="gap-2 p-2"
                   >
-                    <CanvasIcon photoUrl={canvas.photoUrl} size="sm" />
+                    <CanvasIcon photoUrl={canvas.photoUrl ?? undefined} size="sm" />
                     <span className="truncate">{canvas.name}</span>
                   </DropdownMenuItem>
                 ))

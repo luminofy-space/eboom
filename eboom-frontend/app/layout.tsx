@@ -4,6 +4,7 @@ import "./globals.css";
 import QueryProvider from "@/src/components/QueryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/src/components/AuthProvider";
+import ReduxProvider from "@/src/redux/ReduxProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +31,15 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              {children}
-            </ThemeProvider>
-          </AuthProvider>
-        </QueryProvider>
+        <ReduxProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                {children}
+              </ThemeProvider>
+            </AuthProvider>
+          </QueryProvider>
+        </ReduxProvider>
       </body>
     </html>
   );
