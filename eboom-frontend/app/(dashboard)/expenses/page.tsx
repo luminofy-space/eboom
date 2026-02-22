@@ -1,17 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-const ExpensePage = () => {
-    const router = useRouter();
-  return <div>
-    <button onClick={() => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        router.push("/login");
-    }}>
-        Logout
-    </button>   
-  </div>;
-};
+import ExpensesListPage from "@/src/views/expenses/ExpensesListPage";
 
-export default ExpensePage;
+export default function ExpensesPage() {
+  return <ExpensesListPage />;
+}
