@@ -17,23 +17,22 @@ import { CanvasSwitcher } from "../canvas/CanvasSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "../AuthProvider";
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: "Income",
-      url: "/income",
+      title: "Incomes",
+      url: "/incomes",
       icon: BanknoteArrowUp,
+    },
+    {
+      title: "Wallets",
+      url: "/wallets",
+      icon: Wallet,
     },
     {
       title: "Expenses",
       url: "/expenses",
       icon: BanknoteArrowDown,
-    },
-    {
-      title: "wallet",
-      url: "/wallet",
-      icon: Wallet,
     },
   ],
 };
