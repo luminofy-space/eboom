@@ -31,6 +31,7 @@ import {
   PRESET_EMOJIS,
   serializeCanvasIcon,
 } from "./canvasUtils";
+import { useCanvas } from "@/src/hooks/useCanvas";
 
 interface NewCanvasModalProps {
   open: boolean;
@@ -62,10 +63,7 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
   const currencies = currenciesRes?.currencies ?? [];
   const effectiveCode = baseCurrencyCode || currencies[0]?.code || "";
 
-  const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
-    method: "post",
-    hasToken: true,
-  });
+  const { createCanvas, isCreating } = useCanvas();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,13 +73,9 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
 
     try {
       const photoUrl = serializeCanvasIcon({ emoji: selectedEmoji, color: selectedColor });
-      await mutateAsync({
-        name,
-        description: description || undefined,
-        canvasType,
-        photoUrl,
-        baseCurrencyId: selectedCurrency.id,
-      });
+
+      createCanvas(name, description, canvasType, photoUrl, selectedCurrency.id);
+      
 
       setName("");
       setDescription("");
@@ -228,7 +222,7 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
                 Cancel
               </Button>
             </DialogClose>
-            <Button disabled={!name || isPending} type="submit" onClick={handleSubmit}>
+            <Button disabled={!name || isCreating} type="submit" onClick={handleSubmit}>
               Create Canvas
             </Button>
           </DialogFooter>

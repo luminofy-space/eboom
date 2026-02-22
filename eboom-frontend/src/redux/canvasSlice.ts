@@ -3,11 +3,11 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 // import type { RootState } from './store';
 
-interface AuthUiState {
+interface CanvasUiState {
   canvasId?: number;
 }
 
-const initialState: AuthUiState = {
+const initialState: CanvasUiState = {
   canvasId: undefined
 };
 

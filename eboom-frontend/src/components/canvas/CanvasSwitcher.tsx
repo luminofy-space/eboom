@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
 
 import {
@@ -18,10 +17,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
 import { NewCanvasModal } from "./NewCanvasModal";
 import { parseCanvasIcon } from "./canvasUtils";
+import { useEffect, useState } from "react";
+import { useCanvas } from "@/src/hooks/useCanvas";
 
 interface Canvas {
   id: number;
@@ -47,26 +46,20 @@ function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" 
 
 export function CanvasSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeCanvas, setActiveCanvas] = React.useState<Canvas | null>(null);
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const [activeCanvas, setActiveCanvas] = useState<Canvas | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const { data, isLoading, refetch } = useQueryApi<{ canvases: Canvas[] }>(
-    API_ROUTES.CANVASES_LIST,
-    {
-      queryKey: ["canvases"],
-      hasToken: true,
-    }
-  );
+  const { canvases, isQueryLoading, selectCanvas, refetch } = useCanvas();
 
-  const canvases = React.useMemo(() => data?.canvases ?? [], [data?.canvases]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (canvases.length > 0 && !activeCanvas) {
-      setActiveCanvas(canvases[0]);
+      selectCanvas(canvases[0].id);
+      setActiveCanvas(canvases[0] as Canvas);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvases, activeCanvas]);
 
-  if (isLoading) {
+  if (isQueryLoading) {
     return <Skeleton className="h-12 w-full" />;
   }
 
@@ -111,10 +104,13 @@ export function CanvasSwitcher() {
                 canvases.map((canvas) => (
                   <DropdownMenuItem
                     key={canvas.id}
-                    onClick={() => setActiveCanvas(canvas)}
+                    onClick={() => {
+                      selectCanvas(canvas.id);
+                      setActiveCanvas(canvas as Canvas);
+                    }}
                     className="gap-2 p-2"
                   >
-                    <CanvasIcon photoUrl={canvas.photoUrl} size="sm" />
+                    <CanvasIcon photoUrl={canvas.photoUrl ?? undefined} size="sm" />
                     <span className="truncate">{canvas.name}</span>
                   </DropdownMenuItem>
                 ))
