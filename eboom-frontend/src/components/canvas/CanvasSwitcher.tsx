@@ -19,17 +19,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { NewCanvasModal } from "./NewCanvasModal";
 import { parseCanvasIcon } from "./canvasUtils";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useCanvas } from "@/src/hooks/useCanvas";
-
-interface Canvas {
-  id: number;
-  name: string;
-  description?: string;
-  canvasType?: string;
-  photoUrl?: string;
-  isOwner?: boolean;
-}
 
 function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" | "md" }) {
   const { emoji, color } = parseCanvasIcon(photoUrl);
@@ -46,18 +37,14 @@ function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" 
 
 export function CanvasSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeCanvas, setActiveCanvas] = useState<Canvas | null>(null);
+  
   const [modalOpen, setModalOpen] = useState(false);
 
-  const { canvases, isQueryLoading, selectCanvas, refetch } = useCanvas();
-
-  useEffect(() => {
-    if (canvases.length > 0 && !activeCanvas) {
-      selectCanvas(canvases[0].id);
-      setActiveCanvas(canvases[0] as Canvas);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvases, activeCanvas]);
+  const { canvases, canvas, isQueryLoading, selectCanvas, refetch } = useCanvas();
+  const activeCanvas = useMemo(
+    () => canvases.find((c) => c.id === canvas) ?? null,
+    [canvases, canvas]
+  );
 
   if (isQueryLoading) {
     return <Skeleton className="h-12 w-full" />;
@@ -73,7 +60,7 @@ export function CanvasSwitcher() {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <CanvasIcon photoUrl={activeCanvas?.photoUrl} size="md" />
+                <CanvasIcon photoUrl={activeCanvas?.photoUrl ?? undefined} size="md" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">
                     {activeCanvas?.name ?? "Select a canvas"}
@@ -104,10 +91,7 @@ export function CanvasSwitcher() {
                 canvases.map((canvas) => (
                   <DropdownMenuItem
                     key={canvas.id}
-                    onClick={() => {
-                      selectCanvas(canvas.id);
-                      setActiveCanvas(canvas as Canvas);
-                    }}
+                    onClick={() => selectCanvas(canvas.id)}
                     className="gap-2 p-2"
                   >
                     <CanvasIcon photoUrl={canvas.photoUrl ?? undefined} size="sm" />

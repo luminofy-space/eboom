@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API_ROUTES from "../api/urls";
 import { useMutationApi } from "../api/useMutation";
 import useQueryApi from "../api/useQuery";
@@ -19,17 +19,16 @@ const getStoredToken = (key: string) => {
 };
 
 export const useCanvas = () => {
-    const [canvas, setCanvas] = useState<number | null>(() =>
-        Number(getStoredToken("canvasId"))
-    );
-
-
     const { data, refetch, isLoading: isQueryLoading } = useQueryApi<{ canvases: Canvas[] }>(
         API_ROUTES.CANVASES_LIST,
         {
             queryKey: ["canvases"],
             hasToken: true,
         }
+    );
+
+    const [canvas, setCanvas] = useState<number | null>(() =>
+        Number(getStoredToken("canvasId")) 
     );
 
     const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
@@ -39,11 +38,13 @@ export const useCanvas = () => {
 
     const dispatch = useDispatch();
 
-    const selectCanvas = (canvasId: number) => {
-        console.log("selectCanvas", canvasId);
+    const selectCanvas = useCallback((canvasId: number) => {
         setCanvas(canvasId);
         dispatch(updateCanvas(canvasId));
-    }
+        if (hasWindow) {
+            window.localStorage.setItem("canvasId", canvasId.toString());
+        }
+    }, [dispatch]);
 
     const createCanvas = async (name: string, description: string, canvasType: string, photoUrl: string, baseCurrencyId: number) => {
         await mutateAsync({
@@ -57,7 +58,14 @@ export const useCanvas = () => {
         });
     }
 
-    // derive loading without setState in effect
+    useEffect(() => {
+        if (canvas) return;
+        const firstId = data?.canvases?.[0]?.id;
+        if (typeof firstId === "number") {
+            setTimeout(() => selectCanvas(firstId), 0);
+        }
+    }, [canvas, data?.canvases, selectCanvas]);
+
     return {
         canvases: data?.canvases ?? [],
         canvas,
