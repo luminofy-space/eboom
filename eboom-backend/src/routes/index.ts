@@ -6,6 +6,7 @@ import canvas from './canvas';
 import authRoutes from './auth';
 import currency from './currency';
 import income from './income';
+import incomeCategories from "./income-categories";
 import wallets from './wallets';
 import expenses from './expenses';
 
@@ -18,8 +19,9 @@ router.use('/canvases', auth, canvas);
 // Currency routes
 router.use('/currency', auth, currency);
 
-// Income routes (individual resource and transaction operations)
+// Income routes (resources, transactions, categories)
 router.use('/income', auth, income);
+router.use("/income/categories", auth, incomeCategories);
 
 // Wallet routes (individual wallet operations)
 router.use('/wallets', auth, wallets);

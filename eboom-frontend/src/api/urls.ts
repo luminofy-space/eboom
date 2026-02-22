@@ -48,6 +48,12 @@ const API_ROUTES = {
   INCOME_TRANSACTIONS_UPDATE: (id: number) => `/api/income/transactions/${id}/`,
   INCOME_TRANSACTIONS_DELETE: (id: number) => `/api/income/transactions/${id}/`,
 
+  // Income Category
+  INCOME_CATEGORIES: '/api/income/categories',
+  INCOME_CATEGORIES_CREATE: '/api/income/categories',
+  INCOME_CATEGORIES_UPDATE: (id: number) => `/api/income/categories/${id}`,
+  INCOME_CATEGORIES_DELETE: (id: number) => `/api/income/categories/${id}`,
+
   // ============================================================================
   // WALLETS
   // ============================================================================
