@@ -199,7 +199,6 @@ export const wallets = pgTable('wallets', {
   walletCategoryId: integer('wallet_category_id').notNull().references(() => walletCategories.id),
   ownerId: integer('owner_id').notNull().references(() => users.id),
   walletNumber: varchar('wallet_number', { length: 255 }),
-  entityId: integer('entity_id').references(() => entities.id),
   description: jsonb('description'),
   isArchived: boolean('is_archived').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -812,10 +811,6 @@ export const walletsRelations = relations(wallets, ({ many, one }) => ({
     fields: [wallets.ownerId],
     references: [users.id],
     relationName: 'walletOwner'
-  }),
-  entity: one(entities, {
-    fields: [wallets.entityId],
-    references: [entities.id],
   }),
   assets: many(assets),
   createdBy: one(users, { fields: [wallets.createdBy], references: [users.id] }),

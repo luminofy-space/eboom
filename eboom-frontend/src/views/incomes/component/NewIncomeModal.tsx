@@ -19,14 +19,16 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { IncomeResource } from "@backend/db/schema";
 import { useRef, useState } from "react";
 
 interface NewIncomeModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
+  income?: IncomeResource;
 }
 
-export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
+export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
     currencies?: { name: string; code: string }[];
   }>(
@@ -76,13 +78,13 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
     }
   );
 
-  const [isRecurrent, setIsRecurrent] = useState(false);
-  const [name, setName] = useState("");
-  const [currency, setCurr] = useState("");
-  const [amount, setAmount] = useState(0);
-  const [incomeResource, setIncomeResource] = useState<number | null>(null);
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState('');
-  const [description, setDescription] = useState('');
+  const [isRecurrent, setIsRecurrent] = useState(income?.isRecurring ?? false);
+  const [name, setName] = useState(income?.name ?? "");
+  const [currency, setCurr] = useState(income?.currency ?? "");
+  const [amount, setAmount] = useState(income?.amount ?? 0);
+  const [incomeResource, setIncomeResource] = useState<number | null>(income?.incomeResourceCategoryId ?? null);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState(income?.recurrenceFrequency ?? '');
+  const [description, setDescription] = useState(income?.description ?? '');
   const [photo, setPhoto] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -230,7 +232,33 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
               </Combobox>
             </div>
           </div>
-          <div className="flex flex-row gap-5 items-center">
+          <div className="flex flex-row gap-5">
+            <div className="w-full flex flex-col gap-1">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                name="description"
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex flex-row gap-5">
+            <div className="w-full flex flex-col gap-1">
+              <Label htmlFor="photo-url">Photo</Label>
+              <Input
+                  ref={fileInputRef}
+                  id="photo"
+                  name="photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="cursor-pointer"
+                />
+            </div>
+          </div>
+          <div className="flex flex-row gap-5 items-center h-12">
             <div className="w-1/2 flex items-center gap-2">
               <Field orientation="horizontal" className="items-center">
                 <Checkbox id="isRecurrent" name="isRecurrent" />
@@ -267,32 +295,6 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
                   </Combobox>
                 </div>
             )}
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                name="description"
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                }}
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="photo-url">Photo</Label>
-              <Input
-                  ref={fileInputRef}
-                  id="photo"
-                  name="photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="cursor-pointer"
-                />
-            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>

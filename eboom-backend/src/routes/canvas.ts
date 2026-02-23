@@ -528,9 +528,7 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   const {
     name,
     walletCategoryId,
-    ownerId,
     walletNumber,
-    entityId,
     description,
   } = req.body;
 
@@ -552,9 +550,8 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
         canvasId,
         name,
         walletCategoryId,
-        ownerId: ownerId || user.id,
+        ownerId: user.id,
         walletNumber: walletNumber || null,
-        entityId: entityId || null,
         description: description || null,
         isArchived: false,
         createdBy: user.id,

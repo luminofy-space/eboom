@@ -9,6 +9,7 @@ import income from './income';
 import incomeCategories from "./income-categories";
 import wallets from './wallets';
 import expenses from './expenses';
+import walletCategories from './wallet-categories';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
@@ -25,6 +26,7 @@ router.use("/income/categories", auth, incomeCategories);
 
 // Wallet routes (individual wallet operations)
 router.use('/wallets', auth, wallets);
+router.use('/wallet/categories', auth, walletCategories)
 
 // Expense routes (individual expense operations)
 router.use('/expenses', auth, expenses);
