@@ -1,8 +1,12 @@
-import { AppSidebar } from "@/src/components/layout/app-sidebar"
+"use client";
+
+import React from "react";
+import { AppSidebar } from "@/src/components/layout/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { SiteHeader } from "./layout/site-header";
 
 export default function LayoutProvider({ children }: { children: React.ReactNode }) {
   return (
@@ -16,14 +20,15 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
+        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 h-full">
+            <div className="flex flex-col gap-4 md:gap-6 h-full">
               {children}
             </div>
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
