@@ -5,6 +5,7 @@ import QueryProvider from "@/src/components/QueryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/src/components/AuthProvider";
 import ReduxProvider from "@/src/redux/ReduxProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +36,9 @@ export default async function RootLayout({
           <QueryProvider>
             <AuthProvider>
               <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                {children}
+                <TooltipProvider>
+                  {children}
+                </TooltipProvider>
               </ThemeProvider>
             </AuthProvider>
           </QueryProvider>
