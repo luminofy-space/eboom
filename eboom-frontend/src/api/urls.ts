@@ -67,11 +67,6 @@ const API_ROUTES = {
   EXPENSES_GET: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
-
-  // ============================================================================
-  // DEPRECATED (kept for backwards compatibility)
-  // ============================================================================
-  INCOME_BASE: '/api/income/',
 } as const;
 
 export default API_ROUTES;

@@ -32,13 +32,13 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                {children}
-              </ThemeProvider>
-            </AuthProvider>
-          </QueryProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              {children}
+            </ThemeProvider>
+          </AuthProvider>
+        </QueryProvider>
         </ReduxProvider>
       </body>
     </html>

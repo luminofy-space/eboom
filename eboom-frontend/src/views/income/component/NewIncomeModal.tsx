@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox, ComboboxCollection, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem } from "@/components/ui/combobox";
 import {
   Dialog,
@@ -11,15 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
-import GroupSelect, {
-  TItem,
-} from "@/src/components/groupe-select/GroupeSelect";
-import { useState } from "react";
+import { useCanvas } from "@/src/hooks/useCanvas";
+import { useRef, useState } from "react";
 
 interface NewIncomeModalProps {
   open: boolean;
@@ -37,14 +37,36 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
     }
   );
 
+  const { data: resourceRes, isLoading: isLoadingRes } = useQueryApi<{
+    categories?: { id: number; name: string; code: string }[];
+  }>(
+    API_ROUTES.INCOME_CATEGORIES,
+    {
+      queryKey: ["income-categories"],
+      hasToken: true,
+    }
+  );
+
   const currencyItems =
     currenciesRes?.currencies?.map((c) => c.code).filter(Boolean) ?? [];
+
+  const resourceItems =
+    resourceRes?.categories
+      ?.map((c) => c.id)
+      .filter((id): id is number => typeof id === "number") ?? [];
+  const frequencyItems = [{name: "Daily", value: "d"}, {name: "Weekly", value: "w"}, {name: "Monthly", value: "m"}, {name: "Yearly", value: "y"}];
+  const resourceDisplayName = (id: number | string) => {
+    const parsed = typeof id === "number" ? id : Number(id);
+    return resourceRes?.categories?.find((c) => c.id === parsed)?.name ?? `${id}`;
+  };
 
   const currencyDisplayName = (code: string) =>
     currenciesRes?.currencies?.find((c) => c.code === code)?.name ?? code;
 
+  const { canvas } = useCanvas();
+
   const { mutateAsync } = useMutationApi(
-    API_ROUTES.INCOME_BASE,
+    API_ROUTES.CANVASES_INCOME_RESOURCES_CREATE(canvas ?? -1),
     {
       method: "post",
       // headers: {
@@ -54,15 +76,25 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
     }
   );
 
-  const [type, setType] = useState("o");
+  const [isRecurrent, setIsRecurrent] = useState(false);
   const [name, setName] = useState("");
   const [currency, setCurr] = useState("");
   const [amount, setAmount] = useState(0);
-  const [date, setDate] = useState<string | undefined>();
+  const [incomeResource, setIncomeResource] = useState<number | null>(null);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('');
+  const [description, setDescription] = useState('');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-
-  const handleSelectType = (item: TItem) => {
-    setType(item.key);
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(file);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,9 +105,12 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
       const data = {
         name,
         currency,
-        amount: Number(amount), // Ensure it's a number
-        date: date || new Date().toISOString().split('T')[0], // Provide default if empty
-        type
+        amount: Number(amount),
+        isRecurrent,
+        incomeResourceCategoryId: incomeResource ?? undefined,
+        recurrenceFrequency,
+        description,
+        photoUrl: photo ? URL.createObjectURL(photo) : null,
       };
 
       // Send as JSON
@@ -85,25 +120,20 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
       setName("");
       setCurr("");
       setAmount(0);
-      setDate(undefined);
-      setType("o");
+      setIncomeResource(null);
+      setIsRecurrent(false);
+      setRecurrenceFrequency("");
+      setDescription('');
+      setPhoto(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setOpen(false);
     } catch (error) {
       // Error is already handled by useMutationApi hook
       console.error("Error adding income:", error);
     }
   };
-
-  const items: TItem[] = [
-    {
-      key: "o",
-      title: "One-time",
-    },
-    {
-      key: "m",
-      title: "Monthly",
-    },
-  ];
 
   // console.log(currencyItems, isLoadingCurr)
 
@@ -144,6 +174,7 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
               <Combobox
                 items={currencyItems}
                 value={currency}
+                id="currency"
                 disabled={isLoadingCurr}
                 onValueChange={(val) => setCurr(val ?? "")}
               >
@@ -175,31 +206,100 @@ export function NewIncomeModal({ open, setOpen }: NewIncomeModalProps) {
               />
             </div>
             <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="income-resource">Income Resource</Label>
+              <Combobox
+                id="income-resource"
+                items={resourceItems.map((id) => id.toString())}
+                value={incomeResource !== null ? incomeResource.toString() : ""}
+                disabled={isLoadingRes}
+                onValueChange={(val) =>
+                  setIncomeResource(val ? Number(val) : null)
+                }
+              >
+                <ComboboxInput placeholder="Select a Resource" />
+                <ComboboxContent className="z-[80]">
+                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxCollection>
+                    {(item) => (
+                      <ComboboxItem key={item} value={item}>
+                        {resourceDisplayName(item)}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxCollection>
+                </ComboboxContent>
+              </Combobox>
+            </div>
+          </div>
+          <div className="flex flex-row gap-5 items-center">
+            <div className="w-1/2 flex items-center gap-2">
+              <Field orientation="horizontal" className="items-center">
+                <Checkbox id="isRecurrent" name="isRecurrent" />
+                <Label
+                  htmlFor="isRecurrent"
+                  onClick={() => {
+                    setIsRecurrent((prev) => !prev);
+                  }}
+                >
+                  Recurrent
+                </Label>
+              </Field>
+            </div>
+            {isRecurrent && (
+                <div className="w-1/2 flex flex-col gap-1">
+                  <Label htmlFor="frequency">Frequency</Label>
+                  <Combobox
+                    id="frequency"
+                    items={frequencyItems}
+                    value={recurrenceFrequency}
+                    onValueChange={(val) => setRecurrenceFrequency(val ?? "")}
+                  >
+                    <ComboboxInput placeholder="Select a Frequency" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(item) => (
+                          <ComboboxItem key={item.value} value={item.value}>
+                            {item.name}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                </div>
+            )}
+          </div>
+          <div className="flex flex-row gap-5">
+            <div className="w-full flex flex-col gap-1">
+              <Label htmlFor="description">Description</Label>
               <Input
-                required
-                id="date"
-                name="date"
-                type="date"
+                id="description"
+                name="description"
                 onChange={(e) => {
-                  setDate(e.target.value);
+                  setDescription(e.target.value);
                 }}
               />
             </div>
           </div>
           <div className="flex flex-row gap-5">
-            <GroupSelect
-              items={items}
-              handleSelect={handleSelectType}
-              value={type}
-            />
+            <div className="w-full flex flex-col gap-1">
+              <Label htmlFor="photo-url">Photo</Label>
+              <Input
+                  ref={fileInputRef}
+                  id="photo"
+                  name="photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="cursor-pointer"
+                />
+            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!name || !currency || !amount || !date}
+              disabled={!name || !currency || !amount}
               onClick={handleSubmit}
               type="submit"
             >

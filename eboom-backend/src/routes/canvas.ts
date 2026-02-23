@@ -405,10 +405,6 @@ router.get("/:canvasId/income-resources", async (req: Request, res: Response) =>
         incomeResourceCategories,
         eq(incomeResources.incomeResourceCategoryId, incomeResourceCategories.id)
       )
-      .leftJoin(
-        valueCategories,
-        eq(incomeResources.defaultValueCategoryId, valueCategories.id)
-      )
       .where(eq(incomeResources.canvasId, canvasId));
 
     const formattedResources = resources.map((r) => ({
@@ -437,19 +433,17 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
   const {
     name,
     incomeResourceCategoryId,
-    ownerId,
-    defaultValueCategoryId,
-    defaultEntityId,
-    defaultAssetId,
+    currency,
+    amount,
     isRecurring,
-    recurrencePattern,
+    recurrenceFrequency,
     photoUrl,
     description,
   } = req.body;
 
-  if (!name || !incomeResourceCategoryId || !defaultValueCategoryId) {
+  if (!name || !incomeResourceCategoryId) {
     return res.status(400).json({
-      error: "Name, category, and default value category are required",
+      error: "Name, category is required",
     });
   }
 
@@ -465,12 +459,11 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
         canvasId,
         name,
         incomeResourceCategoryId,
-        ownerId: ownerId || user.id,
-        defaultValueCategoryId,
-        defaultEntityId: defaultEntityId || null,
-        defaultAssetId: defaultAssetId || null,
+        amount,
+        currency,
         isRecurring: isRecurring || false,
-        recurrencePattern: recurrencePattern || null,
+        ownerId: user.id,
+        recurrenceFrequency: recurrenceFrequency || null,
         photoUrl: photoUrl || null,
         description: description || null,
         createdBy: user.id,
@@ -484,10 +477,6 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
     res.status(500).json({ error: "Failed to create income resource" });
   }
 });
-
-// ============================================================================
-// CANVAS WALLETS ROUTES
-// ============================================================================
 
 // GET /canvases/:canvasId/wallets - Get all wallets for a canvas
 router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
