@@ -68,10 +68,7 @@ const API_ROUTES = {
   EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
 
-  // ============================================================================
-  // DEPRECATED (kept for backwards compatibility)
-  // ============================================================================
-  INCOME_BASE: '/api/income/',
+  WALLET_CATEGORIES: 'api/wallet/categories'
 } as const;
 
 export default API_ROUTES;

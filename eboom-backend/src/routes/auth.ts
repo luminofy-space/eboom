@@ -500,7 +500,6 @@ router.get(
       if (!req.user || !req.appUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      console.log('appUser:', req.appUser)
       const user = formatUserResponse(req.appUser);
 
       res.json({

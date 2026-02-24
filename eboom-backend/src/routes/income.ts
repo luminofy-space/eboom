@@ -54,10 +54,6 @@ router.get("/resources/:id", async (req: Request, res: Response) => {
         incomeResourceCategories,
         eq(incomeResources.incomeResourceCategoryId, incomeResourceCategories.id)
       )
-      .leftJoin(
-        valueCategories,
-        eq(incomeResources.defaultValueCategoryId, valueCategories.id)
-      )
       .where(eq(incomeResources.id, resourceId));
 
     if (!resource) {

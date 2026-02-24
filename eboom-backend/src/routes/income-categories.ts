@@ -16,6 +16,8 @@ router.get("/", async (req: Request, res: Response) => {
       .from(incomeResourceCategories)
       .orderBy(asc(incomeResourceCategories.name));
 
+      console.log(categories)
+
     res.json({ categories });
   } catch (err) {
     console.error("Error fetching income categories:", err);

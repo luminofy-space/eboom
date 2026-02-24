@@ -8,6 +8,8 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { NewWalletModal } from "./components/NewWalletModal";
 
 interface Wallet {
   id: number;
@@ -18,6 +20,7 @@ interface Wallet {
 
 export default function WalletsListPage() {
   const { canvas } = useCanvas();
+  const [open, setOpen] = useState(false);
 
   const { data, isLoading } = useQueryApi<{ wallets: Wallet[] }>(
     canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
@@ -47,9 +50,9 @@ export default function WalletsListPage() {
           <Card className="w-[375px] flex flex-col items-center justify-center gap-3 py-8">
             <div className="text-center text-2xl font-semibold">Add Wallet</div>
             <div className="text-center text-sm text-muted-foreground">
-              Create wallets to manage your assets and accounts.
+              Create wallets to manage your assets.
             </div>
-            <Button className="w-[80%] min-h-[40px]">
+            <Button className="w-[80%] min-h-[40px]" onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Add
             </Button>
@@ -72,6 +75,7 @@ export default function WalletsListPage() {
           ))}
         </div>
       )}
+      <NewWalletModal open={open} setOpen={setOpen} />
     </>
   );
 }
