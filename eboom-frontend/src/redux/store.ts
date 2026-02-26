@@ -3,7 +3,8 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import type { TypedUseSelectorHook } from 'react-redux';
 import { useDispatch, useSelector } from 'react-redux';
 import { persistReducer, persistStore } from 'redux-persist';
-import canvasReducer from './canvasSlice'
+import canvasReducer from './canvasSlice';
+import searchReducer from './searchSlice';
 import storage from './storage';
 
 const persistConfig = {
@@ -30,6 +31,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
     canvas: canvasReducer,
+    search: searchReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

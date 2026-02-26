@@ -1,6 +1,8 @@
+"use client";
+
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -10,8 +12,22 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Fragment } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, X } from "lucide-react";
+import { Fragment, useRef, useEffect } from "react";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
+import {
+  selectSearchQuery,
+  selectSearchVisible,
+  setSearchQuery,
+  toggleSearch,
+  hideSearch,
+} from "@/src/redux/searchSlice";
+import { cn } from "@/lib/utils";
+
+const LIST_PAGES = ["/incomes", "/wallets", "/expenses"];
 
 const ROUTE_LABELS: Record<string, { label: string; listUrl: string }> = {
   incomes: { label: "Incomes", listUrl: "/incomes" },
@@ -66,8 +82,27 @@ export function SiteHeader() {
   const activeCanvas = canvases.find((c) => c.id === canvas);
   const crumbs = buildBreadcrumbs(pathname, activeCanvas?.name ?? null);
 
+  const dispatch = useAppDispatch();
+  const searchQuery = useAppSelector(selectSearchQuery);
+  const isSearchVisible = useAppSelector(selectSearchVisible);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isListPage = LIST_PAGES.includes(pathname);
+
+  // Focus input when search becomes visible
+  useEffect(() => {
+    if (isSearchVisible && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isSearchVisible]);
+
+  // Clear search when navigating away
+  useEffect(() => {
+    dispatch(hideSearch());
+  }, [pathname, dispatch]);
+
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -93,6 +128,37 @@ export function SiteHeader() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+
+      {isListPage && (
+        <div className="flex items-center gap-2 px-4">
+          <div
+            className={cn(
+              "overflow-hidden transition-all duration-300 ease-in-out",
+              isSearchVisible ? "w-64 opacity-100" : "w-0 opacity-0"
+            )}
+          >
+            <Input
+              ref={inputRef}
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+              className="h-8"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => dispatch(toggleSearch())}
+          >
+            {isSearchVisible ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
     </header>
-  )
+  );
 }
