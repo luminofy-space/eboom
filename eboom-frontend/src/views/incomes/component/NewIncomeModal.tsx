@@ -21,6 +21,11 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { IncomeResource } from "@backend/db/schema";
 import { useRef, useState } from "react";
+import {
+  RecurrencePatternPicker,
+  DEFAULT_RECURRENCE_PATTERN,
+  type RecurrencePattern,
+} from "@/src/components/RecurrencePatternPicker";
 
 interface NewIncomeModalProps {
   open: boolean;
@@ -36,6 +41,7 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
     {
       queryKey: ["currencies"],
       hasToken: true,
+      enabled: open,
     }
   );
 
@@ -46,21 +52,19 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
     {
       queryKey: ["income-categories"],
       hasToken: true,
+      enabled: open,
     }
   );
 
   const currencyItems =
     currenciesRes?.currencies?.map((c) => c.code).filter(Boolean) ?? [];
 
-  const resourceItems =
-    resourceRes?.categories
-      ?.map((c) => c.id)
-      .filter((id): id is number => typeof id === "number") ?? [];
-  const frequencyItems = [{name: "Daily", value: "d"}, {name: "Weekly", value: "w"}, {name: "Monthly", value: "m"}, {name: "Yearly", value: "y"}];
-  const resourceDisplayName = (id: number | string) => {
-    const parsed = typeof id === "number" ? id : Number(id);
-    return resourceRes?.categories?.find((c) => c.id === parsed)?.name ?? `${id}`;
-  };
+  const resourceCategories = resourceRes?.categories ?? [];
+  const resourceNames = resourceCategories.map((c) => c.name);
+  const resourceNameToId = (name: string) =>
+    resourceCategories.find((c) => c.name === name)?.id ?? null;
+  const resourceIdToName = (id: number | null) =>
+    id !== null ? resourceCategories.find((c) => c.id === id)?.name ?? "" : "";
 
   const currencyDisplayName = (code: string) =>
     currenciesRes?.currencies?.find((c) => c.code === code)?.name ?? code;
@@ -83,7 +87,9 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
   const [currency, setCurr] = useState(income?.currency ?? "");
   const [amount, setAmount] = useState(income?.amount ?? 0);
   const [incomeResource, setIncomeResource] = useState<number | null>(income?.incomeResourceCategoryId ?? null);
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState(income?.recurrenceFrequency ?? '');
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>(
+    (income?.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN
+  );
   const [description, setDescription] = useState(income?.description ?? '');
   const [photo, setPhoto] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,11 +97,7 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(file);
-      };
-      reader.readAsDataURL(file);
+      setPhoto(file);
     }
   };
 
@@ -108,9 +110,9 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
         name,
         currency,
         amount: Number(amount),
-        isRecurrent,
+        isRecurring: isRecurrent,
         incomeResourceCategoryId: incomeResource ?? undefined,
-        recurrenceFrequency,
+        recurrencePattern: isRecurrent ? recurrencePattern : null,
         description,
         photoUrl: photo ? URL.createObjectURL(photo) : null,
       };
@@ -124,7 +126,7 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
       setAmount(0);
       setIncomeResource(null);
       setIsRecurrent(false);
-      setRecurrenceFrequency("");
+      setRecurrencePattern(DEFAULT_RECURRENCE_PATTERN);
       setDescription('');
       setPhoto(null);
       if (fileInputRef.current) {
@@ -141,8 +143,8 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
-      <form onSubmit={handleSubmit}>
         <DialogContent className="w-full">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Add New Income</DialogTitle>
             <DialogDescription>
@@ -211,20 +213,20 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
               <Label htmlFor="income-resource">Income Resource</Label>
               <Combobox
                 id="income-resource"
-                items={resourceItems.map((id) => id.toString())}
-                value={incomeResource !== null ? incomeResource.toString() : ""}
+                items={resourceNames}
+                value={resourceIdToName(incomeResource)}
                 disabled={isLoadingRes}
                 onValueChange={(val) =>
-                  setIncomeResource(val ? Number(val) : null)
+                  setIncomeResource(val ? resourceNameToId(val) : null)
                 }
               >
                 <ComboboxInput placeholder="Select a Resource" />
                 <ComboboxContent className="z-[80]">
                   <ComboboxEmpty>No items found.</ComboboxEmpty>
                   <ComboboxCollection>
-                    {(item) => (
-                      <ComboboxItem key={item} value={item}>
-                        {resourceDisplayName(item)}
+                    {(name) => (
+                      <ComboboxItem key={name} value={name}>
+                        {name}
                       </ComboboxItem>
                     )}
                   </ComboboxCollection>
@@ -258,42 +260,23 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
                 />
             </div>
           </div>
-          <div className="flex flex-row gap-5 items-center h-12">
-            <div className="w-1/2 flex items-center gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <Field orientation="horizontal" className="items-center">
-                <Checkbox id="isRecurrent" name="isRecurrent" />
-                <Label
-                  htmlFor="isRecurrent"
-                  onClick={() => {
-                    setIsRecurrent((prev) => !prev);
-                  }}
-                >
-                  Recurrent
-                </Label>
+                <Checkbox
+                  id="isRecurrent"
+                  name="isRecurrent"
+                  checked={isRecurrent}
+                  onCheckedChange={(checked) => setIsRecurrent(!!checked)}
+                />
+                <Label htmlFor="isRecurrent">Recurring</Label>
               </Field>
             </div>
             {isRecurrent && (
-                <div className="w-1/2 flex flex-col gap-1">
-                  <Label htmlFor="frequency">Frequency</Label>
-                  <Combobox
-                    id="frequency"
-                    items={frequencyItems}
-                    value={recurrenceFrequency}
-                    onValueChange={(val) => setRecurrenceFrequency(val ?? "")}
-                  >
-                    <ComboboxInput placeholder="Select a Frequency" />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(item) => (
-                          <ComboboxItem key={item.value} value={item.value}>
-                            {item.name}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                </div>
+              <RecurrencePatternPicker
+                value={recurrencePattern}
+                onChange={setRecurrencePattern}
+              />
             )}
           </div>
           <DialogFooter>
@@ -308,8 +291,8 @@ export function NewIncomeModal({ open, setOpen, income }: NewIncomeModalProps) {
               Save changes
             </Button>
           </DialogFooter>
-        </DialogContent>
       </form>
+        </DialogContent>
     </Dialog>
   );
 }

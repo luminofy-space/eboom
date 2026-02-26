@@ -68,7 +68,10 @@ const API_ROUTES = {
   EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
 
-  WALLET_CATEGORIES: 'api/wallet/categories'
+  WALLET_CATEGORIES: '/api/wallet/categories',
+
+  // Expense Categories
+  EXPENSE_CATEGORIES: '/api/expense/categories',
 } as const;
 
 export default API_ROUTES;

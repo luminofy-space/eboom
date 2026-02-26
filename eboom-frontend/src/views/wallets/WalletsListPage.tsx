@@ -1,51 +1,67 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import { Plus } from "lucide-react";
-import Link from "next/link";
+import { useInfiniteList } from "@/src/hooks/useInfiniteList";
+import { useAppSelector } from "@/src/redux/store";
+import { selectSearchQuery } from "@/src/redux/searchSlice";
+import { useDebouncedValue } from "@mantine/hooks";
+import { Plus, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { NewWalletModal } from "./components/NewWalletModal";
+import { GridCard } from "@/src/components/GridCard";
+import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
+import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 
 interface Wallet {
   id: number;
   name: string;
   description?: string;
   walletType?: string;
+  photoUrl?: string | null;
+  lastModifiedAt?: string | null;
+  category?: {
+    id: number;
+    name: string;
+    photoUrl?: string | null;
+  } | null;
 }
 
 export default function WalletsListPage() {
   const { canvas } = useCanvas();
+  const searchQuery = useAppSelector(selectSearchQuery);
+  const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
   const [open, setOpen] = useState(false);
 
-  const { data, isLoading } = useQueryApi<{ wallets: Wallet[] }>(
+  const {
+    items,
+    isLoading,
+    isFetchingNextPage,
+    sentinelRef,
+  } = useInfiniteList<Wallet>(
     canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
     {
       queryKey: ["wallets", canvas],
-      hasToken: true,
       enabled: !!canvas,
+      search: debouncedSearch,
     }
   );
 
-  const wallets = data?.wallets ?? [];
-
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <GridCardSkeleton key={i} />
         ))}
       </div>
     );
   }
 
-  return (
-    <>
-      {wallets.length === 0 ? (
+  if (items.length === 0 && !searchQuery) {
+    return (
+      <>
         <div className="flex-1 flex items-center justify-center px-4">
           <Card className="w-[375px] flex flex-col items-center justify-center gap-3 py-8">
             <div className="text-center text-2xl font-semibold">Add Wallet</div>
@@ -58,23 +74,43 @@ export default function WalletsListPage() {
             </Button>
           </Card>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 xl:grid-cols-3">
-          {wallets.map((wallet) => (
-            <Link key={wallet.id} href={`/wallet/${wallet.id}`}>
-              <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle>{wallet.name}</CardTitle>
-                  <CardDescription>
-                    {wallet.walletType || "Wallet"}
-                    {wallet.description && ` · ${wallet.description}`}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          ))}
+        <NewWalletModal open={open} setOpen={setOpen} />
+      </>
+    );
+  }
+
+  if (items.length === 0 && searchQuery) {
+    return (
+      <div className="flex-1 flex items-center justify-center px-4">
+        <p className="text-muted-foreground">No results found for &ldquo;{searchQuery}&rdquo;</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {items.map((wallet) => (
+          <GridCard
+            key={wallet.id}
+            href={`/wallet/${wallet.id}`}
+            imageUrl={wallet.photoUrl || wallet.category?.photoUrl}
+            title={wallet.name}
+            updatedAt={wallet.lastModifiedAt}
+          />
+        ))}
+      </div>
+
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-1" />
+
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
+
+      <FloatingAddButton onClick={() => setOpen(true)} />
       <NewWalletModal open={open} setOpen={setOpen} />
     </>
   );

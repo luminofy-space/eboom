@@ -40,21 +40,16 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
             categories?: { id: number; name: string }[];
         }>(API_ROUTES.WALLET_CATEGORIES, {
             queryKey: ["wallet-categories", "metadata"],
-            hasToken: true
+            hasToken: true,
+            enabled: open,
         });
 
-    const categoryItems =
-        categoriesRes?.categories
-            ?.map((c) => c.id)
-            .filter((id): id is number => typeof id === "number") ?? [];
-
-    const categoryDisplayName = (id: number | string) => {
-        const parsed = typeof id === "number" ? id : Number(id);
-        return (
-            categoriesRes?.categories?.find((c) => c.id === parsed)?.name ??
-            `${id}`
-        );
-    };
+    const categories = categoriesRes?.categories ?? [];
+    const categoryNames = categories.map((c) => c.name);
+    const categoryNameToId = (name: string) =>
+        categories.find((c) => c.name === name)?.id ?? null;
+    const categoryIdToName = (id: number | null) =>
+        id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
     // 🔹 Mutation
     const { mutateAsync } = useMutationApi(
@@ -96,8 +91,8 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen} modal={false}>
-            <form onSubmit={handleSubmit}>
                 <DialogContent className="w-full">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <DialogHeader>
                         <DialogTitle>Add New Wallet</DialogTitle>
                         <DialogDescription>
@@ -123,24 +118,20 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                             <Label htmlFor="wallet-category">Wallet Category</Label>
                             <Combobox
                                 id="wallet-category"
-                                items={categoryItems.map((id) => id.toString())}
-                                value={
-                                    walletCategoryId !== null
-                                        ? walletCategoryId.toString()
-                                        : ""
-                                }
+                                items={categoryNames}
+                                value={categoryIdToName(walletCategoryId)}
                                 disabled={isLoadingCategories}
                                 onValueChange={(val) =>
-                                    setWalletCategoryId(val ? Number(val) : null)
+                                    setWalletCategoryId(val ? categoryNameToId(val) : null)
                                 }
                             >
                                 <ComboboxInput placeholder="Select a category" />
                                 <ComboboxContent className="z-[80]">
                                     <ComboboxEmpty>No categories found.</ComboboxEmpty>
                                     <ComboboxCollection>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item}>
-                                                {categoryDisplayName(item)}
+                                        {(name) => (
+                                            <ComboboxItem key={name} value={name}>
+                                                {name}
                                             </ComboboxItem>
                                         )}
                                     </ComboboxCollection>
@@ -186,8 +177,8 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                             Create Wallet
                         </Button>
                     </DialogFooter>
-                </DialogContent>
             </form>
+                </DialogContent>
         </Dialog>
     );
 }

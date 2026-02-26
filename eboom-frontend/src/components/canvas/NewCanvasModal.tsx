@@ -57,6 +57,8 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
   }>(API_ROUTES.CURRENCIES_METADATA, {
     queryKey: ["currencies"],
     hasToken: true,
+    staleTime: 10 * 60 * 1000,
+    enabled: open,
   });
 
   const currencies = currenciesRes?.currencies ?? [];
