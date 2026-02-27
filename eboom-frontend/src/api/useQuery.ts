@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { useAuth } from "../hooks/useAuth";
 import { snakeToCamel } from "./utils";
 
@@ -36,7 +36,7 @@ const useQueryApi = <T>(
     needBaseUrl = true,
   } = options || {};
 
-  const { accessToken } = useAuth();
+  const { accessToken, logout } = useAuth();
 
   const buildUrl = () => {
     let finalUrl = needBaseUrl ? `${process.env.NEXT_PUBLIC_BASE_URL}${url}` : url;
@@ -65,9 +65,17 @@ const useQueryApi = <T>(
       ...axiosProp,
     };
 
-    const res = await axios(config);
-
-    return snakeToCamel(res.data) as T;
+    try {
+      const res = await axios(config);
+      return snakeToCamel(res.data) as T;
+    } catch (err) {
+      const axiosErr = err as AxiosError;
+      const status = axiosErr.response?.status;
+      if (status === 401 || status === 403) {
+        logout();
+      }
+      throw err;
+    }
   };
 
   return useQuery<T>({

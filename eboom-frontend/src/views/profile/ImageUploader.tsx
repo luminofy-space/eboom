@@ -86,7 +86,6 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('terst')
 
     if (!selectedFile) {
       toast({

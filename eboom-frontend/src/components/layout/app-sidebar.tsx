@@ -1,37 +1,72 @@
 "use client";
 
 import * as React from "react";
-import { BanknoteArrowDown, BanknoteArrowUp, Wallet } from "lucide-react";
+import {
+  BanknoteArrowDown,
+  BanknoteArrowUp,
+  Wallet,
+  Presentation,
+  PiggyBank,
+  ShoppingBag,
+  BrainCircuit,
+} from "lucide-react";
 
 import { NavMain } from "./nav-main";
+import { NavUpcoming } from "./nav-upcoming";
 import { NavUser } from "./nav-user";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
+  SidebarHeader,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { CanvasSwitcher } from "../canvas/CanvasSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "../AuthProvider";
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: "Income",
-      url: "/income",
+      title: "Incomes",
+      url: "/incomes",
       icon: BanknoteArrowUp,
+    },
+    {
+      title: "Wallets",
+      url: "/wallets",
+      icon: Wallet,
     },
     {
       title: "Expenses",
       url: "/expenses",
       icon: BanknoteArrowDown,
     },
+  ],
+  navUpcoming: [
     {
-      title: "wallet",
-      url: "/wallet",
-      icon: Wallet,
+      title: "Whiteboard",
+      url: "/whiteboard",
+      icon: Presentation,
+      badge: "Soon",
+    },
+    {
+      title: "Budget & Planning",
+      url: "/budget-planning",
+      icon: PiggyBank,
+      badge: "Soon",
+    },
+    {
+      title: "Wish List",
+      url: "/wish-list",
+      icon: ShoppingBag,
+      badge: "Soon",
+    },
+    {
+      title: "AI Insights",
+      url: "/ai-insights",
+      icon: BrainCircuit,
+      badge: "Soon",
     },
   ],
 };
@@ -39,36 +74,15 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, userLoading: isLoading } = useAuthContext();
 
-  // return (
-  //   <Sidebar collapsible="icon" {...props}>
-  //     <SidebarHeader>
-  //       <TeamSwitcher teams={data.teams} />
-  //     </SidebarHeader>
-  //     <SidebarContent>
-  //       <NavMain items={data.navMain} />
-  //       {/* <NavProjects projects={data.projects} /> */}
-  //     </SidebarContent>
-  //     <SidebarFooter>
-
-  //      {isLoading ? <Skeleton className="h-10 w-full" /> : <NavUser
-  //         user={{
-  //           name: user?.firstName + " " + user?.lastName,
-  //           email: user?.email || "",
-  //           avatar: user?.photoUrl || "https://ui.shadcn.com/avatar.svg",
-  //         }}
-  //       />}
-  //     </SidebarFooter>
-  //     <SidebarRail />
-  //   </Sidebar>
-  // );
   return (
     <Sidebar collapsible="offcanvas" {...props}>
+      <SidebarHeader>
+        <CanvasSwitcher />
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <NavMain items={data.navMain} />
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavMain items={data.navMain} />
+        <SidebarSeparator />
+        <NavUpcoming items={data.navUpcoming} />
       </SidebarContent>
       <SidebarFooter>
         {isLoading ? (

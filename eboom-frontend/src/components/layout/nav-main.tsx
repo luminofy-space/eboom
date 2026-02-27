@@ -3,11 +3,11 @@
 import { type LucideIcon } from "lucide-react";
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 export function NavMain({
   items,
@@ -16,28 +16,27 @@ export function NavMain({
     title: string;
     url: string;
     icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
   }[];
 }) {
   const router = useRouter();
-  const [activeItem, setActiveItem] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  const isActive = (url: string) => {
+    if (url === "/") return pathname === "/";
+    const base = url.replace(/s$/, "");
+    return pathname === url || pathname.startsWith(base);
+  };
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel>Management</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuButton
             key={item.title}
-            isActive={activeItem === item.title}
+            isActive={isActive(item.url)}
             tooltip={item.title}
-            onClick={() => {
-              router.push(item.url);
-              setActiveItem(item.title);
-            }}
+            onClick={() => router.push(item.url)}
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
