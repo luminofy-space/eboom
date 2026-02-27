@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { formatRelativeEdit } from "@/src/utils/date";
 import { useState } from "react";
 
@@ -61,7 +61,7 @@ export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, 
                     e.stopPropagation();
                   }}
                 >
-                  <MoreHorizontal className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4" />
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
