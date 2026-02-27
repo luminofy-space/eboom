@@ -256,6 +256,7 @@ export const incomeResources = pgTable('income_resources', {
   recurrencePattern: jsonb('recurrence_pattern'),
   photoUrl: text('photo_url'),
   description: jsonb('description'),
+  isArchived: boolean('is_archived').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   createdBy: integer('created_by').references(() => users.id),
   lastModifiedAt: timestamp('last_modified_at', { withTimezone: true }).defaultNow(),

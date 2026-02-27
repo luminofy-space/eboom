@@ -56,7 +56,7 @@ router.get("/", async (req: Request, res: Response) => {
       })
       .from(canvasMembers)
       .innerJoin(canvases, eq(canvasMembers.canvasId, canvases.id))
-      .where(eq(canvasMembers.userId, user.id));
+      .where(and(eq(canvasMembers.userId, user.id), eq(canvases.isArchived, false)));
 
     const userCanvases = memberships.map((m) => ({
       ...m.canvas,
@@ -419,8 +419,8 @@ router.get("/:canvasId/income-resources", async (req: Request, res: Response) =>
     const { page, limit, search, offset } = parsePaginationParams(req);
 
     const whereCondition = search
-      ? and(eq(incomeResources.canvasId, canvasId), ilike(incomeResources.name, `%${search}%`))
-      : eq(incomeResources.canvasId, canvasId);
+      ? and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false), ilike(incomeResources.name, `%${search}%`))
+      : and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false));
 
     const [{ total }] = await db
       .select({ total: count() })

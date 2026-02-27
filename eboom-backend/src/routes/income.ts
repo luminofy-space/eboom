@@ -176,8 +176,15 @@ router.delete("/resources/:id", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Delete the income resource
-    await db.delete(incomeResources).where(eq(incomeResources.id, resourceId));
+    // Archive the income resource (soft delete)
+    await db
+      .update(incomeResources)
+      .set({
+        isArchived: true,
+        lastModifiedBy: user.id,
+        lastModifiedAt: new Date(),
+      })
+      .where(eq(incomeResources.id, resourceId));
 
     res.json({ message: "Income resource deleted successfully" });
   } catch (err) {
