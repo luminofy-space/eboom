@@ -1,46 +1,44 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
-import { useAppSelector } from "@/src/redux/store";
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
+import {
+  openExpenseCreateModal,
+  openExpenseEditModal,
+  type ExpenseItem,
+} from "@/src/redux/expenseSlice";
 import { useDebouncedValue } from "@mantine/hooks";
-import { Plus, Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Plus, Loader2 } from "lucide-react";
 import { NewExpenseModal } from "./components/NewExpenseModal";
 import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
+import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 
-interface Expense {
-  id: number;
-  name: string;
-  description?: string;
-  expenseType?: string;
-  photoUrl?: string | null;
-  lastModifiedAt?: string | null;
-  category?: {
-    id: number;
-    name: string;
-    photoUrl?: string | null;
-  } | null;
-}
+const hasWindow = typeof window !== "undefined";
 
 export default function ExpensesListPage() {
   const { canvas } = useCanvas();
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
-  const [open, setOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const {
     items,
     isLoading,
     isFetchingNextPage,
     sentinelRef,
-  } = useInfiniteList<Expense>(
+  } = useInfiniteList<ExpenseItem>(
     canvas ? API_ROUTES.CANVASES_EXPENSES_LIST(canvas) : "",
     {
       queryKey: ["expenses", canvas],
@@ -48,6 +46,20 @@ export default function ExpensesListPage() {
       search: debouncedSearch,
     }
   );
+
+  const { mutate: deleteExpense, isPending: isDeleting } = useMutation({
+    mutationFn: async (id: number) => {
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSES_DELETE(id)}`;
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      await axios.delete(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    },
+    onSuccess: () => {
+      setDeleteId(null);
+      queryClient.invalidateQueries();
+    },
+  });
 
   if (isLoading) {
     return (
@@ -68,13 +80,13 @@ export default function ExpensesListPage() {
             <div className="text-center text-sm text-muted-foreground">
               Track your spending and manage your budgets.
             </div>
-            <Button className="w-[80%] min-h-[40px]" onClick={() => setOpen(true)}>
+            <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openExpenseCreateModal())}>
               <Plus className="mr-2 h-4 w-4" />
               Add
             </Button>
           </Card>
         </div>
-        <NewExpenseModal open={open} setOpen={setOpen} />
+        <NewExpenseModal />
       </>
     );
   }
@@ -97,6 +109,8 @@ export default function ExpensesListPage() {
             imageUrl={expense.photoUrl || expense.category?.photoUrl}
             title={expense.name}
             updatedAt={expense.lastModifiedAt}
+            onEdit={() => dispatch(openExpenseEditModal(expense))}
+            onDelete={() => setDeleteId(expense.id)}
           />
         ))}
       </div>
@@ -110,8 +124,15 @@ export default function ExpensesListPage() {
         </div>
       )}
 
-      <FloatingAddButton onClick={() => setOpen(true)} />
-      <NewExpenseModal open={open} setOpen={setOpen} />
+      <FloatingAddButton onClick={() => dispatch(openExpenseCreateModal())} />
+      <NewExpenseModal />
+
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId !== null) deleteExpense(deleteId); }}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

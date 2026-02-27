@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { persistReducer, persistStore } from 'redux-persist';
 import canvasReducer from './canvasSlice';
 import searchReducer from './searchSlice';
+import incomeReducer from './incomeSlice';
+import expenseReducer from './expenseSlice';
+import walletReducer from './walletSlice';
 import storage from './storage';
 
 const persistConfig = {
@@ -32,6 +35,9 @@ const persistConfig = {
 const rootReducer = combineReducers({
     canvas: canvasReducer,
     search: searchReducer,
+    income: incomeReducer,
+    expense: expenseReducer,
+    wallet: walletReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

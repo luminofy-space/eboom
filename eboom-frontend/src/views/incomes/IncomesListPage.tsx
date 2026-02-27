@@ -3,43 +3,41 @@
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
-import { useAppSelector } from "@/src/redux/store";
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
+import {
+  openIncomeCreateModal,
+  openIncomeEditModal,
+  type IncomeResourceItem,
+} from "@/src/redux/incomeSlice";
 import { useDebouncedValue } from "@mantine/hooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useState } from "react";
 import { NewIncomeModal } from "./component/NewIncomeModal";
 import AddIncomeButton from "./component/AddIncomeButton";
 import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
+import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { Loader2 } from "lucide-react";
 
-interface IncomeResource {
-  id: number;
-  name: string;
-  isRecurring: boolean;
-  description?: string;
-  photoUrl?: string | null;
-  lastModifiedAt?: string | null;
-  category?: {
-    id: number;
-    name: string;
-    photoUrl?: string | null;
-  } | null;
-}
+const hasWindow = typeof window !== "undefined";
 
 export default function IncomesListPage() {
   const { canvas } = useCanvas();
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
-  const [open, setOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const {
     items,
     isLoading,
     isFetchingNextPage,
     sentinelRef,
-  } = useInfiniteList<IncomeResource>(
+  } = useInfiniteList<IncomeResourceItem>(
     canvas ? API_ROUTES.CANVASES_INCOME_RESOURCES_LIST(canvas) : "",
     {
       queryKey: ["income-resources", canvas],
@@ -47,6 +45,20 @@ export default function IncomesListPage() {
       search: debouncedSearch,
     }
   );
+
+  const { mutate: deleteIncome, isPending: isDeleting } = useMutation({
+    mutationFn: async (id: number) => {
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_RESOURCES_DELETE(id)}`;
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      await axios.delete(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    },
+    onSuccess: () => {
+      setDeleteId(null);
+      queryClient.invalidateQueries();
+    },
+  });
 
   if (isLoading) {
     return (
@@ -61,8 +73,8 @@ export default function IncomesListPage() {
   if (items.length === 0 && !searchQuery) {
     return (
       <>
-        <AddIncomeButton onClick={() => setOpen(true)} />
-        <NewIncomeModal open={open} setOpen={setOpen} />
+        <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />
+        <NewIncomeModal />
       </>
     );
   }
@@ -85,6 +97,8 @@ export default function IncomesListPage() {
             imageUrl={resource.photoUrl || resource.category?.photoUrl}
             title={resource.name}
             updatedAt={resource.lastModifiedAt}
+            onEdit={() => dispatch(openIncomeEditModal(resource))}
+            onDelete={() => setDeleteId(resource.id)}
           />
         ))}
       </div>
@@ -98,8 +112,15 @@ export default function IncomesListPage() {
         </div>
       )}
 
-      <FloatingAddButton onClick={() => setOpen(true)} />
-      <NewIncomeModal open={open} setOpen={setOpen} />
+      <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />
+      <NewIncomeModal />
+
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId !== null) deleteIncome(deleteId); }}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

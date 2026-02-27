@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { formatRelativeEdit } from "@/src/utils/date";
+import { useState } from "react";
 
 interface GridCardProps {
   href: string;
@@ -11,9 +21,14 @@ interface GridCardProps {
   title: string;
   updatedAt?: string | Date | null;
   className?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function GridCard({ href, imageUrl, title, updatedAt, className }: GridCardProps) {
+export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, onDelete }: GridCardProps) {
+  const hasActions = onEdit || onDelete;
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <Link href={href} className={cn("block group", className)}>
       <Card
@@ -30,6 +45,58 @@ export function GridCard({ href, imageUrl, title, updatedAt, className }: GridCa
               style={{ backgroundImage: `url(${imageUrl})` }}
             />
           </CardContent>
+        )}
+
+        {/* 3-dot action menu */}
+        {hasActions && (
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon-xs"
+                  className="h-7 w-7 bg-black/50 hover:bg-black/70 text-white border-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {onEdit && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onEdit();
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {onEdit && onDelete && <DropdownMenuSeparator />}
+                {onDelete && (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
 
         {/* Dark gradient overlay at bottom for text readability */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -26,21 +27,50 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import { useRef, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
+import { selectExpenseModal, closeExpenseModal } from "@/src/redux/expenseSlice";
+import { useEffect, useRef } from "react";
 import {
   RecurrencePatternPicker,
   DEFAULT_RECURRENCE_PATTERN,
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
 
-interface NewExpenseModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
+interface ExpenseFormData {
+  name: string;
+  expenseCategoryId: number | null;
+  currencyId: number | null;
+  description: string;
+  isRecurring: boolean;
+  recurrencePattern: RecurrencePattern;
+  photo: File | null;
 }
 
-export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
+const defaultValues: ExpenseFormData = {
+  name: "",
+  expenseCategoryId: null,
+  currencyId: null,
+  description: "",
+  isRecurring: false,
+  recurrencePattern: DEFAULT_RECURRENCE_PATTERN,
+  photo: null,
+};
+
+export function NewExpenseModal() {
+  const dispatch = useAppDispatch();
+  const { open, mode, editingItem } = useAppSelector(selectExpenseModal);
+  const isEdit = mode === "edit";
   const { canvas } = useCanvas();
-  console.log(canvas)
+
+  const { register, handleSubmit, control, reset, watch } = useForm<ExpenseFormData>({
+    defaultValues,
+  });
+
+  const isRecurring = watch("isRecurring");
+  const name = watch("name");
+  const expenseCategoryId = watch("expenseCategoryId");
+  const currencyId = watch("currencyId");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch expense categories
   const { data: categoriesRes, isLoading: isLoadingCategories } = useQueryApi<{
@@ -62,8 +92,8 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
 
   const categories = categoriesRes?.categories ?? [];
   const categoryNames = categories.map((c) => c.name);
-  const categoryNameToId = (name: string) =>
-    categories.find((c) => c.name === name)?.id ?? null;
+  const categoryNameToId = (catName: string) =>
+    categories.find((c) => c.name === catName)?.id ?? null;
   const categoryIdToName = (id: number | null) =>
     id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
@@ -79,10 +109,8 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
     return currencies.find((c) => c.code === code)?.id ?? null;
   };
 
-  console.log(canvas)
-
-  // Mutation
-  const { mutateAsync } = useMutationApi(
+  // Mutations
+  const { mutateAsync: createExpense } = useMutationApi(
     API_ROUTES.CANVASES_EXPENSES_CREATE(canvas ?? -1),
     {
       method: "post",
@@ -90,68 +118,80 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
     }
   );
 
-  // Form state
-  const [name, setName] = useState("");
-  const [expenseCategoryId, setExpenseCategoryId] = useState<number | null>(null);
-  const [currencyId, setCurrencyId] = useState<number | null>(null);
-  const [description, setDescription] = useState("");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>(
-    DEFAULT_RECURRENCE_PATTERN
-  );
-  const [photo, setPhoto] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhoto(file);
+  const { mutateAsync: updateExpense } = useMutationApi(
+    editingItem ? API_ROUTES.EXPENSES_UPDATE(editingItem.id) : "",
+    {
+      method: "put",
+      hasToken: true,
     }
-  };
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log('here')
-    e.preventDefault();
+  // Populate form when editing, reset when creating
+  useEffect(() => {
+    if (open && isEdit && editingItem) {
+      reset({
+        name: editingItem.name ?? "",
+        expenseCategoryId: editingItem.expenseCategoryId ?? null,
+        currencyId: editingItem.currencyId ?? null,
+        description: editingItem.description ?? "",
+        isRecurring: editingItem.isRecurring ?? false,
+        recurrencePattern:
+          (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
+        photo: null,
+      });
+    } else if (open && !isEdit) {
+      reset(defaultValues);
+    }
+  }, [open, isEdit, editingItem, reset]);
 
-    try {
-      const data = {
-        name,
-        expenseCategoryId,
-        currencyId,
-        description,
-        isRecurring,
-        recurrencePattern: isRecurring ? recurrencePattern : null,
-        photoUrl: photo ? URL.createObjectURL(photo) : null,
-      };
-
-      await mutateAsync(data);
-
-      // Reset form
-      setName("");
-      setExpenseCategoryId(null);
-      setCurrencyId(null);
-      setDescription("");
-      setIsRecurring(false);
-      setRecurrencePattern(DEFAULT_RECURRENCE_PATTERN);
-      setPhoto(null);
+  const handleClose = (openState: boolean) => {
+    if (!openState) {
+      dispatch(closeExpenseModal());
+      reset(defaultValues);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setOpen(false);
+    }
+  };
+
+  const onSubmit = async (formData: ExpenseFormData) => {
+    try {
+      const data = {
+        name: formData.name,
+        expenseCategoryId: formData.expenseCategoryId,
+        currencyId: formData.currencyId,
+        description: formData.description,
+        isRecurring: formData.isRecurring,
+        recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
+        photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
+      };
+
+      if (isEdit) {
+        await updateExpense(data);
+      } else {
+        await createExpense(data);
+      }
+
+      reset(defaultValues);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      dispatch(closeExpenseModal());
     } catch (error) {
-      console.error("Error creating expense:", error);
+      console.error("Error saving expense:", error);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen} modal={false}>
+    <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="w-full">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Add New Expense</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit Expense" : "Add New Expense"}</DialogTitle>
             <DialogDescription>
-              Enter the details below to track a new expense. Keep your spending
-              organized and on budget.
+              {isEdit
+                ? "Update the details of your expense."
+                : "Enter the details below to track a new expense. Keep your spending organized and on budget."}
             </DialogDescription>
           </DialogHeader>
 
@@ -160,36 +200,41 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
             <div className="w-1/2 flex flex-col gap-1">
               <Label htmlFor="expense-name">Name</Label>
               <Input
-                required
                 id="expense-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Monthly Rent"
+                {...register("name", { required: true })}
               />
             </div>
             <div className="w-1/2 flex flex-col gap-1">
               <Label htmlFor="expense-category">Expense Category</Label>
-              <Combobox
-                id="expense-category"
-                items={categoryNames}
-                value={categoryIdToName(expenseCategoryId)}
-                disabled={isLoadingCategories}
-                onValueChange={(val) =>
-                  setExpenseCategoryId(val ? categoryNameToId(val) : null)
-                }
-              >
-                <ComboboxInput placeholder="Select a category" />
-                <ComboboxContent className="z-[80]">
-                  <ComboboxEmpty>No categories found.</ComboboxEmpty>
-                  <ComboboxCollection>
-                    {(name) => (
-                      <ComboboxItem key={name} value={name}>
-                        {name}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxCollection>
-                </ComboboxContent>
-              </Combobox>
+              <Controller
+                name="expenseCategoryId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    id="expense-category"
+                    items={categoryNames}
+                    value={categoryIdToName(field.value)}
+                    disabled={isLoadingCategories}
+                    onValueChange={(val) =>
+                      field.onChange(val ? categoryNameToId(val) : null)
+                    }
+                  >
+                    <ComboboxInput placeholder="Select a category" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(catName) => (
+                          <ComboboxItem key={catName} value={catName}>
+                            {catName}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
+              />
             </div>
           </div>
 
@@ -197,27 +242,34 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
           <div className="flex flex-row gap-5">
             <div className="w-1/2 flex flex-col gap-1">
               <Label htmlFor="expense-currency">Currency</Label>
-              <Combobox
-                items={currencyLabels}
-                value={currencyIdToLabel(currencyId)}
-                id="expense-currency"
-                disabled={isLoadingCurr}
-                onValueChange={(val) =>
-                  setCurrencyId(val ? currencyLabelToId(val) : null)
-                }
-              >
-                <ComboboxInput placeholder="Select a currency" />
-                <ComboboxContent className="z-[80]">
-                  <ComboboxEmpty>No items found.</ComboboxEmpty>
-                  <ComboboxCollection>
-                    {(label) => (
-                      <ComboboxItem key={label} value={label}>
-                        {label}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxCollection>
-                </ComboboxContent>
-              </Combobox>
+              <Controller
+                name="currencyId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    items={currencyLabels}
+                    value={currencyIdToLabel(field.value)}
+                    id="expense-currency"
+                    disabled={isLoadingCurr}
+                    onValueChange={(val) =>
+                      field.onChange(val ? currencyLabelToId(val) : null)
+                    }
+                  >
+                    <ComboboxInput placeholder="Select a currency" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(label) => (
+                          <ComboboxItem key={label} value={label}>
+                            {label}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
+              />
             </div>
           </div>
 
@@ -227,9 +279,8 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
               <Label htmlFor="expense-description">Description</Label>
               <Input
                 id="expense-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional notes about this expense"
+                {...register("description")}
               />
             </div>
           </div>
@@ -238,13 +289,22 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
           <div className="flex flex-row gap-5">
             <div className="w-full flex flex-col gap-1">
               <Label htmlFor="expense-photo">Photo</Label>
-              <Input
-                ref={fileInputRef}
-                id="expense-photo"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="cursor-pointer"
+              <Controller
+                name="photo"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    ref={fileInputRef}
+                    id="expense-photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      field.onChange(file);
+                    }}
+                    className="cursor-pointer"
+                  />
+                )}
               />
             </div>
           </div>
@@ -253,18 +313,30 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Field orientation="horizontal" className="items-center">
-                <Checkbox
-                  id="expense-recurring"
-                  checked={isRecurring}
-                  onCheckedChange={(checked) => setIsRecurring(!!checked)}
+                <Controller
+                  name="isRecurring"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="expense-recurring"
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(!!checked)}
+                    />
+                  )}
                 />
                 <Label htmlFor="expense-recurring">Recurring</Label>
               </Field>
             </div>
             {isRecurring && (
-              <RecurrencePatternPicker
-                value={recurrencePattern}
-                onChange={setRecurrencePattern}
+              <Controller
+                name="recurrencePattern"
+                control={control}
+                render={({ field }) => (
+                  <RecurrencePatternPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
             )}
           </div>
@@ -277,7 +349,7 @@ export function NewExpenseModal({ open, setOpen }: NewExpenseModalProps) {
               disabled={!name || !expenseCategoryId || currencyId === null}
               type="submit"
             >
-              Create Expense
+              {isEdit ? "Save changes" : "Create Expense"}
             </Button>
           </DialogFooter>
       </form>

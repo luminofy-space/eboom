@@ -299,8 +299,8 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
     const { page, limit, search, offset } = parsePaginationParams(req);
 
     const whereCondition = search
-      ? and(eq(expenses.canvasId, canvasId), ilike(expenses.name, `%${search}%`))
-      : eq(expenses.canvasId, canvasId);
+      ? and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true), ilike(expenses.name, `%${search}%`))
+      : and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true));
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -531,8 +531,8 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
     const { page, limit, search, offset } = parsePaginationParams(req);
 
     const whereCondition = search
-      ? and(eq(wallets.canvasId, canvasId), ilike(wallets.name, `%${search}%`))
-      : eq(wallets.canvasId, canvasId);
+      ? and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false), ilike(wallets.name, `%${search}%`))
+      : and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false));
 
     const [{ total }] = await db
       .select({ total: count() })
