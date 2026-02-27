@@ -9,6 +9,7 @@ import {
   PiggyBank,
   ShoppingBag,
   BrainCircuit,
+  Calendar,
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
@@ -41,6 +42,11 @@ const data = {
       title: "Expenses",
       url: "/expenses",
       icon: BanknoteArrowDown,
+    },
+    {
+      title: "Calendar",
+      url: "/calendar",
+      icon: Calendar,
     },
   ],
   navUpcoming: [

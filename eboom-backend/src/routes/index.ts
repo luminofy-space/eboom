@@ -11,12 +11,16 @@ import wallets from './wallets';
 import expenses from './expenses';
 import walletCategories from './wallet-categories';
 import expenseCategories from './expense-categories';
+import calendar from './calendar';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
 
 // Canvas routes (includes all canvas-scoped routes: canvases, expenses, income-resources, wallets)
 router.use('/canvases', auth, canvas);
+
+// Calendar routes
+router.use('/calendar', auth, calendar);
 
 // Currency routes
 router.use('/currency', auth, currency);
