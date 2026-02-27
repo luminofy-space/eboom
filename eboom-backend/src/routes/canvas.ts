@@ -8,14 +8,22 @@ import {
   currencies,
   incomeResources,
   incomeResourceCategories,
-  valueCategories,
   wallets,
   walletCategories,
 } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ilike, count, desc } from "drizzle-orm";
 import type { User } from "../db/schema/models";
 
 const router = express.Router();
+
+// Helper to parse pagination query params
+function parsePaginationParams(req: Request) {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const search = (req.query.search as string) || "";
+  const offset = (page - 1) * limit;
+  return { page, limit, search, offset };
+}
 
 // Helper function to check canvas access
 async function checkCanvasAccess(
@@ -48,7 +56,7 @@ router.get("/", async (req: Request, res: Response) => {
       })
       .from(canvasMembers)
       .innerJoin(canvases, eq(canvasMembers.canvasId, canvases.id))
-      .where(eq(canvasMembers.userId, user.id));
+      .where(and(eq(canvasMembers.userId, user.id), eq(canvases.isArchived, false)));
 
     const userCanvases = memberships.map((m) => ({
       ...m.canvas,
@@ -288,6 +296,17 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true), ilike(expenses.name, `%${search}%`))
+      : and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(expenses)
+      .where(whereCondition);
+
     const expensesList = await db
       .select({
         expense: expenses,
@@ -300,7 +319,10 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
         eq(expenses.expenseCategoryId, expenseCategories.id)
       )
       .leftJoin(currencies, eq(expenses.currencyId, currencies.id))
-      .where(eq(expenses.canvasId, canvasId));
+      .where(whereCondition)
+      .orderBy(desc(expenses.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
 
     const formattedExpenses = expensesList.map((e) => ({
       ...e.expense,
@@ -308,7 +330,7 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
       currency: e.currency,
     }));
 
-    res.json({ expenses: formattedExpenses });
+    res.json({ expenses: formattedExpenses, items: formattedExpenses, total, page, limit });
   } catch (err) {
     console.error("Error fetching expenses:", err);
     res.status(500).json({ error: "Failed to fetch expenses" });
@@ -394,26 +416,38 @@ router.get("/:canvasId/income-resources", async (req: Request, res: Response) =>
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false), ilike(incomeResources.name, `%${search}%`))
+      : and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(incomeResources)
+      .where(whereCondition);
+
     const resources = await db
       .select({
         incomeResource: incomeResources,
         category: incomeResourceCategories,
-        valueCategory: valueCategories,
       })
       .from(incomeResources)
       .leftJoin(
         incomeResourceCategories,
         eq(incomeResources.incomeResourceCategoryId, incomeResourceCategories.id)
       )
-      .where(eq(incomeResources.canvasId, canvasId));
+      .where(whereCondition)
+      .orderBy(desc(incomeResources.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
 
     const formattedResources = resources.map((r) => ({
       ...r.incomeResource,
       category: r.category,
-      defaultValueCategory: r.valueCategory,
     }));
 
-    res.json({ incomeResources: formattedResources });
+    res.json({ incomeResources: formattedResources, items: formattedResources, total, page, limit });
   } catch (err) {
     console.error("Error fetching income resources:", err);
     res.status(500).json({ error: "Failed to fetch income resources" });
@@ -436,7 +470,7 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
     currency,
     amount,
     isRecurring,
-    recurrenceFrequency,
+    recurrencePattern,
     photoUrl,
     description,
   } = req.body;
@@ -463,7 +497,7 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
         currency,
         isRecurring: isRecurring || false,
         ownerId: user.id,
-        recurrenceFrequency: recurrenceFrequency || null,
+        recurrencePattern: recurrencePattern || null,
         photoUrl: photoUrl || null,
         description: description || null,
         createdBy: user.id,
@@ -494,6 +528,17 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false), ilike(wallets.name, `%${search}%`))
+      : and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(wallets)
+      .where(whereCondition);
+
     const walletsList = await db
       .select({
         wallet: wallets,
@@ -501,14 +546,17 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
       })
       .from(wallets)
       .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
-      .where(eq(wallets.canvasId, canvasId));
+      .where(whereCondition)
+      .orderBy(desc(wallets.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
 
     const formattedWallets = walletsList.map((w) => ({
       ...w.wallet,
       category: w.category,
     }));
 
-    res.json({ wallets: formattedWallets });
+    res.json({ wallets: formattedWallets, items: formattedWallets, total, page, limit });
   } catch (err) {
     console.error("Error fetching wallets:", err);
     res.status(500).json({ error: "Failed to fetch wallets" });
@@ -530,6 +578,7 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
     walletCategoryId,
     walletNumber,
     description,
+    photoUrl,
   } = req.body;
 
   if (!name || !walletCategoryId) {
@@ -552,6 +601,7 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
         walletCategoryId,
         ownerId: user.id,
         walletNumber: walletNumber || null,
+        photoUrl: photoUrl || null,
         description: description || null,
         isArchived: false,
         createdBy: user.id,

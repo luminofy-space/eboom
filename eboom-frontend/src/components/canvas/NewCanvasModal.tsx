@@ -1,5 +1,6 @@
 "use client";
 
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -23,20 +24,19 @@ import { Label } from "@/components/ui/label";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import GroupSelect, { TItem } from "@/src/components/groupe-select/GroupeSelect";
-import { useState } from "react";
+import { useEffect } from "react";
 import {
   DEFAULT_CANVAS_ICON,
   PRESET_COLORS,
   PRESET_EMOJIS,
+  parseCanvasIcon,
   serializeCanvasIcon,
 } from "./canvasUtils";
 import { useCanvas } from "@/src/hooks/useCanvas";
-
-interface NewCanvasModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  onCreated?: () => void;
-}
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
+import { closeCanvasModal, selectCanvasModal } from "@/src/redux/canvasSlice";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 const canvasTypeItems: TItem[] = [
   { key: "personal", title: "Personal" },
@@ -44,19 +44,49 @@ const canvasTypeItems: TItem[] = [
   { key: "family", title: "Family" },
 ];
 
-export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [canvasType, setCanvasType] = useState("personal");
-  const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_CANVAS_ICON.emoji);
-  const [selectedColor, setSelectedColor] = useState(DEFAULT_CANVAS_ICON.color);
-  const [baseCurrencyCode, setBaseCurrencyCode] = useState<string>("");
+interface CanvasFormData {
+  name: string;
+  description: string;
+  canvasType: string;
+  selectedEmoji: string;
+  selectedColor: string;
+  baseCurrencyCode: string;
+}
+
+const defaultValues: CanvasFormData = {
+  name: "",
+  description: "",
+  canvasType: "personal",
+  selectedEmoji: DEFAULT_CANVAS_ICON.emoji,
+  selectedColor: DEFAULT_CANVAS_ICON.color,
+  baseCurrencyCode: "",
+};
+
+const hasWindow = typeof window !== "undefined";
+
+export function NewCanvasModal() {
+  const dispatch = useAppDispatch();
+  const { open, mode, editingItem } = useAppSelector(selectCanvasModal);
+  const isEdit = mode === "edit";
+  const queryClient = useQueryClient();
+
+  const { register, handleSubmit, reset, setValue, control } = useForm<CanvasFormData>({
+    defaultValues,
+  });
+
+  const name = useWatch({ control, name: "name" });
+  const canvasType = useWatch({ control, name: "canvasType" });
+  const selectedEmoji = useWatch({ control, name: "selectedEmoji" });
+  const selectedColor = useWatch({ control, name: "selectedColor" });
+  const baseCurrencyCode = useWatch({ control, name: "baseCurrencyCode" });
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
     currencies?: { id: number; name: string; code: string; symbol: string }[];
   }>(API_ROUTES.CURRENCIES_METADATA, {
     queryKey: ["currencies"],
     hasToken: true,
+    staleTime: 10 * 60 * 1000,
+    enabled: open,
   });
 
   const currencies = currenciesRes?.currencies ?? [];
@@ -64,40 +94,75 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
 
   const { createCanvas, isCreating } = useCanvas();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { mutate: updateCanvasMutation, isPending: isUpdating } = useMutation({
+    mutationFn: async (data: { name: string; description?: string; canvasType: string; photoUrl: string }) => {
+      if (!editingItem) return;
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.CANVASES_UPDATE(editingItem.id)}`;
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      await axios.put(url, data, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      handleClose();
+    },
+  });
 
-    const selectedCurrency = currencies.find((c) => c.code === effectiveCode);
-    if (!selectedCurrency) return;
+  useEffect(() => {
+    if (open && isEdit && editingItem) {
+      const icon = parseCanvasIcon(editingItem.photoUrl ?? undefined);
+      reset({
+        name: editingItem.name,
+        description: typeof editingItem.description === "string" ? editingItem.description : "",
+        canvasType: editingItem.canvasType ?? "personal",
+        selectedEmoji: icon.emoji,
+        selectedColor: icon.color,
+        baseCurrencyCode: "",
+      });
+    } else if (open && !isEdit) {
+      reset(defaultValues);
+    }
+  }, [open, isEdit, editingItem, reset]);
 
-    try {
-      const photoUrl = serializeCanvasIcon({ emoji: selectedEmoji, color: selectedColor });
+  const handleClose = () => {
+    dispatch(closeCanvasModal());
+    reset(defaultValues);
+  };
 
-      createCanvas(name, description, canvasType, photoUrl, selectedCurrency.id);
-      
+  const onSubmit = async (formData: CanvasFormData) => {
+    const photoUrl = serializeCanvasIcon({ emoji: formData.selectedEmoji, color: formData.selectedColor });
 
-      setName("");
-      setDescription("");
-      setCanvasType("personal");
-      setSelectedEmoji(DEFAULT_CANVAS_ICON.emoji);
-      setSelectedColor(DEFAULT_CANVAS_ICON.color);
-      setBaseCurrencyCode("");
-      setOpen(false);
-      onCreated?.();
-    } catch (error) {
-      console.error("Error creating canvas:", error);
+    if (isEdit) {
+      updateCanvasMutation({
+        name: formData.name,
+        description: formData.description || undefined,
+        canvasType: formData.canvasType,
+        photoUrl,
+      });
+    } else {
+      const selectedCurrency = currencies.find((c) => c.code === effectiveCode);
+      if (!selectedCurrency) return;
+
+      try {
+        await createCanvas(formData.name, formData.description, formData.canvasType, photoUrl, selectedCurrency.id);
+        handleClose();
+      } catch (error) {
+        console.error("Error creating canvas:", error);
+      }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <form onSubmit={handleSubmit}>
-        <DialogContent className="w-full max-w-md">
+    <Dialog open={open} onOpenChange={(openState) => { if (!openState) handleClose(); }}>
+      <DialogContent className="w-full max-w-md">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Add New Canvas</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit Canvas" : "Add New Canvas"}</DialogTitle>
             <DialogDescription>
-              Create a new canvas to organize your finances. Each canvas is an
-              independent financial workspace.
+              {isEdit
+                ? "Update your canvas details."
+                : "Create a new canvas to organize your finances. Each canvas is an independent financial workspace."}
             </DialogDescription>
           </DialogHeader>
 
@@ -115,10 +180,8 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
                 <Input
                   required
                   id="canvas-name"
-                  name="name"
                   placeholder="e.g. My Personal Budget"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  {...register("name", { required: true })}
                 />
               </div>
             </div>
@@ -128,10 +191,8 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
               <Label htmlFor="canvas-description">Description</Label>
               <Input
                 id="canvas-description"
-                name="description"
                 placeholder="Optional description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                {...register("description")}
               />
             </div>
 
@@ -140,36 +201,38 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
               <Label>Type</Label>
               <GroupSelect
                 items={canvasTypeItems}
-                handleSelect={(item) => setCanvasType(item.key)}
+                handleSelect={(item) => setValue("canvasType", item.key)}
                 value={canvasType}
               />
             </div>
 
-            {/* Base Currency */}
-            <div className="flex flex-col gap-1">
-              <Label>Base Currency</Label>
-              <Combobox
-                items={currencies.map((c) => c.code)}
-                value={effectiveCode}
-                disabled={isLoadingCurr}
-                onValueChange={(val: string | null) => setBaseCurrencyCode(val ?? "")}
-              >
-                <ComboboxInput placeholder="Select a currency" />
-                <ComboboxContent>
-                  <ComboboxEmpty>No currencies found.</ComboboxEmpty>
-                  <ComboboxCollection>
-                    {(code: string) => {
-                      const c = currencies.find((c) => c.code === code);
-                      return (
-                        <ComboboxItem key={code} value={code}>
-                          {c ? `${c.code} – ${c.name}` : code}
-                        </ComboboxItem>
-                      );
-                    }}
-                  </ComboboxCollection>
-                </ComboboxContent>
-              </Combobox>
-            </div>
+            {/* Base Currency — only in create mode */}
+            {!isEdit && (
+              <div className="flex flex-col gap-1">
+                <Label>Base Currency</Label>
+                <Combobox
+                  items={currencies.map((c) => c.code)}
+                  value={effectiveCode}
+                  disabled={isLoadingCurr}
+                  onValueChange={(val: string | null) => setValue("baseCurrencyCode", val ?? "")}
+                >
+                  <ComboboxInput placeholder="Select a currency" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No currencies found.</ComboboxEmpty>
+                    <ComboboxCollection>
+                      {(code: string) => {
+                        const c = currencies.find((c) => c.code === code);
+                        return (
+                          <ComboboxItem key={code} value={code}>
+                            {c ? `${c.code} – ${c.name}` : code}
+                          </ComboboxItem>
+                        );
+                      }}
+                    </ComboboxCollection>
+                  </ComboboxContent>
+                </Combobox>
+              </div>
+            )}
 
             {/* Color picker */}
             <div className="flex flex-col gap-2">
@@ -179,7 +242,7 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
                   <button
                     key={color}
                     type="button"
-                    onClick={() => setSelectedColor(color)}
+                    onClick={() => setValue("selectedColor", color)}
                     className="size-7 rounded-lg transition-transform hover:scale-110 focus:outline-none"
                     style={{ backgroundColor: color }}
                     aria-label={color}
@@ -202,7 +265,7 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
                   <button
                     key={emoji}
                     type="button"
-                    onClick={() => setSelectedEmoji(emoji)}
+                    onClick={() => setValue("selectedEmoji", emoji)}
                     className={`size-9 flex items-center justify-center rounded-lg text-lg transition-colors hover:bg-muted ${
                       selectedEmoji === emoji ? "bg-muted ring-2 ring-primary" : ""
                     }`}
@@ -221,12 +284,12 @@ export function NewCanvasModal({ open, setOpen, onCreated }: NewCanvasModalProps
                 Cancel
               </Button>
             </DialogClose>
-            <Button disabled={!name || isCreating} type="submit" onClick={handleSubmit}>
-              Create Canvas
+            <Button disabled={!name || isCreating || isUpdating} type="submit">
+              {isEdit ? "Save Changes" : "Create Canvas"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </form>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }

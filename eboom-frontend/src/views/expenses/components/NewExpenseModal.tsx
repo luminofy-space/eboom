@@ -3,7 +3,14 @@
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox, ComboboxCollection, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem } from "@/components/ui/combobox";
+import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+} from "@/components/ui/combobox";
 import {
   Dialog,
   DialogClose,
@@ -21,7 +28,7 @@ import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
-import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
+import { selectExpenseModal, closeExpenseModal } from "@/src/redux/expenseSlice";
 import { useEffect, useRef } from "react";
 import {
   RecurrencePatternPicker,
@@ -29,87 +36,90 @@ import {
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
 
-interface IncomeFormData {
+interface ExpenseFormData {
   name: string;
-  currency: string;
-  amount: number;
-  incomeResourceCategoryId: number | null;
+  expenseCategoryId: number | null;
+  currencyId: number | null;
   description: string;
   isRecurring: boolean;
   recurrencePattern: RecurrencePattern;
   photo: File | null;
 }
 
-const defaultValues: IncomeFormData = {
+const defaultValues: ExpenseFormData = {
   name: "",
-  currency: "",
-  amount: 0,
-  incomeResourceCategoryId: null,
+  expenseCategoryId: null,
+  currencyId: null,
   description: "",
   isRecurring: false,
   recurrencePattern: DEFAULT_RECURRENCE_PATTERN,
   photo: null,
 };
 
-export function NewIncomeModal() {
+export function NewExpenseModal() {
   const dispatch = useAppDispatch();
-  const { open, mode, editingItem } = useAppSelector(selectIncomeModal);
+  const { open, mode, editingItem } = useAppSelector(selectExpenseModal);
   const isEdit = mode === "edit";
+  const { canvas } = useCanvas();
 
-  const { register, handleSubmit, control, reset, watch, formState: { isValid } } = useForm<IncomeFormData>({
+  const { register, handleSubmit, control, reset, watch } = useForm<ExpenseFormData>({
     defaultValues,
   });
 
   const isRecurring = watch("isRecurring");
+  const name = watch("name");
+  const expenseCategoryId = watch("expenseCategoryId");
+  const currencyId = watch("currencyId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch expense categories
+  const { data: categoriesRes, isLoading: isLoadingCategories } = useQueryApi<{
+    categories?: { id: number; name: string }[];
+  }>(API_ROUTES.EXPENSE_CATEGORIES, {
+    queryKey: ["expense-categories"],
+    hasToken: true,
+    enabled: open,
+  });
+
+  // Fetch currencies
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
-    currencies?: { name: string; code: string }[];
-  }>(
-    API_ROUTES.CURRENCIES_METADATA,
-    {
-      queryKey: ["currencies"],
-      hasToken: true,
-      enabled: open,
-    }
-  );
+    currencies?: { id: number; name: string; code: string }[];
+  }>(API_ROUTES.CURRENCIES_METADATA, {
+    queryKey: ["currencies"],
+    hasToken: true,
+    enabled: open,
+  });
 
-  const { data: resourceRes, isLoading: isLoadingRes } = useQueryApi<{
-    categories?: { id: number; name: string; code: string }[];
-  }>(
-    API_ROUTES.INCOME_CATEGORIES,
-    {
-      queryKey: ["income-categories"],
-      hasToken: true,
-      enabled: open,
-    }
-  );
+  const categories = categoriesRes?.categories ?? [];
+  const categoryNames = categories.map((c) => c.name);
+  const categoryNameToId = (catName: string) =>
+    categories.find((c) => c.name === catName)?.id ?? null;
+  const categoryIdToName = (id: number | null) =>
+    id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
-  const currencyItems =
-    currenciesRes?.currencies?.map((c) => c.code).filter(Boolean) ?? [];
+  const currencies = currenciesRes?.currencies ?? [];
+  const currencyLabels = currencies.map((c) => `${c.code} – ${c.name}`);
+  const currencyIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const c = currencies.find((cur) => cur.id === id);
+    return c ? `${c.code} – ${c.name}` : "";
+  };
+  const currencyLabelToId = (label: string) => {
+    const code = label.split(" – ")[0];
+    return currencies.find((c) => c.code === code)?.id ?? null;
+  };
 
-  const resourceCategories = resourceRes?.categories ?? [];
-  const resourceNames = resourceCategories.map((c) => c.name);
-  const resourceNameToId = (name: string) =>
-    resourceCategories.find((c) => c.name === name)?.id ?? null;
-  const resourceIdToName = (id: number | null) =>
-    id !== null ? resourceCategories.find((c) => c.id === id)?.name ?? "" : "";
-
-  const currencyDisplayName = (code: string) =>
-    currenciesRes?.currencies?.find((c) => c.code === code)?.name ?? code;
-
-  const { canvas } = useCanvas();
-
-  const { mutateAsync: createIncome } = useMutationApi(
-    API_ROUTES.CANVASES_INCOME_RESOURCES_CREATE(canvas ?? -1),
+  // Mutations
+  const { mutateAsync: createExpense } = useMutationApi(
+    API_ROUTES.CANVASES_EXPENSES_CREATE(canvas ?? -1),
     {
       method: "post",
       hasToken: true,
     }
   );
 
-  const { mutateAsync: updateIncome } = useMutationApi(
-    editingItem ? API_ROUTES.INCOME_RESOURCES_UPDATE(editingItem.id) : "",
+  const { mutateAsync: updateExpense } = useMutationApi(
+    editingItem ? API_ROUTES.EXPENSES_UPDATE(editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
@@ -121,13 +131,12 @@ export function NewIncomeModal() {
     if (open && isEdit && editingItem) {
       reset({
         name: editingItem.name ?? "",
-        currency: editingItem.currency ?? "",
-        amount: editingItem.amount ?? 0,
-        incomeResourceCategoryId: editingItem.incomeResourceCategoryId ?? null,
+        expenseCategoryId: editingItem.expenseCategoryId ?? null,
+        currencyId: editingItem.currencyId ?? null,
+        description: editingItem.description ?? "",
         isRecurring: editingItem.isRecurring ?? false,
         recurrencePattern:
           (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
-        description: editingItem.description ?? "",
         photo: null,
       });
     } else if (open && !isEdit) {
@@ -137,7 +146,7 @@ export function NewIncomeModal() {
 
   const handleClose = (openState: boolean) => {
     if (!openState) {
-      dispatch(closeIncomeModal());
+      dispatch(closeExpenseModal());
       reset(defaultValues);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -145,32 +154,31 @@ export function NewIncomeModal() {
     }
   };
 
-  const onSubmit = async (formData: IncomeFormData) => {
+  const onSubmit = async (formData: ExpenseFormData) => {
     try {
       const data = {
         name: formData.name,
-        currency: formData.currency,
-        amount: Number(formData.amount),
-        isRecurring: formData.isRecurring,
-        incomeResourceCategoryId: formData.incomeResourceCategoryId ?? undefined,
-        recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
+        expenseCategoryId: formData.expenseCategoryId,
+        currencyId: formData.currencyId,
         description: formData.description,
+        isRecurring: formData.isRecurring,
+        recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
         photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
       };
 
       if (isEdit) {
-        await updateIncome(data);
+        await updateExpense(data);
       } else {
-        await createIncome(data);
+        await createExpense(data);
       }
 
       reset(defaultValues);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      dispatch(closeIncomeModal());
+      dispatch(closeExpenseModal());
     } catch (error) {
-      console.error("Error saving income:", error);
+      console.error("Error saving expense:", error);
     }
   };
 
@@ -179,42 +187,82 @@ export function NewIncomeModal() {
         <DialogContent className="w-full">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Income" : "Add New Income"}</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit Expense" : "Add New Expense"}</DialogTitle>
             <DialogDescription>
               {isEdit
-                ? "Update the details of your income source."
-                : "Enter the details below to track your income from various sources and assets. Keep your finances organized."}
+                ? "Update the details of your expense."
+                : "Enter the details below to track a new expense. Keep your spending organized and on budget."}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Row 1: Name + Category */}
           <div className="flex flex-row gap-5">
             <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="expense-name">Name</Label>
               <Input
-                id="name"
+                id="expense-name"
+                placeholder="e.g. Monthly Rent"
                 {...register("name", { required: true })}
               />
             </div>
             <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="currency">Currency</Label>
+              <Label htmlFor="expense-category">Expense Category</Label>
               <Controller
-                name="currency"
+                name="expenseCategoryId"
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => (
                   <Combobox
-                    items={currencyItems}
-                    value={field.value}
-                    id="currency"
+                    id="expense-category"
+                    items={categoryNames}
+                    value={categoryIdToName(field.value)}
+                    disabled={isLoadingCategories}
+                    onValueChange={(val) =>
+                      field.onChange(val ? categoryNameToId(val) : null)
+                    }
+                  >
+                    <ComboboxInput placeholder="Select a category" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(catName) => (
+                          <ComboboxItem key={catName} value={catName}>
+                            {catName}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Currency */}
+          <div className="flex flex-row gap-5">
+            <div className="w-1/2 flex flex-col gap-1">
+              <Label htmlFor="expense-currency">Currency</Label>
+              <Controller
+                name="currencyId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    items={currencyLabels}
+                    value={currencyIdToLabel(field.value)}
+                    id="expense-currency"
                     disabled={isLoadingCurr}
-                    onValueChange={(val) => field.onChange(val ?? "")}
+                    onValueChange={(val) =>
+                      field.onChange(val ? currencyLabelToId(val) : null)
+                    }
                   >
                     <ComboboxInput placeholder="Select a currency" />
                     <ComboboxContent className="z-[80]">
                       <ComboboxEmpty>No items found.</ComboboxEmpty>
                       <ComboboxCollection>
-                        {(item) => (
-                          <ComboboxItem key={item} value={item}>
-                            {currencyDisplayName(item)}
+                        {(label) => (
+                          <ComboboxItem key={label} value={label}>
+                            {label}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -224,65 +272,30 @@ export function NewIncomeModal() {
               />
             </div>
           </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                {...register("amount", { required: true, valueAsNumber: true })}
-              />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="income-resource">Income Resource</Label>
-              <Controller
-                name="incomeResourceCategoryId"
-                control={control}
-                render={({ field }) => (
-                  <Combobox
-                    id="income-resource"
-                    items={resourceNames}
-                    value={resourceIdToName(field.value)}
-                    disabled={isLoadingRes}
-                    onValueChange={(val) =>
-                      field.onChange(val ? resourceNameToId(val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder="Select a Resource" />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(name) => (
-                          <ComboboxItem key={name} value={name}>
-                            {name}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              />
-            </div>
-          </div>
+
+          {/* Description */}
           <div className="flex flex-row gap-5">
             <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="expense-description">Description</Label>
               <Input
-                id="description"
+                id="expense-description"
+                placeholder="Optional notes about this expense"
                 {...register("description")}
               />
             </div>
           </div>
+
+          {/* Photo */}
           <div className="flex flex-row gap-5">
             <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="photo">Photo</Label>
+              <Label htmlFor="expense-photo">Photo</Label>
               <Controller
                 name="photo"
                 control={control}
                 render={({ field }) => (
                   <Input
                     ref={fileInputRef}
-                    id="photo"
+                    id="expense-photo"
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
@@ -295,6 +308,8 @@ export function NewIncomeModal() {
               />
             </div>
           </div>
+
+          {/* Recurring */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Field orientation="horizontal" className="items-center">
@@ -303,13 +318,13 @@ export function NewIncomeModal() {
                   control={control}
                   render={({ field }) => (
                     <Checkbox
-                      id="isRecurrent"
+                      id="expense-recurring"
                       checked={field.value}
                       onCheckedChange={(checked) => field.onChange(!!checked)}
                     />
                   )}
                 />
-                <Label htmlFor="isRecurrent">Recurring</Label>
+                <Label htmlFor="expense-recurring">Recurring</Label>
               </Field>
             </div>
             {isRecurring && (
@@ -325,15 +340,16 @@ export function NewIncomeModal() {
               />
             )}
           </div>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!isValid}
+              disabled={!name || !expenseCategoryId || currencyId === null}
               type="submit"
             >
-              {isEdit ? "Save changes" : "Create Income"}
+              {isEdit ? "Save changes" : "Create Expense"}
             </Button>
           </DialogFooter>
       </form>

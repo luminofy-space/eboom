@@ -1,5 +1,6 @@
 "use client";
 
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
     Combobox,
@@ -24,40 +25,56 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import { useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/src/redux/store";
+import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
+import { useEffect } from "react";
 
-interface NewWalletModalProps {
-    open: boolean;
-    setOpen: (open: boolean) => void;
+interface WalletFormData {
+    name: string;
+    walletCategoryId: number | null;
+    walletNumber: string;
+    description: string;
 }
 
-export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
+const defaultValues: WalletFormData = {
+    name: "",
+    walletCategoryId: null,
+    walletNumber: "",
+    description: "",
+};
+
+export function NewWalletModal() {
+    const dispatch = useAppDispatch();
+    const { open, mode, editingItem } = useAppSelector(selectWalletModal);
+    const isEdit = mode === "edit";
     const { canvas } = useCanvas();
 
-    // 🔹 Fetch wallet categories
+    const { register, handleSubmit, control, reset, watch } = useForm<WalletFormData>({
+        defaultValues,
+    });
+
+    const name = watch("name");
+    const walletCategoryId = watch("walletCategoryId");
+
+    // Fetch wallet categories
     const { data: categoriesRes, isLoading: isLoadingCategories } =
         useQueryApi<{
             categories?: { id: number; name: string }[];
         }>(API_ROUTES.WALLET_CATEGORIES, {
             queryKey: ["wallet-categories", "metadata"],
-            hasToken: true
+            hasToken: true,
+            enabled: open,
         });
 
-    const categoryItems =
-        categoriesRes?.categories
-            ?.map((c) => c.id)
-            .filter((id): id is number => typeof id === "number") ?? [];
+    const categories = categoriesRes?.categories ?? [];
+    const categoryNames = categories.map((c) => c.name);
+    const categoryNameToId = (catName: string) =>
+        categories.find((c) => c.name === catName)?.id ?? null;
+    const categoryIdToName = (id: number | null) =>
+        id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
-    const categoryDisplayName = (id: number | string) => {
-        const parsed = typeof id === "number" ? id : Number(id);
-        return (
-            categoriesRes?.categories?.find((c) => c.id === parsed)?.name ??
-            `${id}`
-        );
-    };
-
-    // 🔹 Mutation
-    const { mutateAsync } = useMutationApi(
+    // Mutations
+    const { mutateAsync: createWallet } = useMutationApi(
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
         {
             method: "post",
@@ -65,44 +82,67 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
         }
     );
 
-    // 🔹 State
-    const [name, setName] = useState("");
-    const [walletCategoryId, setWalletCategoryId] = useState<number | null>(null);
-    const [walletNumber, setWalletNumber] = useState("");
-    const [description, setDescription] = useState("");
+    const { mutateAsync: updateWallet } = useMutationApi(
+        editingItem ? API_ROUTES.WALLETS_UPDATE(editingItem.id) : "",
+        {
+            method: "put",
+            hasToken: true,
+        }
+    );
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        try {
-            await mutateAsync({
-                name,
-                walletCategoryId,
-                walletNumber,
-                description,
+    // Populate form when editing, reset when creating
+    useEffect(() => {
+        if (open && isEdit && editingItem) {
+            reset({
+                name: editingItem.name ?? "",
+                walletCategoryId: editingItem.walletCategoryId ?? null,
+                walletNumber: editingItem.walletNumber ?? "",
+                description: editingItem.description ?? "",
             });
+        } else if (open && !isEdit) {
+            reset(defaultValues);
+        }
+    }, [open, isEdit, editingItem, reset]);
 
-            // Reset form
-            setName("");
-            setWalletCategoryId(null);
-            setWalletNumber("");
-            setDescription("");
+    const handleClose = (openState: boolean) => {
+        if (!openState) {
+            dispatch(closeWalletModal());
+            reset(defaultValues);
+        }
+    };
 
-            setOpen(false);
+    const onSubmit = async (formData: WalletFormData) => {
+        try {
+            const data = {
+                name: formData.name,
+                walletCategoryId: formData.walletCategoryId,
+                walletNumber: formData.walletNumber,
+                description: formData.description,
+            };
+
+            if (isEdit) {
+                await updateWallet(data);
+            } else {
+                await createWallet(data);
+            }
+
+            reset(defaultValues);
+            dispatch(closeWalletModal());
         } catch (error) {
-            console.error("Error creating wallet:", error);
+            console.error("Error saving wallet:", error);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen} modal={false}>
-            <form onSubmit={handleSubmit}>
+        <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent className="w-full">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <DialogHeader>
-                        <DialogTitle>Add New Wallet</DialogTitle>
+                        <DialogTitle>{isEdit ? "Edit Wallet" : "Add New Wallet"}</DialogTitle>
                         <DialogDescription>
-                            Enter the details below to create a new wallet. Organize your
-                            accounts and keep track of your financial sources.
+                            {isEdit
+                                ? "Update the details of your wallet."
+                                : "Enter the details below to create a new wallet. Organize your accounts and keep track of your financial sources."}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -111,41 +151,42 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                         <div className="w-1/2 flex flex-col gap-1">
                             <Label htmlFor="wallet-name">Wallet Name</Label>
                             <Input
-                                required
                                 id="wallet-name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
                                 placeholder="e.g. Main Bank Account"
+                                {...register("name", { required: true })}
                             />
                         </div>
 
                         <div className="w-1/2 flex flex-col gap-1">
                             <Label htmlFor="wallet-category">Wallet Category</Label>
-                            <Combobox
-                                id="wallet-category"
-                                items={categoryItems.map((id) => id.toString())}
-                                value={
-                                    walletCategoryId !== null
-                                        ? walletCategoryId.toString()
-                                        : ""
-                                }
-                                disabled={isLoadingCategories}
-                                onValueChange={(val) =>
-                                    setWalletCategoryId(val ? Number(val) : null)
-                                }
-                            >
-                                <ComboboxInput placeholder="Select a category" />
-                                <ComboboxContent className="z-[80]">
-                                    <ComboboxEmpty>No categories found.</ComboboxEmpty>
-                                    <ComboboxCollection>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item}>
-                                                {categoryDisplayName(item)}
-                                            </ComboboxItem>
-                                        )}
-                                    </ComboboxCollection>
-                                </ComboboxContent>
-                            </Combobox>
+                            <Controller
+                                name="walletCategoryId"
+                                control={control}
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <Combobox
+                                        id="wallet-category"
+                                        items={categoryNames}
+                                        value={categoryIdToName(field.value)}
+                                        disabled={isLoadingCategories}
+                                        onValueChange={(val) =>
+                                            field.onChange(val ? categoryNameToId(val) : null)
+                                        }
+                                    >
+                                        <ComboboxInput placeholder="Select a category" />
+                                        <ComboboxContent className="z-[80]">
+                                            <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                                            <ComboboxCollection>
+                                                {(catName) => (
+                                                    <ComboboxItem key={catName} value={catName}>
+                                                        {catName}
+                                                    </ComboboxItem>
+                                                )}
+                                            </ComboboxCollection>
+                                        </ComboboxContent>
+                                    </Combobox>
+                                )}
+                            />
                         </div>
                     </div>
 
@@ -155,9 +196,8 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                             <Label htmlFor="wallet-number">Wallet Number</Label>
                             <Input
                                 id="wallet-number"
-                                value={walletNumber}
-                                onChange={(e) => setWalletNumber(e.target.value)}
                                 placeholder="e.g. 1234-5678-9012"
+                                {...register("walletNumber")}
                             />
                         </div>
                     </div>
@@ -168,9 +208,8 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                             <Label htmlFor="wallet-description">Description</Label>
                             <Input
                                 id="wallet-description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Optional notes about this wallet"
+                                {...register("description")}
                             />
                         </div>
                     </div>
@@ -183,11 +222,11 @@ export function NewWalletModal({ open, setOpen }: NewWalletModalProps) {
                             disabled={!name || !walletCategoryId}
                             type="submit"
                         >
-                            Create Wallet
+                            {isEdit ? "Save changes" : "Create Wallet"}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
             </form>
+                </DialogContent>
         </Dialog>
     );
 }
