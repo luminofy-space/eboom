@@ -3,6 +3,7 @@
 import { type LucideIcon } from "lucide-react";
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
@@ -28,6 +29,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel>Management</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuButton

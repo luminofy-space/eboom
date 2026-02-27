@@ -20,6 +20,10 @@ const ROUTE_LABELS: Record<string, { label: string; listUrl: string }> = {
   wallet: { label: "Wallets", listUrl: "/wallets" },
   expenses: { label: "Expenses", listUrl: "/expenses" },
   expense: { label: "Expenses", listUrl: "/expenses" },
+  whiteboard: { label: "Whiteboard", listUrl: "/whiteboard" },
+  "budget-planning": { label: "Budget & Planning", listUrl: "/budget-planning" },
+  "wish-list": { label: "Wish List", listUrl: "/wish-list" },
+  "ai-insights": { label: "AI Insights", listUrl: "/ai-insights" },
 };
 
 interface BreadcrumbSegment {
