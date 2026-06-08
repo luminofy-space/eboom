@@ -117,14 +117,25 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
+    const parsedExpenseCategoryId =
+      expenseCategoryId !== undefined ? Number(expenseCategoryId) : undefined;
+    const parsedCurrencyId = currencyId !== undefined ? Number(currencyId) : undefined;
+    const parsedEntityId = entityId !== undefined && entityId !== null ? Number(entityId) : entityId;
+    if (
+      (parsedExpenseCategoryId !== undefined && Number.isNaN(parsedExpenseCategoryId)) ||
+      (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId))
+    ) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
+    }
+
     // Update the expense
     const [updatedExpense] = await db
       .update(expenses)
       .set({
         ...(name !== undefined && { name }),
-        ...(expenseCategoryId !== undefined && { expenseCategoryId }),
-        ...(currencyId !== undefined && { currencyId }),
-        ...(entityId !== undefined && { entityId }),
+        ...(parsedExpenseCategoryId !== undefined && { expenseCategoryId: parsedExpenseCategoryId }),
+        ...(parsedCurrencyId !== undefined && { currencyId: parsedCurrencyId }),
+        ...(parsedEntityId !== undefined && { entityId: parsedEntityId }),
         ...(isRecurring !== undefined && { isRecurring }),
         ...(recurrencePattern !== undefined && { recurrencePattern }),
         ...(description !== undefined && { description }),

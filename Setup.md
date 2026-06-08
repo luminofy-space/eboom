@@ -2,6 +2,11 @@
 
 This guide will walk you through setting up the eBoom Personal Finance Management platform from scratch.
 
+**Related documentation:**
+
+- [README.md](README.md) — project overview, architecture, feature status, and quick start
+- [CONVENTIONS.md](CONVENTIONS.md) — coding standards and patterns for contributors
+
 ## Table of Contents
 
 1. [Prerequisites Installation](#1-prerequisites-installation)
@@ -719,13 +724,13 @@ After successful setup:
    - Review `eboom-backend/src/db/schema/` for database schema
 
 3. **Start Development**
-   - Read the [README.md](README.md) for development workflows
+   - Read [README.md](README.md) for architecture and development commands
+   - Follow [CONVENTIONS.md](CONVENTIONS.md) when adding features
    - Check available npm scripts
    - Set up your development environment
 
 4. **Join the Team**
-   - Review coding standards
-   - Set up git hooks
+   - Review [CONVENTIONS.md](CONVENTIONS.md)
    - Start contributing
 
 ---
@@ -764,7 +769,7 @@ npm run type-check       # Check TypeScript
 
 If you encounter issues not covered here:
 
-1. Check the [README.md](README.md) troubleshooting section
+1. Review [section 10: Troubleshooting](#10-troubleshooting) above
 2. Review backend/frontend logs for error details
 3. Search existing issues in the repository
 4. Create a new issue with:
