@@ -5,15 +5,13 @@ export interface WalletItem {
   id: number;
   name: string;
   description?: string;
-  walletType?: string;
   photoUrl?: string | null;
   lastModifiedAt?: string | null;
   walletCategoryId?: number | null;
-  walletNumber?: string;
+  isArchived?: boolean;
   category?: {
     id: number;
     name: string;
-    photoUrl?: string | null;
   } | null;
 }
 

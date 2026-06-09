@@ -106,7 +106,7 @@ export default function WalletsListPage() {
           <GridCard
             key={wallet.id}
             href={`/wallet/${wallet.id}`}
-            imageUrl={wallet.photoUrl || wallet.category?.photoUrl}
+            imageUrl={wallet.photoUrl}
             title={wallet.name}
             updatedAt={wallet.lastModifiedAt}
             onEdit={() => dispatch(openWalletEditModal(wallet))}

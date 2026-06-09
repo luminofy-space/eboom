@@ -1,11 +1,10 @@
 import express, { Request, Response } from "express";
 import { db } from "../db/client";
-import { incomeResourceCategories } from "../db/schema";
+import { incomeCategories } from "../db/schema";
 import { eq, asc } from "drizzle-orm";
 
 const router = express.Router();
 
-// GET / - List all income resource categories
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -13,10 +12,8 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const categories = await db
       .select()
-      .from(incomeResourceCategories)
-      .orderBy(asc(incomeResourceCategories.name));
-
-      console.log(categories)
+      .from(incomeCategories)
+      .orderBy(asc(incomeCategories.name));
 
     res.json({ categories });
   } catch (err) {
@@ -25,7 +22,6 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// POST / - Create a custom income resource category
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -35,8 +31,8 @@ router.post("/", async (req: Request, res: Response) => {
 
   try {
     const [category] = await db
-      .insert(incomeResourceCategories)
-      .values({ name, isSystemCategory: false })
+      .insert(incomeCategories)
+      .values({ name })
       .returning();
 
     res.status(201).json({ category });
@@ -46,7 +42,6 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// PUT /:id - Update a custom income resource category
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -60,16 +55,15 @@ router.put("/:id", async (req: Request, res: Response) => {
   try {
     const [existing] = await db
       .select()
-      .from(incomeResourceCategories)
-      .where(eq(incomeResourceCategories.id, categoryId));
+      .from(incomeCategories)
+      .where(eq(incomeCategories.id, categoryId));
 
     if (!existing) return res.status(404).json({ error: "Category not found" });
-    if (existing.isSystemCategory) return res.status(403).json({ error: "System categories cannot be modified" });
 
     const [updated] = await db
-      .update(incomeResourceCategories)
-      .set({ name })
-      .where(eq(incomeResourceCategories.id, categoryId))
+      .update(incomeCategories)
+      .set({ name, lastModifiedAt: new Date() })
+      .where(eq(incomeCategories.id, categoryId))
       .returning();
 
     res.json({ category: updated });
@@ -79,7 +73,6 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /:id - Delete a custom income resource category
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -90,13 +83,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const [existing] = await db
       .select()
-      .from(incomeResourceCategories)
-      .where(eq(incomeResourceCategories.id, categoryId));
+      .from(incomeCategories)
+      .where(eq(incomeCategories.id, categoryId));
 
     if (!existing) return res.status(404).json({ error: "Category not found" });
-    if (existing.isSystemCategory) return res.status(403).json({ error: "System categories cannot be deleted" });
 
-    await db.delete(incomeResourceCategories).where(eq(incomeResourceCategories.id, categoryId));
+    await db.delete(incomeCategories).where(eq(incomeCategories.id, categoryId));
 
     res.json({ message: "Category deleted successfully" });
   } catch (err) {

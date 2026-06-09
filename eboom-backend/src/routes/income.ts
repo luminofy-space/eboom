@@ -3,10 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   canvasMembers,
-  currencies,
+  incomeCategories,
   incomeEntries,
-  incomeResourceCategories,
-  incomeResources,
+  incomes,
   walletCategories,
   wallets,
 } from "../db/schema";
@@ -22,75 +21,196 @@ async function checkCanvasAccess(canvasId: number, userId: number): Promise<bool
   return !!membership;
 }
 
-router.get("/resources/:id", async (req: Request, res: Response) => {
+router.delete("/entries/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const resourceId = parseInt(req.params.id, 10);
-  if (isNaN(resourceId)) {
-    return res.status(400).json({ error: "Invalid income resource ID" });
+  const entryId = parseInt(req.params.id, 10);
+  if (isNaN(entryId)) {
+    return res.status(400).json({ error: "Invalid income entry ID" });
   }
 
   try {
-    const [resource] = await db
-      .select({ incomeResource: incomeResources, category: incomeResourceCategories })
-      .from(incomeResources)
-      .leftJoin(
-        incomeResourceCategories,
-        eq(incomeResources.incomeResourceCategoryId, incomeResourceCategories.id)
-      )
-      .where(eq(incomeResources.id, resourceId));
+    const [existing] = await db.select().from(incomeEntries).where(eq(incomeEntries.id, entryId));
+    if (!existing) return res.status(404).json({ error: "Income entry not found" });
 
-    if (!resource) {
-      return res.status(404).json({ error: "Income resource not found" });
+    const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
+    if (!income) return res.status(404).json({ error: "Income not found" });
+
+    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
+    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+
+    await debitWalletBalance({
+      walletId: existing.destinationWalletId,
+      currencyId: income.currencyId,
+      amount: String(existing.amount),
+      allowNegative: false,
+    });
+
+    await db.delete(incomeEntries).where(eq(incomeEntries.id, entryId));
+    res.json({ message: "Income entry deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting income entry:", err);
+    res.status(500).json({ error: "Failed to delete income entry" });
+  }
+});
+
+router.get("/:incomeId/entries", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const incomeId = parseInt(req.params.incomeId, 10);
+  if (isNaN(incomeId)) {
+    return res.status(400).json({ error: "Invalid income ID" });
+  }
+
+  try {
+    const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
+    if (!income) return res.status(404).json({ error: "Income not found" });
+
+    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
+    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+
+    const entries = await db
+      .select({ entry: incomeEntries, wallet: wallets, walletCategory: walletCategories })
+      .from(incomeEntries)
+      .leftJoin(wallets, eq(incomeEntries.destinationWalletId, wallets.id))
+      .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
+      .where(eq(incomeEntries.incomeId, incomeId));
+
+    res.json({
+      entries: entries.map((e) => ({
+        ...e.entry,
+        destinationWallet: e.wallet ? { ...e.wallet, category: e.walletCategory } : null,
+      })),
+    });
+  } catch (err) {
+    console.error("Error fetching income entries:", err);
+    res.status(500).json({ error: "Failed to fetch income entries" });
+  }
+});
+
+router.post("/:incomeId/entries", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const incomeId = parseInt(req.params.incomeId, 10);
+  if (isNaN(incomeId)) {
+    return res.status(400).json({ error: "Invalid income ID" });
+  }
+
+  const { destinationWalletId, amount, expectedDate, receivedDate, notes } = req.body;
+
+  if (!destinationWalletId || !amount) {
+    return res.status(400).json({ error: "Destination wallet and amount are required" });
+  }
+
+  try {
+    const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
+    if (!income) return res.status(404).json({ error: "Income not found" });
+
+    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
+    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, destinationWalletId));
+    if (!wallet || wallet.canvasId !== income.canvasId) {
+      return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
     }
 
-    const hasAccess = await checkCanvasAccess(resource.incomeResource.canvasId, user.id);
+    const [created] = await db
+      .insert(incomeEntries)
+      .values({
+        incomeId,
+        destinationWalletId,
+        amount: String(amount),
+        expectedDate: expectedDate || null,
+        receivedDate: receivedDate || null,
+        notes: notes || null,
+        createdBy: user.id,
+        lastModifiedBy: user.id,
+      })
+      .returning();
+
+    await creditWalletBalance({
+      walletId: destinationWalletId,
+      currencyId: income.currencyId,
+      amount: String(amount),
+    });
+
+    res.status(201).json({ entry: created });
+  } catch (err) {
+    console.error("Error creating income entry:", err);
+    res.status(500).json({ error: "Failed to create income entry" });
+  }
+});
+
+router.get("/:id", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const incomeId = parseInt(req.params.id, 10);
+  if (isNaN(incomeId)) {
+    return res.status(400).json({ error: "Invalid income ID" });
+  }
+
+  try {
+    const [record] = await db
+      .select({ income: incomes, category: incomeCategories, defaultWallet: wallets })
+      .from(incomes)
+      .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+      .leftJoin(wallets, eq(incomes.defaultWalletId, wallets.id))
+      .where(eq(incomes.id, incomeId));
+
+    if (!record) {
+      return res.status(404).json({ error: "Income not found" });
+    }
+
+    const hasAccess = await checkCanvasAccess(record.income.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
     res.json({
-      incomeResource: {
-        ...resource.incomeResource,
-        category: resource.category,
+      income: {
+        ...record.income,
+        category: record.category,
+        defaultWallet: record.defaultWallet,
       },
     });
   } catch (err) {
-    console.error("Error fetching income resource:", err);
-    res.status(500).json({ error: "Failed to fetch income resource" });
+    console.error("Error fetching income:", err);
+    res.status(500).json({ error: "Failed to fetch income" });
   }
 });
 
-router.put("/resources/:id", async (req: Request, res: Response) => {
+router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const resourceId = parseInt(req.params.id, 10);
-  if (isNaN(resourceId)) {
-    return res.status(400).json({ error: "Invalid income resource ID" });
+  const incomeId = parseInt(req.params.id, 10);
+  if (isNaN(incomeId)) {
+    return res.status(400).json({ error: "Invalid income ID" });
   }
 
   const {
     name,
-    incomeResourceCategoryId,
-    ownerId,
-    currency,
+    incomeCategoryId,
+    currencyId,
+    defaultWalletId,
     amount,
     isRecurring,
     recurrencePattern,
     description,
+    photoUrl,
+    status,
     isArchived,
   } = req.body;
 
   try {
-    const [existing] = await db
-      .select()
-      .from(incomeResources)
-      .where(eq(incomeResources.id, resourceId));
+    const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
 
     if (!existing) {
-      return res.status(404).json({ error: "Income resource not found" });
+      return res.status(404).json({ error: "Income not found" });
     }
 
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
@@ -99,56 +219,68 @@ router.put("/resources/:id", async (req: Request, res: Response) => {
     }
 
     const parsedCategoryId =
-      incomeResourceCategoryId !== undefined ? Number(incomeResourceCategoryId) : undefined;
-    const parsedOwnerId = ownerId !== undefined ? Number(ownerId) : undefined;
+      incomeCategoryId !== undefined ? Number(incomeCategoryId) : undefined;
+    const parsedCurrencyId = currencyId !== undefined ? Number(currencyId) : undefined;
+    const parsedDefaultWalletId =
+      defaultWalletId !== undefined ? Number(defaultWalletId) : undefined;
     if (
       (parsedCategoryId !== undefined && Number.isNaN(parsedCategoryId)) ||
-      (parsedOwnerId !== undefined && Number.isNaN(parsedOwnerId))
+      (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId)) ||
+      (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId))
     ) {
-      return res.status(400).json({ error: "Invalid owner or income category ID" });
+      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    }
+
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== existing.canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
     }
 
     const [updated] = await db
-      .update(incomeResources)
+      .update(incomes)
       .set({
         ...(name !== undefined && { name }),
-        ...(parsedCategoryId !== undefined && { incomeResourceCategoryId: parsedCategoryId }),
-        ...(parsedOwnerId !== undefined && { ownerId: parsedOwnerId }),
-        ...(currency !== undefined && { currency }),
+        ...(parsedCategoryId !== undefined && { incomeCategoryId: parsedCategoryId }),
+        ...(parsedCurrencyId !== undefined && { currencyId: parsedCurrencyId }),
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         ...(amount !== undefined && { amount: parseInt(amount, 10) || 0 }),
         ...(isRecurring !== undefined && { isRecurring }),
         ...(recurrencePattern !== undefined && { recurrencePattern }),
         ...(description !== undefined && { description }),
+        ...(photoUrl !== undefined && { photoUrl }),
+        ...(status !== undefined && { status }),
         ...(isArchived !== undefined && { isArchived }),
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
-      .where(eq(incomeResources.id, resourceId))
+      .where(eq(incomes.id, incomeId))
       .returning();
 
-    res.json({ incomeResource: updated });
+    res.json({ income: updated });
   } catch (err) {
-    console.error("Error updating income resource:", err);
-    res.status(500).json({ error: "Failed to update income resource" });
+    console.error("Error updating income:", err);
+    res.status(500).json({ error: "Failed to update income" });
   }
 });
 
-router.delete("/resources/:id", async (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const resourceId = parseInt(req.params.id, 10);
-  if (isNaN(resourceId)) {
-    return res.status(400).json({ error: "Invalid income resource ID" });
+  const incomeId = parseInt(req.params.id, 10);
+  if (isNaN(incomeId)) {
+    return res.status(400).json({ error: "Invalid income ID" });
   }
 
   try {
-    const [existing] = await db
-      .select()
-      .from(incomeResources)
-      .where(eq(incomeResources.id, resourceId));
+    const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!existing) {
-      return res.status(404).json({ error: "Income resource not found" });
+      return res.status(404).json({ error: "Income not found" });
     }
 
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
@@ -157,180 +289,19 @@ router.delete("/resources/:id", async (req: Request, res: Response) => {
     }
 
     await db
-      .update(incomeResources)
+      .update(incomes)
       .set({
         isArchived: true,
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
-      .where(eq(incomeResources.id, resourceId));
+      .where(eq(incomes.id, incomeId));
 
-    res.json({ message: "Income resource archived successfully" });
+    res.json({ message: "Income archived successfully" });
   } catch (err) {
-    console.error("Error deleting income resource:", err);
-    res.status(500).json({ error: "Failed to delete income resource" });
+    console.error("Error deleting income:", err);
+    res.status(500).json({ error: "Failed to delete income" });
   }
-});
-
-router.get("/resources/:resourceId/transactions", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const resourceId = parseInt(req.params.resourceId, 10);
-  if (isNaN(resourceId)) {
-    return res.status(400).json({ error: "Invalid income resource ID" });
-  }
-
-  try {
-    const [resource] = await db
-      .select()
-      .from(incomeResources)
-      .where(eq(incomeResources.id, resourceId));
-
-    if (!resource) return res.status(404).json({ error: "Income resource not found" });
-
-    const hasAccess = await checkCanvasAccess(resource.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
-
-    const transactions = await db
-      .select({ transaction: incomeEntries, wallet: wallets, walletCategory: walletCategories })
-      .from(incomeEntries)
-      .leftJoin(wallets, eq(incomeEntries.destinationWalletId, wallets.id))
-      .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
-      .where(eq(incomeEntries.incomeResourceId, resourceId));
-
-    res.json({
-      transactions: transactions.map((t) => ({
-        ...t.transaction,
-        destinationWallet: t.wallet ? { ...t.wallet, category: t.walletCategory } : null,
-      })),
-    });
-  } catch (err) {
-    console.error("Error fetching income transactions:", err);
-    res.status(500).json({ error: "Failed to fetch income transactions" });
-  }
-});
-
-router.post("/resources/:resourceId/transactions", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const resourceId = parseInt(req.params.resourceId, 10);
-  if (isNaN(resourceId)) {
-    return res.status(400).json({ error: "Invalid income resource ID" });
-  }
-
-  const { destinationWalletId, amount, expectedDate, receivedDate, status, notes, description, photoUrl } =
-    req.body;
-
-  if (!destinationWalletId || !amount) {
-    return res.status(400).json({ error: "Destination wallet and amount are required" });
-  }
-
-  try {
-    const [resource] = await db
-      .select()
-      .from(incomeResources)
-      .where(eq(incomeResources.id, resourceId));
-    if (!resource) return res.status(404).json({ error: "Income resource not found" });
-
-    const hasAccess = await checkCanvasAccess(resource.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
-
-    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, destinationWalletId));
-    if (!wallet || wallet.canvasId !== resource.canvasId) {
-      return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
-    }
-
-    const [created] = await db
-      .insert(incomeEntries)
-      .values({
-        incomeResourceId: resourceId,
-        destinationWalletId,
-        amount: String(amount),
-        expectedDate: expectedDate || null,
-        receivedDate: receivedDate || null,
-        status: status || "pending",
-        notes: notes || null,
-        description: description || null,
-        photoUrl: photoUrl || null,
-        createdBy: user.id,
-        lastModifiedBy: user.id,
-      })
-      .returning();
-
-    const [currencyRow] = await db
-      .select()
-      .from(currencies)
-      .where(eq(currencies.code, resource.currency))
-      .limit(1);
-
-    if (!currencyRow) {
-      return res.status(400).json({ error: "Income resource currency is invalid" });
-    }
-
-    await creditWalletBalance({
-      walletId: destinationWalletId,
-      currencyId: currencyRow.id,
-      amount: String(amount),
-    });
-
-    res.status(201).json({ transaction: created });
-  } catch (err) {
-    console.error("Error creating income transaction:", err);
-    res.status(500).json({ error: "Failed to create income transaction" });
-  }
-});
-
-router.delete("/transactions/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const transactionId = parseInt(req.params.id, 10);
-  if (isNaN(transactionId)) {
-    return res.status(400).json({ error: "Invalid transaction ID" });
-  }
-
-  try {
-    const [existing] = await db.select().from(incomeEntries).where(eq(incomeEntries.id, transactionId));
-    if (!existing) return res.status(404).json({ error: "Income transaction not found" });
-
-    const [resource] = await db
-      .select()
-      .from(incomeResources)
-      .where(eq(incomeResources.id, existing.incomeResourceId));
-    if (!resource) return res.status(404).json({ error: "Income resource not found" });
-
-    const hasAccess = await checkCanvasAccess(resource.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
-
-    const [currencyRow] = await db
-      .select()
-      .from(currencies)
-      .where(eq(currencies.code, resource.currency))
-      .limit(1);
-
-    if (currencyRow) {
-      await debitWalletBalance({
-        walletId: existing.destinationWalletId,
-        currencyId: currencyRow.id,
-        amount: String(existing.amount),
-        allowNegative: false,
-      });
-    }
-
-    await db.delete(incomeEntries).where(eq(incomeEntries.id, transactionId));
-    res.json({ message: "Income transaction deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting income transaction:", err);
-    res.status(500).json({ error: "Failed to delete income transaction" });
-  }
-});
-
-router.put("/transactions/:id", async (_req: Request, res: Response) => {
-  return res.status(501).json({
-    error: "Updating income transactions is not supported in Phase 0. Delete and recreate instead.",
-  });
 });
 
 export default router;

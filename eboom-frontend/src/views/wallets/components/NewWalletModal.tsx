@@ -32,14 +32,12 @@ import { useEffect } from "react";
 interface WalletFormData {
     name: string;
     walletCategoryId: number | null;
-    walletNumber: string;
     description: string;
 }
 
 const defaultValues: WalletFormData = {
     name: "",
     walletCategoryId: null,
-    walletNumber: "",
     description: "",
 };
 
@@ -56,7 +54,6 @@ export function NewWalletModal() {
     const name = watch("name");
     const walletCategoryId = watch("walletCategoryId");
 
-    // Fetch wallet categories
     const { data: categoriesRes, isLoading: isLoadingCategories } =
         useQueryApi<{
             categories?: { id: number; name: string }[];
@@ -73,7 +70,6 @@ export function NewWalletModal() {
     const categoryIdToName = (id: number | null) =>
         id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
-    // Mutations
     const { mutateAsync: createWallet } = useMutationApi(
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
         {
@@ -90,14 +86,12 @@ export function NewWalletModal() {
         }
     );
 
-    // Populate form when editing, reset when creating
     useEffect(() => {
         if (open && isEdit && editingItem) {
             reset({
                 name: editingItem.name ?? "",
                 walletCategoryId: editingItem.walletCategoryId ?? null,
-                walletNumber: editingItem.walletNumber ?? "",
-                description: editingItem.description ?? "",
+                description: typeof editingItem.description === "string" ? editingItem.description : "",
             });
         } else if (open && !isEdit) {
             reset(defaultValues);
@@ -116,7 +110,6 @@ export function NewWalletModal() {
             const data = {
                 name: formData.name,
                 walletCategoryId: formData.walletCategoryId,
-                walletNumber: formData.walletNumber,
                 description: formData.description,
             };
 
@@ -146,7 +139,6 @@ export function NewWalletModal() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* Row 1 */}
                     <div className="flex flex-row gap-5">
                         <div className="w-1/2 flex flex-col gap-1">
                             <Label htmlFor="wallet-name">Wallet Name</Label>
@@ -190,20 +182,7 @@ export function NewWalletModal() {
                         </div>
                     </div>
 
-                    {/* Row 2 */}
-                    <div className="flex flex-row gap-5 mt-4">
-                        <div className="w-1/2 flex flex-col gap-1">
-                            <Label htmlFor="wallet-number">Wallet Number</Label>
-                            <Input
-                                id="wallet-number"
-                                placeholder="e.g. 1234-5678-9012"
-                                {...register("walletNumber")}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="flex flex-row gap-5 mt-4">
+                    <div className="flex flex-row gap-5">
                         <div className="w-full flex flex-col gap-1">
                             <Label htmlFor="wallet-description">Description</Label>
                             <Input

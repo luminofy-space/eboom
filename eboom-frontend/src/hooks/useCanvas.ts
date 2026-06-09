@@ -53,8 +53,11 @@ export const useCanvas = () => {
             canvasType,
             photoUrl,
             baseCurrencyId,
-        }).then((newCanvas) => {
-            selectCanvas(newCanvas.id);
+        }).then((response) => {
+            const canvasId = (response as { canvas?: { id: number } })?.canvas?.id;
+            if (typeof canvasId === "number") {
+                selectCanvas(canvasId);
+            }
         });
     }
 

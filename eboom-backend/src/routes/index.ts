@@ -15,13 +15,13 @@ import expenseCategories from './expense-categories';
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
 
-// Canvas routes (includes all canvas-scoped routes: canvases, expenses, income-resources, wallets)
+// Canvas routes (includes canvas-scoped lists: expenses, incomes, wallets)
 router.use('/canvases', auth, canvas);
 
 // Currency routes
 router.use('/currency', auth, currency);
 
-// Income routes (resources, transactions, categories)
+// Income routes (CRUD + entries, categories)
 router.use('/income', auth, income);
 router.use("/income/categories", auth, incomeCategories);
 

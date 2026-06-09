@@ -8,7 +8,7 @@ import { selectSearchQuery } from "@/src/redux/searchSlice";
 import {
   openIncomeCreateModal,
   openIncomeEditModal,
-  type IncomeResourceItem,
+  type IncomeItem,
 } from "@/src/redux/incomeSlice";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,10 +37,10 @@ export default function IncomesListPage() {
     isLoading,
     isFetchingNextPage,
     sentinelRef,
-  } = useInfiniteList<IncomeResourceItem>(
-    canvas ? API_ROUTES.CANVASES_INCOME_RESOURCES_LIST(canvas) : "",
+  } = useInfiniteList<IncomeItem>(
+    canvas ? API_ROUTES.CANVASES_INCOMES_LIST(canvas) : "",
     {
-      queryKey: ["income-resources", canvas],
+      queryKey: ["incomes", canvas],
       enabled: !!canvas,
       search: debouncedSearch,
     }
@@ -48,7 +48,7 @@ export default function IncomesListPage() {
 
   const { mutate: deleteIncome, isPending: isDeleting } = useMutation({
     mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_RESOURCES_DELETE(id)}`;
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOMES_DELETE(id)}`;
       const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
       await axios.delete(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -90,20 +90,19 @@ export default function IncomesListPage() {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map((resource) => (
+        {items.map((income) => (
           <GridCard
-            key={resource.id}
-            href={`/income/${resource.id}`}
-            imageUrl={resource.photoUrl || resource.category?.photoUrl}
-            title={resource.name}
-            updatedAt={resource.lastModifiedAt}
-            onEdit={() => dispatch(openIncomeEditModal(resource))}
-            onDelete={() => setDeleteId(resource.id)}
+            key={income.id}
+            href={`/income/${income.id}`}
+            imageUrl={income.photoUrl}
+            title={income.name}
+            updatedAt={income.lastModifiedAt}
+            onEdit={() => dispatch(openIncomeEditModal(income))}
+            onDelete={() => setDeleteId(income.id)}
           />
         ))}
       </div>
 
-      {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} className="h-1" />
 
       {isFetchingNextPage && (

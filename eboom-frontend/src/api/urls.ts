@@ -26,29 +26,27 @@ const API_ROUTES = {
   CANVASES_EXPENSES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
   CANVASES_EXPENSES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
 
-  // Canvas-scoped Income Resources
-  CANVASES_INCOME_RESOURCES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/income-resources/`,
-  CANVASES_INCOME_RESOURCES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/income-resources/`,
+  // Canvas-scoped Incomes
+  CANVASES_INCOMES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/incomes/`,
+  CANVASES_INCOMES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/incomes/`,
 
   // Canvas-scoped Wallets
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
 
   // ============================================================================
-  // INCOME RESOURCES
+  // INCOMES
   // ============================================================================
-  INCOME_RESOURCES_GET: (id: number) => `/api/income/resources/${id}/`,
-  INCOME_RESOURCES_UPDATE: (id: number) => `/api/income/resources/${id}/`,
-  INCOME_RESOURCES_DELETE: (id: number) => `/api/income/resources/${id}/`,
+  INCOMES_GET: (id: number) => `/api/income/${id}/`,
+  INCOMES_UPDATE: (id: number) => `/api/income/${id}/`,
+  INCOMES_DELETE: (id: number) => `/api/income/${id}/`,
 
-  // Income Transactions
-  INCOME_TRANSACTIONS_LIST: (resourceId: number) => `/api/income/resources/${resourceId}/transactions/`,
-  INCOME_TRANSACTIONS_CREATE: (resourceId: number) => `/api/income/resources/${resourceId}/transactions/`,
-  INCOME_TRANSACTIONS_GET: (id: number) => `/api/income/transactions/${id}/`,
-  INCOME_TRANSACTIONS_UPDATE: (id: number) => `/api/income/transactions/${id}/`,
-  INCOME_TRANSACTIONS_DELETE: (id: number) => `/api/income/transactions/${id}/`,
+  // Income Entries
+  INCOME_ENTRIES_LIST: (incomeId: number) => `/api/income/${incomeId}/entries/`,
+  INCOME_ENTRIES_CREATE: (incomeId: number) => `/api/income/${incomeId}/entries/`,
+  INCOME_ENTRIES_DELETE: (id: number) => `/api/income/entries/${id}/`,
 
-  // Income Category
+  // Income Categories
   INCOME_CATEGORIES: '/api/income/categories',
   INCOME_CATEGORIES_CREATE: '/api/income/categories',
   INCOME_CATEGORIES_UPDATE: (id: number) => `/api/income/categories/${id}`,

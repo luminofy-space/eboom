@@ -31,9 +31,10 @@ import {
 
 interface IncomeFormData {
   name: string;
-  currency: string;
+  currencyId: number | null;
   amount: number;
-  incomeResourceCategoryId: number | null;
+  incomeCategoryId: number | null;
+  defaultWalletId: number | null;
   description: string;
   isRecurring: boolean;
   recurrencePattern: RecurrencePattern;
@@ -42,9 +43,10 @@ interface IncomeFormData {
 
 const defaultValues: IncomeFormData = {
   name: "",
-  currency: "",
+  currencyId: null,
   amount: 0,
-  incomeResourceCategoryId: null,
+  incomeCategoryId: null,
+  defaultWalletId: null,
   description: "",
   isRecurring: false,
   recurrencePattern: DEFAULT_RECURRENCE_PATTERN,
@@ -56,15 +58,19 @@ export function NewIncomeModal() {
   const { open, mode, editingItem } = useAppSelector(selectIncomeModal);
   const isEdit = mode === "edit";
 
-  const { register, handleSubmit, control, reset, watch, formState: { isValid } } = useForm<IncomeFormData>({
+  const { register, handleSubmit, control, reset, watch } = useForm<IncomeFormData>({
     defaultValues,
   });
 
   const isRecurring = watch("isRecurring");
+  const name = watch("name");
+  const currencyId = watch("currencyId");
+  const incomeCategoryId = watch("incomeCategoryId");
+  const defaultWalletId = watch("defaultWalletId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
-    currencies?: { name: string; code: string }[];
+    currencies?: { id: number; name: string; code: string }[];
   }>(
     API_ROUTES.CURRENCIES_METADATA,
     {
@@ -74,8 +80,8 @@ export function NewIncomeModal() {
     }
   );
 
-  const { data: resourceRes, isLoading: isLoadingRes } = useQueryApi<{
-    categories?: { id: number; name: string; code: string }[];
+  const { data: categoriesRes, isLoading: isLoadingCategories } = useQueryApi<{
+    categories?: { id: number; name: string }[];
   }>(
     API_ROUTES.INCOME_CATEGORIES,
     {
@@ -85,23 +91,47 @@ export function NewIncomeModal() {
     }
   );
 
-  const currencyItems =
-    currenciesRes?.currencies?.map((c) => c.code).filter(Boolean) ?? [];
-
-  const resourceCategories = resourceRes?.categories ?? [];
-  const resourceNames = resourceCategories.map((c) => c.name);
-  const resourceNameToId = (name: string) =>
-    resourceCategories.find((c) => c.name === name)?.id ?? null;
-  const resourceIdToName = (id: number | null) =>
-    id !== null ? resourceCategories.find((c) => c.id === id)?.name ?? "" : "";
-
-  const currencyDisplayName = (code: string) =>
-    currenciesRes?.currencies?.find((c) => c.code === code)?.name ?? code;
-
   const { canvas } = useCanvas();
 
+  const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
+    wallets?: { id: number; name: string }[];
+  }>(
+    canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
+    {
+      queryKey: ["wallets", canvas],
+      hasToken: true,
+      enabled: open && !!canvas,
+    }
+  );
+
+  const currencies = currenciesRes?.currencies ?? [];
+  const currencyLabels = currencies.map((c) => `${c.code} – ${c.name}`);
+  const currencyIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const c = currencies.find((cur) => cur.id === id);
+    return c ? `${c.code} – ${c.name}` : "";
+  };
+  const currencyLabelToId = (label: string) => {
+    const code = label.split(" – ")[0];
+    return currencies.find((c) => c.code === code)?.id ?? null;
+  };
+
+  const incomeCategories = categoriesRes?.categories ?? [];
+  const categoryNames = incomeCategories.map((c) => c.name);
+  const categoryNameToId = (catName: string) =>
+    incomeCategories.find((c) => c.name === catName)?.id ?? null;
+  const categoryIdToName = (id: number | null) =>
+    id !== null ? incomeCategories.find((c) => c.id === id)?.name ?? "" : "";
+
+  const wallets = walletsRes?.wallets ?? [];
+  const walletNames = wallets.map((w) => w.name);
+  const walletNameToId = (walletName: string) =>
+    wallets.find((w) => w.name === walletName)?.id ?? null;
+  const walletIdToName = (id: number | null) =>
+    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+
   const { mutateAsync: createIncome } = useMutationApi(
-    API_ROUTES.CANVASES_INCOME_RESOURCES_CREATE(canvas ?? -1),
+    API_ROUTES.CANVASES_INCOMES_CREATE(canvas ?? -1),
     {
       method: "post",
       hasToken: true,
@@ -109,25 +139,25 @@ export function NewIncomeModal() {
   );
 
   const { mutateAsync: updateIncome } = useMutationApi(
-    editingItem ? API_ROUTES.INCOME_RESOURCES_UPDATE(editingItem.id) : "",
+    editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
     }
   );
 
-  // Populate form when editing, reset when creating
   useEffect(() => {
     if (open && isEdit && editingItem) {
       reset({
         name: editingItem.name ?? "",
-        currency: editingItem.currency ?? "",
+        currencyId: editingItem.currencyId ?? editingItem.currency?.id ?? null,
         amount: editingItem.amount ?? 0,
-        incomeResourceCategoryId: editingItem.incomeResourceCategoryId ?? null,
+        incomeCategoryId: editingItem.incomeCategoryId ?? null,
+        defaultWalletId: editingItem.defaultWalletId ?? editingItem.defaultWallet?.id ?? null,
         isRecurring: editingItem.isRecurring ?? false,
         recurrencePattern:
           (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
-        description: editingItem.description ?? "",
+        description: typeof editingItem.description === "string" ? editingItem.description : "",
         photo: null,
       });
     } else if (open && !isEdit) {
@@ -149,10 +179,11 @@ export function NewIncomeModal() {
     try {
       const data = {
         name: formData.name,
-        currency: formData.currency,
+        currencyId: formData.currencyId,
         amount: Number(formData.amount),
         isRecurring: formData.isRecurring,
-        incomeResourceCategoryId: formData.incomeResourceCategoryId ?? undefined,
+        incomeCategoryId: formData.incomeCategoryId ?? undefined,
+        defaultWalletId: formData.defaultWalletId ?? undefined,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
         description: formData.description,
         photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
@@ -183,7 +214,7 @@ export function NewIncomeModal() {
             <DialogDescription>
               {isEdit
                 ? "Update the details of your income source."
-                : "Enter the details below to track your income from various sources and assets. Keep your finances organized."}
+                : "Enter the details below to track your income from various sources. Keep your finances organized."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-row gap-5">
@@ -197,24 +228,26 @@ export function NewIncomeModal() {
             <div className="w-1/2 flex flex-col gap-1">
               <Label htmlFor="currency">Currency</Label>
               <Controller
-                name="currency"
+                name="currencyId"
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => (
                   <Combobox
-                    items={currencyItems}
-                    value={field.value}
+                    items={currencyLabels}
+                    value={currencyIdToLabel(field.value)}
                     id="currency"
                     disabled={isLoadingCurr}
-                    onValueChange={(val) => field.onChange(val ?? "")}
+                    onValueChange={(val) =>
+                      field.onChange(val ? currencyLabelToId(val) : null)
+                    }
                   >
                     <ComboboxInput placeholder="Select a currency" />
                     <ComboboxContent className="z-[80]">
                       <ComboboxEmpty>No items found.</ComboboxEmpty>
                       <ComboboxCollection>
-                        {(item) => (
-                          <ComboboxItem key={item} value={item}>
-                            {currencyDisplayName(item)}
+                        {(label) => (
+                          <ComboboxItem key={label} value={label}>
+                            {label}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -234,27 +267,61 @@ export function NewIncomeModal() {
               />
             </div>
             <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="income-resource">Income Resource</Label>
+              <Label htmlFor="income-category">Income Category</Label>
               <Controller
-                name="incomeResourceCategoryId"
+                name="incomeCategoryId"
                 control={control}
+                rules={{ required: true }}
                 render={({ field }) => (
                   <Combobox
-                    id="income-resource"
-                    items={resourceNames}
-                    value={resourceIdToName(field.value)}
-                    disabled={isLoadingRes}
+                    id="income-category"
+                    items={categoryNames}
+                    value={categoryIdToName(field.value)}
+                    disabled={isLoadingCategories}
                     onValueChange={(val) =>
-                      field.onChange(val ? resourceNameToId(val) : null)
+                      field.onChange(val ? categoryNameToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a Resource" />
+                    <ComboboxInput placeholder="Select a category" />
                     <ComboboxContent className="z-[80]">
                       <ComboboxEmpty>No items found.</ComboboxEmpty>
                       <ComboboxCollection>
-                        {(name) => (
-                          <ComboboxItem key={name} value={name}>
-                            {name}
+                        {(catName) => (
+                          <ComboboxItem key={catName} value={catName}>
+                            {catName}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
+              />
+            </div>
+          </div>
+          <div className="flex flex-row gap-5">
+            <div className="w-full flex flex-col gap-1">
+              <Label htmlFor="default-wallet">Default Wallet</Label>
+              <Controller
+                name="defaultWalletId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    id="default-wallet"
+                    items={walletNames}
+                    value={walletIdToName(field.value)}
+                    disabled={isLoadingWallets}
+                    onValueChange={(val) =>
+                      field.onChange(val ? walletNameToId(val) : null)
+                    }
+                  >
+                    <ComboboxInput placeholder="Select a wallet" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(walletName) => (
+                          <ComboboxItem key={walletName} value={walletName}>
+                            {walletName}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -330,7 +397,7 @@ export function NewIncomeModal() {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!isValid}
+              disabled={!name || currencyId === null || !incomeCategoryId || defaultWalletId === null}
               type="submit"
             >
               {isEdit ? "Save changes" : "Create Income"}

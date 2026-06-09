@@ -6,17 +6,16 @@ import {
   expenses,
   expenseCategories,
   currencies,
-  incomeResources,
-  incomeResourceCategories,
+  incomes,
+  incomeCategories,
   wallets,
   walletCategories,
+  userSettings,
 } from "../db/schema";
 import { eq, and, ilike, count, desc } from "drizzle-orm";
-import type { User } from "../db/schema/models";
 
 const router = express.Router();
 
-// Helper to parse pagination query params
 function parsePaginationParams(req: Request) {
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -25,7 +24,6 @@ function parsePaginationParams(req: Request) {
   return { page, limit, search, offset };
 }
 
-// Helper function to check canvas access
 async function checkCanvasAccess(
   canvasId: number,
   userId: number
@@ -43,7 +41,6 @@ async function checkCanvasAccess(
 // CANVAS ROUTES
 // ============================================================================
 
-// GET /canvases - Get all canvases for the authenticated user
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -71,7 +68,6 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// GET /canvases/:id - Get a specific canvas
 router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -118,7 +114,6 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// POST /canvases - Create a new canvas
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -129,18 +124,33 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Canvas name is required" });
   }
 
-  if (!baseCurrencyId) {
-    return res.status(400).json({ error: "Base currency is required" });
-  }
-
   try {
-    const [selectedCurrency] = await db
-      .select({ id: currencies.id })
-      .from(currencies)
-      .where(eq(currencies.id, Number(baseCurrencyId)));
+    if (baseCurrencyId) {
+      const [selectedCurrency] = await db
+        .select({ id: currencies.id })
+        .from(currencies)
+        .where(eq(currencies.id, Number(baseCurrencyId)));
 
-    if (!selectedCurrency) {
-      return res.status(400).json({ error: "Invalid base currency" });
+      if (!selectedCurrency) {
+        return res.status(400).json({ error: "Invalid base currency" });
+      }
+
+      const [existingSettings] = await db
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.userId, user.id));
+
+      if (existingSettings) {
+        await db
+          .update(userSettings)
+          .set({ defaultCurrencyId: selectedCurrency.id, lastModifiedAt: new Date() })
+          .where(eq(userSettings.userId, user.id));
+      } else {
+        await db.insert(userSettings).values({
+          userId: user.id,
+          defaultCurrencyId: selectedCurrency.id,
+        });
+      }
     }
 
     const [newCanvas] = await db
@@ -158,10 +168,7 @@ router.post("/", async (req: Request, res: Response) => {
     await db.insert(canvasMembers).values({
       canvasId: newCanvas.id,
       userId: user.id,
-      baseCurrencyId: selectedCurrency.id,
       isOwner: true,
-      createdBy: user.id,
-      lastModifiedBy: user.id,
     });
 
     res.status(201).json({ canvas: newCanvas });
@@ -171,7 +178,6 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// PUT /canvases/:id - Update a canvas
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -229,7 +235,6 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /canvases/:id - Archive a canvas
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -280,7 +285,6 @@ router.delete("/:id", async (req: Request, res: Response) => {
 // CANVAS EXPENSES ROUTES
 // ============================================================================
 
-// GET /canvases/:canvasId/expenses - Get all expenses for a canvas
 router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -299,8 +303,8 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
     const { page, limit, search, offset } = parsePaginationParams(req);
 
     const whereCondition = search
-      ? and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true), ilike(expenses.name, `%${search}%`))
-      : and(eq(expenses.canvasId, canvasId), eq(expenses.isActive, true));
+      ? and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false), ilike(expenses.name, `%${search}%`))
+      : and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false));
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -312,13 +316,12 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
         expense: expenses,
         category: expenseCategories,
         currency: currencies,
+        defaultWallet: wallets,
       })
       .from(expenses)
-      .leftJoin(
-        expenseCategories,
-        eq(expenses.expenseCategoryId, expenseCategories.id)
-      )
+      .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
       .leftJoin(currencies, eq(expenses.currencyId, currencies.id))
+      .leftJoin(wallets, eq(expenses.defaultWalletId, wallets.id))
       .where(whereCondition)
       .orderBy(desc(expenses.lastModifiedAt))
       .limit(limit)
@@ -328,6 +331,7 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
       ...e.expense,
       category: e.category,
       currency: e.currency,
+      defaultWallet: e.defaultWallet,
     }));
 
     res.json({ expenses: formattedExpenses, items: formattedExpenses, total, page, limit });
@@ -337,7 +341,6 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
   }
 });
 
-// POST /canvases/:canvasId/expenses - Create a new expense
 router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -351,17 +354,17 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
     name,
     expenseCategoryId,
     currencyId,
-    entityId,
+    defaultWalletId,
     isRecurring,
     recurrencePattern,
     description,
     photoUrl,
-    isActive,
+    status,
   } = req.body;
 
-  if (!name || !expenseCategoryId || !currencyId) {
+  if (!name || !expenseCategoryId || !currencyId || !defaultWalletId) {
     return res.status(400).json({
-      error: "Expense name, category, and currency are required",
+      error: "Expense name, category, currency, and default wallet are required",
     });
   }
 
@@ -373,9 +376,21 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
 
     const parsedExpenseCategoryId = Number(expenseCategoryId);
     const parsedCurrencyId = Number(currencyId);
-    const parsedEntityId = entityId ? Number(entityId) : null;
-    if (Number.isNaN(parsedExpenseCategoryId) || Number.isNaN(parsedCurrencyId)) {
-      return res.status(400).json({ error: "Invalid category or currency ID" });
+    const parsedDefaultWalletId = Number(defaultWalletId);
+    if (
+      Number.isNaN(parsedExpenseCategoryId) ||
+      Number.isNaN(parsedCurrencyId) ||
+      Number.isNaN(parsedDefaultWalletId)
+    ) {
+      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    }
+
+    const [wallet] = await db
+      .select()
+      .from(wallets)
+      .where(eq(wallets.id, parsedDefaultWalletId));
+    if (!wallet || wallet.canvasId !== canvasId) {
+      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
     }
 
     const [newExpense] = await db
@@ -385,12 +400,12 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
         name,
         expenseCategoryId: parsedExpenseCategoryId,
         currencyId: parsedCurrencyId,
-        entityId: parsedEntityId,
+        defaultWalletId: parsedDefaultWalletId,
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         description: description || null,
         photoUrl: photoUrl || null,
-        isActive: isActive !== undefined ? isActive : true,
+        status: status || "pending",
         createdBy: user.id,
         lastModifiedBy: user.id,
       })
@@ -404,11 +419,10 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// CANVAS INCOME RESOURCES ROUTES
+// CANVAS INCOMES ROUTES
 // ============================================================================
 
-// GET /canvases/:canvasId/income-resources - Get all income resources for a canvas
-router.get("/:canvasId/income-resources", async (req: Request, res: Response) => {
+router.get("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
@@ -426,43 +440,45 @@ router.get("/:canvasId/income-resources", async (req: Request, res: Response) =>
     const { page, limit, search, offset } = parsePaginationParams(req);
 
     const whereCondition = search
-      ? and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false), ilike(incomeResources.name, `%${search}%`))
-      : and(eq(incomeResources.canvasId, canvasId), eq(incomeResources.isArchived, false));
+      ? and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false), ilike(incomes.name, `%${search}%`))
+      : and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false));
 
     const [{ total }] = await db
       .select({ total: count() })
-      .from(incomeResources)
+      .from(incomes)
       .where(whereCondition);
 
-    const resources = await db
+    const incomeList = await db
       .select({
-        incomeResource: incomeResources,
-        category: incomeResourceCategories,
+        income: incomes,
+        category: incomeCategories,
+        currency: currencies,
+        defaultWallet: wallets,
       })
-      .from(incomeResources)
-      .leftJoin(
-        incomeResourceCategories,
-        eq(incomeResources.incomeResourceCategoryId, incomeResourceCategories.id)
-      )
+      .from(incomes)
+      .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+      .leftJoin(currencies, eq(incomes.currencyId, currencies.id))
+      .leftJoin(wallets, eq(incomes.defaultWalletId, wallets.id))
       .where(whereCondition)
-      .orderBy(desc(incomeResources.lastModifiedAt))
+      .orderBy(desc(incomes.lastModifiedAt))
       .limit(limit)
       .offset(offset);
 
-    const formattedResources = resources.map((r) => ({
-      ...r.incomeResource,
+    const formattedIncomes = incomeList.map((r) => ({
+      ...r.income,
       category: r.category,
+      currency: r.currency,
+      defaultWallet: r.defaultWallet,
     }));
 
-    res.json({ incomeResources: formattedResources, items: formattedResources, total, page, limit });
+    res.json({ incomes: formattedIncomes, items: formattedIncomes, total, page, limit });
   } catch (err) {
-    console.error("Error fetching income resources:", err);
-    res.status(500).json({ error: "Failed to fetch income resources" });
+    console.error("Error fetching incomes:", err);
+    res.status(500).json({ error: "Failed to fetch incomes" });
   }
 });
 
-// POST /canvases/:canvasId/income-resources - Create a new income resource
-router.post("/:canvasId/income-resources", async (req: Request, res: Response) => {
+router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
@@ -473,18 +489,20 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
 
   const {
     name,
-    incomeResourceCategoryId,
-    currency,
+    incomeCategoryId,
+    currencyId,
+    defaultWalletId,
     amount,
     isRecurring,
     recurrencePattern,
     photoUrl,
     description,
+    status,
   } = req.body;
 
-  if (!name || !incomeResourceCategoryId) {
+  if (!name || !incomeCategoryId || !currencyId || !defaultWalletId) {
     return res.status(400).json({
-      error: "Name, category is required",
+      error: "Name, category, currency, and default wallet are required",
     });
   }
 
@@ -494,37 +512,55 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
-    const parsedIncomeResourceCategoryId = Number(incomeResourceCategoryId);
-    if (Number.isNaN(parsedIncomeResourceCategoryId)) {
-      return res.status(400).json({ error: "Invalid income category ID" });
+    const parsedIncomeCategoryId = Number(incomeCategoryId);
+    const parsedCurrencyId = Number(currencyId);
+    const parsedDefaultWalletId = Number(defaultWalletId);
+    if (
+      Number.isNaN(parsedIncomeCategoryId) ||
+      Number.isNaN(parsedCurrencyId) ||
+      Number.isNaN(parsedDefaultWalletId)
+    ) {
+      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
     }
 
-    const [newResource] = await db
-      .insert(incomeResources)
+    const [wallet] = await db
+      .select()
+      .from(wallets)
+      .where(eq(wallets.id, parsedDefaultWalletId));
+    if (!wallet || wallet.canvasId !== canvasId) {
+      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+    }
+
+    const [newIncome] = await db
+      .insert(incomes)
       .values({
         canvasId,
         name,
-        incomeResourceCategoryId: parsedIncomeResourceCategoryId,
+        incomeCategoryId: parsedIncomeCategoryId,
+        currencyId: parsedCurrencyId,
+        defaultWalletId: parsedDefaultWalletId,
         amount: Number(amount) || 0,
-        currency,
         isRecurring: isRecurring || false,
-        ownerId: user.id,
         recurrencePattern: recurrencePattern || null,
         photoUrl: photoUrl || null,
         description: description || null,
+        status: status || "pending",
         createdBy: user.id,
         lastModifiedBy: user.id,
       })
       .returning();
 
-    res.status(201).json({ incomeResource: newResource });
+    res.status(201).json({ income: newIncome });
   } catch (err) {
-    console.error("Error creating income resource:", err);
-    res.status(500).json({ error: "Failed to create income resource" });
+    console.error("Error creating income:", err);
+    res.status(500).json({ error: "Failed to create income" });
   }
 });
 
-// GET /canvases/:canvasId/wallets - Get all wallets for a canvas
+// ============================================================================
+// CANVAS WALLETS ROUTES
+// ============================================================================
+
 router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -575,7 +611,6 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
   }
 });
 
-// POST /canvases/:canvasId/wallets - Create a new wallet
 router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -588,7 +623,6 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   const {
     name,
     walletCategoryId,
-    walletNumber,
     description,
     photoUrl,
   } = req.body;
@@ -616,8 +650,6 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
         canvasId,
         name,
         walletCategoryId: parsedWalletCategoryId,
-        ownerId: user.id,
-        walletNumber: walletNumber || null,
         photoUrl: photoUrl || null,
         description: description || null,
         isArchived: false,
