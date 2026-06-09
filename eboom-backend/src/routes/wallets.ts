@@ -1,74 +1,57 @@
 import express, { Request, Response } from "express";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import {
-  wallets,
-  walletCategories,
-  canvasMembers,
-  assets,
-} from "../db/schema";
-import { eq, and } from "drizzle-orm";
-import type { Wallet, NewWallet, User } from "../db/schema/models";
+import { canvasMembers, currencies, walletBalances, walletCategories, wallets } from "../db/schema";
 
 const router = express.Router();
 
-// Helper function to check canvas access
-async function checkCanvasAccess(
-  canvasId: number,
-  userId: number
-): Promise<boolean> {
+async function checkCanvasAccess(canvasId: number, userId: number): Promise<boolean> {
   const [membership] = await db
     .select()
     .from(canvasMembers)
-    .where(
-      and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId))
-    );
+    .where(and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId)));
   return !!membership;
 }
 
-// ============================================================================
-// GET /:id - Get a specific wallet with its assets
-// ============================================================================
 router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id);
+  const walletId = parseInt(req.params.id, 10);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
 
   try {
-    // Get the wallet with category info
-    const [wallet] = await db
-      .select({
-        wallet: wallets,
-        category: walletCategories,
-      })
+    const [walletRecord] = await db
+      .select({ wallet: wallets, category: walletCategories })
       .from(wallets)
       .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
       .where(eq(wallets.id, walletId));
 
-    if (!wallet) {
+    if (!walletRecord) {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    // Check canvas access
-    const hasAccess = await checkCanvasAccess(wallet.wallet.canvasId, user.id);
+    const hasAccess = await checkCanvasAccess(walletRecord.wallet.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Get assets in this wallet
-    const walletAssets = await db
-      .select()
-      .from(assets)
-      .where(eq(assets.walletId, walletId));
+    const balances = await db
+      .select({ balance: walletBalances, currency: currencies })
+      .from(walletBalances)
+      .leftJoin(currencies, eq(walletBalances.currencyId, currencies.id))
+      .where(eq(walletBalances.walletId, walletId));
 
     res.json({
       wallet: {
-        ...wallet.wallet,
-        category: wallet.category,
-        assets: walletAssets,
+        ...walletRecord.wallet,
+        category: walletRecord.category,
+        balances: balances.map((b) => ({
+          ...b.balance,
+          currency: b.currency,
+        })),
       },
     });
   } catch (err) {
@@ -77,54 +60,48 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// ============================================================================
-// PUT /:id - Update a wallet
-// ============================================================================
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id);
+  const walletId = parseInt(req.params.id, 10);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
 
-  const {
-    name,
-    walletCategoryId,
-    ownerId,
-    walletNumber,
-    entityId,
-    description,
-    isArchived,
-  } = req.body;
+  const { name, walletCategoryId, ownerId, walletNumber, entityId, description, isArchived } =
+    req.body;
 
   try {
-    // Get the existing wallet to check canvas access
-    const [existing] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, walletId));
-
+    const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
     if (!existing) {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    // Check canvas access
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Update the wallet
+    const parsedWalletCategoryId =
+      walletCategoryId !== undefined ? Number(walletCategoryId) : undefined;
+    const parsedOwnerId = ownerId !== undefined ? Number(ownerId) : undefined;
+    const parsedEntityId = entityId !== undefined && entityId !== null ? Number(entityId) : entityId;
+    if (
+      (parsedWalletCategoryId !== undefined && Number.isNaN(parsedWalletCategoryId)) ||
+      (parsedOwnerId !== undefined && Number.isNaN(parsedOwnerId))
+    ) {
+      return res.status(400).json({ error: "Invalid owner or wallet category ID" });
+    }
+
     const [updatedWallet] = await db
       .update(wallets)
       .set({
         ...(name !== undefined && { name }),
-        ...(walletCategoryId !== undefined && { walletCategoryId }),
-        ...(ownerId !== undefined && { ownerId }),
+        ...(parsedWalletCategoryId !== undefined && { walletCategoryId: parsedWalletCategoryId }),
+        ...(parsedOwnerId !== undefined && { ownerId: parsedOwnerId }),
         ...(walletNumber !== undefined && { walletNumber }),
-        ...(entityId !== undefined && { entityId }),
+        ...(parsedEntityId !== undefined && { entityId: parsedEntityId }),
         ...(description !== undefined && { description }),
         ...(isArchived !== undefined && { isArchived }),
         lastModifiedBy: user.id,
@@ -140,36 +117,26 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// ============================================================================
-// DELETE /:id - Archive a wallet (soft delete)
-// ============================================================================
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id);
+  const walletId = parseInt(req.params.id, 10);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
 
   try {
-    // Get the existing wallet to check canvas access
-    const [existing] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, walletId));
-
+    const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
     if (!existing) {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    // Check canvas access
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Archive the wallet (soft delete)
     await db
       .update(wallets)
       .set({

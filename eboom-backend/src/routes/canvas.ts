@@ -371,14 +371,21 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const parsedExpenseCategoryId = Number(expenseCategoryId);
+    const parsedCurrencyId = Number(currencyId);
+    const parsedEntityId = entityId ? Number(entityId) : null;
+    if (Number.isNaN(parsedExpenseCategoryId) || Number.isNaN(parsedCurrencyId)) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
+    }
+
     const [newExpense] = await db
       .insert(expenses)
       .values({
         canvasId,
         name,
-        expenseCategoryId,
-        currencyId,
-        entityId: entityId || null,
+        expenseCategoryId: parsedExpenseCategoryId,
+        currencyId: parsedCurrencyId,
+        entityId: parsedEntityId,
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         description: description || null,
@@ -487,13 +494,18 @@ router.post("/:canvasId/income-resources", async (req: Request, res: Response) =
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const parsedIncomeResourceCategoryId = Number(incomeResourceCategoryId);
+    if (Number.isNaN(parsedIncomeResourceCategoryId)) {
+      return res.status(400).json({ error: "Invalid income category ID" });
+    }
+
     const [newResource] = await db
       .insert(incomeResources)
       .values({
         canvasId,
         name,
-        incomeResourceCategoryId,
-        amount,
+        incomeResourceCategoryId: parsedIncomeResourceCategoryId,
+        amount: Number(amount) || 0,
         currency,
         isRecurring: isRecurring || false,
         ownerId: user.id,
@@ -593,12 +605,17 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
 
+    const parsedWalletCategoryId = Number(walletCategoryId);
+    if (Number.isNaN(parsedWalletCategoryId)) {
+      return res.status(400).json({ error: "Invalid wallet category ID" });
+    }
+
     const [newWallet] = await db
       .insert(wallets)
       .values({
         canvasId,
         name,
-        walletCategoryId,
+        walletCategoryId: parsedWalletCategoryId,
         ownerId: user.id,
         walletNumber: walletNumber || null,
         photoUrl: photoUrl || null,
