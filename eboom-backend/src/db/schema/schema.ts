@@ -13,8 +13,23 @@ import {
   unique,
   check,
   AnyPgColumn,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+export const transactionStatusEnum = pgEnum("transaction_status", [
+  "pending",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+
+export const recurrenceFrequencyEnum = pgEnum("recurrence_frequency", [
+  "daily",
+  "weekly",
+  "monthly",
+  "yearly",
+]);
 
 export const users = pgTable(
   "users",
@@ -64,14 +79,10 @@ export const currencies = pgTable("currencies", {
   code: varchar("code", { length: 10 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
   symbol: varchar("symbol", { length: 10 }).notNull(),
-  type: varchar("type", { length: 50 }).default("fiat"),
   decimals: integer("decimals").default(2),
-  photoUrl: text("photo_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-  lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
 export const userSettings = pgTable("user_settings", {
@@ -81,7 +92,7 @@ export const userSettings = pgTable("user_settings", {
   language: varchar("language", { length: 10 }).default("en"),
   dateFormat: varchar("date_format", { length: 50 }).default("YYYY-MM-DD"),
   defaultCurrencyId: integer("default_currency_id").references(() => currencies.id),
-  theme: varchar("theme", { length: 20 }).default("dark"),
+  // theme: varchar("theme", { length: 20 }).default("dark"),
   notificationEnabled: boolean("notification_enabled").default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
@@ -94,13 +105,9 @@ export const canvasMembers = pgTable(
     canvasId: integer("canvas_id").notNull().references(() => canvases.id),
     userId: integer("user_id").notNull().references(() => users.id),
     roleId: integer("role_id").references(() => roles.id),
-    baseCurrencyId: integer("base_currency_id").notNull().references(() => currencies.id),
     isOwner: boolean("is_owner").default(false),
-    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    createdBy: integer("created_by").references(() => users.id),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-    lastModifiedBy: integer("last_modified_by").references(() => users.id),
   },
   (table) => ({
     uniqueCanvasUser: unique().on(table.canvasId, table.userId),
@@ -110,12 +117,11 @@ export const canvasMembers = pgTable(
 export const walletCategories = pgTable("wallet_categories", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  photoUrl: text("photo_url"),
-  isSystemCategory: boolean("is_system_category").default(false),
+  // isSystemCategory: boolean("is_system_category").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  // createdBy: integer("created_by").references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  // lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
 export const wallets = pgTable("wallets", {
@@ -123,25 +129,23 @@ export const wallets = pgTable("wallets", {
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
   name: varchar("name", { length: 255 }).notNull(),
   walletCategoryId: integer("wallet_category_id").notNull().references(() => walletCategories.id),
-  ownerId: integer("owner_id").notNull().references(() => users.id),
-  walletNumber: varchar("wallet_number", { length: 255 }),
-  entityId: integer("entity_id"),
   photoUrl: text("photo_url"),
   description: jsonb("description"),
   isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
-export const walletBalances = pgTable(
-  "wallet_balances",
+export const subWallets = pgTable(
+  "sub_wallets",
   {
     id: serial("id").primaryKey(),
     walletId: integer("wallet_id").notNull().references(() => wallets.id),
     currencyId: integer("currency_id").notNull().references(() => currencies.id),
     amount: numeric("amount", { precision: 20, scale: 8 }).notNull().default("0"),
+    address: varchar("address", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   },
@@ -150,34 +154,34 @@ export const walletBalances = pgTable(
   })
 );
 
-export const incomeResourceCategories = pgTable("income_resource_categories", {
+export const incomeCategories = pgTable("income_categories", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  photoUrl: text("photo_url"),
-  isSystemCategory: boolean("is_system_category").default(false),
+  // isSystemCategory: boolean("is_system_category").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  // createdBy: integer("created_by").references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  // lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
-export const incomeResources = pgTable("income_resources", {
+export const incomes = pgTable("incomes", {
   id: serial("id").primaryKey(),
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
   name: varchar("name", { length: 255 }).notNull(),
-  currency: varchar("currency", { length: 10 }).notNull(),
+  currencyId: integer("currency_id").notNull().references(() => currencies.id),
+  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
   amount: integer("amount").notNull(),
-  incomeResourceCategoryId: integer("income_resource_category_id")
+  incomeCategoryId: integer("income_category_id")
     .notNull()
-    .references(() => incomeResourceCategories.id),
-  ownerId: integer("owner_id").notNull().references(() => users.id),
+    .references(() => incomeCategories.id),
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: jsonb("recurrence_pattern"),
+  status: transactionStatusEnum("status").default("pending"),
   photoUrl: text("photo_url"),
   description: jsonb("description"),
   isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
@@ -186,15 +190,12 @@ export const incomeEntries = pgTable(
   "income_entries",
   {
     id: serial("id").primaryKey(),
-    incomeResourceId: integer("income_resource_id").notNull().references(() => incomeResources.id),
+    incomeId: integer("income_id").notNull().references(() => incomes.id),
     destinationWalletId: integer("destination_wallet_id").notNull().references(() => wallets.id),
     amount: numeric("amount", { precision: 20, scale: 8 }).notNull(),
     expectedDate: timestamp("expected_date", { withTimezone: true }),
     receivedDate: timestamp("received_date", { withTimezone: true }),
-    status: varchar("status", { length: 50 }).default("pending"),
     notes: text("notes"),
-    description: jsonb("description"),
-    photoUrl: text("photo_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").references(() => users.id),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
@@ -205,16 +206,12 @@ export const incomeEntries = pgTable(
 
 export const expenseCategories = pgTable("expense_categories", {
   id: serial("id").primaryKey(),
-  canvasId: integer("canvas_id").references(() => canvases.id),
-  parentCategoryId: integer("parent_category_id"),
   name: varchar("name", { length: 255 }).notNull(),
-  photoUrl: text("photo_url"),
-  level: integer("level").default(0),
-  isSystemCategory: boolean("is_system_category").default(false),
+  // isSystemCategory: boolean("is_system_category").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  // createdBy: integer("created_by").references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  // lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
 export const expenses = pgTable("expenses", {
@@ -223,14 +220,15 @@ export const expenses = pgTable("expenses", {
   name: varchar("name", { length: 255 }).notNull(),
   expenseCategoryId: integer("expense_category_id").notNull().references(() => expenseCategories.id),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
-  entityId: integer("entity_id"),
+  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: jsonb("recurrence_pattern"),
+  status: transactionStatusEnum("status").default("pending"),
   description: jsonb("description"),
   photoUrl: text("photo_url"),
-  isActive: boolean("is_active").default(true),
+  isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
@@ -241,17 +239,10 @@ export const expensePayments = pgTable(
     id: serial("id").primaryKey(),
     expenseId: integer("expense_id").notNull().references(() => expenses.id),
     sourceWalletId: integer("source_wallet_id").notNull().references(() => wallets.id),
-    sourceCurrencyId: integer("source_currency_id").notNull().references(() => currencies.id),
-    expenseCurrencyId: integer("expense_currency_id").references(() => currencies.id),
     amount: numeric("amount", { precision: 20, scale: 8 }).notNull(),
     dueDate: timestamp("due_date", { withTimezone: true }),
     paidDate: timestamp("paid_date", { withTimezone: true }),
-    exchangeRate: numeric("exchange_rate", { precision: 20, scale: 8 }),
-    transactionFee: numeric("transaction_fee", { precision: 20, scale: 8 }).default("0"),
-    status: varchar("status", { length: 50 }).default("pending"),
     notes: text("notes"),
-    description: jsonb("description"),
-    photoUrl: text("photo_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").references(() => users.id),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
@@ -264,11 +255,8 @@ export const transfers = pgTable(
   "transfers",
   {
     id: serial("id").primaryKey(),
-    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
-    sourceWalletId: integer("source_wallet_id").notNull().references(() => wallets.id),
-    destinationWalletId: integer("destination_wallet_id").notNull().references(() => wallets.id),
-    sourceCurrencyId: integer("source_currency_id").notNull().references(() => currencies.id),
-    destinationCurrencyId: integer("destination_currency_id").notNull().references(() => currencies.id),
+    sourceWalletId: integer("source_wallet_id").notNull().references(() => subWallets.id),
+    destinationWalletId: integer("destination_wallet_id").notNull().references(() => subWallets.id),
     sourceAmount: numeric("source_amount", { precision: 20, scale: 8 }).notNull(),
     destinationAmount: numeric("destination_amount", { precision: 20, scale: 8 }).notNull(),
     exchangeRate: numeric("exchange_rate", { precision: 20, scale: 8 }),
@@ -308,12 +296,12 @@ export const toBuyItems = pgTable("to_buy_items", {
   estimatedPrice: numeric("estimated_price", { precision: 20, scale: 8 }),
   currencyId: integer("currency_id").references(() => currencies.id),
   priority: integer("priority").default(0),
-  category: varchar("category", { length: 100 }),
+  // category: varchar("category", { length: 100 }),
   dueDate: date("due_date"),
   targetPurchaseDate: date("target_purchase_date"),
-  actualPurchaseDate: date("actual_purchase_date"),
-  actualPrice: numeric("actual_price", { precision: 20, scale: 8 }),
-  purchasedFromEntityId: integer("purchased_from_entity_id"),
+  purchaseDate: date("actual_purchase_date"),
+  price: numeric("actual_price", { precision: 20, scale: 8 }),
+  purchasedFromWalletId: integer("purchased_from_wallet_id").references(() => wallets.id),
   status: varchar("status", { length: 50 }),
   links: jsonb("links"),
   photoUrl: text("photo_url"),
@@ -333,5 +321,23 @@ export const attachments = pgTable("attachments", {
   fileSize: bigint("file_size", { mode: "number" }),
   mimeType: varchar("mime_type", { length: 100 }),
   uploadedBy: integer("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const recurrencePatterns = pgTable("recurrence_patterns", {
+  id: serial("id").primaryKey(),
+  frequency: recurrenceFrequencyEnum("frequency").notNull(),
+  interval: integer("interval").default(1),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
