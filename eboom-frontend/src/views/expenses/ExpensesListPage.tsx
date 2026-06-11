@@ -106,7 +106,7 @@ export default function ExpensesListPage() {
           <GridCard
             key={expense.id}
             href={`/expense/${expense.id}`}
-            imageUrl={expense.photoUrl || expense.category?.photoUrl}
+            imageUrl={expense.photoUrl}
             title={expense.name}
             updatedAt={expense.lastModifiedAt}
             onEdit={() => dispatch(openExpenseEditModal(expense))}

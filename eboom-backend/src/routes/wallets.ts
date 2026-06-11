@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { canvasMembers, currencies, walletBalances, walletCategories, wallets } from "../db/schema";
+import { canvasMembers, currencies, subWallets, walletCategories, wallets } from "../db/schema";
 
 const router = express.Router();
 
@@ -38,18 +38,18 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    const balances = await db
-      .select({ balance: walletBalances, currency: currencies })
-      .from(walletBalances)
-      .leftJoin(currencies, eq(walletBalances.currencyId, currencies.id))
-      .where(eq(walletBalances.walletId, walletId));
+    const subWalletRows = await db
+      .select({ subWallet: subWallets, currency: currencies })
+      .from(subWallets)
+      .leftJoin(currencies, eq(subWallets.currencyId, currencies.id))
+      .where(eq(subWallets.walletId, walletId));
 
     res.json({
       wallet: {
         ...walletRecord.wallet,
         category: walletRecord.category,
-        balances: balances.map((b) => ({
-          ...b.balance,
+        subWallets: subWalletRows.map((b) => ({
+          ...b.subWallet,
           currency: b.currency,
         })),
       },
@@ -69,8 +69,7 @@ router.put("/:id", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
 
-  const { name, walletCategoryId, ownerId, walletNumber, entityId, description, isArchived } =
-    req.body;
+  const { name, walletCategoryId, description, photoUrl, isArchived } = req.body;
 
   try {
     const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
@@ -85,13 +84,8 @@ router.put("/:id", async (req: Request, res: Response) => {
 
     const parsedWalletCategoryId =
       walletCategoryId !== undefined ? Number(walletCategoryId) : undefined;
-    const parsedOwnerId = ownerId !== undefined ? Number(ownerId) : undefined;
-    const parsedEntityId = entityId !== undefined && entityId !== null ? Number(entityId) : entityId;
-    if (
-      (parsedWalletCategoryId !== undefined && Number.isNaN(parsedWalletCategoryId)) ||
-      (parsedOwnerId !== undefined && Number.isNaN(parsedOwnerId))
-    ) {
-      return res.status(400).json({ error: "Invalid owner or wallet category ID" });
+    if (parsedWalletCategoryId !== undefined && Number.isNaN(parsedWalletCategoryId)) {
+      return res.status(400).json({ error: "Invalid wallet category ID" });
     }
 
     const [updatedWallet] = await db
@@ -99,10 +93,8 @@ router.put("/:id", async (req: Request, res: Response) => {
       .set({
         ...(name !== undefined && { name }),
         ...(parsedWalletCategoryId !== undefined && { walletCategoryId: parsedWalletCategoryId }),
-        ...(parsedOwnerId !== undefined && { ownerId: parsedOwnerId }),
-        ...(walletNumber !== undefined && { walletNumber }),
-        ...(parsedEntityId !== undefined && { entityId: parsedEntityId }),
         ...(description !== undefined && { description }),
+        ...(photoUrl !== undefined && { photoUrl }),
         ...(isArchived !== undefined && { isArchived }),
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),

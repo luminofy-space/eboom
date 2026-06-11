@@ -1,23 +1,23 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { walletBalances } from "../db/schema";
+import { subWallets } from "../db/schema";
 
-type BalanceTx = any;
+type BalanceTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-async function getOrCreateBalanceRow(
+async function getOrCreateSubWalletRow(
   tx: BalanceTx,
   walletId: number,
   currencyId: number
 ) {
   const [existing] = await tx
     .select()
-    .from(walletBalances)
-    .where(and(eq(walletBalances.walletId, walletId), eq(walletBalances.currencyId, currencyId)));
+    .from(subWallets)
+    .where(and(eq(subWallets.walletId, walletId), eq(subWallets.currencyId, currencyId)));
 
   if (existing) return existing;
 
   const [created] = await tx
-    .insert(walletBalances)
+    .insert(subWallets)
     .values({
       walletId,
       currencyId,
@@ -34,15 +34,15 @@ export async function creditWalletBalance(input: {
   amount: string;
 }) {
   return db.transaction(async (tx) => {
-    const row = await getOrCreateBalanceRow(tx, input.walletId, input.currencyId);
+    const row = await getOrCreateSubWalletRow(tx, input.walletId, input.currencyId);
 
     const [updated] = await tx
-      .update(walletBalances)
+      .update(subWallets)
       .set({
-        amount: sql`${walletBalances.amount} + ${input.amount}`,
+        amount: sql`${subWallets.amount} + ${input.amount}`,
         lastModifiedAt: new Date(),
       })
-      .where(eq(walletBalances.id, row.id))
+      .where(eq(subWallets.id, row.id))
       .returning();
 
     return updated;
@@ -56,7 +56,7 @@ export async function debitWalletBalance(input: {
   allowNegative?: boolean;
 }) {
   return db.transaction(async (tx) => {
-    const row = await getOrCreateBalanceRow(tx, input.walletId, input.currencyId);
+    const row = await getOrCreateSubWalletRow(tx, input.walletId, input.currencyId);
     const current = Number(row.amount);
     const debit = Number(input.amount);
 
@@ -65,12 +65,12 @@ export async function debitWalletBalance(input: {
     }
 
     const [updated] = await tx
-      .update(walletBalances)
+      .update(subWallets)
       .set({
-        amount: sql`${walletBalances.amount} - ${input.amount}`,
+        amount: sql`${subWallets.amount} - ${input.amount}`,
         lastModifiedAt: new Date(),
       })
-      .where(eq(walletBalances.id, row.id))
+      .where(eq(subWallets.id, row.id))
       .returning();
 
     return updated;

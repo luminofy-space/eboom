@@ -1,28 +1,40 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "./store";
 
-export interface IncomeResourceItem {
+export interface IncomeItem {
   id: number;
   name: string;
   isRecurring: boolean;
   description?: string;
   photoUrl?: string | null;
   lastModifiedAt?: string | null;
-  currency?: string;
+  currencyId?: number;
   amount?: number;
-  incomeResourceCategoryId?: number | null;
+  incomeCategoryId?: number | null;
+  defaultWalletId?: number | null;
+  status?: string;
+  isArchived?: boolean;
   recurrencePattern?: unknown;
   category?: {
     id: number;
     name: string;
-    photoUrl?: string | null;
+  } | null;
+  currency?: {
+    id: number;
+    code: string;
+    name: string;
+    symbol: string;
+  } | null;
+  defaultWallet?: {
+    id: number;
+    name: string;
   } | null;
 }
 
 interface IncomeModalState {
   open: boolean;
   mode: "create" | "edit";
-  editingItem: IncomeResourceItem | null;
+  editingItem: IncomeItem | null;
 }
 
 interface IncomeState {
@@ -46,7 +58,7 @@ const incomeSlice = createSlice({
       state.modal.mode = "create";
       state.modal.editingItem = null;
     },
-    openIncomeEditModal: (state, action: PayloadAction<IncomeResourceItem>) => {
+    openIncomeEditModal: (state, action: PayloadAction<IncomeItem>) => {
       state.modal.open = true;
       state.modal.mode = "edit";
       state.modal.editingItem = action.payload;

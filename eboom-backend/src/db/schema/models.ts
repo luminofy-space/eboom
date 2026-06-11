@@ -7,9 +7,9 @@ import {
   currencies,
   walletCategories,
   wallets,
-  walletBalances,
-  incomeResourceCategories,
-  incomeResources,
+  subWallets,
+  incomeCategories,
+  incomes,
   incomeEntries,
   expenseCategories,
   expenses,
@@ -18,6 +18,8 @@ import {
   wishlists,
   toBuyItems,
   attachments,
+  notifications,
+  recurrencePatterns,
 } from "./schema";
 
 // SELECT types
@@ -29,9 +31,9 @@ export type CanvasMember = typeof canvasMembers.$inferSelect;
 export type Currency = typeof currencies.$inferSelect;
 export type WalletCategory = typeof walletCategories.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
-export type WalletBalance = typeof walletBalances.$inferSelect;
-export type IncomeResourceCategory = typeof incomeResourceCategories.$inferSelect;
-export type IncomeResource = typeof incomeResources.$inferSelect;
+export type SubWallet = typeof subWallets.$inferSelect;
+export type IncomeCategory = typeof incomeCategories.$inferSelect;
+export type Income = typeof incomes.$inferSelect;
 export type IncomeEntry = typeof incomeEntries.$inferSelect;
 export type ExpenseCategory = typeof expenseCategories.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
@@ -40,6 +42,8 @@ export type Transfer = typeof transfers.$inferSelect;
 export type Wishlist = typeof wishlists.$inferSelect;
 export type ToBuyItem = typeof toBuyItems.$inferSelect;
 export type Attachment = typeof attachments.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type RecurrencePattern = typeof recurrencePatterns.$inferSelect;
 
 // INSERT types
 export type NewUser = typeof users.$inferInsert;
@@ -50,9 +54,9 @@ export type NewCanvasMember = typeof canvasMembers.$inferInsert;
 export type NewCurrency = typeof currencies.$inferInsert;
 export type NewWalletCategory = typeof walletCategories.$inferInsert;
 export type NewWallet = typeof wallets.$inferInsert;
-export type NewWalletBalance = typeof walletBalances.$inferInsert;
-export type NewIncomeResourceCategory = typeof incomeResourceCategories.$inferInsert;
-export type NewIncomeResource = typeof incomeResources.$inferInsert;
+export type NewSubWallet = typeof subWallets.$inferInsert;
+export type NewIncomeCategory = typeof incomeCategories.$inferInsert;
+export type NewIncome = typeof incomes.$inferInsert;
 export type NewIncomeEntry = typeof incomeEntries.$inferInsert;
 export type NewExpenseCategory = typeof expenseCategories.$inferInsert;
 export type NewExpense = typeof expenses.$inferInsert;
@@ -61,3 +65,5 @@ export type NewTransfer = typeof transfers.$inferInsert;
 export type NewWishlist = typeof wishlists.$inferInsert;
 export type NewToBuyItem = typeof toBuyItems.$inferInsert;
 export type NewAttachment = typeof attachments.$inferInsert;
+export type NewNotification = typeof notifications.$inferInsert;
+export type NewRecurrencePattern = typeof recurrencePatterns.$inferInsert;

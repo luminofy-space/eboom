@@ -5,17 +5,28 @@ export interface ExpenseItem {
   id: number;
   name: string;
   description?: string;
-  expenseType?: string;
   photoUrl?: string | null;
   lastModifiedAt?: string | null;
   isRecurring?: boolean;
   expenseCategoryId?: number | null;
   currencyId?: number | null;
+  defaultWalletId?: number | null;
+  status?: string;
+  isArchived?: boolean;
   recurrencePattern?: unknown;
   category?: {
     id: number;
     name: string;
-    photoUrl?: string | null;
+  } | null;
+  currency?: {
+    id: number;
+    code: string;
+    name: string;
+    symbol: string;
+  } | null;
+  defaultWallet?: {
+    id: number;
+    name: string;
   } | null;
 }
 

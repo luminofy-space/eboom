@@ -5,13 +5,12 @@ import {
   expenseCategories,
   canvasMembers,
   currencies,
+  wallets,
 } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import type { Expense, NewExpense, User } from "../db/schema/models";
 
 const router = express.Router();
 
-// Helper function to check canvas access
 async function checkCanvasAccess(
   canvasId: number,
   userId: number
@@ -25,9 +24,6 @@ async function checkCanvasAccess(
   return !!membership;
 }
 
-// ============================================================================
-// GET /:id - Get a specific expense
-// ============================================================================
 router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -38,26 +34,23 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    // Get the expense with category and currency info
     const [expense] = await db
       .select({
         expense: expenses,
         category: expenseCategories,
         currency: currencies,
+        defaultWallet: wallets,
       })
       .from(expenses)
-      .leftJoin(
-        expenseCategories,
-        eq(expenses.expenseCategoryId, expenseCategories.id)
-      )
+      .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
       .leftJoin(currencies, eq(expenses.currencyId, currencies.id))
+      .leftJoin(wallets, eq(expenses.defaultWalletId, wallets.id))
       .where(eq(expenses.id, expenseId));
 
     if (!expense) {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    // Check canvas access
     const hasAccess = await checkCanvasAccess(expense.expense.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
@@ -68,6 +61,7 @@ router.get("/:id", async (req: Request, res: Response) => {
         ...expense.expense,
         category: expense.category,
         currency: expense.currency,
+        defaultWallet: expense.defaultWallet,
       },
     });
   } catch (err) {
@@ -76,9 +70,6 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// ============================================================================
-// PUT /:id - Update an expense
-// ============================================================================
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -92,16 +83,16 @@ router.put("/:id", async (req: Request, res: Response) => {
     name,
     expenseCategoryId,
     currencyId,
-    entityId,
+    defaultWalletId,
     isRecurring,
     recurrencePattern,
     description,
     photoUrl,
-    isActive,
+    status,
+    isArchived,
   } = req.body;
 
   try {
-    // Get the existing expense to check canvas access
     const [existing] = await db
       .select()
       .from(expenses)
@@ -111,7 +102,6 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    // Check canvas access
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
@@ -120,27 +110,39 @@ router.put("/:id", async (req: Request, res: Response) => {
     const parsedExpenseCategoryId =
       expenseCategoryId !== undefined ? Number(expenseCategoryId) : undefined;
     const parsedCurrencyId = currencyId !== undefined ? Number(currencyId) : undefined;
-    const parsedEntityId = entityId !== undefined && entityId !== null ? Number(entityId) : entityId;
+    const parsedDefaultWalletId =
+      defaultWalletId !== undefined ? Number(defaultWalletId) : undefined;
     if (
       (parsedExpenseCategoryId !== undefined && Number.isNaN(parsedExpenseCategoryId)) ||
-      (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId))
+      (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId)) ||
+      (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId))
     ) {
-      return res.status(400).json({ error: "Invalid category or currency ID" });
+      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
     }
 
-    // Update the expense
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== existing.canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
+    }
+
     const [updatedExpense] = await db
       .update(expenses)
       .set({
         ...(name !== undefined && { name }),
         ...(parsedExpenseCategoryId !== undefined && { expenseCategoryId: parsedExpenseCategoryId }),
         ...(parsedCurrencyId !== undefined && { currencyId: parsedCurrencyId }),
-        ...(parsedEntityId !== undefined && { entityId: parsedEntityId }),
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         ...(isRecurring !== undefined && { isRecurring }),
         ...(recurrencePattern !== undefined && { recurrencePattern }),
         ...(description !== undefined && { description }),
         ...(photoUrl !== undefined && { photoUrl }),
-        ...(isActive !== undefined && { isActive }),
+        ...(status !== undefined && { status }),
+        ...(isArchived !== undefined && { isArchived }),
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
@@ -154,9 +156,6 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// ============================================================================
-// DELETE /:id - Deactivate an expense (soft delete)
-// ============================================================================
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -167,7 +166,6 @@ router.delete("/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    // Get the existing expense to check canvas access
     const [existing] = await db
       .select()
       .from(expenses)
@@ -177,23 +175,21 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    // Check canvas access
     const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Deactivate the expense (soft delete)
     await db
       .update(expenses)
       .set({
-        isActive: false,
+        isArchived: true,
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
       .where(eq(expenses.id, expenseId));
 
-    res.json({ message: "Expense deactivated successfully" });
+    res.json({ message: "Expense archived successfully" });
   } catch (err) {
     console.error("Error deleting expense:", err);
     res.status(500).json({ error: "Failed to delete expense" });

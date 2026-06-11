@@ -40,6 +40,7 @@ interface ExpenseFormData {
   name: string;
   expenseCategoryId: number | null;
   currencyId: number | null;
+  defaultWalletId: number | null;
   description: string;
   isRecurring: boolean;
   recurrencePattern: RecurrencePattern;
@@ -50,6 +51,7 @@ const defaultValues: ExpenseFormData = {
   name: "",
   expenseCategoryId: null,
   currencyId: null,
+  defaultWalletId: null,
   description: "",
   isRecurring: false,
   recurrencePattern: DEFAULT_RECURRENCE_PATTERN,
@@ -70,6 +72,7 @@ export function NewExpenseModal() {
   const name = watch("name");
   const expenseCategoryId = watch("expenseCategoryId");
   const currencyId = watch("currencyId");
+  const defaultWalletId = watch("defaultWalletId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch expense categories
@@ -109,6 +112,24 @@ export function NewExpenseModal() {
     return currencies.find((c) => c.code === code)?.id ?? null;
   };
 
+  const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
+    wallets?: { id: number; name: string }[];
+  }>(
+    canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
+    {
+      queryKey: ["wallets", canvas],
+      hasToken: true,
+      enabled: open && !!canvas,
+    }
+  );
+
+  const wallets = walletsRes?.wallets ?? [];
+  const walletNames = wallets.map((w) => w.name);
+  const walletNameToId = (walletName: string) =>
+    wallets.find((w) => w.name === walletName)?.id ?? null;
+  const walletIdToName = (id: number | null) =>
+    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+
   // Mutations
   const { mutateAsync: createExpense } = useMutationApi(
     API_ROUTES.CANVASES_EXPENSES_CREATE(canvas ?? -1),
@@ -133,7 +154,8 @@ export function NewExpenseModal() {
         name: editingItem.name ?? "",
         expenseCategoryId: editingItem.expenseCategoryId ?? null,
         currencyId: editingItem.currencyId ?? null,
-        description: editingItem.description ?? "",
+        defaultWalletId: editingItem.defaultWalletId ?? editingItem.defaultWallet?.id ?? null,
+        description: typeof editingItem.description === "string" ? editingItem.description : "",
         isRecurring: editingItem.isRecurring ?? false,
         recurrencePattern:
           (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
@@ -160,6 +182,7 @@ export function NewExpenseModal() {
         name: formData.name,
         expenseCategoryId: formData.expenseCategoryId,
         currencyId: formData.currencyId,
+        defaultWalletId: formData.defaultWalletId,
         description: formData.description,
         isRecurring: formData.isRecurring,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
@@ -238,7 +261,7 @@ export function NewExpenseModal() {
             </div>
           </div>
 
-          {/* Row 2: Currency */}
+          {/* Row 2: Currency + Default Wallet */}
           <div className="flex flex-row gap-5">
             <div className="w-1/2 flex flex-col gap-1">
               <Label htmlFor="expense-currency">Currency</Label>
@@ -263,6 +286,37 @@ export function NewExpenseModal() {
                         {(label) => (
                           <ComboboxItem key={label} value={label}>
                             {label}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
+              />
+            </div>
+            <div className="w-1/2 flex flex-col gap-1">
+              <Label htmlFor="expense-default-wallet">Default Wallet</Label>
+              <Controller
+                name="defaultWalletId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    id="expense-default-wallet"
+                    items={walletNames}
+                    value={walletIdToName(field.value)}
+                    disabled={isLoadingWallets}
+                    onValueChange={(val) =>
+                      field.onChange(val ? walletNameToId(val) : null)
+                    }
+                  >
+                    <ComboboxInput placeholder="Select a wallet" />
+                    <ComboboxContent className="z-[80]">
+                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(walletName) => (
+                          <ComboboxItem key={walletName} value={walletName}>
+                            {walletName}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -346,7 +400,7 @@ export function NewExpenseModal() {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!name || !expenseCategoryId || currencyId === null}
+              disabled={!name || !expenseCategoryId || currencyId === null || defaultWalletId === null}
               type="submit"
             >
               {isEdit ? "Save changes" : "Create Expense"}

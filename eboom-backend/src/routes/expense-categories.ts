@@ -5,7 +5,6 @@ import { eq, asc } from "drizzle-orm";
 
 const router = express.Router();
 
-// GET / - List all expense categories
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -23,26 +22,17 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// POST / - Create a custom expense category
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const { name, photoUrl } = req.body;
-
-  if (!name)
-    return res.status(400).json({ error: "Category name is required" });
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Category name is required" });
 
   try {
     const [category] = await db
       .insert(expenseCategories)
-      .values({
-        name,
-        photoUrl: photoUrl ?? null,
-        isSystemCategory: false,
-        createdBy: user.id,
-        lastModifiedBy: user.id,
-      })
+      .values({ name })
       .returning();
 
     res.status(201).json({ category });
@@ -52,19 +42,15 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// PUT /:id - Update a custom expense category
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const categoryId = parseInt(req.params.id);
-  if (isNaN(categoryId))
-    return res.status(400).json({ error: "Invalid category ID" });
+  if (isNaN(categoryId)) return res.status(400).json({ error: "Invalid category ID" });
 
-  const { name, photoUrl } = req.body;
-
-  if (!name)
-    return res.status(400).json({ error: "Category name is required" });
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Category name is required" });
 
   try {
     const [existing] = await db
@@ -72,22 +58,11 @@ router.put("/:id", async (req: Request, res: Response) => {
       .from(expenseCategories)
       .where(eq(expenseCategories.id, categoryId));
 
-    if (!existing)
-      return res.status(404).json({ error: "Category not found" });
-
-    if (existing.isSystemCategory)
-      return res
-        .status(403)
-        .json({ error: "System categories cannot be modified" });
+    if (!existing) return res.status(404).json({ error: "Category not found" });
 
     const [updated] = await db
       .update(expenseCategories)
-      .set({
-        name,
-        photoUrl: photoUrl ?? null,
-        lastModifiedBy: user.id,
-        lastModifiedAt: new Date(),
-      })
+      .set({ name, lastModifiedAt: new Date() })
       .where(eq(expenseCategories.id, categoryId))
       .returning();
 
@@ -98,14 +73,12 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /:id - Delete a custom expense category
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const categoryId = parseInt(req.params.id);
-  if (isNaN(categoryId))
-    return res.status(400).json({ error: "Invalid category ID" });
+  if (isNaN(categoryId)) return res.status(400).json({ error: "Invalid category ID" });
 
   try {
     const [existing] = await db
@@ -113,17 +86,9 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .from(expenseCategories)
       .where(eq(expenseCategories.id, categoryId));
 
-    if (!existing)
-      return res.status(404).json({ error: "Category not found" });
+    if (!existing) return res.status(404).json({ error: "Category not found" });
 
-    if (existing.isSystemCategory)
-      return res
-        .status(403)
-        .json({ error: "System categories cannot be deleted" });
-
-    await db
-      .delete(expenseCategories)
-      .where(eq(expenseCategories.id, categoryId));
+    await db.delete(expenseCategories).where(eq(expenseCategories.id, categoryId));
 
     res.json({ message: "Category deleted successfully" });
   } catch (err) {
