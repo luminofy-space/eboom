@@ -66,6 +66,11 @@ const API_ROUTES = {
   EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
 
+  // Expense Payments
+  EXPENSE_PAYMENTS_LIST: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_CREATE: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_DELETE: (id: number) => `/api/expenses/payments/${id}/`,
+
   WALLET_CATEGORIES: '/api/wallet/categories',
 
   // Expense Categories
