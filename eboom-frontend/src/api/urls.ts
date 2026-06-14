@@ -58,6 +58,10 @@ const API_ROUTES = {
   WALLETS_GET: (id: number) => `/api/wallets/${id}/`,
   WALLETS_UPDATE: (id: number) => `/api/wallets/${id}/`,
   WALLETS_DELETE: (id: number) => `/api/wallets/${id}/`,
+  SUB_WALLETS_LIST: (walletId: number) => `/api/wallets/${walletId}/sub-wallets/`,
+  WALLET_ENTRIES: (id: number) => `/api/wallets/${id}/income-entries/`,
+  WALLET_PAYMENTS: (id: number) => `/api/wallets/${id}/expense-payments/`,
+  WALLET_TRANSACTIONS: (id: number) => `/api/wallets/${id}/transactions/`,
 
   // ============================================================================
   // EXPENSES

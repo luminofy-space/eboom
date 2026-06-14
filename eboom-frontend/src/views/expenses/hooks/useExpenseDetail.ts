@@ -34,7 +34,7 @@ export function useExpenseDetail(expenseId: number) {
       queryKey: ["expense-payments", expenseId],
       enabled: !!expenseId,
     }
-  );
+  )
 
   const { data: currenciesRes } = useQueryApi<{
     currencies?: { id: number; code: string; symbol: string }[];

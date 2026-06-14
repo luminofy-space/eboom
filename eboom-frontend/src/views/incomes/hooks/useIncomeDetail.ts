@@ -4,18 +4,12 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMemo } from "react";
 import type { IncomeEntry } from "../component/IncomeEntriesTable";
+import { Income } from "@backend/db/schema";
 
 export function useIncomeDetail(incomeId: number) {
   const { data: incomeRes, isLoading: isLoadingIncome, isError: isIncomeError } =
     useQueryApi<{
-      income: {
-        id: number;
-        name: string;
-        currencyId: number;
-        amount: number;
-        defaultWalletId: number;
-        defaultWallet?: { id: number; name: string } | null;
-      };
+      income: Income;
     }>(API_ROUTES.INCOMES_GET(incomeId), {
       queryKey: ["income", incomeId],
       enabled: !!incomeId,

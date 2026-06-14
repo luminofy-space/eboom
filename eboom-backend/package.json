@@ -25,6 +25,7 @@
         "@types/nodemailer": "^7.0.4",
         "bcryptjs": "^3.0.3",
         "cors": "^2.8.5",
+        "dayjs-plugin-utc": "^0.1.2",
         "dotenv": "^16.0.3",
         "drizzle-kit": "^0.31.8",
         "drizzle-orm": "^0.45.1",

@@ -9,19 +9,11 @@ router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  console.log("==============================================");
-  console.log('test')
-  console.log("==============================================");
-
   try {
     const categories = await db
       .select()
       .from(incomeCategories)
       .orderBy(asc(incomeCategories.name));
-
-    console.log("==============================================");
-    console.log(categories);
-    console.log("==============================================");
 
     res.json({ categories });
   } catch (err) {
