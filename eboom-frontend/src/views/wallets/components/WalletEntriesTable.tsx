@@ -19,23 +19,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
-
-interface WalletEntry {
-  id: number;
-  incomeId: number;
-  destinationWalletId: number;
-  amount: string;
-  expectedDate: string | null;
-  receivedDate: string | null;
-  notes: string | null;
-  createdAt: string;
-}
+import type { WalletEntry } from "../utils/utils";
 
 interface WalletEntriesTableProps {
   walletId: number;
+  walletName?: string;
   currencySymbol?: string;
 }
 
@@ -77,21 +69,11 @@ function sortEntries(entries: WalletEntry[]): WalletEntry[] {
 
 export function WalletEntriesTable({
   walletId,
+  walletName,
   currencySymbol,
 }: WalletEntriesTableProps) {
-//   const {
-//     data: entriesRes,
-//     isLoading: isLoadingEntries,
-//     isError,
-//   } = useQueryApi<{ entries: WalletEntry[] }>(
-//     API_ROUTES.WALLET_ENTRIES(walletId),
-//     {
-//       queryKey: ["wallet-entries", walletId],
-//       enabled: !!walletId,
-//     }
-//   );
-
-    const {entries: entriesRes, isLoading, isError} = useWalletDetail(walletId);
+  const [createOpen, setCreateOpen] = useState(false);
+  const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
   const entries = useMemo(
     () => sortEntries(entriesRes ?? []),
@@ -132,20 +114,27 @@ export function WalletEntriesTable({
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 lg:px-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Income Entries</h2>
-          <p className="text-muted-foreground text-sm">
-            Incoming transactions to this wallet
-          </p>
+    <>
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Income Entries</h2>
+            <p className="text-muted-foreground text-sm">
+              Incoming transactions to this wallet
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {entries.length > 0 && (
+              <p className="text-muted-foreground hidden text-sm tabular-nums sm:block">
+                {entries.length} {entries.length === 1 ? "entry" : "entries"}
+              </p>
+            )}
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Entry
+            </Button>
+          </div>
         </div>
-        {entries.length > 0 && (
-          <p className="text-muted-foreground hidden text-sm tabular-nums sm:block">
-            {entries.length} {entries.length === 1 ? "entry" : "entries"}
-          </p>
-        )}
-      </div>
 
       <div className="overflow-hidden rounded-lg border">
         <Table>
@@ -165,7 +154,7 @@ export function WalletEntriesTable({
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <p className="text-muted-foreground">
-                    No income entries yet. Create a new income to track incoming payments.
+                    No income entries yet. Create an entry to record incoming funds.
                   </p>
                 </TableCell>
               </TableRow>
@@ -178,7 +167,12 @@ export function WalletEntriesTable({
                       {formatAmount(entry.amount, currencySymbol)}
                     </TableCell>
                     <TableCell>
-                      <span>Income #{entry.incomeId}</span>
+                      <div className="flex flex-col">
+                        <span>{entry.incomeName ?? `Income #${entry.incomeId}`}</span>
+                        {entry.categoryName && (
+                          <span className="text-muted-foreground text-xs">{entry.categoryName}</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(entry.expectedDate)}
@@ -235,6 +229,15 @@ export function WalletEntriesTable({
           )}
         </Table>
       </div>
-    </div>
+      </div>
+
+      <NewIncomeEntryModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        fixedDestinationWalletId={walletId}
+        walletName={walletName}
+        extraInvalidateKeys={[["wallet-entries", walletId], ["wallet", walletId]]}
+      />
+    </>
   );
 }

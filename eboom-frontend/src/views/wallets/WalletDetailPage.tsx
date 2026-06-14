@@ -45,11 +45,11 @@ export default function WalletDetailPage({ id }: Props) {
         isLoading={isLoading}
       />
 
-      <WalletEntriesTable walletId={id} currencySymbol={currencySymbol} />
+      <WalletEntriesTable walletId={id} walletName={wallet?.name} currencySymbol={currencySymbol} />
 
       <div className="my-8" />
 
-      <WalletPaymentsTable walletId={id} currencySymbol={currencySymbol} />
+      <WalletPaymentsTable walletId={id} walletName={wallet?.name} currencySymbol={currencySymbol} />
     </>
   );
 }

@@ -15,15 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import API_ROUTES from "@/src/api/urls";
-import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 interface PaymentFormData {
+  expenseId: number | null;
   amount: number;
   sourceWalletId: number | null;
   dueDate: string;
@@ -32,6 +33,7 @@ interface PaymentFormData {
 }
 
 const defaultValues: PaymentFormData = {
+  expenseId: null,
   amount: 0,
   sourceWalletId: null,
   dueDate: "",
@@ -39,12 +41,17 @@ const defaultValues: PaymentFormData = {
   notes: "",
 };
 
+const hasWindow = typeof window !== "undefined";
+
 interface NewExpensePaymentModalProps {
-  expenseId: number;
+  expenseId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultWalletId?: number | null;
+  fixedSourceWalletId?: number;
   expenseName?: string;
+  walletName?: string;
+  extraInvalidateKeys?: unknown[][];
 }
 
 export function NewExpensePaymentModal({
@@ -52,50 +59,121 @@ export function NewExpensePaymentModal({
   open,
   onOpenChange,
   defaultWalletId,
+  fixedSourceWalletId,
   expenseName,
+  walletName,
+  extraInvalidateKeys = [],
 }: NewExpensePaymentModalProps) {
   const queryClient = useQueryClient();
   const { canvas } = useCanvas();
+  const showExpensePicker = expenseId === undefined;
+  const showWalletPicker = fixedSourceWalletId === undefined;
 
   const { register, handleSubmit, control, reset, watch } = useForm<PaymentFormData>({
     defaultValues,
   });
 
   const amount = watch("amount");
+  const selectedExpenseId = watch("expenseId");
   const sourceWalletId = watch("sourceWalletId");
 
-  const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
-    wallets?: { id: number; name: string }[];
-  }>(canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "", {
-    queryKey: ["wallets", canvas],
+  const { data: expensesRes, isLoading: isLoadingExpenses } = useQueryApi<{
+    expenses?: { id: number; name: string; category?: { name: string } | null }[];
+  }>(canvas ? `${API_ROUTES.CANVASES_EXPENSES_LIST(canvas)}?limit=100` : "", {
+    queryKey: ["expenses", canvas, "all"],
     hasToken: true,
-    enabled: open && !!canvas,
+    enabled: open && !!canvas && showExpensePicker,
   });
 
-  const wallets = walletsRes?.wallets ?? [];
-  const walletNames = wallets.map((w) => w.name);
-  const walletNameToId = (name: string) =>
-    wallets.find((w) => w.name === name)?.id ?? null;
-  const walletIdToName = (id: number | null) =>
-    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+  const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
+    wallets?: { id: number; name: string; category?: { name: string } | null }[];
+  }>(canvas ? `${API_ROUTES.CANVASES_WALLETS_LIST(canvas)}?limit=100` : "", {
+    queryKey: ["wallets", canvas, "all"],
+    hasToken: true,
+    enabled: open && !!canvas && showWalletPicker,
+  });
 
-  const { mutateAsync: createPayment, isPending } = useMutationApi(
-    API_ROUTES.EXPENSE_PAYMENTS_CREATE(expenseId),
-    {
-      method: "post",
-      hasToken: true,
-    }
-  );
+  const expenses = expensesRes?.expenses ?? [];
+  const expenseLabels = expenses.map((expense) => {
+    const categorySuffix = expense.category?.name ? ` (${expense.category.name})` : "";
+    return `${expense.name}${categorySuffix} – #${expense.id}`;
+  });
+  const expenseLabelToId = (label: string) => {
+    const idMatch = label.match(/#(\d+)$/);
+    return idMatch ? Number(idMatch[1]) : null;
+  };
+  const expenseIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const expense = expenses.find((item) => item.id === id);
+    if (!expense) return "";
+    const categorySuffix = expense.category?.name ? ` (${expense.category.name})` : "";
+    return `${expense.name}${categorySuffix} – #${expense.id}`;
+  };
+
+  const wallets = walletsRes?.wallets ?? [];
+  const walletLabels = wallets.map((wallet) => {
+    const categorySuffix = wallet.category?.name ? ` (${wallet.category.name})` : "";
+    return `${wallet.name}${categorySuffix} – #${wallet.id}`;
+  });
+  const walletLabelToId = (label: string) => {
+    const idMatch = label.match(/#(\d+)$/);
+    return idMatch ? Number(idMatch[1]) : null;
+  };
+  const walletIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const wallet = wallets.find((item) => item.id === id);
+    if (!wallet) return "";
+    const categorySuffix = wallet.category?.name ? ` (${wallet.category.name})` : "";
+    return `${wallet.name}${categorySuffix} – #${wallet.id}`;
+  };
+
+  const { mutateAsync: createPayment, isPending } = useMutation({
+    mutationFn: async (formData: PaymentFormData) => {
+      const resolvedExpenseId = expenseId ?? formData.expenseId;
+      const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
+
+      if (!resolvedExpenseId || !resolvedWalletId) {
+        throw new Error("Expense and source wallet are required");
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId)}`;
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+
+      await axios.post(
+        url,
+        {
+          sourceWalletId: resolvedWalletId,
+          amount: Number(formData.amount),
+          dueDate: formData.dueDate || null,
+          paidDate: formData.paidDate || null,
+          notes: formData.notes.trim() || null,
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+    },
+    onSuccess: async () => {
+      const resolvedExpenseId = expenseId ?? selectedExpenseId;
+      if (resolvedExpenseId) {
+        await queryClient.invalidateQueries({ queryKey: ["expense-payments", resolvedExpenseId] });
+      }
+      for (const key of extraInvalidateKeys) {
+        await queryClient.invalidateQueries({ queryKey: key });
+      }
+    },
+  });
 
   useEffect(() => {
     if (open) {
       reset({
         ...defaultValues,
-        sourceWalletId: defaultWalletId ?? null,
+        expenseId: expenseId ?? null,
+        sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
         paidDate: new Date().toISOString().slice(0, 10),
       });
     }
-  }, [open, defaultWalletId, reset]);
+  }, [open, expenseId, defaultWalletId, fixedSourceWalletId, reset]);
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -106,15 +184,7 @@ export function NewExpensePaymentModal({
 
   const onSubmit = async (formData: PaymentFormData) => {
     try {
-      await createPayment({
-        sourceWalletId: formData.sourceWalletId,
-        amount: Number(formData.amount),
-        dueDate: formData.dueDate || null,
-        paidDate: formData.paidDate || null,
-        notes: formData.notes.trim() || null,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["expense-payments", expenseId] });
+      await createPayment(formData);
       reset(defaultValues);
       onOpenChange(false);
     } catch (error) {
@@ -122,7 +192,9 @@ export function NewExpensePaymentModal({
     }
   };
 
-  const isValid = amount > 0 && sourceWalletId !== null;
+  const effectiveExpenseId = expenseId ?? selectedExpenseId;
+  const effectiveWalletId = fixedSourceWalletId ?? sourceWalletId;
+  const isValid = amount > 0 && !!effectiveExpenseId && !!effectiveWalletId;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -133,11 +205,47 @@ export function NewExpensePaymentModal({
             <DialogDescription>
               {expenseName
                 ? `Record a payment made for ${expenseName}.`
-                : "Record a payment made for this expense."}
+                : walletName
+                  ? `Record outgoing funds from ${walletName}.`
+                  : "Record a payment made for an expense."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
+            {showExpensePicker && (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="payment-expense">Expense</Label>
+                <Controller
+                  name="expenseId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Combobox
+                      id="payment-expense"
+                      items={expenseLabels}
+                      value={expenseIdToLabel(field.value)}
+                      disabled={isLoadingExpenses}
+                      onValueChange={(val) =>
+                        field.onChange(val ? expenseLabelToId(val) : null)
+                      }
+                    >
+                      <ComboboxInput placeholder={isLoadingExpenses ? "Loading expenses..." : "Select an expense"} />
+                      <ComboboxContent className="z-[80]">
+                        <ComboboxEmpty>No expenses found.</ComboboxEmpty>
+                        <ComboboxCollection>
+                          {(label) => (
+                            <ComboboxItem key={label} value={label}>
+                              {label}
+                            </ComboboxItem>
+                          )}
+                        </ComboboxCollection>
+                      </ComboboxContent>
+                    </Combobox>
+                  )}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-1">
               <Label htmlFor="payment-amount">Amount</Label>
               <Input
@@ -150,37 +258,44 @@ export function NewExpensePaymentModal({
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="payment-wallet">Source Wallet</Label>
-              <Controller
-                name="sourceWalletId"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <Combobox
-                    id="payment-wallet"
-                    items={walletNames}
-                    value={walletIdToName(field.value)}
-                    disabled={isLoadingWallets}
-                    onValueChange={(val) =>
-                      field.onChange(val ? walletNameToId(val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder="Select a wallet" />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(walletName) => (
-                          <ComboboxItem key={walletName} value={walletName}>
-                            {walletName}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              />
-            </div>
+            {showWalletPicker ? (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="payment-wallet">Source Wallet</Label>
+                <Controller
+                  name="sourceWalletId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Combobox
+                      id="payment-wallet"
+                      items={walletLabels}
+                      value={walletIdToLabel(field.value)}
+                      disabled={isLoadingWallets}
+                      onValueChange={(val) =>
+                        field.onChange(val ? walletLabelToId(val) : null)
+                      }
+                    >
+                      <ComboboxInput placeholder="Select a wallet" />
+                      <ComboboxContent className="z-[80]">
+                        <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                        <ComboboxCollection>
+                          {(label) => (
+                            <ComboboxItem key={label} value={label}>
+                              {label}
+                            </ComboboxItem>
+                          )}
+                        </ComboboxCollection>
+                      </ComboboxContent>
+                    </Combobox>
+                  )}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <Label>Source Wallet</Label>
+                <Input value={walletName ?? "This wallet"} disabled />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">

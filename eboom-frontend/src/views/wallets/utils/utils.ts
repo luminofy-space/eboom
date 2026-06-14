@@ -6,6 +6,8 @@ dayjs.extend(isBetween);
 export interface WalletEntry {
   id: number;
   incomeId: number;
+  incomeName?: string;
+  categoryName?: string;
   destinationWalletId: number;
   amount: string;
   expectedDate: string | null;
@@ -17,6 +19,8 @@ export interface WalletEntry {
 export interface WalletPayment {
   id: number;
   expenseId: number;
+  expenseName?: string;
+  categoryName?: string;
   sourceWalletId: number;
   amount: string;
   dueDate: string | null;

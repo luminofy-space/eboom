@@ -184,6 +184,7 @@ router.get("/:walletId/income-entries", async (req: Request, res: Response) => {
         incomeId: incomeEntries.incomeId,
         incomeName: incomes.name,
         categoryName: incomeCategories.name,
+        destinationWalletId: incomeEntries.destinationWalletId,
         amount: incomeEntries.amount,
         expectedDate: incomeEntries.expectedDate,
         receivedDate: incomeEntries.receivedDate,
@@ -224,15 +225,17 @@ router.get("/:walletId/expense-payments", async (req: Request, res: Response) =>
         expenseId: expensePayments.expenseId,
         expenseName: expenses.name,
         categoryName: expenseCategories.name,
+        sourceWalletId: expensePayments.sourceWalletId,
         amount: expensePayments.amount,
-        paymentDate: expensePayments.paidDate,
+        dueDate: expensePayments.dueDate,
+        paidDate: expensePayments.paidDate,
         notes: expensePayments.notes,
         createdAt: expensePayments.createdAt,
       })
       .from(expensePayments)
       .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
       .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
-      .where(eq(expenses.defaultWalletId, walletId));
+      .where(eq(expensePayments.sourceWalletId, walletId));
 
     res.json({
       walletId,
@@ -264,6 +267,7 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
         incomeId: incomeEntries.incomeId,
         incomeName: incomes.name,
         categoryName: incomeCategories.name,
+        destinationWalletId: incomeEntries.destinationWalletId,
         amount: incomeEntries.amount,
         expectedDate: incomeEntries.expectedDate,
         receivedDate: incomeEntries.receivedDate,
@@ -282,15 +286,17 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
         expenseId: expensePayments.expenseId,
         expenseName: expenses.name,
         categoryName: expenseCategories.name,
+        sourceWalletId: expensePayments.sourceWalletId,
         amount: expensePayments.amount,
-        paymentDate: expensePayments.paidDate,
+        dueDate: expensePayments.dueDate,
+        paidDate: expensePayments.paidDate,
         notes: expensePayments.notes,
         createdAt: expensePayments.createdAt,
       })
       .from(expensePayments)
       .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
       .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
-      .where(eq(expenses.defaultWalletId, walletId));
+      .where(eq(expensePayments.sourceWalletId, walletId));
 
     // Combine and sort by date
     const allTransactions = [...incomeData, ...expenseData].sort(

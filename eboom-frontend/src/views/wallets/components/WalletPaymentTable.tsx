@@ -19,23 +19,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
-
-interface WalletPayment {
-  id: number;
-  expenseId: number;
-  sourceWalletId: number;
-  amount: string;
-  dueDate: string | null;
-  paidDate: string | null;
-  notes: string | null;
-  createdAt: string;
-}
+import type { WalletPayment } from "../utils/utils";
 
 interface WalletPaymentsTableProps {
   walletId: number;
+  walletName?: string;
   currencySymbol?: string;
 }
 
@@ -80,9 +72,11 @@ function sortPayments(payments: WalletPayment[]): WalletPayment[] {
 
 export function WalletPaymentsTable({
   walletId,
+  walletName,
   currencySymbol,
 }: WalletPaymentsTableProps) {
-  const {payments: paymentsRes, isLoading, isError} = useWalletDetail(walletId);
+  const [createOpen, setCreateOpen] = useState(false);
+  const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
   const payments = useMemo(
     () => sortPayments(paymentsRes ?? []),
@@ -123,20 +117,27 @@ export function WalletPaymentsTable({
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 lg:px-6 pb-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Expense Payments</h2>
-          <p className="text-muted-foreground text-sm">
-            Outgoing transactions from this wallet
-          </p>
+    <>
+      <div className="flex flex-col gap-4 px-4 lg:px-6 pb-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Expense Payments</h2>
+            <p className="text-muted-foreground text-sm">
+              Outgoing transactions from this wallet
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {payments.length > 0 && (
+              <p className="text-muted-foreground hidden text-sm tabular-nums sm:block">
+                {payments.length} {payments.length === 1 ? "payment" : "payments"}
+              </p>
+            )}
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Payment
+            </Button>
+          </div>
         </div>
-        {payments.length > 0 && (
-          <p className="text-muted-foreground hidden text-sm tabular-nums sm:block">
-            {payments.length} {payments.length === 1 ? "payment" : "payments"}
-          </p>
-        )}
-      </div>
 
       <div className="overflow-hidden rounded-lg border">
         <Table>
@@ -156,7 +157,7 @@ export function WalletPaymentsTable({
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <p className="text-muted-foreground">
-                    No expense payments yet. Create a new expense to track outgoing payments.
+                    No expense payments yet. Create a payment to record outgoing funds.
                   </p>
                 </TableCell>
               </TableRow>
@@ -169,7 +170,12 @@ export function WalletPaymentsTable({
                       {formatAmount(payment.amount, currencySymbol)}
                     </TableCell>
                     <TableCell>
-                      <span>Expense #{payment.expenseId}</span>
+                      <div className="flex flex-col">
+                        <span>{payment.expenseName ?? `Expense #${payment.expenseId}`}</span>
+                        {payment.categoryName && (
+                          <span className="text-muted-foreground text-xs">{payment.categoryName}</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(payment.dueDate)}
@@ -226,6 +232,15 @@ export function WalletPaymentsTable({
           )}
         </Table>
       </div>
-    </div>
+      </div>
+
+      <NewExpensePaymentModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        fixedSourceWalletId={walletId}
+        walletName={walletName}
+        extraInvalidateKeys={[["wallet-payments", walletId], ["wallet", walletId]]}
+      />
+    </>
   );
 }
