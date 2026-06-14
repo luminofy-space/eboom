@@ -4,6 +4,7 @@ import i18n from "./index";
 const LOCALE_MAP: Record<string, string> = {
   en: "en-US",
   de: "de-DE",
+  fa: "fa-IR",
   cs: "cs-CZ",
 };
 

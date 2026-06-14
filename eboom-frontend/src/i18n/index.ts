@@ -13,7 +13,7 @@ if (!i18n.isInitialized) {
     .use(initReactI18next)
     .init({
       fallbackLng: DEFAULT_LANGUAGE,
-      supportedLngs: ["en"],
+      supportedLngs: ["en", "de", "fa"],
       ns: [
         "common",
         "auth",

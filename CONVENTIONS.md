@@ -199,7 +199,7 @@ For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 - **Shared strings:** Put reusable labels (`Add`, `Cancel`, `Delete`) in `common.json`
 - **Formatting:** Use `formatMoney` / `formatAmount` / `formatRelativeEdit` from [`src/i18n/formatters.ts`](eboom-frontend/src/i18n/formatters.ts) instead of hardcoded `Intl.NumberFormat("en-US", ...)`
 - **Language selector:** `LanguageSwitcher` in the sidebar account menu; preference stored in localStorage (`eboom-language`)
-- **Adding locales:** Mirror the `en/` JSON structure under a new folder, extend `SUPPORTED_LANGUAGES` in [`src/i18n/languages.ts`](eboom-frontend/src/i18n/languages.ts)
+- **Adding locales:** Mirror the `en/` JSON structure under a new folder (e.g. `de/`, `fa/`), extend `SUPPORTED_LANGUAGES` in [`src/i18n/languages.ts`](eboom-frontend/src/i18n/languages.ts), and add the locale to `supportedLngs` in `index.ts`. RTL languages (currently `fa`) set `document.documentElement.dir` automatically.
 
 ## Environment and Security
 

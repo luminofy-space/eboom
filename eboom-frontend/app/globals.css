@@ -134,3 +134,7 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+[dir="rtl"] body {
+  font-family: var(--font-geist-sans), system-ui, "Segoe UI", Tahoma, sans-serif;
+}

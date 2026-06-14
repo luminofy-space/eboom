@@ -1,0 +1,26 @@
+{
+  "dashboard": "Dashboard",
+  "search": {
+    "placeholder": "Suchen..."
+  },
+  "groups": {
+    "management": "Verwaltung",
+    "explore": "Entdecken"
+  },
+  "routes": {
+    "incomes": "Einnahmen",
+    "wallets": "Wallets",
+    "expenses": "Ausgaben",
+    "whiteboard": "Whiteboard",
+    "budgetPlanning": "Budget & Planung",
+    "wishList": "Wunschliste",
+    "aiInsights": "KI-Einblicke"
+  },
+  "badges": {
+    "soon": "Bald"
+  },
+  "account": {
+    "language": "Sprache",
+    "logOut": "Abmelden"
+  }
+}

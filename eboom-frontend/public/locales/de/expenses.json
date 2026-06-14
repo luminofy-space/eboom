@@ -1,0 +1,144 @@
+{
+  "list": {
+    "empty": {
+      "title": "Ausgabe hinzufügen",
+      "description": "Verfolgen Sie Ihre Ausgaben und verwalten Sie Ihre Budgets."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "Neue Ausgabe hinzufügen",
+      "description": "Geben Sie die Details ein, um eine neue Ausgabe zu erfassen. Behalten Sie Ihre Ausgaben im Blick und halten Sie sich an Ihr Budget."
+    },
+    "edit": {
+      "title": "Ausgabe bearbeiten",
+      "description": "Aktualisieren Sie die Details Ihrer Ausgabe."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "z. B. Monatsmiete"
+      },
+      "expenseCategory": {
+        "label": "Ausgabenkategorie"
+      },
+      "currency": {
+        "label": "Währung"
+      },
+      "defaultWallet": {
+        "label": "Standard-Wallet (optional)",
+        "placeholder": "Standard-Wallet auswählen"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Optionale Notizen zu dieser Ausgabe"
+      },
+      "photo": {
+        "label": "Foto"
+      },
+      "recurring": {
+        "label": "Wiederkehrend"
+      }
+    },
+    "submit": {
+      "create": "Ausgabe erstellen",
+      "edit": "Änderungen speichern"
+    }
+  },
+  "paymentModal": {
+    "title": "Zahlung erstellen",
+    "description": {
+      "forExpense": "Erfassen Sie eine Zahlung für {{expenseName}}.",
+      "fromWallet": "Erfassen Sie ausgehende Mittel aus {{walletName}}.",
+      "default": "Erfassen Sie eine Zahlung für eine Ausgabe."
+    },
+    "fields": {
+      "expense": {
+        "label": "Ausgabe",
+        "placeholder": "Ausgabe auswählen",
+        "loading": "Ausgaben werden geladen..."
+      },
+      "amount": {
+        "label": "Betrag"
+      },
+      "sourceWallet": {
+        "label": "Quell-Wallet"
+      },
+      "dueDate": {
+        "label": "Fälligkeitsdatum"
+      },
+      "paidDate": {
+        "label": "Zahlungsdatum"
+      },
+      "notes": {
+        "label": "Notizen"
+      }
+    },
+    "empty": {
+      "noExpenses": "Keine Ausgaben gefunden."
+    },
+    "submit": "Zahlung erstellen",
+    "error": {
+      "required": "Ausgabe und Quell-Wallet sind erforderlich"
+    }
+  },
+  "paymentsTable": {
+    "title": "Zahlungen",
+    "subtitle": "Zahlungshistorie für {{expenseName}}",
+    "createPayment": "Zahlung erstellen",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Ausgabenzahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "wallet": "Wallet",
+      "due": "Fällig",
+      "paid": "Bezahlt",
+      "status": "Status",
+      "notes": "Notizen"
+    },
+    "empty": "Noch keine Zahlungen. Erfassen Sie eine Zahlung, um bezahlte Ausgaben zu verfolgen.",
+    "footer": {
+      "totalPaid": "Gesamt bezahlt"
+    }
+  },
+  "status": {
+    "paid": "Bezahlt",
+    "due": "Fällig",
+    "unpaid": "Unbezahlt"
+  },
+  "summaryCards": {
+    "totalPaid": {
+      "label": "Gesamt bezahlt",
+      "footerCount": "{{count}} bezahlte {{unit}}"
+    },
+    "unpaid": {
+      "label": "Unbezahlt",
+      "badge": "{{count}} offen",
+      "footerTitle": "Zahlung ausstehend",
+      "footerDescription": "Zahlungen ohne Zahlungsdatum"
+    },
+    "totalPayments": {
+      "label": "Zahlungen gesamt",
+      "badge": "{{paidCount}} / {{totalCount}} bezahlt",
+      "footerTitle": "Alle erfassten Zahlungen",
+      "footerDescription": "Einschließlich bezahlter und unbezahlter"
+    },
+    "averagePayment": {
+      "label": "Durchschnittliche Zahlung",
+      "badge": "Pro bezahlter Zahlung",
+      "footerTitle": "Basierend auf {{count}} {{unit}}",
+      "footerDescription": "Durchschnittsbetrag bezahlter Zahlungen"
+    }
+  },
+  "chart": {
+    "title": "Ausgaben im Zeitverlauf",
+    "description": {
+      "withData": "{{amount}} bezahlt & fällig für die {{timeRange}}",
+      "noData": "Keine Zahlungen in den {{timeRange}}"
+    },
+    "series": {
+      "paid": "Bezahlt",
+      "due": "Fällig"
+    }
+  }
+}

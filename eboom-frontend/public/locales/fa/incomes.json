@@ -1,0 +1,145 @@
+{
+  "list": {
+    "empty": {
+      "title": "افزودن درآمد",
+      "description": "منابع درآمد و دریافتی‌های خود را پیگیری کنید."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "افزودن درآمد جدید",
+      "description": "جزئیات زیر را وارد کنید تا درآمد خود را از منابع مختلف پیگیری کنید. امور مالی خود را منظم نگه دارید."
+    },
+    "edit": {
+      "title": "ویرایش درآمد",
+      "description": "جزئیات منبع درآمد خود را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "name": {
+        "label": "نام"
+      },
+      "currency": {
+        "label": "ارز"
+      },
+      "amount": {
+        "label": "مبلغ"
+      },
+      "incomeCategory": {
+        "label": "دسته‌بندی درآمد"
+      },
+      "defaultWallet": {
+        "label": "کیف پول پیش‌فرض (اختیاری)",
+        "placeholder": "انتخاب کیف پول پیش‌فرض"
+      },
+      "description": {
+        "label": "توضیحات"
+      },
+      "photo": {
+        "label": "عکس"
+      },
+      "recurring": {
+        "label": "تکرارشونده"
+      }
+    },
+    "submit": {
+      "create": "ایجاد درآمد",
+      "edit": "ذخیره تغییرات"
+    }
+  },
+  "entryModal": {
+    "title": "ایجاد ورودی",
+    "description": {
+      "forIncome": "ثبت پرداخت دریافت‌شده برای {{incomeName}}.",
+      "toWallet": "ثبت وجوه ورودی به {{walletName}}.",
+      "default": "ثبت پرداخت دریافت‌شده برای یک منبع درآمد."
+    },
+    "fields": {
+      "income": {
+        "label": "درآمد",
+        "placeholder": "انتخاب درآمد",
+        "loading": "در حال بارگذاری درآمدها..."
+      },
+      "amount": {
+        "label": "مبلغ"
+      },
+      "destinationWallet": {
+        "label": "کیف پول مقصد"
+      },
+      "expectedDate": {
+        "label": "تاریخ مورد انتظار"
+      },
+      "receivedDate": {
+        "label": "تاریخ دریافت"
+      },
+      "notes": {
+        "label": "یادداشت‌ها"
+      }
+    },
+    "empty": {
+      "noIncomes": "درآمدی یافت نشد."
+    },
+    "submit": "ایجاد ورودی",
+    "error": {
+      "required": "درآمد و کیف پول مقصد الزامی هستند"
+    }
+  },
+  "entriesTable": {
+    "title": "ورودی‌ها",
+    "subtitle": "سابقه پرداخت برای {{incomeName}}",
+    "createEntry": "ایجاد ورودی",
+    "count": "{{count}} {{unit}}",
+    "loadError": "بارگذاری ورودی‌های درآمد ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "wallet": "کیف پول",
+      "expected": "مورد انتظار",
+      "received": "دریافت‌شده",
+      "status": "وضعیت",
+      "notes": "یادداشت‌ها"
+    },
+    "empty": "هنوز ورودی‌ای ثبت نشده. برای پیگیری درآمد دریافت‌شده، یک پرداخت ثبت کنید.",
+    "footer": {
+      "totalReceived": "مجموع دریافت‌شده"
+    }
+  },
+  "status": {
+    "received": "دریافت‌شده",
+    "expected": "مورد انتظار",
+    "pending": "در انتظار"
+  },
+  "summaryCards": {
+    "totalReceived": {
+      "label": "مجموع دریافت‌شده",
+      "footerCount": "{{count}} {{unit}} دریافت‌شده"
+    },
+    "pending": {
+      "label": "در انتظار",
+      "badge": "{{count}} باز",
+      "footerTitle": "در انتظار دریافت",
+      "footerDescription": "ورودی‌های بدون تاریخ دریافت"
+    },
+    "totalEntries": {
+      "label": "کل ورودی‌ها",
+      "badge": "{{receivedCount}} / {{totalCount}} دریافت‌شده",
+      "footerTitle": "همه پرداخت‌های ثبت‌شده",
+      "footerDescription": "شامل دریافت‌شده و در انتظار"
+    },
+    "averagePayment": {
+      "label": "میانگین پرداخت",
+      "badge": "به ازای هر ورودی دریافت‌شده",
+      "footerTitle": "بر اساس {{count}} {{unit}}",
+      "footerDescription": "میانگین مبلغ در ورودی‌های دریافت‌شده"
+    }
+  },
+  "chart": {
+    "title": "درآمد در طول زمان",
+    "description": {
+      "withData": "{{amount}} دریافت‌شده و مورد انتظار برای {{timeRange}}",
+      "noData": "ورودی‌ای در {{timeRange}} وجود ندارد"
+    },
+    "series": {
+      "received": "دریافت‌شده",
+      "expected": "مورد انتظار"
+    }
+  }
+}
