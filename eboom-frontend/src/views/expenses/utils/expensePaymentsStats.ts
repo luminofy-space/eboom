@@ -26,27 +26,30 @@ export function buildChartData(
   timeRange: string
 ): ChartDataPoint[] {
   const days = getTimeRangeDays(timeRange);
-  const startDate = dayjs().subtract(days, "day").startOf("day");
+  const startDate = dayjs().subtract(days, "day");
+  const map = new Map<string, ChartDataPoint>();
 
-  const dateMap = new Map<string, ChartDataPoint>();
-
-  const addToMap = (dateStr: string, field: "paid" | "due", amount: number) => {
-    if (dayjs(dateStr).isBefore(startDate)) return;
-    const existing = dateMap.get(dateStr) ?? { date: dateStr, paid: 0, due: 0 };
-    existing[field] += amount;
-    dateMap.set(dateStr, existing);
-  };
+  for (let i = 0; i <= days; i++) {
+    const date = startDate.add(i, "day").format("YYYY-MM-DD");
+    map.set(date, { date, paid: 0, due: 0 });
+  }
 
   for (const payment of payments) {
     const amount = parseFloat(payment.amount) || 0;
     if (payment.paidDate) {
-      addToMap(dayjs(payment.paidDate).format("YYYY-MM-DD"), "paid", amount);
+      const date = dayjs(payment.paidDate).format("YYYY-MM-DD");
+      const existing = map.get(date);
+      if (existing) existing.paid += amount;
     } else if (payment.dueDate) {
-      addToMap(dayjs(payment.dueDate).format("YYYY-MM-DD"), "due", amount);
+      const date = dayjs(payment.dueDate).format("YYYY-MM-DD");
+      const existing = map.get(date);
+      if (existing) existing.due += amount;
     }
   }
 
-  return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 }
 
 export interface ExpenseStats {

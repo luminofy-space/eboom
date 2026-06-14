@@ -33,7 +33,6 @@ import type { IncomeEntry } from "./IncomeEntriesTable";
 import {
   buildChartData,
   formatMoney,
-  getTimeRangeDays,
 } from "../utils/incomeEntriesStats";
 
 const chartConfig = {
@@ -110,7 +109,7 @@ export function IncomeEntriesChart({
         <CardTitle>Income Over Time</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            {filteredData.length > 0
+            {rangeTotal > 0
               ? `${formatMoney(rangeTotal, currencySymbol)} received & expected for the ${timeRangeLabel}`
               : `No entries in the ${timeRangeLabel}`}
           </span>
@@ -151,18 +150,11 @@ export function IncomeEntriesChart({
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {filteredData.length === 0 ? (
-          <div className="flex aspect-auto h-[250px] w-full items-center justify-center rounded-lg border border-dashed">
-            <p className="text-muted-foreground text-sm">
-              No entries in the {getTimeRangeDays(timeRange)}-day window
-            </p>
-          </div>
-        ) : (
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <AreaChart data={filteredData}>
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[250px] w-full"
+        >
+          <AreaChart data={filteredData}>
               <defs>
                 <linearGradient id={fillReceivedId} x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -242,7 +234,6 @@ export function IncomeEntriesChart({
               />
             </AreaChart>
           </ChartContainer>
-        )}
       </CardContent>
     </Card>
   );

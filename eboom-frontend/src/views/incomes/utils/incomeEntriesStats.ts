@@ -26,35 +26,30 @@ export function buildChartData(
   timeRange: string
 ): ChartDataPoint[] {
   const days = getTimeRangeDays(timeRange);
-  const startDate = dayjs().subtract(days, "day").startOf("day");
+  const startDate = dayjs().subtract(days, "day");
+  const map = new Map<string, ChartDataPoint>();
 
-  const dateMap = new Map<string, ChartDataPoint>();
-
-  const addToMap = (
-    dateStr: string,
-    field: "received" | "expected",
-    amount: number
-  ) => {
-    if (dayjs(dateStr).isBefore(startDate)) return;
-    const existing = dateMap.get(dateStr) ?? {
-      date: dateStr,
-      received: 0,
-      expected: 0,
-    };
-    existing[field] += amount;
-    dateMap.set(dateStr, existing);
-  };
+  for (let i = 0; i <= days; i++) {
+    const date = startDate.add(i, "day").format("YYYY-MM-DD");
+    map.set(date, { date, received: 0, expected: 0 });
+  }
 
   for (const entry of entries) {
     const amount = parseFloat(entry.amount) || 0;
     if (entry.receivedDate) {
-      addToMap(dayjs(entry.receivedDate).format("YYYY-MM-DD"), "received", amount);
+      const date = dayjs(entry.receivedDate).format("YYYY-MM-DD");
+      const existing = map.get(date);
+      if (existing) existing.received += amount;
     } else if (entry.expectedDate) {
-      addToMap(dayjs(entry.expectedDate).format("YYYY-MM-DD"), "expected", amount);
+      const date = dayjs(entry.expectedDate).format("YYYY-MM-DD");
+      const existing = map.get(date);
+      if (existing) existing.expected += amount;
     }
   }
 
-  return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 }
 
 export interface IncomeStats {

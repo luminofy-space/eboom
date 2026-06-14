@@ -33,7 +33,6 @@ import type { ExpensePayment } from "./ExpensePaymentsTable";
 import {
   buildChartData,
   formatMoney,
-  getTimeRangeDays,
 } from "../utils/expensePaymentsStats";
 
 const chartConfig = {
@@ -107,7 +106,7 @@ export function ExpensePaymentsChart({
         <CardTitle>Expenses Over Time</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            {filteredData.length > 0
+            {rangeTotal > 0
               ? `${formatMoney(rangeTotal, currencySymbol)} paid & due for the ${timeRangeLabel}`
               : `No payments in the ${timeRangeLabel}`}
           </span>
@@ -148,18 +147,11 @@ export function ExpensePaymentsChart({
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {filteredData.length === 0 ? (
-          <div className="flex aspect-auto h-[250px] w-full items-center justify-center rounded-lg border border-dashed">
-            <p className="text-muted-foreground text-sm">
-              No payments in the {getTimeRangeDays(timeRange)}-day window
-            </p>
-          </div>
-        ) : (
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <AreaChart data={filteredData}>
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[250px] w-full"
+        >
+          <AreaChart data={filteredData}>
               <defs>
                 <linearGradient id={fillPaidId} x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -239,7 +231,6 @@ export function ExpensePaymentsChart({
               />
             </AreaChart>
           </ChartContainer>
-        )}
       </CardContent>
     </Card>
   );

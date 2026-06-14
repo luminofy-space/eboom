@@ -32,7 +32,6 @@ import {
 import {
   buildChartData,
   formatMoney,
-  getTimeRangeDays,
 } from "../utils/utils";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 
@@ -61,24 +60,16 @@ export function WalletTransactionChart({
 
   const { entries, payments, currencySymbol, isLoading } = useWalletDetail(walletId);
 
-  console.log(entries)
-
-  console.log(payments)
-
   React.useEffect(() => {
     if (isMobile) {
       setTimeRange("30d");
     }
   }, [isMobile]);
 
-  console.log(entries)
-
   const filteredData = React.useMemo(
     () => buildChartData(entries, payments, timeRange),
     [entries, payments, timeRange]
   );
-
-  console.log(filteredData)
 
   const rangeTotal = React.useMemo(
     () =>
@@ -116,7 +107,7 @@ export function WalletTransactionChart({
         <CardTitle>Transactions Over Time</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            {filteredData.length > 0
+            {rangeTotal > 0
               ? `${formatMoney(rangeTotal, currencySymbol)} incoming & outgoing for the ${timeRangeLabel}`
               : `No transactions in the ${timeRangeLabel}`}
           </span>
@@ -157,18 +148,11 @@ export function WalletTransactionChart({
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {filteredData.length === 0 ? (
-          <div className="flex aspect-auto h-[250px] w-full items-center justify-center rounded-lg border border-dashed">
-            <p className="text-muted-foreground text-sm">
-              No transactions in the {getTimeRangeDays(timeRange)}-day window
-            </p>
-          </div>
-        ) : (
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <AreaChart data={filteredData}>
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[250px] w-full"
+        >
+          <AreaChart data={filteredData}>
               <defs>
                 <linearGradient id={fillEntriesId} x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -248,7 +232,6 @@ export function WalletTransactionChart({
               />
             </AreaChart>
           </ChartContainer>
-        )}
       </CardContent>
     </Card>
   );
