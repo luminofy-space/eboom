@@ -189,6 +189,18 @@ For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 - **Toasts:** Prefer `sonner` (wired in the app layout). Do not add another toast library.
 - **Themes:** Dark mode supported via `next-themes`
 
+## Internationalization (i18n)
+
+- **Stack:** `i18next` + `react-i18next` with JSON files in [`public/locales/{lng}/`](eboom-frontend/public/locales/)
+- **Config:** [`src/i18n/index.ts`](eboom-frontend/src/i18n/index.ts), wrapped by `I18nProvider` in the root layout
+- **Namespaces:** One JSON file per feature area — `common`, `auth`, `navigation`, `expenses`, `incomes`, `wallets`, `profile`, `canvas`
+- **Usage:** `const { t } = useTranslation("expenses")` then `t("modal.create.title")` — never hardcode user-facing strings in JSX
+- **Key naming:** Nested camelCase objects grouped by section (e.g. `actions.add`, `status.paid`); use `{{variable}}` for interpolation
+- **Shared strings:** Put reusable labels (`Add`, `Cancel`, `Delete`) in `common.json`
+- **Formatting:** Use `formatMoney` / `formatAmount` / `formatRelativeEdit` from [`src/i18n/formatters.ts`](eboom-frontend/src/i18n/formatters.ts) instead of hardcoded `Intl.NumberFormat("en-US", ...)`
+- **Language selector:** `LanguageSwitcher` in the sidebar account menu; preference stored in localStorage (`eboom-language`)
+- **Adding locales:** Mirror the `en/` JSON structure under a new folder, extend `SUPPORTED_LANGUAGES` in [`src/i18n/languages.ts`](eboom-frontend/src/i18n/languages.ts)
+
 ## Environment and Security
 
 - Never commit `.env` files
@@ -205,7 +217,7 @@ Do not extend these patterns; match nearby code when touching related areas:
 | Mixed request body casing | Signup uses `first_name`; some updates use `entityId` — follow the existing route you extend |
 | Trailing slashes | Auth routes use trailing slashes (`/api/auth/login/`); most others do not — follow `urls.ts` per route group |
 | Duplicate sidebar components | Use `src/components/layout/app-sidebar.tsx`, not `components/layout/SideBar.tsx` |
-| Unused dependencies | `joi`, `roleAuth` middleware, and `i18next` are installed but not wired — do not build on them until integrated |
+| Unused dependencies | `joi` and `roleAuth` middleware are installed but not wired — do not build on them until integrated |
 | Toast libraries | Both `sonner` and `react-toastify` exist — use `sonner` for new code |
 | Redux persist whitelist | Store references `auth` reducer that does not exist — do not add auth to Redux |
 

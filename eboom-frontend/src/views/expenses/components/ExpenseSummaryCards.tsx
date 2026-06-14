@@ -17,6 +17,7 @@ import { Typography, typographyVariants } from "@/components/ui/typography";
 import { useMemo } from "react";
 import type { ExpensePayment } from "./ExpensePaymentsTable";
 import { computeExpenseStats, formatMoney } from "../utils/expensePaymentsStats";
+import { useTranslation } from "react-i18next";
 
 interface ExpenseSummaryCardsProps {
   payments: ExpensePayment[];
@@ -25,10 +26,12 @@ interface ExpenseSummaryCardsProps {
 }
 
 function TrendBadge({ change }: { change: number | null }) {
+  const { t: tc } = useTranslation("common");
+
   if (change === null) {
     return (
       <Badge variant="outline" className="text-muted-foreground">
-        No prior data
+        {tc("trends.noPriorData")}
       </Badge>
     );
   }
@@ -50,6 +53,8 @@ export function ExpenseSummaryCards({
   currencySymbol,
   isLoading,
 }: ExpenseSummaryCardsProps) {
+  const { t } = useTranslation("expenses");
+  const { t: tc } = useTranslation("common");
   const stats = useMemo(() => computeExpenseStats(payments), [payments]);
 
   if (isLoading) {
@@ -71,13 +76,14 @@ export function ExpenseSummaryCards({
 
   const momChange = stats.monthOverMonthChange;
   const momIsUp = momChange !== null && momChange >= 0;
+  const paymentUnit = stats.paidCount === 1 ? tc("plurals.payment") : tc("plurals.payments");
 
   return (
     <Container>
       <Grid variant="stats" gap={4}>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Paid</CardDescription>
+          <CardDescription>{t("summaryCards.totalPaid.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalPaid, currencySymbol)}
           </CardTitle>
@@ -88,10 +94,10 @@ export function ExpenseSummaryCards({
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
             {momChange === null
-              ? "No month-over-month comparison yet"
+              ? tc("trends.noMonthOverMonth")
               : momIsUp
-                ? "Up from last month"
-                : "Down from last month"}
+                ? tc("trends.upFromLastMonth")
+                : tc("trends.downFromLastMonth")}
             {momChange !== null &&
               (momIsUp ? (
                 <IconTrendingUp className="size-4" />
@@ -100,71 +106,78 @@ export function ExpenseSummaryCards({
               ))}
           </Typography>
           <Typography variant="muted">
-            {stats.paidCount} paid{" "}
-            {stats.paidCount === 1 ? "payment" : "payments"}
+            {t("summaryCards.totalPaid.footerCount", {
+              count: stats.paidCount,
+              unit: paymentUnit,
+            })}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Unpaid</CardDescription>
+          <CardDescription>{t("summaryCards.unpaid.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalUnpaid, currencySymbol)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">{stats.unpaidCount} open</Badge>
+            <Badge variant="outline">{t("summaryCards.unpaid.badge", { count: stats.unpaidCount })}</Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
-            Awaiting payment
+            {t("summaryCards.unpaid.footerTitle")}
           </Typography>
           <Typography variant="muted">
-            Payments without a paid date
+            {t("summaryCards.unpaid.footerDescription")}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Payments</CardDescription>
+          <CardDescription>{t("summaryCards.totalPayments.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {stats.paymentCount}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              {stats.paidCount} / {stats.paymentCount} paid
+              {t("summaryCards.totalPayments.badge", {
+                paidCount: stats.paidCount,
+                totalCount: stats.paymentCount,
+              })}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
-            All recorded payments
+            {t("summaryCards.totalPayments.footerTitle")}
           </Typography>
           <Typography variant="muted">
-            Includes paid and unpaid
+            {t("summaryCards.totalPayments.footerDescription")}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Average Payment</CardDescription>
+          <CardDescription>{t("summaryCards.averagePayment.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.averagePaid, currencySymbol)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">Per paid payment</Badge>
+            <Badge variant="outline">{t("summaryCards.averagePayment.badge")}</Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
-            Based on {stats.paidCount}{" "}
-            {stats.paidCount === 1 ? "payment" : "payments"}
+            {t("summaryCards.averagePayment.footerTitle", {
+              count: stats.paidCount,
+              unit: paymentUnit,
+            })}
           </Typography>
           <Typography variant="muted">
-            Mean amount across paid payments
+            {t("summaryCards.averagePayment.footerDescription")}
           </Typography>
         </CardFooter>
       </Card>

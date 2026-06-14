@@ -24,55 +24,57 @@ import {
 import { CanvasSwitcher } from "../canvas/CanvasSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "../AuthProvider";
-
-const data = {
-  navMain: [
-    {
-      title: "Incomes",
-      url: "/incomes",
-      icon: BanknoteArrowUp,
-    },
-    {
-      title: "Wallets",
-      url: "/wallets",
-      icon: Wallet,
-    },
-    {
-      title: "Expenses",
-      url: "/expenses",
-      icon: BanknoteArrowDown,
-    },
-  ],
-  navUpcoming: [
-    {
-      title: "Whiteboard",
-      url: "/whiteboard",
-      icon: Presentation,
-      badge: "Soon",
-    },
-    {
-      title: "Budget & Planning",
-      url: "/budget-planning",
-      icon: PiggyBank,
-      badge: "Soon",
-    },
-    {
-      title: "Wish List",
-      url: "/wish-list",
-      icon: ShoppingBag,
-      badge: "Soon",
-    },
-    {
-      title: "AI Insights",
-      url: "/ai-insights",
-      icon: BrainCircuit,
-      badge: "Soon",
-    },
-  ],
-};
+import { useTranslation } from "react-i18next";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, userLoading: isLoading } = useAuthContext();
+  const { t } = useTranslation("navigation");
+
+  const data = {
+    navMain: [
+      {
+        title: t("routes.incomes"),
+        url: "/incomes",
+        icon: BanknoteArrowUp,
+      },
+      {
+        title: t("routes.wallets"),
+        url: "/wallets",
+        icon: Wallet,
+      },
+      {
+        title: t("routes.expenses"),
+        url: "/expenses",
+        icon: BanknoteArrowDown,
+      },
+    ],
+    navUpcoming: [
+      {
+        title: t("routes.whiteboard"),
+        url: "/whiteboard",
+        icon: Presentation,
+        badge: t("badges.soon"),
+      },
+      {
+        title: t("routes.budgetPlanning"),
+        url: "/budget-planning",
+        icon: PiggyBank,
+        badge: t("badges.soon"),
+      },
+      {
+        title: t("routes.wishList"),
+        url: "/wish-list",
+        icon: ShoppingBag,
+        badge: t("badges.soon"),
+      },
+      {
+        title: t("routes.aiInsights"),
+        url: "/ai-insights",
+        icon: BrainCircuit,
+        badge: t("badges.soon"),
+      },
+    ],
+  };
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

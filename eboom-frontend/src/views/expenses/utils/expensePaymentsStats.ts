@@ -1,18 +1,13 @@
 import dayjs from "dayjs";
 import type { ExpensePayment } from "../components/ExpensePaymentsTable";
+import { formatMoney } from "@/src/i18n/formatters";
+
+export { formatMoney };
 
 export interface ChartDataPoint {
   date: string;
   paid: number;
   due: number;
-}
-
-export function formatMoney(amount: number, symbol?: string): string {
-  const formatted = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-  return symbol ? `${symbol}${formatted}` : formatted;
 }
 
 export function getTimeRangeDays(timeRange: string): number {

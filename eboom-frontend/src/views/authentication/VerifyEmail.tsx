@@ -11,24 +11,29 @@ import {
 import { Button } from "@/components/ui/button";
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
+import { useTranslation } from "react-i18next";
 
 type VerifyEmailResponse = {
   message: string;
 };
 
-function getVerifyErrorMessage(error: unknown): string {
+function getVerifyErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
   if (error && typeof error === "object" && "response" in error) {
     const data = (error as { response?: { data?: { error?: string } } }).response
       ?.data;
-    return data?.error || "Verification failed.";
+    return data?.error || fallback;
   }
-  return "Verification failed.";
+  return fallback;
 }
 
 export function VerifyEmail() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
+  const { t } = useTranslation("auth");
 
   const { data, isLoading, isError, error } = useQueryApi<VerifyEmailResponse>(
     API_ROUTES.AUTH_VERIFY_EMAIL,
@@ -45,12 +50,12 @@ export function VerifyEmail() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Verification Failed</CardTitle>
-          <CardDescription>Verification token is missing.</CardDescription>
+          <CardTitle>{t("verifyEmail.missingToken.title")}</CardTitle>
+          <CardDescription>{t("verifyEmail.missingToken.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button className="w-full" onClick={() => router.push("/signup")}>
-            Back to Signup
+            {t("verifyEmail.missingToken.backToSignup")}
           </Button>
         </CardContent>
       </Card>
@@ -61,8 +66,8 @@ export function VerifyEmail() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Verifying Email</CardTitle>
-          <CardDescription>Verifying your email...</CardDescription>
+          <CardTitle>{t("verifyEmail.loading.title")}</CardTitle>
+          <CardDescription>{t("verifyEmail.loading.description")}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -72,12 +77,14 @@ export function VerifyEmail() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Verification Failed</CardTitle>
-          <CardDescription>{getVerifyErrorMessage(error)}</CardDescription>
+          <CardTitle>{t("verifyEmail.error.title")}</CardTitle>
+          <CardDescription>
+            {getVerifyErrorMessage(error, t("verifyEmail.error.default"))}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Button className="w-full" onClick={() => router.push("/signup")}>
-            Back to Signup
+            {t("verifyEmail.error.backToSignup")}
           </Button>
         </CardContent>
       </Card>
@@ -87,14 +94,14 @@ export function VerifyEmail() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Email Verified</CardTitle>
+        <CardTitle>{t("verifyEmail.success.title")}</CardTitle>
         <CardDescription>
-          {data?.message || "Email verified successfully."}
+          {data?.message || t("verifyEmail.success.default")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button className="w-full" onClick={() => router.push("/login")}>
-          Go to Login
+          {t("verifyEmail.success.goToLogin")}
         </Button>
       </CardContent>
     </Card>

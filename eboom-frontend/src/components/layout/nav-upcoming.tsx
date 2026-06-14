@@ -10,6 +10,7 @@ import {
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export function NavUpcoming({
   items,
@@ -23,6 +24,7 @@ export function NavUpcoming({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation("navigation");
 
   const isActive = (url: string) => {
     return pathname === url || pathname.startsWith(url);
@@ -30,7 +32,7 @@ export function NavUpcoming({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Explore</SidebarGroupLabel>
+      <SidebarGroupLabel>{t("groups.explore")}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>

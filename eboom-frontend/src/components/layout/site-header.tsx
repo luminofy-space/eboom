@@ -26,20 +26,21 @@ import {
   hideSearch,
 } from "@/src/redux/searchSlice";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const LIST_PAGES = ["/incomes", "/wallets", "/expenses"];
 
-const ROUTE_LABELS: Record<string, { label: string; listUrl: string }> = {
-  incomes: { label: "Incomes", listUrl: "/incomes" },
-  income: { label: "Incomes", listUrl: "/incomes" },
-  wallets: { label: "Wallets", listUrl: "/wallets" },
-  wallet: { label: "Wallets", listUrl: "/wallets" },
-  expenses: { label: "Expenses", listUrl: "/expenses" },
-  expense: { label: "Expenses", listUrl: "/expenses" },
-  whiteboard: { label: "Whiteboard", listUrl: "/whiteboard" },
-  "budget-planning": { label: "Budget & Planning", listUrl: "/budget-planning" },
-  "wish-list": { label: "Wish List", listUrl: "/wish-list" },
-  "ai-insights": { label: "AI Insights", listUrl: "/ai-insights" },
+const ROUTE_KEYS: Record<string, { labelKey: string; listUrl: string }> = {
+  incomes: { labelKey: "routes.incomes", listUrl: "/incomes" },
+  income: { labelKey: "routes.incomes", listUrl: "/incomes" },
+  wallets: { labelKey: "routes.wallets", listUrl: "/wallets" },
+  wallet: { labelKey: "routes.wallets", listUrl: "/wallets" },
+  expenses: { labelKey: "routes.expenses", listUrl: "/expenses" },
+  expense: { labelKey: "routes.expenses", listUrl: "/expenses" },
+  whiteboard: { labelKey: "routes.whiteboard", listUrl: "/whiteboard" },
+  "budget-planning": { labelKey: "routes.budgetPlanning", listUrl: "/budget-planning" },
+  "wish-list": { labelKey: "routes.wishList", listUrl: "/wish-list" },
+  "ai-insights": { labelKey: "routes.aiInsights", listUrl: "/ai-insights" },
 };
 
 interface BreadcrumbSegment {
@@ -47,33 +48,36 @@ interface BreadcrumbSegment {
   href?: string;
 }
 
-function buildBreadcrumbs(pathname: string, canvasName: string | null): BreadcrumbSegment[] {
+function buildBreadcrumbs(
+  pathname: string,
+  canvasName: string | null,
+  dashboardLabel: string,
+  t: (key: string) => string
+): BreadcrumbSegment[] {
   const segments = pathname.split("/").filter(Boolean);
   const crumbs: BreadcrumbSegment[] = [];
 
-  // First crumb: canvas name
   if (segments.length === 0) {
-    crumbs.push({ label: canvasName || "Dashboard" });
+    crumbs.push({ label: canvasName || dashboardLabel });
     return crumbs;
   }
 
-  crumbs.push({ label: canvasName || "Dashboard", href: "/" });
+  crumbs.push({ label: canvasName || dashboardLabel, href: "/" });
 
-  // Section crumb (incomes, wallets, expenses, income, wallet, expense)
   const section = segments[0];
-  const route = ROUTE_LABELS[section];
+  const route = ROUTE_KEYS[section];
 
   if (!route) {
     crumbs.push({ label: section });
     return crumbs;
   }
 
+  const routeLabel = t(route.labelKey);
+
   if (segments.length === 1) {
-    // List page — section is current page
-    crumbs.push({ label: route.label });
+    crumbs.push({ label: routeLabel });
   } else {
-    // Detail page — section links to list, ID is current page
-    crumbs.push({ label: route.label, href: route.listUrl });
+    crumbs.push({ label: routeLabel, href: route.listUrl });
     crumbs.push({ label: `#${segments[1]}` });
   }
 
@@ -84,7 +88,13 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { canvases, canvas } = useCanvas();
   const activeCanvas = canvases.find((c) => c.id === canvas);
-  const crumbs = buildBreadcrumbs(pathname, activeCanvas?.name ?? null);
+  const { t } = useTranslation("navigation");
+  const crumbs = buildBreadcrumbs(
+    pathname,
+    activeCanvas?.name ?? null,
+    t("dashboard"),
+    t
+  );
 
   const dispatch = useAppDispatch();
   const searchQuery = useAppSelector(selectSearchQuery);
@@ -143,7 +153,7 @@ export function SiteHeader() {
           >
             <Input
               ref={inputRef}
-              placeholder="Search..."
+              placeholder={t("search.placeholder")}
               value={searchQuery}
               onChange={(e) => dispatch(setSearchQuery(e.target.value))}
               className="h-8"

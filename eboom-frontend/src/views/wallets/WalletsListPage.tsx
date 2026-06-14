@@ -27,10 +27,13 @@ import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import { useTranslation } from "react-i18next";
 
 const hasWindow = typeof window !== "undefined";
 
 export default function WalletsListPage() {
+  const { t } = useTranslation("wallets");
+  const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
@@ -84,13 +87,13 @@ export default function WalletsListPage() {
         <Stack className="flex-1" align="center" justify="center">
           <Card className="w-[375px] py-8">
             <Stack align="center" gap={3}>
-              <Typography variant="title" className="text-center">Add Wallet</Typography>
+              <Typography variant="title" className="text-center">{t("list.empty.title")}</Typography>
               <Typography variant="muted-sm" className="text-center">
-                Create wallets to manage your assets.
+                {t("list.empty.description")}
               </Typography>
               <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openWalletCreateModal())}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add
+                {tc("actions.add")}
               </Button>
             </Stack>
           </Card>
@@ -103,7 +106,7 @@ export default function WalletsListPage() {
   if (items.length === 0 && searchQuery) {
     return (
       <Stack className="flex-1" align="center" justify="center">
-        <Typography variant="muted">No results found for &ldquo;{searchQuery}&rdquo;</Typography>
+        <Typography variant="muted">{tc("empty.noResults", { query: searchQuery })}</Typography>
       </Stack>
     );
   }

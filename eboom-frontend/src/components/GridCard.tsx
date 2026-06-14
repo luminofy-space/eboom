@@ -14,6 +14,7 @@ import {
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { formatRelativeEdit } from "@/src/utils/date";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface GridCardProps {
   href: string;
@@ -28,6 +29,7 @@ interface GridCardProps {
 export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, onDelete }: GridCardProps) {
   const hasActions = onEdit || onDelete;
   const [menuOpen, setMenuOpen] = useState(false);
+  const { t } = useTranslation("common");
 
   return (
     <Link href={href} className={cn("block group", className)}>
@@ -62,7 +64,7 @@ export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, 
                   }}
                 >
                   <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("actions.actions")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-36">
@@ -76,7 +78,7 @@ export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, 
                     }}
                   >
                     <Pencil className="h-4 w-4" />
-                    Edit
+                    {t("actions.edit")}
                   </DropdownMenuItem>
                 )}
                 {onEdit && onDelete && <DropdownMenuSeparator />}
@@ -91,7 +93,7 @@ export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, 
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete
+                    {t("actions.delete")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

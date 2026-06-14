@@ -8,6 +8,7 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export function NavMain({
   items,
@@ -20,6 +21,7 @@ export function NavMain({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation("navigation");
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
@@ -29,7 +31,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Management</SidebarGroupLabel>
+      <SidebarGroupLabel>{t("groups.management")}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuButton

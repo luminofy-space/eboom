@@ -24,6 +24,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ImageUploader from "@/src/views/profile/ImageUploader";
 import { useAuthContext } from "../AuthProvider";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 export function NavUser({
   user,
@@ -38,6 +40,7 @@ export function NavUser({
   const router = useRouter();
   const { signOut } = useAuthContext();
   const [imageModal, setImageModal] = useState(false);
+  const { t } = useTranslation("navigation");
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -84,28 +87,8 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <LanguageSwitcher />
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
             <DropdownMenuItem
               onClick={async () => {
                 await signOut();
@@ -113,7 +96,7 @@ export function NavUser({
               }}
             >
               <LogOut />
-              Log out
+              {t("account.logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

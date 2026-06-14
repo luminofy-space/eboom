@@ -27,6 +27,9 @@ import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletPayment } from "../utils/utils";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { formatAmount } from "@/src/i18n/formatters";
 
 interface WalletPaymentsTableProps {
   walletId: number;
@@ -34,35 +37,25 @@ interface WalletPaymentsTableProps {
   currencySymbol?: string;
 }
 
-function formatDate(date: string | null | undefined): string {
-  if (!date) return "—";
+function formatDate(date: string | null | undefined, emDash: string): string {
+  if (!date) return emDash;
   return dayjs(date).format("MMM D, YYYY");
 }
 
-function formatAmount(amount: string | number, symbol?: string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (Number.isNaN(num)) return "—";
-  const formatted = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8,
-  }).format(num);
-  return symbol ? `${symbol}${formatted}` : formatted;
-}
-
-function getPaymentStatus(payment: WalletPayment): {
+function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
   label: string;
   variant: "default" | "secondary" | "outline" | "destructive";
 } {
   if (payment.paidDate) {
-    return { label: "Paid", variant: "default" };
+    return { label: t("status.paid"), variant: "default" };
   }
   if (payment.dueDate && dayjs(payment.dueDate).isBefore(dayjs(), "day")) {
-    return { label: "Overdue", variant: "destructive" };
+    return { label: t("status.overdue"), variant: "destructive" };
   }
   if (payment.dueDate && dayjs(payment.dueDate).isAfter(dayjs(), "day")) {
-    return { label: "Due", variant: "secondary" };
+    return { label: t("status.due"), variant: "secondary" };
   }
-  return { label: "Pending", variant: "outline" };
+  return { label: t("status.pending"), variant: "outline" };
 }
 
 function sortPayments(payments: WalletPayment[]): WalletPayment[] {
@@ -78,6 +71,9 @@ export function WalletPaymentsTable({
   walletName,
   currencySymbol,
 }: WalletPaymentsTableProps) {
+  const { t } = useTranslation("wallets");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const [createOpen, setCreateOpen] = useState(false);
   const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
@@ -115,7 +111,7 @@ export function WalletPaymentsTable({
     return (
       <Container>
         <Typography variant="muted-sm">
-          Failed to load expense payments. Please try again.
+          {t("paymentsTable.loadError")}
         </Typography>
       </Container>
     );
@@ -127,20 +123,23 @@ export function WalletPaymentsTable({
         <Stack gap={4}>
         <Stack direction="row" align="center" justify="between" gap={4}>
           <div>
-            <Typography variant="heading">Expense Payments</Typography>
+            <Typography variant="heading">{t("paymentsTable.title")}</Typography>
             <Typography variant="muted-sm">
-              Outgoing transactions from this wallet
+              {t("paymentsTable.subtitle")}
             </Typography>
           </div>
           <Stack direction="row" align="center" gap={3}>
             {payments.length > 0 && (
               <Typography variant="count" className="hidden sm:block">
-                {payments.length} {payments.length === 1 ? "payment" : "payments"}
+                {t("paymentsTable.count", {
+                  count: payments.length,
+                  unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+                })}
               </Typography>
             )}
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
-              Create Payment
+              {t("paymentsTable.createPayment")}
             </Button>
           </Stack>
         </Stack>
@@ -149,12 +148,12 @@ export function WalletPaymentsTable({
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[140px]">Amount</TableHead>
-              <TableHead>Expense</TableHead>
-              <TableHead>Due</TableHead>
-              <TableHead>Paid</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Notes</TableHead>
+              <TableHead className="w-[140px]">{t("paymentsTable.headers.amount")}</TableHead>
+              <TableHead>{t("paymentsTable.headers.expense")}</TableHead>
+              <TableHead>{t("paymentsTable.headers.due")}</TableHead>
+              <TableHead>{t("paymentsTable.headers.paid")}</TableHead>
+              <TableHead>{t("paymentsTable.headers.status")}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("paymentsTable.headers.notes")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -163,31 +162,31 @@ export function WalletPaymentsTable({
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <p className="text-muted-foreground">
-                    No expense payments yet. Create a payment to record outgoing funds.
+                    {t("paymentsTable.empty")}
                   </p>
                 </TableCell>
               </TableRow>
             ) : (
               payments.map((payment) => {
-                const status = getPaymentStatus(payment);
+                const status = getPaymentStatus(payment, t);
                 return (
                   <TableRow key={payment.id}>
                     <TableCell className="font-medium tabular-nums">
-                      {formatAmount(payment.amount, currencySymbol)}
+                      {formatAmount(payment.amount, currencySymbol, emDash)}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span>{payment.expenseName ?? `Expense #${payment.expenseId}`}</span>
+                        <span>{payment.expenseName ?? t("paymentsTable.fallbackExpenseName", { expenseId: payment.expenseId })}</span>
                         {payment.categoryName && (
                           <Typography variant="caption">{payment.categoryName}</Typography>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.dueDate)}
+                      {formatDate(payment.dueDate, emDash)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.paidDate)}
+                      {formatDate(payment.paidDate, emDash)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
@@ -196,7 +195,7 @@ export function WalletPaymentsTable({
                       {payment.notes ? (
                         <span title={payment.notes}>{payment.notes}</span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">{emDash}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -208,13 +207,13 @@ export function WalletPaymentsTable({
                             className="text-muted-foreground size-8"
                           >
                             <MoreVertical className="size-4" />
-                            <span className="sr-only">Open menu</span>
+                            <span className="sr-only">{tc("actions.openMenu")}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem variant="destructive" disabled>
                             <Trash2 className="size-4" />
-                            Delete
+                            {tc("actions.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -228,10 +227,10 @@ export function WalletPaymentsTable({
             <TableFooter>
               <TableRow>
                 <TableCell className="font-semibold tabular-nums">
-                  {formatAmount(totalPaid, currencySymbol)}
+                  {formatAmount(totalPaid, currencySymbol, emDash)}
                 </TableCell>
                 <TableCell colSpan={6} className="text-muted-foreground">
-                  Total paid
+                  {t("paymentsTable.footer.totalPaid")}
                 </TableCell>
               </TableRow>
             </TableFooter>

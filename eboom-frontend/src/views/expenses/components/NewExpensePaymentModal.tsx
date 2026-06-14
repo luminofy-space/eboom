@@ -27,6 +27,7 @@ import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 interface PaymentFormData {
   expenseId: number | null;
@@ -69,6 +70,8 @@ export function NewExpensePaymentModal({
   walletName,
   extraInvalidateKeys = [],
 }: NewExpensePaymentModalProps) {
+  const { t } = useTranslation("expenses");
+  const { t: tc } = useTranslation("common");
   const queryClient = useQueryClient();
   const { canvas } = useCanvas();
   const showExpensePicker = expenseId === undefined;
@@ -138,7 +141,7 @@ export function NewExpensePaymentModal({
       const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
 
       if (!resolvedExpenseId || !resolvedWalletId) {
-        throw new Error("Expense and source wallet are required");
+        throw new Error(t("paymentModal.error.required"));
       }
 
       const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId)}`;
@@ -201,25 +204,25 @@ export function NewExpensePaymentModal({
   const effectiveWalletId = fixedSourceWalletId ?? sourceWalletId;
   const isValid = amount > 0 && !!effectiveExpenseId && !!effectiveWalletId;
 
+  const description = expenseName
+    ? t("paymentModal.description.forExpense", { expenseName })
+    : walletName
+      ? t("paymentModal.description.fromWallet", { walletName })
+      : t("paymentModal.description.default");
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>Create Payment</DialogTitle>
-            <DialogDescription>
-              {expenseName
-                ? `Record a payment made for ${expenseName}.`
-                : walletName
-                  ? `Record outgoing funds from ${walletName}.`
-                  : "Record a payment made for an expense."}
-            </DialogDescription>
+            <DialogTitle>{t("paymentModal.title")}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
             {showExpensePicker && (
               <Field>
-                <FieldLabel htmlFor="payment-expense">Expense</FieldLabel>
+                <FieldLabel htmlFor="payment-expense">{t("paymentModal.fields.expense.label")}</FieldLabel>
                 <Controller
                   name="expenseId"
                   control={control}
@@ -234,9 +237,9 @@ export function NewExpensePaymentModal({
                         field.onChange(val ? expenseLabelToId(val) : null)
                       }
                     >
-                      <ComboboxInput placeholder={isLoadingExpenses ? "Loading expenses..." : "Select an expense"} />
+                      <ComboboxInput placeholder={isLoadingExpenses ? t("paymentModal.fields.expense.loading") : t("paymentModal.fields.expense.placeholder")} />
                       <ComboboxContent className="z-[80]">
-                        <ComboboxEmpty>No expenses found.</ComboboxEmpty>
+                        <ComboboxEmpty>{t("paymentModal.empty.noExpenses")}</ComboboxEmpty>
                         <ComboboxCollection>
                           {(label) => (
                             <ComboboxItem key={label} value={label}>
@@ -252,20 +255,20 @@ export function NewExpensePaymentModal({
             )}
 
             <Field>
-              <FieldLabel htmlFor="payment-amount">Amount</FieldLabel>
+              <FieldLabel htmlFor="payment-amount">{t("paymentModal.fields.amount.label")}</FieldLabel>
               <Input
                 id="payment-amount"
                 type="number"
                 step="any"
                 min="0"
-                placeholder="0.00"
+                placeholder={tc("placeholders.amount")}
                 {...register("amount", { required: true, valueAsNumber: true, min: 0.01 })}
               />
             </Field>
 
             {showWalletPicker ? (
               <Field>
-                <FieldLabel htmlFor="payment-wallet">Source Wallet</FieldLabel>
+                <FieldLabel htmlFor="payment-wallet">{t("paymentModal.fields.sourceWallet.label")}</FieldLabel>
                 <Controller
                   name="sourceWalletId"
                   control={control}
@@ -280,9 +283,9 @@ export function NewExpensePaymentModal({
                         field.onChange(val ? walletLabelToId(val) : null)
                       }
                     >
-                      <ComboboxInput placeholder="Select a wallet" />
+                      <ComboboxInput placeholder={tc("placeholders.selectWallet")} />
                       <ComboboxContent className="z-[80]">
-                        <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                        <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
                         <ComboboxCollection>
                           {(label) => (
                             <ComboboxItem key={label} value={label}>
@@ -297,14 +300,14 @@ export function NewExpensePaymentModal({
               </Field>
             ) : (
               <Field>
-                <FieldLabel>Source Wallet</FieldLabel>
-                <Input value={walletName ?? "This wallet"} disabled />
+                <FieldLabel>{t("paymentModal.fields.sourceWallet.label")}</FieldLabel>
+                <Input value={walletName ?? tc("wallet.thisWallet")} disabled />
               </Field>
             )}
 
             <Stack direction="row" gap={4}>
               <Field className="flex-1">
-                <FieldLabel htmlFor="payment-due-date">Due Date</FieldLabel>
+                <FieldLabel htmlFor="payment-due-date">{t("paymentModal.fields.dueDate.label")}</FieldLabel>
                 <Input
                   id="payment-due-date"
                   type="date"
@@ -312,7 +315,7 @@ export function NewExpensePaymentModal({
                 />
               </Field>
               <Field className="flex-1">
-                <FieldLabel htmlFor="payment-paid-date">Paid Date</FieldLabel>
+                <FieldLabel htmlFor="payment-paid-date">{t("paymentModal.fields.paidDate.label")}</FieldLabel>
                 <Input
                   id="payment-paid-date"
                   type="date"
@@ -322,10 +325,10 @@ export function NewExpensePaymentModal({
             </Stack>
 
             <Field>
-              <FieldLabel htmlFor="payment-notes">Notes</FieldLabel>
+              <FieldLabel htmlFor="payment-notes">{t("paymentModal.fields.notes.label")}</FieldLabel>
               <Textarea
                 id="payment-notes"
-                placeholder="Optional notes about this payment"
+                placeholder={tc("placeholders.optionalNotesPayment")}
                 rows={3}
                 {...register("notes")}
               />
@@ -334,12 +337,12 @@ export function NewExpensePaymentModal({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
+                {tc("actions.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={isPending || !isValid}>
               {isPending && <Loader2 className="size-4 animate-spin" />}
-              {isPending ? "Creating..." : "Create Payment"}
+              {isPending ? tc("actions.creating") : t("paymentModal.submit")}
             </Button>
           </DialogFooter>
           </FieldGroup>

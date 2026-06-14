@@ -1,32 +1,28 @@
-'use client'
+"use client";
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Stack } from "@/components/ui/stack"
+} from "@/components/ui/card";
+import { Stack } from "@/components/ui/stack";
+import { useTranslation } from "react-i18next";
 
 export function ConfirmEmailForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const { t } = useTranslation("auth");
+
   return (
     <Stack gap={6} className={className} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Email Confirmation</CardTitle>
-          <CardDescription>
-            We&apos;ve sent a confirmation link to your email. Please check your inbox and click the link to confirm your email address.
-          </CardDescription>
+          <CardTitle>{t("confirmEmail.title")}</CardTitle>
+          <CardDescription>{t("confirmEmail.description")}</CardDescription>
         </CardHeader>
-        {/* <CardContent>
-            <p>We&apos;ve sent a confirmation link to your email. Please check your inbox and click the link to confirm your email address.</p>
-            <p>If you don&apos;t see the email, please check your spam folder or request a new confirmation link.</p>
-        </CardContent> */}
       </Card>
     </Stack>
-  )
+  );
 }

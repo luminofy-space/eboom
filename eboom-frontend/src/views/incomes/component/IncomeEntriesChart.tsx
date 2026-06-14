@@ -34,17 +34,7 @@ import {
   buildChartData,
   formatMoney,
 } from "../utils/incomeEntriesStats";
-
-const chartConfig = {
-  received: {
-    label: "Received",
-    color: "var(--primary)",
-  },
-  expected: {
-    label: "Expected",
-    color: "hsl(var(--muted-foreground))",
-  },
-} satisfies ChartConfig;
+import { useTranslation } from "react-i18next";
 
 interface IncomeEntriesChartProps {
   entries: IncomeEntry[];
@@ -57,10 +47,27 @@ export function IncomeEntriesChart({
   currencySymbol,
   isLoading,
 }: IncomeEntriesChartProps) {
+  const { t } = useTranslation("incomes");
+  const { t: tc } = useTranslation("common");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
   const fillReceivedId = React.useId();
   const fillExpectedId = React.useId();
+
+  const chartConfig = React.useMemo(
+    () =>
+      ({
+        received: {
+          label: t("chart.series.received"),
+          color: "var(--primary)",
+        },
+        expected: {
+          label: t("chart.series.expected"),
+          color: "hsl(var(--muted-foreground))",
+        },
+      }) satisfies ChartConfig,
+    [t]
+  );
 
   React.useEffect(() => {
     if (isMobile) {
@@ -84,10 +91,10 @@ export function IncomeEntriesChart({
 
   const timeRangeLabel =
     timeRange === "7d"
-      ? "last 7 days"
+      ? tc("chart.timeRange.last7Days")
       : timeRange === "30d"
-        ? "last 30 days"
-        : "last 3 months";
+        ? tc("chart.timeRange.last30Days")
+        : tc("chart.timeRange.last3Months");
 
   if (isLoading) {
     return (
@@ -106,12 +113,15 @@ export function IncomeEntriesChart({
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Income Over Time</CardTitle>
+        <CardTitle>{t("chart.title")}</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
             {rangeTotal > 0
-              ? `${formatMoney(rangeTotal, currencySymbol)} received & expected for the ${timeRangeLabel}`
-              : `No entries in the ${timeRangeLabel}`}
+              ? t("chart.description.withData", {
+                  amount: formatMoney(rangeTotal, currencySymbol),
+                  timeRange: timeRangeLabel,
+                })
+              : t("chart.description.noData", { timeRange: timeRangeLabel })}
           </span>
           <span className="@[540px]/card:hidden">{timeRangeLabel}</span>
         </CardDescription>
@@ -123,27 +133,27 @@ export function IncomeEntriesChart({
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
           >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+            <ToggleGroupItem value="90d">{tc("chart.last3Months")}</ToggleGroupItem>
+            <ToggleGroupItem value="30d">{tc("chart.last30Days")}</ToggleGroupItem>
+            <ToggleGroupItem value="7d">{tc("chart.last7Days")}</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
               size="sm"
-              aria-label="Select time range"
+              aria-label={tc("chart.selectTimeRange")}
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder={tc("chart.last3Months")} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
+                {tc("chart.last3Months")}
               </SelectItem>
               <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
+                {tc("chart.last30Days")}
               </SelectItem>
               <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
+                {tc("chart.last7Days")}
               </SelectItem>
             </SelectContent>
           </Select>
