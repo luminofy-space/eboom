@@ -17,7 +17,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/src/hooks/useAuth";
+import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
 
 interface SignupFormData {
@@ -41,7 +41,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
   const password = watch("password");
 
-  const { signup, loading } = useAuth();
+  const { signup, loading } = useAuthContext();
 
   const onSubmit = (data: SignupFormData) => {
     signup({
@@ -50,8 +50,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       email: data.email,
       password: data.password,
     })
-      .then(() => {
-        router.push("/confirm-email");
+      .then((res) => {
+        router.push(res?.user?.emailVerified ? "/" : "/confirm-email");
       })
       .catch((error) => {
         console.error("error", error);

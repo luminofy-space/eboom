@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import supabase from "../supabaseClient";
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -14,24 +13,38 @@ import {
 import { db } from "../db/client";
 import { User, users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import {
+  hashPassword,
+  verifyPassword,
+  signTokenPair,
+  verifyRefreshToken,
+} from "../services/jwtService";
 
 const router = express.Router();
 
+const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "1";
+
+if (skipEmailVerification) {
+  console.warn(
+    "SKIP_EMAIL_VERIFICATION is enabled — new users are auto-verified and verification emails are not sent."
+  );
+}
+
 interface TokenData {
-  userId: string;
+  userId: number;
   email: string;
   expiresAt: Date;
 }
 
-// Helper function to fetch user details from users table by appUserId
-async function getUserByAppUserId(appUserId: number): Promise<User | null> {
+async function getUserByEmail(email: string): Promise<User | null> {
   try {
-    const [appUser] = await db.select().from(users).where(eq(users.id, appUserId));
-    if (!appUser) return null;
-
-    return appUser;
+    const [appUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()));
+    return appUser ?? null;
   } catch (error) {
-    console.error('Error fetching user from users table:', error);
+    console.error("Error fetching user by email:", error);
     return null;
   }
 }
@@ -70,8 +83,6 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, first_name, last_name, age, photo_url } = req.body;
 
-    console.log(req.body)
-
     if (!email || !password || !first_name || !last_name) {
       return res.status(400).json({ error: "Email and password are required" });
     }
@@ -82,66 +93,54 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
         .json({ error: "Password must be at least 8 characters long" });
     }
 
-    const [appUser] = await db.insert(users).values({
-      email,
-      firstName: first_name,
-      lastName: last_name,
-      age,
-      photoUrl: photo_url,
-      emailVerified: false,
-      createdBy: null,
-      createdAt: new Date(),
-    }).returning();
+    const normalizedEmail = email.toLowerCase();
+    const existingUser = await getUserByEmail(normalizedEmail);
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          appUserId: appUser.id,
-        },
-        emailRedirectTo: `${
-          process.env.APP_URL || "http://localhost:3000"
-        }/verify-email`,
-      },
+    const passwordHash = await hashPassword(password);
+
+    const [appUser] = await db
+      .insert(users)
+      .values({
+        email: normalizedEmail,
+        firstName: first_name,
+        lastName: last_name,
+        age,
+        photoUrl: photo_url,
+        emailVerified: skipEmailVerification,
+        passwordHash,
+        createdBy: null,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    if (!skipEmailVerification) {
+      const verificationToken = uuidv4();
+      verificationTokens.set(verificationToken, {
+        userId: appUser.id,
+        email: appUser.email,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+
+      try {
+        await sendVerificationEmail(appUser.email, verificationToken);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+      }
+    }
+
+    const user = formatUserResponse({
+      ...appUser,
+      emailVerified: skipEmailVerification || appUser.emailVerified || false,
     });
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    if (!data.user) {
-      return res.status(500).json({ error: "Failed to create user" });
-    }
-
-    console.log("data.user", data);
-
-    const verificationToken = uuidv4();
-    verificationTokens.set(verificationToken, {
-      userId: data.user.id,
-      email: data.user.email!,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
-    try {
-      await sendVerificationEmail(data.user.email!, verificationToken);
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-    }
-
-    console.log("Verification token created and email sent");
-
-    // Format user response using the app user data
-    const user = formatUserResponse(appUser);
-
-    console.log("data.session", data.session);
 
     res.status(201).json({
-      message:
-        "User created successfully. Please check your email to verify your account.",
-      accessToken: data.session?.access_token,
-      refreshToken: data.session?.refresh_token,
-      expiresIn: data.session?.expires_in,
+      message: skipEmailVerification
+        ? "User created successfully."
+        : "User created successfully. Please check your email to verify your account.",
+      ...signTokenPair(appUser.id, appUser.email),
       user,
     });
   } catch (error) {
@@ -158,46 +157,29 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Sign in user with Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
+    const appUser = await getUserByEmail(email);
+    if (!appUser || !appUser.passwordHash) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    if (!data.user || !data.session) {
-      return res.status(500).json({ error: "Failed to create session" });
+    const passwordValid = await verifyPassword(password, appUser.passwordHash);
+    if (!passwordValid) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Check if email is verified
-    if (!data.user.email_confirmed_at) {
+    if (!skipEmailVerification && !appUser.emailVerified) {
       return res.status(403).json({
         error: "Email not verified",
         message: "Please verify your email before logging in.",
       });
     }
 
-    // Fetch user details from users table using appUserId
-    const appUserId = data.user.user_metadata?.appUserId;
-    if (!appUserId) {
-      return res.status(500).json({ error: "User profile not found" });
-    }
-
-    const appUser = await getUserByAppUserId(appUserId);
-    if (!appUser) {
-      return res.status(500).json({ error: "User profile not found" });
-    }
-
+    const tokens = signTokenPair(appUser.id, appUser.email);
     const user = formatUserResponse(appUser);
 
     res.json({
       message: "Login successful",
-      accessToken: data.session.access_token,
-      refreshToken: data.session.refresh_token,
-      expiresIn: data.session.expires_in,
+      ...tokens,
       user,
     });
   } catch (error) {
@@ -217,42 +199,32 @@ router.post(
         return res.status(400).json({ error: "Refresh token is required" });
       }
 
-      const { data, error } = await supabase.auth.refreshSession({
-        refresh_token: refreshToken,
-      });
+      const payload = verifyRefreshToken(refreshToken);
+      const [appUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, payload.sub));
 
-      if (error || !data.session) {
+      if (!appUser) {
         return res
           .status(401)
           .json({ error: "Invalid or expired refresh token" });
       }
 
-      res.json({
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresIn: data.session.expires_in,
-      });
+      const tokens = signTokenPair(appUser.id, appUser.email);
+
+      res.json(tokens);
     } catch (error) {
       console.error("Refresh token error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      return res
+        .status(401)
+        .json({ error: "Invalid or expired refresh token" });
     }
   }
 );
 
-router.post("/logout", authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const auth = req.headers.authorization;
-    const token = auth?.replace(/^Bearer\s+/i, "");
-
-    if (token) {
-      await supabase.auth.signOut();
-    }
-
-    res.json({ message: "Logged out successfully" });
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
+router.post("/logout", authMiddleware, async (_req: Request, res: Response) => {
+  res.json({ message: "Logged out successfully" });
 });
 
 router.post(
@@ -266,31 +238,9 @@ router.post(
         return res.status(400).json({ error: "Email is required" });
       }
 
-      let user;
-      try {
-        const { data: users, error: userError } =
-          await supabase.auth.admin.listUsers();
+      const appUser = await getUserByEmail(email);
 
-        if (userError) {
-          console.error("Error fetching users:", userError);
-          return res.json({
-            message:
-              "If an account with that email exists, a password reset link has been sent.",
-          });
-        }
-
-        user = users?.users.find(
-          (u) => u.email?.toLowerCase() === email.toLowerCase()
-        );
-      } catch (error) {
-        console.error("Error checking user:", error);
-        return res.json({
-          message:
-            "If an account with that email exists, a password reset link has been sent.",
-        });
-      }
-
-      if (!user || !user.email) {
+      if (!appUser) {
         return res.json({
           message:
             "If an account with that email exists, a password reset link has been sent.",
@@ -299,14 +249,13 @@ router.post(
 
       const resetToken = uuidv4();
       resetTokens.set(resetToken, {
-        userId: user.id,
-        email: user.email,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        userId: appUser.id,
+        email: appUser.email,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       });
 
-      // Send password reset email
       try {
-        await sendPasswordResetEmail(user.email, resetToken);
+        await sendPasswordResetEmail(appUser.email, resetToken);
       } catch (emailError) {
         console.error("Failed to send password reset email:", emailError);
         return res
@@ -325,10 +274,6 @@ router.post(
   }
 );
 
-/**
- * POST /api/auth/reset-password
- * Reset password using token
- */
 router.post(
   "/reset-password",
   passwordResetRateLimiter,
@@ -348,7 +293,6 @@ router.post(
           .json({ error: "Password must be at least 8 characters long" });
       }
 
-      // Verify token
       const tokenData = resetTokens.get(token);
       if (!tokenData) {
         return res
@@ -361,14 +305,15 @@ router.post(
         return res.status(400).json({ error: "Reset token has expired" });
       }
 
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
-        tokenData.userId,
-        { password: newPassword }
-      );
+      const passwordHash = await hashPassword(newPassword);
 
-      if (updateError) {
-        return res.status(400).json({ error: updateError.message });
-      }
+      await db
+        .update(users)
+        .set({
+          passwordHash,
+          lastModifiedAt: new Date(),
+        })
+        .where(eq(users.id, tokenData.userId));
 
       resetTokens.delete(token);
 
@@ -407,14 +352,13 @@ router.get(
           .json({ error: "Verification token has expired" });
       }
 
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
-        tokenData.userId,
-        { email_confirm: true }
-      );
-
-      if (updateError) {
-        return res.status(400).json({ error: updateError.message });
-      }
+      await db
+        .update(users)
+        .set({
+          emailVerified: true,
+          lastModifiedAt: new Date(),
+        })
+        .where(eq(users.id, tokenData.userId));
 
       verificationTokens.delete(token);
 
@@ -437,43 +381,28 @@ router.post(
         return res.status(400).json({ error: "Email is required" });
       }
 
-      let user;
-      try {
-        const { data: users, error: userError } =
-          await supabase.auth.admin.listUsers();
+      const appUser = await getUserByEmail(email);
 
-        if (userError) {
-          return res.status(500).json({ error: "Failed to check user status" });
-        }
-
-        user = users?.users.find(
-          (u) => u.email?.toLowerCase() === email.toLowerCase()
-        );
-      } catch (error) {
-        console.error("Error checking user:", error);
-        return res.status(500).json({ error: "Failed to check user status" });
-      }
-
-      if (!user || !user.email) {
+      if (!appUser) {
         return res.json({
           message:
             "If an account with that email exists and is unverified, a verification email has been sent.",
         });
       }
 
-      if (user.email_confirmed_at) {
+      if (appUser.emailVerified) {
         return res.status(400).json({ error: "Email is already verified" });
       }
 
       const verificationToken = uuidv4();
       verificationTokens.set(verificationToken, {
-        userId: user.id,
-        email: user.email,
+        userId: appUser.id,
+        email: appUser.email,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
 
       try {
-        await sendVerificationEmail(user.email, verificationToken);
+        await sendVerificationEmail(appUser.email, verificationToken);
       } catch (emailError) {
         console.error("Failed to send verification email:", emailError);
         return res
@@ -497,7 +426,7 @@ router.get(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      if (!req.user || !req.appUser) {
+      if (!req.appUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const user = formatUserResponse(req.appUser);
@@ -519,11 +448,10 @@ router.post("/change-photo", authMiddleware, async (req: Request, res: Response)
       return res.status(400).json({ error: "Photo URL is required" });
     }
 
-    if (!req.user || !req.appUser) {
+    if (!req.appUser) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Middleware already fetched appUser, use its ID directly
     await db
       .update(users)
       .set({
@@ -532,50 +460,11 @@ router.post("/change-photo", authMiddleware, async (req: Request, res: Response)
       })
       .where(eq(users.id, req.appUser.id));
 
-    // Also update in Supabase for backward compatibility
-    const { error } = await supabase.auth.updateUser({
-      data: { photo_url },
-    });
-    if (error) throw error;
-
     res.json({ message: "Photo updated successfully" });
   } catch (error) {
     console.error("Change photo error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-// router.post('/auth/login-with-google', async (req: Request, res: Response) => {
-//   try {
-//     const { token } = req.body;
-//     const { data, error } = await supabase.auth.signInWithIdToken({
-//       provider: 'google',
-//       token: token,
-//     });
-//     if (error) {
-//       return res.status(400).json({ error: error.message });
-//     }
-//     res.json({ data });
-//     if (!data.user || !data.session) {
-//       return res.status(500).json({ error: 'Failed to create session' });
-//     }
-
-//     res.json({
-//       message: 'Login successful',
-//       accessToken: data.session.access_token,
-//       refreshToken: data.session.refresh_token,
-//       expiresIn: data.session.expires_in,
-//       user: {
-//         id: data.user.id,
-//         email: data.user.email,
-//         name: data.user.user_metadata?.name,
-//         role: data.user.user_metadata?.role || 'user',
-//       },
-//     });
-//   } catch (error) {
-//     console.error('Login with Google error:', error);
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-// });
 
 export default router;

@@ -204,10 +204,11 @@ DATABASE_URL=postgres://eboomuser:your-secure-password@localhost:5432/eboom
 # DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[project-id].supabase.co:5432/postgres
 
 # ============================================================================
-# Supabase Configuration
+# JWT Authentication
 # ============================================================================
-NEXT_PUBLIC_SUPABASE_URL=https://[your-project-id].supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=[your-publishable-key]
+JWT_SECRET=[random-secret-at-least-32-chars]
+JWT_ACCESS_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
 
 # ============================================================================
 # App Configuration
@@ -272,12 +273,6 @@ code .env
 # Backend API Configuration
 # ============================================================================
 NEXT_PUBLIC_BASE_URL=http://localhost:4000
-
-# ============================================================================
-# Supabase Configuration
-# ============================================================================
-NEXT_PUBLIC_SUPABASE_URL=https://[your-project-id].supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=[your-publishable-key]
 
 # ============================================================================
 # Database Connection (for TypeScript type sharing)

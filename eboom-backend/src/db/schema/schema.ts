@@ -42,6 +42,7 @@ export const users = pgTable(
     age: integer("age").$type<number | null>(),
     phone: varchar("phone", { length: 50 }),
     emailVerified: boolean("email_verified").default(false),
+    passwordHash: varchar("password_hash", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").references((): AnyPgColumn => users.id),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
