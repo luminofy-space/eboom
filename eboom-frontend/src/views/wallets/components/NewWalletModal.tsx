@@ -19,8 +19,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -129,7 +134,8 @@ export function NewWalletModal() {
     return (
         <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent className="w-full">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit(onSubmit)}>
+                    <FieldGroup className="gap-4">
                     <DialogHeader>
                         <DialogTitle>{isEdit ? "Edit Wallet" : "Add New Wallet"}</DialogTitle>
                         <DialogDescription>
@@ -139,18 +145,18 @@ export function NewWalletModal() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex flex-row gap-5">
-                        <div className="w-1/2 flex flex-col gap-1">
-                            <Label htmlFor="wallet-name">Wallet Name</Label>
+                    <Stack direction="row" gap={5}>
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="wallet-name">Wallet Name</FieldLabel>
                             <Input
                                 id="wallet-name"
                                 placeholder="e.g. Main Bank Account"
                                 {...register("name", { required: true })}
                             />
-                        </div>
+                        </Field>
 
-                        <div className="w-1/2 flex flex-col gap-1">
-                            <Label htmlFor="wallet-category">Wallet Category</Label>
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="wallet-category">Wallet Category</FieldLabel>
                             <Controller
                                 name="walletCategoryId"
                                 control={control}
@@ -179,19 +185,17 @@ export function NewWalletModal() {
                                     </Combobox>
                                 )}
                             />
-                        </div>
-                    </div>
+                        </Field>
+                    </Stack>
 
-                    <div className="flex flex-row gap-5">
-                        <div className="w-full flex flex-col gap-1">
-                            <Label htmlFor="wallet-description">Description</Label>
-                            <Input
-                                id="wallet-description"
-                                placeholder="Optional notes about this wallet"
-                                {...register("description")}
-                            />
-                        </div>
-                    </div>
+                    <Field>
+                        <FieldLabel htmlFor="wallet-description">Description</FieldLabel>
+                        <Input
+                            id="wallet-description"
+                            placeholder="Optional notes about this wallet"
+                            {...register("description")}
+                        />
+                    </Field>
 
                     <DialogFooter>
                         <DialogClose asChild>
@@ -204,6 +208,7 @@ export function NewWalletModal() {
                             {isEdit ? "Save changes" : "Create Wallet"}
                         </Button>
                     </DialogFooter>
+                    </FieldGroup>
             </form>
                 </DialogContent>
         </Dialog>

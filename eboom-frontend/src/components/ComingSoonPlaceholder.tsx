@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Typography } from "@/components/ui/typography";
 
 interface ComingSoonPlaceholderProps {
   title: string;
@@ -21,8 +22,8 @@ export function ComingSoonPlaceholder({
         priority
       />
       <div className="text-center max-w-md">
-        <h1 className="text-2xl font-semibold mb-2">{title}</h1>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <Typography variant="title" as="h1" className="mb-2">{title}</Typography>
+        <Typography variant="muted-sm">{description}</Typography>
       </div>
     </div>
   );

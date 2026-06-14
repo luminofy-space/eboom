@@ -17,6 +17,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Stack } from "@/components/ui/stack";
 import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
 
@@ -54,7 +55,7 @@ export function LoginForm({
   };
 
   return (
-    <div className={`flex flex-col gap-6 ${className}`} {...props}>
+    <Stack gap={6} className={className} {...props}>
       <Card>
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
@@ -132,6 +133,6 @@ export function LoginForm({
           </form>
         </CardContent>
       </Card>
-    </div>
+    </Stack>
   );
 }

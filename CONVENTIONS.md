@@ -181,6 +181,10 @@ For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 ## UI Conventions
 
 - **Primary UI:** shadcn/ui + Tailwind CSS 4
+- **Layout primitives:** `Stack`, `Grid`, `Container`, `Center` from [`components/ui/`](eboom-frontend/components/ui/) — use these instead of repeating flex/grid/padding classes on raw `div`s
+- **Typography:** `Typography` from [`components/ui/typography.tsx`](eboom-frontend/components/ui/typography.tsx) — use variants (`display`, `heading`, `title`, `muted-sm`, `stat`, etc.) instead of repeating text size/color classes on raw elements
+- **Page loading:** `PageLoader` from [`components/ui/page-loader.tsx`](eboom-frontend/components/ui/page-loader.tsx) in route `loading.tsx` files; use `Spinner` for inline/button loading states
+- **Forms:** shadcn `Field`, `FieldGroup`, `FieldLabel` for form layout; combine with `Stack` for multi-column rows
 - **Icons:** Lucide for sidebar and navigation; Tabler where already used in a feature
 - **Toasts:** Prefer `sonner` (wired in the app layout). Do not add another toast library.
 - **Themes:** Dark mode supported via `next-themes`

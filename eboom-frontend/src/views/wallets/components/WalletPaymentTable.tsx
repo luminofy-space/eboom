@@ -9,6 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Container } from "@/components/ui/container";
+import { Stack } from "@/components/ui/stack";
+import { Typography } from "@/components/ui/typography";
 import {
   Table,
   TableBody,
@@ -93,51 +96,54 @@ export function WalletPaymentsTable({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 px-4 lg:px-6">
-        <Skeleton className="h-7 w-48" />
-        <div className="overflow-hidden rounded-lg border">
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
+      <Container>
+        <Stack gap={4}>
+          <Skeleton className="h-7 w-48" />
+          <div className="overflow-hidden rounded-lg border">
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
+        </Stack>
+      </Container>
     );
   }
 
   if (isError) {
     return (
-      <div className="px-4 lg:px-6">
-        <p className="text-muted-foreground text-sm">
+      <Container>
+        <Typography variant="muted-sm">
           Failed to load expense payments. Please try again.
-        </p>
-      </div>
+        </Typography>
+      </Container>
     );
   }
 
   return (
     <>
-      <div className="flex flex-col gap-4 px-4 lg:px-6 pb-6">
-        <div className="flex items-center justify-between gap-4">
+      <Container className="pb-6">
+        <Stack gap={4}>
+        <Stack direction="row" align="center" justify="between" gap={4}>
           <div>
-            <h2 className="text-lg font-semibold">Expense Payments</h2>
-            <p className="text-muted-foreground text-sm">
+            <Typography variant="heading">Expense Payments</Typography>
+            <Typography variant="muted-sm">
               Outgoing transactions from this wallet
-            </p>
+            </Typography>
           </div>
-          <div className="flex items-center gap-3">
+          <Stack direction="row" align="center" gap={3}>
             {payments.length > 0 && (
-              <p className="text-muted-foreground hidden text-sm tabular-nums sm:block">
+              <Typography variant="count" className="hidden sm:block">
                 {payments.length} {payments.length === 1 ? "payment" : "payments"}
-              </p>
+              </Typography>
             )}
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
               Create Payment
             </Button>
-          </div>
-        </div>
+          </Stack>
+        </Stack>
 
       <div className="overflow-hidden rounded-lg border">
         <Table>
@@ -173,7 +179,7 @@ export function WalletPaymentsTable({
                       <div className="flex flex-col">
                         <span>{payment.expenseName ?? `Expense #${payment.expenseId}`}</span>
                         {payment.categoryName && (
-                          <span className="text-muted-foreground text-xs">{payment.categoryName}</span>
+                          <Typography variant="caption">{payment.categoryName}</Typography>
                         )}
                       </div>
                     </TableCell>
@@ -232,7 +238,8 @@ export function WalletPaymentsTable({
           )}
         </Table>
       </div>
-      </div>
+        </Stack>
+      </Container>
 
       <NewExpensePaymentModal
         open={createOpen}

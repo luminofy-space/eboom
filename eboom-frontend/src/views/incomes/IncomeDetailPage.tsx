@@ -4,6 +4,7 @@ import { IncomeEntriesChart } from "./component/IncomeEntriesChart";
 import { IncomeEntriesTable } from "./component/IncomeEntriesTable";
 import { IncomeSummaryCards } from "./component/IncomeSummaryCards";
 import { useIncomeDetail } from "./hooks/useIncomeDetail";
+import { Container } from "@/components/ui/container";
 
 interface Props {
   id: number;
@@ -14,13 +15,13 @@ export default function IncomeDetailPage({ id }: Props) {
 
   return (
     <>
-      <div className="px-4 lg:px-6">
+      <Container>
         <IncomeEntriesChart
           entries={entries}
           currencySymbol={currencySymbol}
           isLoading={isLoading}
         />
-      </div>
+      </Container>
       <IncomeSummaryCards
         entries={entries}
         currencySymbol={currencySymbol}
