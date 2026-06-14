@@ -15,7 +15,7 @@ export function useExpenseDetail(expenseId: number) {
       id: number;
       name: string;
       currencyId: number;
-      defaultWalletId: number;
+      defaultWalletId: number | null;
       defaultWallet?: { id: number; name: string } | null;
       currency?: { id: number; symbol: string } | null;
     };

@@ -103,7 +103,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
       id: number;
       name: string;
       currencyId: number;
-      defaultWalletId: number;
+      defaultWalletId: number | null;
       defaultWallet?: { id: number; name: string } | null;
     };
   }>(API_ROUTES.INCOMES_GET(incomeId), {

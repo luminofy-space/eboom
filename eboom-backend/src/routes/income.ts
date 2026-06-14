@@ -246,16 +246,20 @@ router.put("/:id", async (req: Request, res: Response) => {
       incomeCategoryId !== undefined ? Number(incomeCategoryId) : undefined;
     const parsedCurrencyId = currencyId !== undefined ? Number(currencyId) : undefined;
     const parsedDefaultWalletId =
-      defaultWalletId !== undefined ? Number(defaultWalletId) : undefined;
+      defaultWalletId === undefined
+        ? undefined
+        : defaultWalletId === null || defaultWalletId === ""
+          ? null
+          : Number(defaultWalletId);
     if (
       (parsedCategoryId !== undefined && Number.isNaN(parsedCategoryId)) ||
       (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId)) ||
-      (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId))
+      (typeof parsedDefaultWalletId === "number" && Number.isNaN(parsedDefaultWalletId))
     ) {
       return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
     }
 
-    if (parsedDefaultWalletId !== undefined) {
+    if (typeof parsedDefaultWalletId === "number") {
       const [wallet] = await db
         .select()
         .from(wallets)

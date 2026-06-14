@@ -66,7 +66,6 @@ export function NewIncomeModal() {
   const name = watch("name");
   const currencyId = watch("currencyId");
   const incomeCategoryId = watch("incomeCategoryId");
-  const defaultWalletId = watch("defaultWalletId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
@@ -94,11 +93,11 @@ export function NewIncomeModal() {
   const { canvas } = useCanvas();
 
   const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
-    wallets?: { id: number; name: string }[];
+    wallets?: { id: number; name: string; category?: { name: string } | null }[];
   }>(
-    canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
+    canvas ? `${API_ROUTES.CANVASES_WALLETS_LIST(canvas)}?limit=100` : "",
     {
-      queryKey: ["wallets", canvas],
+      queryKey: ["wallets", canvas, "all"],
       hasToken: true,
       enabled: open && !!canvas,
     }
@@ -124,11 +123,21 @@ export function NewIncomeModal() {
     id !== null ? incomeCategories.find((c) => c.id === id)?.name ?? "" : "";
 
   const wallets = walletsRes?.wallets ?? [];
-  const walletNames = wallets.map((w) => w.name);
-  const walletNameToId = (walletName: string) =>
-    wallets.find((w) => w.name === walletName)?.id ?? null;
-  const walletIdToName = (id: number | null) =>
-    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+  const walletLabels = wallets.map((w) => {
+    const categorySuffix = w.category?.name ? ` (${w.category.name})` : "";
+    return `${w.name}${categorySuffix} – #${w.id}`;
+  });
+  const walletLabelToId = (label: string) => {
+    const idMatch = label.match(/#(\d+)$/);
+    return idMatch ? Number(idMatch[1]) : null;
+  };
+  const walletIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const wallet = wallets.find((w) => w.id === id);
+    if (!wallet) return "";
+    const categorySuffix = wallet.category?.name ? ` (${wallet.category.name})` : "";
+    return `${wallet.name}${categorySuffix} – #${wallet.id}`;
+  };
 
   const { mutateAsync: createIncome } = useMutationApi(
     API_ROUTES.CANVASES_INCOMES_CREATE(canvas ?? -1),
@@ -183,7 +192,7 @@ export function NewIncomeModal() {
         amount: Number(formData.amount),
         isRecurring: formData.isRecurring,
         incomeCategoryId: formData.incomeCategoryId ?? undefined,
-        defaultWalletId: formData.defaultWalletId ?? undefined,
+        defaultWalletId: formData.defaultWalletId,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
         description: formData.description,
         photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
@@ -300,28 +309,27 @@ export function NewIncomeModal() {
           </div>
           <div className="flex flex-row gap-5">
             <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="default-wallet">Default Wallet</Label>
+              <Label htmlFor="default-wallet">Default Wallet (optional)</Label>
               <Controller
                 name="defaultWalletId"
                 control={control}
-                rules={{ required: true }}
                 render={({ field }) => (
                   <Combobox
                     id="default-wallet"
-                    items={walletNames}
-                    value={walletIdToName(field.value)}
+                    items={walletLabels}
+                    value={walletIdToLabel(field.value)}
                     disabled={isLoadingWallets}
                     onValueChange={(val) =>
-                      field.onChange(val ? walletNameToId(val) : null)
+                      field.onChange(val ? walletLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a wallet" />
+                    <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
                     <ComboboxContent className="z-[80]">
                       <ComboboxEmpty>No wallets found.</ComboboxEmpty>
                       <ComboboxCollection>
-                        {(walletName) => (
-                          <ComboboxItem key={walletName} value={walletName}>
-                            {walletName}
+                        {(walletLabel) => (
+                          <ComboboxItem key={walletLabel} value={walletLabel}>
+                            {walletLabel}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -397,7 +405,7 @@ export function NewIncomeModal() {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!name || currencyId === null || !incomeCategoryId || defaultWalletId === null}
+              disabled={!name || currencyId === null || !incomeCategoryId}
               type="submit"
             >
               {isEdit ? "Save changes" : "Create Income"}

@@ -362,9 +362,9 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
     status,
   } = req.body;
 
-  if (!name || !expenseCategoryId || !currencyId || !defaultWalletId) {
+  if (!name || !expenseCategoryId || !currencyId) {
     return res.status(400).json({
-      error: "Expense name, category, currency, and default wallet are required",
+      error: "Expense name, category, and currency are required",
     });
   }
 
@@ -376,21 +376,26 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
 
     const parsedExpenseCategoryId = Number(expenseCategoryId);
     const parsedCurrencyId = Number(currencyId);
-    const parsedDefaultWalletId = Number(defaultWalletId);
-    if (
-      Number.isNaN(parsedExpenseCategoryId) ||
-      Number.isNaN(parsedCurrencyId) ||
-      Number.isNaN(parsedDefaultWalletId)
-    ) {
-      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    const hasDefaultWallet =
+      defaultWalletId !== undefined && defaultWalletId !== null && defaultWalletId !== "";
+    const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
+
+    if (Number.isNaN(parsedExpenseCategoryId) || Number.isNaN(parsedCurrencyId)) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
     }
 
-    const [wallet] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, parsedDefaultWalletId));
-    if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+    if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
+      return res.status(400).json({ error: "Invalid wallet ID" });
+    }
+
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
     }
 
     const [newExpense] = await db
@@ -400,7 +405,7 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
         name,
         expenseCategoryId: parsedExpenseCategoryId,
         currencyId: parsedCurrencyId,
-        defaultWalletId: parsedDefaultWalletId,
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         description: description || null,
@@ -500,9 +505,9 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
     status,
   } = req.body;
 
-  if (!name || !incomeCategoryId || !currencyId || !defaultWalletId) {
+  if (!name || !incomeCategoryId || !currencyId) {
     return res.status(400).json({
-      error: "Name, category, currency, and default wallet are required",
+      error: "Name, category, and currency are required",
     });
   }
 
@@ -514,21 +519,26 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
 
     const parsedIncomeCategoryId = Number(incomeCategoryId);
     const parsedCurrencyId = Number(currencyId);
-    const parsedDefaultWalletId = Number(defaultWalletId);
-    if (
-      Number.isNaN(parsedIncomeCategoryId) ||
-      Number.isNaN(parsedCurrencyId) ||
-      Number.isNaN(parsedDefaultWalletId)
-    ) {
-      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    const hasDefaultWallet =
+      defaultWalletId !== undefined && defaultWalletId !== null && defaultWalletId !== "";
+    const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
+
+    if (Number.isNaN(parsedIncomeCategoryId) || Number.isNaN(parsedCurrencyId)) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
     }
 
-    const [wallet] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, parsedDefaultWalletId));
-    if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+    if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
+      return res.status(400).json({ error: "Invalid wallet ID" });
+    }
+
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
     }
 
     const [newIncome] = await db
@@ -538,7 +548,7 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
         name,
         incomeCategoryId: parsedIncomeCategoryId,
         currencyId: parsedCurrencyId,
-        defaultWalletId: parsedDefaultWalletId,
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         amount: Number(amount) || 0,
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,

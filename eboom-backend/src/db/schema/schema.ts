@@ -169,7 +169,7 @@ export const incomes = pgTable("incomes", {
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
   name: varchar("name", { length: 255 }).notNull(),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
-  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
+  defaultWalletId: integer("wallet_id").references(() => wallets.id),
   amount: integer("amount").notNull(),
   incomeCategoryId: integer("income_category_id")
     .notNull()
@@ -220,7 +220,7 @@ export const expenses = pgTable("expenses", {
   name: varchar("name", { length: 255 }).notNull(),
   expenseCategoryId: integer("expense_category_id").notNull().references(() => expenseCategories.id),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
-  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
+  defaultWalletId: integer("wallet_id").references(() => wallets.id),
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: jsonb("recurrence_pattern"),
   status: transactionStatusEnum("status").default("pending"),
