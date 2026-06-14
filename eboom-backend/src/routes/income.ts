@@ -21,6 +21,12 @@ async function checkCanvasAccess(canvasId: number, userId: number): Promise<bool
   return !!membership;
 }
 
+function parseOptionalDate(value: unknown): Date | null {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 router.delete("/entries/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -101,8 +107,15 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
 
   const { destinationWalletId, amount, expectedDate, receivedDate, notes } = req.body;
 
-  if (!destinationWalletId || !amount) {
-    return res.status(400).json({ error: "Destination wallet and amount are required" });
+  const parsedWalletId = Number(destinationWalletId);
+  const parsedAmount = Number(amount);
+
+  if (!parsedWalletId || Number.isNaN(parsedWalletId)) {
+    return res.status(400).json({ error: "Destination wallet is required" });
+  }
+
+  if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+    return res.status(400).json({ error: "A valid amount greater than zero is required" });
   }
 
   try {
@@ -112,29 +125,40 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
     const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
     if (!hasAccess) return res.status(403).json({ error: "Access denied" });
 
-    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, destinationWalletId));
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
     if (!wallet || wallet.canvasId !== income.canvasId) {
       return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
     }
 
-    const [created] = await db
-      .insert(incomeEntries)
-      .values({
-        incomeId,
-        destinationWalletId,
-        amount: String(amount),
-        expectedDate: expectedDate || null,
-        receivedDate: receivedDate || null,
-        notes: notes || null,
-        createdBy: user.id,
-        lastModifiedBy: user.id,
-      })
-      .returning();
+    const amountStr = String(parsedAmount);
+    const parsedExpectedDate = parseOptionalDate(expectedDate);
+    const parsedReceivedDate = parseOptionalDate(receivedDate);
 
-    await creditWalletBalance({
-      walletId: destinationWalletId,
-      currencyId: income.currencyId,
-      amount: String(amount),
+    const created = await db.transaction(async (tx) => {
+      const [entry] = await tx
+        .insert(incomeEntries)
+        .values({
+          incomeId,
+          destinationWalletId: parsedWalletId,
+          amount: amountStr,
+          expectedDate: parsedExpectedDate,
+          receivedDate: parsedReceivedDate,
+          notes: notes || null,
+          createdBy: user.id,
+          lastModifiedBy: user.id,
+        })
+        .returning();
+
+      await creditWalletBalance(
+        {
+          walletId: parsedWalletId,
+          currencyId: income.currencyId,
+          amount: amountStr,
+        },
+        tx
+      );
+
+      return entry;
     });
 
     res.status(201).json({ entry: created });
@@ -222,16 +246,20 @@ router.put("/:id", async (req: Request, res: Response) => {
       incomeCategoryId !== undefined ? Number(incomeCategoryId) : undefined;
     const parsedCurrencyId = currencyId !== undefined ? Number(currencyId) : undefined;
     const parsedDefaultWalletId =
-      defaultWalletId !== undefined ? Number(defaultWalletId) : undefined;
+      defaultWalletId === undefined
+        ? undefined
+        : defaultWalletId === null || defaultWalletId === ""
+          ? null
+          : Number(defaultWalletId);
     if (
       (parsedCategoryId !== undefined && Number.isNaN(parsedCategoryId)) ||
       (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId)) ||
-      (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId))
+      (typeof parsedDefaultWalletId === "number" && Number.isNaN(parsedDefaultWalletId))
     ) {
       return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
     }
 
-    if (parsedDefaultWalletId !== undefined) {
+    if (typeof parsedDefaultWalletId === "number") {
       const [wallet] = await db
         .select()
         .from(wallets)

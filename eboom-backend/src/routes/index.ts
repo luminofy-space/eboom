@@ -22,8 +22,8 @@ router.use('/canvases', auth, canvas);
 router.use('/currency', auth, currency);
 
 // Income routes (CRUD + entries, categories)
-router.use('/income', auth, income);
 router.use("/income/categories", auth, incomeCategories);
+router.use('/income', auth, income);
 
 // Wallet routes (individual wallet operations)
 router.use('/wallets', auth, wallets);

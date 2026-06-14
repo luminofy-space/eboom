@@ -72,7 +72,6 @@ export function NewExpenseModal() {
   const name = watch("name");
   const expenseCategoryId = watch("expenseCategoryId");
   const currencyId = watch("currencyId");
-  const defaultWalletId = watch("defaultWalletId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch expense categories
@@ -113,22 +112,32 @@ export function NewExpenseModal() {
   };
 
   const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
-    wallets?: { id: number; name: string }[];
+    wallets?: { id: number; name: string; category?: { name: string } | null }[];
   }>(
-    canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
+    canvas ? `${API_ROUTES.CANVASES_WALLETS_LIST(canvas)}?limit=100` : "",
     {
-      queryKey: ["wallets", canvas],
+      queryKey: ["wallets", canvas, "all"],
       hasToken: true,
       enabled: open && !!canvas,
     }
   );
 
   const wallets = walletsRes?.wallets ?? [];
-  const walletNames = wallets.map((w) => w.name);
-  const walletNameToId = (walletName: string) =>
-    wallets.find((w) => w.name === walletName)?.id ?? null;
-  const walletIdToName = (id: number | null) =>
-    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+  const walletLabels = wallets.map((w) => {
+    const categorySuffix = w.category?.name ? ` (${w.category.name})` : "";
+    return `${w.name}${categorySuffix} – #${w.id}`;
+  });
+  const walletLabelToId = (label: string) => {
+    const idMatch = label.match(/#(\d+)$/);
+    return idMatch ? Number(idMatch[1]) : null;
+  };
+  const walletIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const wallet = wallets.find((w) => w.id === id);
+    if (!wallet) return "";
+    const categorySuffix = wallet.category?.name ? ` (${wallet.category.name})` : "";
+    return `${wallet.name}${categorySuffix} – #${wallet.id}`;
+  };
 
   // Mutations
   const { mutateAsync: createExpense } = useMutationApi(
@@ -295,28 +304,27 @@ export function NewExpenseModal() {
               />
             </div>
             <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="expense-default-wallet">Default Wallet</Label>
+              <Label htmlFor="expense-default-wallet">Default Wallet (optional)</Label>
               <Controller
                 name="defaultWalletId"
                 control={control}
-                rules={{ required: true }}
                 render={({ field }) => (
                   <Combobox
                     id="expense-default-wallet"
-                    items={walletNames}
-                    value={walletIdToName(field.value)}
+                    items={walletLabels}
+                    value={walletIdToLabel(field.value)}
                     disabled={isLoadingWallets}
                     onValueChange={(val) =>
-                      field.onChange(val ? walletNameToId(val) : null)
+                      field.onChange(val ? walletLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a wallet" />
+                    <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
                     <ComboboxContent className="z-[80]">
                       <ComboboxEmpty>No wallets found.</ComboboxEmpty>
                       <ComboboxCollection>
-                        {(walletName) => (
-                          <ComboboxItem key={walletName} value={walletName}>
-                            {walletName}
+                        {(walletLabel) => (
+                          <ComboboxItem key={walletLabel} value={walletLabel}>
+                            {walletLabel}
                           </ComboboxItem>
                         )}
                       </ComboboxCollection>
@@ -400,7 +408,7 @@ export function NewExpenseModal() {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              disabled={!name || !expenseCategoryId || currencyId === null || defaultWalletId === null}
+              disabled={!name || !expenseCategoryId || currencyId === null}
               type="submit"
             >
               {isEdit ? "Save changes" : "Create Expense"}
