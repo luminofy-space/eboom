@@ -10,4 +10,5 @@ declare global {
 export type TProcessEnv = {
     GENERATE_SOURCEMAP: boolean;
     NEXT_PUBLIC_BASE_URL: string;
+    NEXT_PUBLIC_TEST_MODE: string;
   };

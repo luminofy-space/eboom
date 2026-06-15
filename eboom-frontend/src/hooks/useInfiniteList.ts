@@ -2,7 +2,8 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuth } from "./useAuth";
+import { useContext } from "react";
+import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "@/src/api/utils";
 import { buildUrlWithParams } from "@/src/api/buildUrlWithParams";
 import { useCallback, useEffect, useRef } from "react";
@@ -20,7 +21,8 @@ export function useInfiniteList<T>(
   options: UseInfiniteListOptions
 ) {
   const { queryKey, enabled = true, limit = 20, search = "" } = options;
-  const { accessToken, logout } = useAuth();
+  const authContext = useContext(AuthContext);
+  const accessToken = authContext?.accessToken ?? null;
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,7 +49,7 @@ export function useInfiniteList<T>(
       } catch (err: unknown) {
         const axiosErr = err as { response?: { status?: number } };
         if (axiosErr.response?.status === 401 || axiosErr.response?.status === 403) {
-          logout();
+          authContext?.signOut();
         }
         throw err;
       }

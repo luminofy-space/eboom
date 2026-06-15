@@ -23,6 +23,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ImageUploader from "@/src/views/profile/ImageUploader";
+import { useAuthContext } from "../AuthProvider";
 
 export function NavUser({
   user,
@@ -35,6 +36,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const { signOut } = useAuthContext();
   const [imageModal, setImageModal] = useState(false);
   return (
     <SidebarMenu>
@@ -105,9 +107,8 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator /> */}
             <DropdownMenuItem
-              onClick={() => {
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
+              onClick={async () => {
+                await signOut();
                 router.push("/login");
               }}
             >

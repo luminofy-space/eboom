@@ -1,21 +1,19 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import { useContext, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AuthContext } from "@/src/components/AuthProvider";
 import { useApiRespond } from "./useApiRespond";
-import {
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useState } from "react";
 import { snakeToCamel } from "./utils";
 import { IHasId } from "../types/hasId";
+import { env } from "@/utils/env";
 
-const hasWindow = typeof window !== "undefined";
-
-const getStoredToken = (key: string) => {
-  if (!hasWindow) return null;
-  return window.localStorage.getItem(key);
+type AuthOptions = {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  refresh?: () => Promise<string | null>;
 };
 
-export const useMutationApi = <T extends IHasId>(
+export const useMutationApi = <T extends object = IHasId>(
   url: string,
   options?: {
     urlParams?: Array<string>;
@@ -30,17 +28,14 @@ export const useMutationApi = <T extends IHasId>(
     timeout?: number;
     retry?: number;
     needBaseUrl?: boolean;
-    useAuthContext?: boolean;
-    auth?: {
-      accessToken?: string | null;
-      refreshToken?: string | null;
-      refresh?: () => Promise<string | null>;
-    };
+    auth?: AuthOptions;
   },
   axiosProp?: AxiosRequestConfig
 ) => {
   const queryClient = useQueryClient();
   const { handleError, handleSuccess } = useApiRespond();
+  const authContext = useContext(AuthContext);
+
   const optionHeaders = options?.headers;
   const hasToken = options?.hasToken ?? true;
   const optionBody = options?.body;
@@ -50,18 +45,22 @@ export const useMutationApi = <T extends IHasId>(
   const timeout = options?.timeout ?? 15000;
   const retry = options?.retry ?? 0;
   const needBaseUrl = options?.needBaseUrl ?? true;
-  const authAccessToken =
-    options?.auth?.accessToken ?? (hasToken ? getStoredToken("accessToken") : null);
-  const authRefreshToken =
-    options?.auth?.refreshToken ?? getStoredToken("refreshToken");
-  const authRefreshFn = options?.auth?.refresh ?? (async () => null);
+
+  const authAccessToken = hasToken
+    ? options?.auth?.accessToken ?? authContext?.accessToken ?? null
+    : null;
+  const authRefreshToken = hasToken
+    ? options?.auth?.refreshToken ?? authContext?.refreshToken ?? null
+    : null;
+  const authRefreshFn = hasToken
+    ? options?.auth?.refresh ?? authContext?.refreshAccessToken ?? null
+    : null;
 
   const [fieldError, setFieldError] = useState<Record<string, string>>();
   const [generalError, setGeneralError] = useState<Record<string, string>>();
 
-  // ----------------------- URL builder -----------------------
   const buildUrl = () => {
-    let finalUrl = needBaseUrl ? `${process.env.NEXT_PUBLIC_BASE_URL}${url}` : url;
+    let finalUrl = needBaseUrl ? `${env("NEXT_PUBLIC_BASE_URL")}${url}` : url;
 
     if (urlParams?.length) finalUrl += "/" + urlParams.join("/");
     if (staticParams) finalUrl += `/${staticParams}`;
@@ -69,10 +68,8 @@ export const useMutationApi = <T extends IHasId>(
     return finalUrl;
   };
 
-  // ----------------------- API Caller -----------------------
   const callApi = async (payload?: unknown) => {
     const finalUrl = buildUrl();
-
     const headers: Record<string, string> = { ...optionHeaders };
 
     if (hasToken && authAccessToken) {
@@ -90,16 +87,17 @@ export const useMutationApi = <T extends IHasId>(
 
     try {
       const res = await axios(config);
-
       const parsed = snakeToCamel(res.data);
       handleSuccess(parsed);
       return options?.returnWholeData ? parsed : parsed;
-
     } catch (err: unknown) {
       const axiosErr = err as AxiosError;
 
-      // ----------------------- Refresh Token Flow -----------------------
-      if (axiosErr.response?.status === 401 && authRefreshToken && authRefreshFn) {
+      if (
+        axiosErr.response?.status === 401 &&
+        authRefreshToken &&
+        authRefreshFn
+      ) {
         const newToken = await authRefreshFn();
 
         if (newToken) {
@@ -112,7 +110,6 @@ export const useMutationApi = <T extends IHasId>(
         }
       }
 
-      // ----------------------- Error Parsing -----------------------
       const data = axiosErr.response?.data as Record<string, unknown>;
 
       if (data?.errors) setFieldError(data.errors as Record<string, string>);
@@ -123,7 +120,6 @@ export const useMutationApi = <T extends IHasId>(
     }
   };
 
-  // ----------------------- Mutation Hook -----------------------
   const mutation = useMutation({
     mutationFn: callApi,
     retry,

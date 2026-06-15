@@ -17,7 +17,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/src/hooks/useAuth";
+import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
 
 interface LoginFormData {
@@ -38,7 +38,7 @@ export function LoginForm({
     formState: { errors },
   } = useForm<LoginFormData>();
 
-  const { login, loading } = useAuth();
+  const { login, loading } = useAuthContext();
 
   const onSubmit = async (data: LoginFormData) => {
     await login(data)

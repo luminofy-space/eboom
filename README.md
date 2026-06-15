@@ -2,7 +2,7 @@
 
 Personal finance management (PFM) for individuals, families, and small businesses.
 
-eBoom is a web-based platform backed by PostgreSQL. [Supabase](https://supabase.com) provides authentication (and optionally hosted Postgres). All application data is accessed through a custom Express API with Drizzle ORM — not Supabase PostgREST.
+eBoom is a web-based platform backed by PostgreSQL. Authentication is handled internally by the Express API using JWT tokens and bcrypt password hashing. All application data is accessed through a custom Express API with Drizzle ORM.
 
 ## What is eBoom?
 
@@ -39,21 +39,18 @@ See [Roadmap](#roadmap) for the full planned feature set.
 ```mermaid
 flowchart LR
   Browser["Next.js 15 App"]
-  SupabaseAuth["Supabase Auth"]
   ExpressAPI["Express API /api/*"]
   Postgres["PostgreSQL"]
   Browser -->|"Bearer JWT"| ExpressAPI
-  Browser --> SupabaseAuth
   ExpressAPI -->|"Drizzle ORM"| Postgres
-  ExpressAPI --> SupabaseAuth
 ```
 
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 15 (App Router), React 19, Tailwind CSS 4, shadcn/ui, TanStack Query, Redux Toolkit, Axios |
-| Backend | Express 4, TypeScript, Drizzle ORM, Multer, Nodemailer |
-| Database | PostgreSQL (local or Supabase-hosted) |
-| Auth | Supabase Auth (JWT validated by Express middleware) |
+| Backend | Express 4, TypeScript, Drizzle ORM, Multer, Nodemailer, jsonwebtoken, bcryptjs |
+| Database | PostgreSQL |
+| Auth | Internal JWT (signed by Express, validated by auth middleware) |
 | Tooling | Drizzle Studio, ESLint (frontend) |
 
 There is no Docker setup, CI pipeline, or automated test suite yet.
@@ -71,12 +68,12 @@ eboom/
 
 ## Quick Start
 
-**Prerequisites:** Node.js 18+, PostgreSQL (local or Supabase), Supabase project URL and publishable key.
+**Prerequisites:** Node.js 18+, PostgreSQL.
 
 ```bash
 # Backend
 cd eboom-backend
-cp .env.sample .env   # fill in DATABASE_URL, Supabase keys, etc.
+cp .env.sample .env   # fill in DATABASE_URL, JWT_SECRET, etc.
 npm install
 npm run db:migrate
 npm run db:seed
@@ -89,7 +86,7 @@ npm install
 npm run dev           # http://localhost:3000
 ```
 
-For PostgreSQL setup, Supabase configuration, seeding options, test mode, and troubleshooting, see [Setup.md](Setup.md).
+For PostgreSQL setup, seeding options, test mode, and troubleshooting, see [Setup.md](Setup.md).
 
 For coding patterns when adding features, see [CONVENTIONS.md](CONVENTIONS.md).
 
@@ -103,12 +100,14 @@ Copy from [`.env.sample`](eboom-backend/.env.sample).
 |----------|---------|
 | `PORT` | API port (default `4000`) |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase anon/publishable key |
+| `JWT_SECRET` | Secret for signing access and refresh tokens |
+| `JWT_ACCESS_EXPIRES_IN` | Access token lifetime (default `1h`) |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token lifetime (default `7d`) |
 | `APP_URL` | Frontend URL (used in email links) |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP for verification and password reset |
 | `DEFAULT_GUEST_USER_ID` | User ID for public wishlist routes |
 | `TEST_USER_ID` | **Dev only** — bypasses auth when set |
+| `SKIP_EMAIL_VERIFICATION` | **Dev only** — set to `1` to skip email verification on signup/login |
 
 ### Frontend (`eboom-frontend/.env`)
 
@@ -117,11 +116,9 @@ Copy from [`.env.example`](eboom-frontend/.env.example).
 | Variable | Purpose |
 |----------|---------|
 | `NEXT_PUBLIC_BASE_URL` | Backend API base URL (e.g. `http://localhost:4000`) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key |
 | `NEXT_PUBLIC_TEST_MODE` | **Dev only** — set to `true` to bypass frontend auth (requires backend `TEST_USER_ID`) |
 
-Never commit `.env` files. Remove or disable `TEST_USER_ID` and `NEXT_PUBLIC_TEST_MODE` in production.
+Never commit `.env` files. Remove or disable `TEST_USER_ID`, `SKIP_EMAIL_VERIFICATION`, and `NEXT_PUBLIC_TEST_MODE` in production.
 
 ## Development Commands
 

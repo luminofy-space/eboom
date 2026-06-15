@@ -40,7 +40,7 @@ For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.
 |---------|------|----------|
 | Server / API data | TanStack Query | Lists, details, currencies |
 | UI chrome | Redux | Modal open/close, search query, canvas ID |
-| Auth tokens | `useAuth` hook + localStorage | Not Redux |
+| Auth tokens | `AuthProvider` context + localStorage | Not Redux |
 
 Use `useQueryApi` and `useMutationApi` from `src/api/` for API calls. Do not fetch server data into Redux slices.
 
@@ -130,7 +130,7 @@ Use early returns for `400`, `401`, `403`, and `404`. Response shape: `{ error: 
 ### Authentication
 
 - Clients send `Authorization: Bearer <token>`
-- [`middleware/auth.ts`](eboom-backend/src/middleware/auth.ts) validates the token via Supabase and attaches `req.appUser`
+- [`middleware/auth.ts`](eboom-backend/src/middleware/auth.ts) validates the JWT locally and attaches `req.appUser`
 - Dev bypass: set `TEST_USER_ID` in backend `.env` (never in production)
 
 ### Money movement rule
