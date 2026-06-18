@@ -9,29 +9,30 @@ import {
   expenses,
   expenseCategories,
   incomeCategories,
-  canvasMembers,
   walletCategories,
   subWallets,
   currencies,
 } from "../db/schema";
+import {
+  CanvasPermission,
+  checkCanvasPermission,
+} from "../services/canvasAccessService";
 
 const router = express.Router();
 
-async function checkWalletAccess(walletId: number, userId: number): Promise<boolean> {
-  const [wallet] = await db
-    .select()
-    .from(wallets)
-    .innerJoin(canvasMembers, eq(wallets.canvasId, canvasMembers.canvasId))
-    .where(and(eq(wallets.id, walletId), eq(canvasMembers.userId, userId)));
-  return !!wallet;
+function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
+  return res.status(access.status).json({ error: access.error });
 }
 
-async function checkCanvasAccess(canvasId: number, userId: number): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(canvasMembers)
-    .where(and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId)));
-  return !!membership;
+async function checkWalletPermission(
+  walletId: number,
+  userId: number,
+  permission: CanvasPermission
+) {
+  const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
+  if (!existing) return { wallet: null, access: null };
+  const access = await checkCanvasPermission(existing.canvasId, userId, permission);
+  return { wallet: existing, access };
 }
 
 router.get("/:id", async (req: Request, res: Response) => {
@@ -54,10 +55,8 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(walletRecord.wallet.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(walletRecord.wallet.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     const subWalletRows = await db
       .select({ subWallet: subWallets, currency: currencies })
@@ -98,10 +97,8 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     const parsedWalletCategoryId =
       walletCategoryId !== undefined ? Number(walletCategoryId) : undefined;
@@ -145,10 +142,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     await db
       .update(wallets)
@@ -175,8 +170,10 @@ router.get("/:walletId/income-entries", async (req: Request, res: Response) => {
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
-    const hasAccess = await checkWalletAccess(walletId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const { access } = await checkWalletPermission(walletId, user.id, "view");
+    if (!access?.allowed) {
+      return denyPermission(res, access ?? { allowed: false, status: 403, error: "Access denied to this canvas" });
+    }
 
     const entries = await db
       .select({
@@ -216,8 +213,10 @@ router.get("/:walletId/expense-payments", async (req: Request, res: Response) =>
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
-    const hasAccess = await checkWalletAccess(walletId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const { access } = await checkWalletPermission(walletId, user.id, "view");
+    if (!access?.allowed) {
+      return denyPermission(res, access ?? { allowed: false, status: 403, error: "Access denied to this canvas" });
+    }
 
     const payments = await db
       .select({
@@ -257,8 +256,10 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
-    const hasAccess = await checkWalletAccess(walletId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const { access } = await checkWalletPermission(walletId, user.id, "view");
+    if (!access?.allowed) {
+      return denyPermission(res, access ?? { allowed: false, status: 403, error: "Access denied to this canvas" });
+    }
 
     // Fetch income entries
     const incomeData = await db
@@ -336,10 +337,8 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(walletRecord.wallet.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(walletRecord.wallet.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     const subWalletRows = await db
       .select({ subWallet: subWallets, currency: currencies })
@@ -372,8 +371,10 @@ router.get("/:walletId/sub-wallets", async (req: Request, res: Response) => {
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
-    const hasAccess = await checkWalletAccess(walletId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const { access } = await checkWalletPermission(walletId, user.id, "view");
+    if (!access?.allowed) {
+      return denyPermission(res, access ?? { allowed: false, status: 403, error: "Access denied to this canvas" });
+    }
 
     const subWalletRows = await db
       .select({ subWallet: subWallets, currency: currencies })

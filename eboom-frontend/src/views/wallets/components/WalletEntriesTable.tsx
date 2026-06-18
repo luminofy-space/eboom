@@ -28,6 +28,7 @@ import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntr
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletEntry } from "../utils/utils";
 import { useTranslation } from "react-i18next";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount } from "@/src/i18n/formatters";
 
@@ -70,6 +71,7 @@ export function WalletEntriesTable({
 }: WalletEntriesTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
+  const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const [createOpen, setCreateOpen] = useState(false);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
@@ -134,10 +136,12 @@ export function WalletEntriesTable({
                 })}
               </Typography>
             )}
+            {canEdit && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
+            )}
           </Stack>
         </Stack>
 
@@ -151,13 +155,13 @@ export function WalletEntriesTable({
               <TableHead>{t("entriesTable.headers.received")}</TableHead>
               <TableHead>{t("entriesTable.headers.status")}</TableHead>
               <TableHead className="hidden md:table-cell">{t("entriesTable.headers.notes")}</TableHead>
-              <TableHead className="w-10" />
+              {canEdit && <TableHead className="w-10" />}
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
                   <p className="text-muted-foreground">
                     {t("entriesTable.empty")}
                   </p>
@@ -195,6 +199,7 @@ export function WalletEntriesTable({
                         <span className="text-muted-foreground">{emDash}</span>
                       )}
                     </TableCell>
+                    {canEdit && (
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -215,6 +220,7 @@ export function WalletEntriesTable({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
+                    )}
                   </TableRow>
                 );
               })

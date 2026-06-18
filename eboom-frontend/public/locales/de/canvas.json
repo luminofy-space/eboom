@@ -38,6 +38,9 @@
     "empty": {
       "noCurrencies": "Keine Währungen gefunden."
     },
+    "errors": {
+      "createFailed": "Canvas konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+    },
     "submit": {
       "create": "Canvas erstellen",
       "edit": "Änderungen speichern"
@@ -47,6 +50,8 @@
     "placeholder": "Canvas auswählen",
     "fallbackType": "Canvas",
     "label": "Canvases",
+    "owned": "Eigene",
+    "joined": "Beigetreten",
     "empty": "Noch keine Canvases",
     "addNew": "Neues Canvas hinzufügen"
   }

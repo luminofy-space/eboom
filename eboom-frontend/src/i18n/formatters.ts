@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import i18n from "./index";
+
+dayjs.extend(relativeTime);
 
 const LOCALE_MAP: Record<string, string> = {
   en: "en-US",

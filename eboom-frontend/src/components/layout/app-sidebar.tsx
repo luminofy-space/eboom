@@ -9,6 +9,7 @@ import {
   PiggyBank,
   ShoppingBag,
   BrainCircuit,
+  Users,
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
@@ -25,29 +26,41 @@ import { CanvasSwitcher } from "../canvas/CanvasSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "../AuthProvider";
 import { useTranslation } from "react-i18next";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, userLoading: isLoading } = useAuthContext();
   const { t } = useTranslation("navigation");
+  const { canManageMembers } = useCanvasPermissions();
+
+  const navMain = [
+    {
+      title: t("routes.incomes"),
+      url: "/incomes",
+      icon: BanknoteArrowUp,
+    },
+    {
+      title: t("routes.wallets"),
+      url: "/wallets",
+      icon: Wallet,
+    },
+    {
+      title: t("routes.expenses"),
+      url: "/expenses",
+      icon: BanknoteArrowDown,
+    },
+    ...(canManageMembers
+      ? [
+          {
+            title: t("routes.manageMembers"),
+            url: "/members",
+            icon: Users,
+          },
+        ]
+      : []),
+  ];
 
   const data = {
-    navMain: [
-      {
-        title: t("routes.incomes"),
-        url: "/incomes",
-        icon: BanknoteArrowUp,
-      },
-      {
-        title: t("routes.wallets"),
-        url: "/wallets",
-        icon: Wallet,
-      },
-      {
-        title: t("routes.expenses"),
-        url: "/expenses",
-        icon: BanknoteArrowDown,
-      },
-    ],
     navUpcoming: [
       {
         title: t("routes.whiteboard"),
@@ -82,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CanvasSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
         <SidebarSeparator />
         <NavUpcoming items={data.navUpcoming} />
       </SidebarContent>

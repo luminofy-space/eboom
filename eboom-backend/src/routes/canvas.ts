@@ -11,8 +11,15 @@ import {
   wallets,
   walletCategories,
   userSettings,
+  roles,
 } from "../db/schema";
 import { eq, and, ilike, count, desc } from "drizzle-orm";
+import {
+  computePermissions,
+  checkCanvasPermission,
+  formatMembershipForResponse,
+  getCanvasMembership,
+} from "../services/canvasAccessService";
 
 const router = express.Router();
 
@@ -24,17 +31,9 @@ function parsePaginationParams(req: Request) {
   return { page, limit, search, offset };
 }
 
-async function checkCanvasAccess(
-  canvasId: number,
-  userId: number
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(canvasMembers)
-    .where(
-      and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId))
-    );
-  return !!membership;
+
+async function denyCanvasPermission(res: Response, result: { status: 403; error: string }) {
+  return res.status(result.status).json({ error: result.error });
 }
 
 // ============================================================================
@@ -50,16 +49,27 @@ router.get("/", async (req: Request, res: Response) => {
       .select({
         canvas: canvases,
         member: canvasMembers,
+        role: roles,
       })
       .from(canvasMembers)
       .innerJoin(canvases, eq(canvasMembers.canvasId, canvases.id))
+      .leftJoin(roles, eq(canvasMembers.roleId, roles.id))
       .where(and(eq(canvasMembers.userId, user.id), eq(canvases.isArchived, false)));
 
-    const userCanvases = memberships.map((m) => ({
-      ...m.canvas,
-      isOwner: m.member.isOwner,
-      roleId: m.member.roleId,
-    }));
+    const userCanvases = memberships.map((m) => {
+      const rolePermissions =
+        m.role?.permissions && typeof m.role.permissions === "object"
+          ? (m.role.permissions as Record<string, boolean>)
+          : {};
+      const permissions = computePermissions(m.member.isOwner ?? false, rolePermissions);
+      return {
+        ...m.canvas,
+        isOwner: m.member.isOwner,
+        roleId: m.member.roleId,
+        roleName: m.role?.name ?? null,
+        permissions,
+      };
+    });
 
     res.json({ canvases: userCanvases });
   } catch (err) {
@@ -78,16 +88,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
+    const membership = await getCanvasMembership(canvasId, user.id);
     if (!membership) {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
@@ -104,8 +105,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     res.json({
       canvas: {
         ...canvas,
-        isOwner: membership.isOwner,
-        roleId: membership.roleId,
+        ...formatMembershipForResponse(membership),
       },
     });
   } catch (err) {
@@ -190,24 +190,9 @@ router.put("/:id", async (req: Request, res: Response) => {
   const { name, description, canvasType, photoUrl, isArchived } = req.body;
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
-    if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
-    }
-
-    if (!membership.isOwner) {
-      return res
-        .status(403)
-        .json({ error: "Only canvas owner can update canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "manage_canvas");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const [updatedCanvas] = await db
@@ -245,24 +230,9 @@ router.delete("/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
-    if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
-    }
-
-    if (!membership.isOwner) {
-      return res
-        .status(403)
-        .json({ error: "Only canvas owner can delete canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "manage_canvas");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     await db
@@ -295,9 +265,9 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -369,9 +339,9 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedExpenseCategoryId = Number(expenseCategoryId);
@@ -437,9 +407,9 @@ router.get("/:canvasId/incomes", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -512,9 +482,9 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedIncomeCategoryId = Number(incomeCategoryId);
@@ -581,9 +551,9 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -644,9 +614,9 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedWalletCategoryId = Number(walletCategoryId);

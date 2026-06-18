@@ -23,6 +23,28 @@ const API_ROUTES = {
   CANVASES_UPDATE: (id: number) => `/api/canvases/${id}/`,
   CANVASES_DELETE: (id: number) => `/api/canvases/${id}/`,
 
+  // Canvas members
+  CANVAS_MEMBERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/members/`,
+  CANVAS_MEMBERS_LOOKUP: (canvasId: number) => `/api/canvases/${canvasId}/members/lookup/`,
+  CANVAS_MEMBERS_INVITE: (canvasId: number) => `/api/canvases/${canvasId}/members/invitations/`,
+  CANVAS_MEMBERS_PENDING_INVITATIONS: (canvasId: number) =>
+    `/api/canvases/${canvasId}/members/invitations/`,
+  CANVAS_MEMBERS_SUGGESTIONS: (canvasId: number) =>
+    `/api/canvases/${canvasId}/members/suggestions/`,
+  CANVAS_MEMBERS_UPDATE: (canvasId: number, memberId: number) =>
+    `/api/canvases/${canvasId}/members/${memberId}/`,
+  CANVAS_MEMBERS_REMOVE: (canvasId: number, memberId: number) =>
+    `/api/canvases/${canvasId}/members/${memberId}/`,
+  CANVAS_MEMBERS_LEAVE: (canvasId: number) => `/api/canvases/${canvasId}/members/leave/`,
+
+  // Canvas invitations
+  CANVAS_INVITATIONS_SENT: '/api/canvas-invitations/sent/',
+  CANVAS_INVITATIONS_RECEIVED: '/api/canvas-invitations/received/',
+  CANVAS_INVITATIONS_ACCEPT: (id: number) => `/api/canvas-invitations/${id}/accept/`,
+  CANVAS_INVITATIONS_DECLINE: (id: number) => `/api/canvas-invitations/${id}/decline/`,
+  CANVAS_INVITATIONS_CANCEL: (id: number) => `/api/canvas-invitations/${id}/`,
+  CANVAS_ROLES: '/api/roles/canvas/',
+
   // Canvas-scoped Expenses
   CANVASES_EXPENSES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
   CANVASES_EXPENSES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,

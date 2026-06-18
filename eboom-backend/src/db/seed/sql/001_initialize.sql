@@ -3,9 +3,9 @@ BEGIN;
 -- roles
 INSERT INTO roles (name, is_system_role, permissions, created_at)
 VALUES
-  ('Creator', true, '{"all": true}'::jsonb, NOW()),
-  ('Editor', true, '{"edit": true, "view": true}'::jsonb, NOW()),
-  ('Viewer', true, '{"view": true}'::jsonb, NOW())
+  ('Collaborator', true, '{"view": true, "edit": true, "manage_members": true}'::jsonb, NOW()),
+  ('Modifier', true, '{"view": true, "edit": true}'::jsonb, NOW()),
+  ('Visitor', true, '{"view": true}'::jsonb, NOW())
 ON CONFLICT (name) DO NOTHING;
 
 -- currencies

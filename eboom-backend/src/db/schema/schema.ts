@@ -31,6 +31,14 @@ export const recurrenceFrequencyEnum = pgEnum("recurrence_frequency", [
   "yearly",
 ]);
 
+export const canvasInvitationStatusEnum = pgEnum("canvas_invitation_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "cancelled",
+  "expired",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -112,6 +120,29 @@ export const canvasMembers = pgTable(
   },
   (table) => ({
     uniqueCanvasUser: unique().on(table.canvasId, table.userId),
+  })
+);
+
+export const canvasInvitations = pgTable(
+  "canvas_invitations",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    inviteeUserId: integer("invitee_user_id").notNull().references(() => users.id),
+    inviteeEmail: varchar("invitee_email", { length: 255 }).notNull(),
+    roleId: integer("role_id").notNull().references(() => roles.id),
+    invitedBy: integer("invited_by").notNull().references(() => users.id),
+    status: canvasInvitationStatusEnum("status").default("pending").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    uniqueCanvasInvitee: unique("canvas_invitations_canvas_invitee_unique").on(
+      table.canvasId,
+      table.inviteeUserId
+    ),
   })
 );
 

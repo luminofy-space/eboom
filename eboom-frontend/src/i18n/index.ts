@@ -23,6 +23,7 @@ if (!i18n.isInitialized) {
         "wallets",
         "profile",
         "canvas",
+        "canvas-members",
       ],
       defaultNS: "common",
       backend: {

@@ -2,6 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
@@ -32,6 +33,7 @@ const hasWindow = typeof window !== "undefined";
 export default function IncomesListPage() {
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
+  const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
@@ -81,7 +83,7 @@ export default function IncomesListPage() {
   if (items.length === 0 && !searchQuery) {
     return (
       <>
-        <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />
+        {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
         <NewIncomeModal />
       </>
     );
@@ -106,8 +108,8 @@ export default function IncomesListPage() {
               imageUrl={income.photoUrl}
               title={income.name}
               updatedAt={income.lastModifiedAt}
-              onEdit={() => dispatch(openIncomeEditModal(income))}
-              onDelete={() => setDeleteId(income.id)}
+              onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
+              onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
             />
           ))}
         </Grid>
@@ -121,7 +123,7 @@ export default function IncomesListPage() {
         </Stack>
       )}
 
-      <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />
+      {canEdit && <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />}
       <NewIncomeModal />
 
       <ConfirmDeleteDialog

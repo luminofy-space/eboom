@@ -6,6 +6,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -15,8 +16,10 @@ export function NavMain({
 }: {
   items: {
     title: string;
-    url: string;
+    url?: string;
     icon?: LucideIcon;
+    badge?: number;
+    onClick?: () => void;
   }[];
 }) {
   const router = useRouter();
@@ -36,12 +39,23 @@ export function NavMain({
         {items.map((item) => (
           <SidebarMenuButton
             key={item.title}
-            isActive={isActive(item.url)}
+            isActive={item.url ? isActive(item.url) : false}
             tooltip={item.title}
-            onClick={() => router.push(item.url)}
+            onClick={() => {
+              if (item.onClick) {
+                item.onClick();
+                return;
+              }
+              if (item.url) {
+                router.push(item.url);
+              }
+            }}
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
+            {item.badge != null && item.badge > 0 ? (
+              <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+            ) : null}
           </SidebarMenuButton>
         ))}
       </SidebarMenu>

@@ -72,11 +72,7 @@ export function NewWalletModal() {
         });
 
     const categories = categoriesRes?.categories ?? [];
-    const categoryNames = categories.map((c) => c.name);
-    const categoryNameToId = (catName: string) =>
-        categories.find((c) => c.name === catName)?.id ?? null;
-    const categoryIdToName = (id: number | null) =>
-        id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
+    const categoryIds = categories.map((c) => String(c.id));
 
     const { mutateAsync: createWallet } = useMutationApi(
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
@@ -165,22 +161,28 @@ export function NewWalletModal() {
                                 render={({ field }) => (
                                     <Combobox
                                         id="wallet-category"
-                                        items={categoryNames}
-                                        value={categoryIdToName(field.value)}
+                                        items={categoryIds}
+                                        value={field.value !== null ? String(field.value) : ""}
                                         disabled={isLoadingCategories}
                                         onValueChange={(val) =>
-                                            field.onChange(val ? categoryNameToId(val) : null)
+                                            field.onChange(val ? Number(val) : null)
                                         }
                                     >
                                         <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                                         <ComboboxContent className="z-[80]">
                                             <ComboboxEmpty>{tc("empty.noCategoriesFound")}</ComboboxEmpty>
                                             <ComboboxCollection>
-                                                {(catName) => (
-                                                    <ComboboxItem key={catName} value={catName}>
-                                                        {catName}
-                                                    </ComboboxItem>
-                                                )}
+                                                {(categoryId) => {
+                                                    const category = categories.find(
+                                                        (c) => String(c.id) === categoryId
+                                                    );
+                                                    if (!category) return null;
+                                                    return (
+                                                        <ComboboxItem key={categoryId} value={categoryId}>
+                                                            {category.name}
+                                                        </ComboboxItem>
+                                                    );
+                                                }}
                                             </ComboboxCollection>
                                         </ComboboxContent>
                                     </Combobox>

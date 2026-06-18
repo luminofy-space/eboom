@@ -3,6 +3,7 @@
 import {
   ChevronsUpDown,
   LogOut,
+  Mail,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +24,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ImageUploader from "@/src/views/profile/ImageUploader";
+import { CanvasInvitationsModal } from "@/src/views/canvas-invitations/CanvasInvitationsModal";
+import { useCanvasInvitations } from "@/src/hooks/useCanvasInvitations";
 import { useAuthContext } from "../AuthProvider";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "react-i18next";
@@ -41,7 +44,9 @@ export function NavUser({
   const router = useRouter();
   const { signOut } = useAuthContext();
   const [imageModal, setImageModal] = useState(false);
+  const [invitationsOpen, setInvitationsOpen] = useState(false);
   const { t } = useTranslation("navigation");
+  const { pendingReceivedCount } = useCanvasInvitations();
   const { dropdownSide } = useTextDirection();
   return (
     <SidebarMenu>
@@ -92,6 +97,18 @@ export function NavUser({
             <LanguageSwitcher />
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              onClick={() => setInvitationsOpen(true)}
+            >
+              <Mail />
+              <span className="flex-1">{t("account.canvasInvitations")}</span>
+              {pendingReceivedCount > 0 && (
+                <span className="ms-auto flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  {pendingReceivedCount}
+                </span>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
               onClick={async () => {
                 await signOut();
                 router.push("/login");
@@ -104,6 +121,7 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
       <ImageUploader open={imageModal} setOpen={setImageModal} />
+      <CanvasInvitationsModal open={invitationsOpen} onOpenChange={setInvitationsOpen} />
     </SidebarMenu>
   );
 }
