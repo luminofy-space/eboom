@@ -63,7 +63,11 @@ const defaultValues: ExpenseFormData = {
   photo: null,
 };
 
-export function NewExpenseModal() {
+interface NewExpenseModalProps {
+  onCreateSuccess?: (entity: { id: number }) => void;
+}
+
+export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
@@ -208,7 +212,11 @@ export function NewExpenseModal() {
       if (isEdit) {
         await updateExpense(data);
       } else {
-        await createExpense(data);
+        const response = await createExpense(data);
+        const expenseId = (response as { expense?: { id: number } })?.expense?.id;
+        if (typeof expenseId === "number") {
+          onCreateSuccess?.({ id: expenseId });
+        }
       }
 
       reset(defaultValues);

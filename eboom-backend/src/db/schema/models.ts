@@ -21,6 +21,8 @@ import {
   attachments,
   notifications,
   recurrencePatterns,
+  whiteboardViewports,
+  whiteboardNodePositions,
 } from "./schema";
 
 // SELECT types
@@ -48,6 +50,10 @@ export type ToBuyItem = typeof toBuyItems.$inferSelect;
 export type Attachment = typeof attachments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type RecurrencePattern = typeof recurrencePatterns.$inferSelect;
+export type WhiteboardViewport = typeof whiteboardViewports.$inferSelect;
+export type WhiteboardNodePosition = typeof whiteboardNodePositions.$inferSelect;
+export type WhiteboardEntityType =
+  (typeof whiteboardNodePositions.$inferSelect)["entityType"];
 
 // INSERT types
 export type NewUser = typeof users.$inferInsert;
@@ -72,3 +78,5 @@ export type NewToBuyItem = typeof toBuyItems.$inferInsert;
 export type NewAttachment = typeof attachments.$inferInsert;
 export type NewNotification = typeof notifications.$inferInsert;
 export type NewRecurrencePattern = typeof recurrencePatterns.$inferInsert;
+export type NewWhiteboardViewport = typeof whiteboardViewports.$inferInsert;
+export type NewWhiteboardNodePosition = typeof whiteboardNodePositions.$inferInsert;

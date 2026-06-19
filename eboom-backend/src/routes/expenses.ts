@@ -11,6 +11,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
 import { checkCanvasPermission } from "../services/canvasAccessService";
+import { unregisterWhiteboardNode } from "../services/whiteboardService";
 
 const router = express.Router();
 
@@ -342,6 +343,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
         lastModifiedAt: new Date(),
       })
       .where(eq(expenses.id, expenseId));
+
+    await unregisterWhiteboardNode(existing.canvasId, "expense", expenseId);
 
     res.json({ message: "Expense archived successfully" });
   } catch (err) {

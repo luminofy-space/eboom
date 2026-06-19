@@ -39,6 +39,12 @@ export const canvasInvitationStatusEnum = pgEnum("canvas_invitation_status", [
   "expired",
 ]);
 
+export const whiteboardEntityTypeEnum = pgEnum("whiteboard_entity_type", [
+  "wallet",
+  "income",
+  "expense",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -373,3 +379,31 @@ export const recurrencePatterns = pgTable("recurrence_patterns", {
   endDate: date("end_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
+export const whiteboardViewports = pgTable("whiteboard_viewports", {
+  canvasId: integer("canvas_id")
+    .primaryKey()
+    .references(() => canvases.id),
+  x: numeric("x", { precision: 12, scale: 4 }).notNull().default("0"),
+  y: numeric("y", { precision: 12, scale: 4 }).notNull().default("0"),
+  zoom: numeric("zoom", { precision: 8, scale: 4 }).notNull().default("1"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const whiteboardNodePositions = pgTable(
+  "whiteboard_node_positions",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id")
+      .notNull()
+      .references(() => canvases.id),
+    entityType: whiteboardEntityTypeEnum("entity_type").notNull(),
+    entityId: integer("entity_id").notNull(),
+    x: numeric("x", { precision: 12, scale: 4 }).notNull(),
+    y: numeric("y", { precision: 12, scale: 4 }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    uniqueCanvasEntity: unique().on(table.canvasId, table.entityType, table.entityId),
+  })
+);

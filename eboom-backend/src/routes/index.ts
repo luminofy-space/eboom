@@ -14,12 +14,14 @@ import expenseCategories from './expense-categories';
 import canvasMembersRouter from './canvas-members';
 import canvasInvitationsRouter from './canvas-invitations';
 import canvasRolesRouter from './canvas-roles';
+import whiteboardRouter from './whiteboard';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
 
 // Canvas routes (includes canvas-scoped lists: expenses, incomes, wallets)
 router.use('/canvases/:canvasId/members', auth, canvasMembersRouter);
+router.use('/canvases/:canvasId/whiteboard', auth, whiteboardRouter);
 router.use('/canvases', auth, canvas);
 
 // Canvas invitations

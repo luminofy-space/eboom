@@ -49,6 +49,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/expenses",
       icon: BanknoteArrowDown,
     },
+    {
+      title: t("routes.whiteboard"),
+      url: "/whiteboard",
+      icon: Presentation,
+    },
     ...(canManageMembers
       ? [
           {
@@ -62,12 +67,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const data = {
     navUpcoming: [
-      {
-        title: t("routes.whiteboard"),
-        url: "/whiteboard",
-        icon: Presentation,
-        badge: t("badges.soon"),
-      },
       {
         title: t("routes.budgetPlanning"),
         url: "/budget-planning",
