@@ -17,6 +17,7 @@ import {
   CanvasPermission,
   checkCanvasPermission,
 } from "../services/canvasAccessService";
+import { unregisterWhiteboardNode } from "../services/whiteboardService";
 
 const router = express.Router();
 
@@ -153,6 +154,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
         lastModifiedAt: new Date(),
       })
       .where(eq(wallets.id, walletId));
+
+    await unregisterWhiteboardNode(existing.canvasId, "wallet", walletId);
 
     res.json({ message: "Wallet archived successfully" });
   } catch (err) {

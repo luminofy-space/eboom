@@ -1,0 +1,36 @@
+{
+  "noCanvas": "Select or create a canvas to use the whiteboard.",
+  "toolbar": {
+    "addWallet": "Add wallet",
+    "addIncome": "Add income",
+    "addExpense": "Add expense",
+    "autoLayout": "Auto layout",
+    "fitView": "Fit view"
+  },
+  "contextMenu": {
+    "addWallet": "Add wallet",
+    "addIncome": "Add income",
+    "addExpense": "Add expense",
+    "edit": "Edit",
+    "delete": "Delete",
+    "openDetail": "Open detail page"
+  },
+  "nodeTypes": {
+    "wallet": "Wallet",
+    "income": "Income",
+    "expense": "Expense"
+  },
+  "sidePanel": {
+    "incomeFlow": "Income flow",
+    "expenseFlow": "Expense flow",
+    "incomeSummary": "{{count}} entries · {{amount}} total",
+    "expenseSummary": "{{count}} payments · {{amount}} total",
+    "addEntry": "Add income entry",
+    "addPayment": "Add expense payment",
+    "empty": "No movements for this connection yet."
+  },
+  "empty": {
+    "title": "Your financial map starts here",
+    "description": "Right-click the canvas or use the toolbar to add wallets, incomes, and expenses. Then draw arrows to record entries and payments."
+  }
+}

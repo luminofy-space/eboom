@@ -47,7 +47,11 @@ const defaultValues: WalletFormData = {
     description: "",
 };
 
-export function NewWalletModal() {
+interface NewWalletModalProps {
+    onCreateSuccess?: (entity: { id: number }) => void;
+}
+
+export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation("wallets");
     const { t: tc } = useTranslation("common");
@@ -120,7 +124,11 @@ export function NewWalletModal() {
             if (isEdit) {
                 await updateWallet(data);
             } else {
-                await createWallet(data);
+                const response = await createWallet(data);
+                const walletId = (response as { wallet?: { id: number } })?.wallet?.id;
+                if (typeof walletId === "number") {
+                    onCreateSuccess?.({ id: walletId });
+                }
             }
 
             reset(defaultValues);

@@ -20,6 +20,7 @@ import {
   formatMembershipForResponse,
   getCanvasMembership,
 } from "../services/canvasAccessService";
+import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 
 const router = express.Router();
 
@@ -386,6 +387,8 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
       })
       .returning();
 
+    await registerWhiteboardNode(canvasId, "expense", newExpense.id);
+
     res.status(201).json({ expense: newExpense });
   } catch (err) {
     console.error("Error creating expense:", err);
@@ -530,6 +533,8 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
       })
       .returning();
 
+    await registerWhiteboardNode(canvasId, "income", newIncome.id);
+
     res.status(201).json({ income: newIncome });
   } catch (err) {
     console.error("Error creating income:", err);
@@ -637,6 +642,8 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
         lastModifiedBy: user.id,
       })
       .returning();
+
+    await registerWhiteboardNode(canvasId, "wallet", newWallet.id);
 
     res.status(201).json({ wallet: newWallet });
   } catch (err) {

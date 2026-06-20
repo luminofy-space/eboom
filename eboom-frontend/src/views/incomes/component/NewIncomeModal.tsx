@@ -58,7 +58,11 @@ const defaultValues: IncomeFormData = {
   photo: null,
 };
 
-export function NewIncomeModal() {
+interface NewIncomeModalProps {
+  onCreateSuccess?: (entity: { id: number }) => void;
+}
+
+export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation("incomes");
   const { t: tc } = useTranslation("common");
@@ -208,7 +212,11 @@ export function NewIncomeModal() {
       if (isEdit) {
         await updateIncome(data);
       } else {
-        await createIncome(data);
+        const response = await createIncome(data);
+        const incomeId = (response as { income?: { id: number } })?.income?.id;
+        if (typeof incomeId === "number") {
+          onCreateSuccess?.({ id: incomeId });
+        }
       }
 
       reset(defaultValues);

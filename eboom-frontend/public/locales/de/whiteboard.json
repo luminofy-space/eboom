@@ -1,0 +1,36 @@
+{
+  "noCanvas": "Wähle oder erstelle eine Canvas, um das Whiteboard zu nutzen.",
+  "toolbar": {
+    "addWallet": "Wallet hinzufügen",
+    "addIncome": "Einnahme hinzufügen",
+    "addExpense": "Ausgabe hinzufügen",
+    "autoLayout": "Auto-Layout",
+    "fitView": "Ansicht anpassen"
+  },
+  "contextMenu": {
+    "addWallet": "Wallet hinzufügen",
+    "addIncome": "Einnahme hinzufügen",
+    "addExpense": "Ausgabe hinzufügen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "openDetail": "Detailseite öffnen"
+  },
+  "nodeTypes": {
+    "wallet": "Wallet",
+    "income": "Einnahme",
+    "expense": "Ausgabe"
+  },
+  "sidePanel": {
+    "incomeFlow": "Einnahmefluss",
+    "expenseFlow": "Ausgabenfluss",
+    "incomeSummary": "{{count}} Buchungen · {{amount}} gesamt",
+    "expenseSummary": "{{count}} Zahlungen · {{amount}} gesamt",
+    "addEntry": "Einnahmebuchung hinzufügen",
+    "addPayment": "Ausgabenzahlung hinzufügen",
+    "empty": "Noch keine Bewegungen für diese Verbindung."
+  },
+  "empty": {
+    "title": "Deine Finanzkarte beginnt hier",
+    "description": "Rechtsklick auf die Fläche oder Toolbar nutzen, um Wallets, Einnahmen und Ausgaben hinzuzufügen. Dann Pfeile ziehen, um Buchungen und Zahlungen zu erfassen."
+  }
+}

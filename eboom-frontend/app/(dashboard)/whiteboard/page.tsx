@@ -1,12 +1,7 @@
 "use client";
 
-import { ComingSoonPlaceholder } from "@/src/components/ComingSoonPlaceholder";
+import WhiteboardPage from "@/src/views/whiteboard/WhiteboardPage";
 
-export default function WhiteboardPage() {
-  return (
-    <ComingSoonPlaceholder
-      title="Whiteboard"
-      description="A visual workspace where you can manage your incomes, wallets, and expenses with an interactive canvas. Drag, drop, and organize your finances visually."
-    />
-  );
+export default function Page() {
+  return <WhiteboardPage />;
 }

@@ -10,6 +10,7 @@ import {
 } from "../db/schema";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
 import { checkCanvasPermission } from "../services/canvasAccessService";
+import { unregisterWhiteboardNode } from "../services/whiteboardService";
 
 const router = express.Router();
 
@@ -314,6 +315,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
         lastModifiedAt: new Date(),
       })
       .where(eq(incomes.id, incomeId));
+
+    await unregisterWhiteboardNode(existing.canvasId, "income", incomeId);
 
     res.json({ message: "Income archived successfully" });
   } catch (err) {

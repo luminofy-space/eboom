@@ -57,6 +57,13 @@ const API_ROUTES = {
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
 
+  // Canvas whiteboard
+  CANVAS_WHITEBOARD: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/`,
+  CANVAS_WHITEBOARD_VIEWPORT: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/viewport`,
+  CANVAS_WHITEBOARD_NODES: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/nodes`,
+  CANVAS_WHITEBOARD_NODE: (canvasId: number, entityType: string, entityId: number) =>
+    `/api/canvases/${canvasId}/whiteboard/nodes/${entityType}/${entityId}`,
+
   // ============================================================================
   // INCOMES
   // ============================================================================
