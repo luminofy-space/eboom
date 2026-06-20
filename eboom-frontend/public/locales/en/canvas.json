@@ -1,0 +1,53 @@
+{
+  "modal": {
+    "create": {
+      "title": "Add New Canvas",
+      "description": "Create a new canvas to organize your finances. Each canvas is an independent financial workspace."
+    },
+    "edit": {
+      "title": "Edit Canvas",
+      "description": "Update your canvas details."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "e.g. My Personal Budget"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Optional description"
+      },
+      "type": {
+        "label": "Type",
+        "options": {
+          "personal": "Personal",
+          "business": "Business",
+          "family": "Family"
+        }
+      },
+      "baseCurrency": {
+        "label": "Base Currency"
+      },
+      "backgroundColor": {
+        "label": "Background Color"
+      },
+      "icon": {
+        "label": "Icon"
+      }
+    },
+    "empty": {
+      "noCurrencies": "No currencies found."
+    },
+    "submit": {
+      "create": "Create Canvas",
+      "edit": "Save Changes"
+    }
+  },
+  "switcher": {
+    "placeholder": "Select a canvas",
+    "fallbackType": "Canvas",
+    "label": "Canvases",
+    "empty": "No canvases yet",
+    "addNew": "Add a new Canvas"
+  }
+}

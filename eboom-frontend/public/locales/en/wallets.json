@@ -1,0 +1,119 @@
+{
+  "list": {
+    "empty": {
+      "title": "Add Wallet",
+      "description": "Create wallets to manage your assets."
+    }
+  },
+  "detail": {
+    "loadError": "Failed to load wallet details. Please try again."
+  },
+  "modal": {
+    "create": {
+      "title": "Add New Wallet",
+      "description": "Enter the details below to create a new wallet. Organize your accounts and keep track of your financial sources."
+    },
+    "edit": {
+      "title": "Edit Wallet",
+      "description": "Update the details of your wallet."
+    },
+    "fields": {
+      "name": {
+        "label": "Wallet Name",
+        "placeholder": "e.g. Main Bank Account"
+      },
+      "category": {
+        "label": "Wallet Category"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Optional notes about this wallet"
+      }
+    },
+    "submit": {
+      "create": "Create Wallet",
+      "edit": "Save changes"
+    }
+  },
+  "entriesTable": {
+    "title": "Income Entries",
+    "subtitle": "Incoming transactions to this wallet",
+    "createEntry": "Create Entry",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Failed to load income entries. Please try again.",
+    "headers": {
+      "amount": "Amount",
+      "income": "Income",
+      "expected": "Expected",
+      "received": "Received",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "empty": "No income entries yet. Create an entry to record incoming funds.",
+    "fallbackIncomeName": "Income #{{incomeId}}",
+    "footer": {
+      "totalReceived": "Total received"
+    }
+  },
+  "paymentsTable": {
+    "title": "Expense Payments",
+    "subtitle": "Outgoing transactions from this wallet",
+    "createPayment": "Create Payment",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Failed to load expense payments. Please try again.",
+    "headers": {
+      "amount": "Amount",
+      "expense": "Expense",
+      "due": "Due",
+      "paid": "Paid",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "empty": "No expense payments yet. Create a payment to record outgoing funds.",
+    "fallbackExpenseName": "Expense #{{expenseId}}",
+    "footer": {
+      "totalPaid": "Total paid"
+    }
+  },
+  "status": {
+    "received": "Received",
+    "expected": "Expected",
+    "pending": "Pending",
+    "paid": "Paid",
+    "due": "Due",
+    "overdue": "Overdue"
+  },
+  "summaryCards": {
+    "totalReceived": {
+      "label": "Total Received",
+      "footerCount": "{{count}} received {{unit}}"
+    },
+    "pendingIncoming": {
+      "label": "Pending Incoming",
+      "badge": "{{count}} open",
+      "footerTitle": "Awaiting receipt",
+      "footerDescription": "Entries without a received date"
+    },
+    "totalPaid": {
+      "label": "Total Paid",
+      "footerCount": "{{count}} paid {{unit}}"
+    },
+    "dueOutgoing": {
+      "label": "Due Outgoing",
+      "badge": "{{count}} overdue",
+      "footerTitle": "Awaiting payment",
+      "footerDescription": "Payments without a paid date"
+    }
+  },
+  "chart": {
+    "title": "Transactions Over Time",
+    "description": {
+      "withData": "{{amount}} incoming & outgoing for the {{timeRange}}",
+      "noData": "No transactions in the {{timeRange}}"
+    },
+    "series": {
+      "incoming": "Incoming",
+      "outgoing": "Outgoing"
+    }
+  }
+}

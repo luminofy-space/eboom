@@ -1,0 +1,136 @@
+{
+  "actions": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating...",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "edit": "Edit",
+    "openMenu": "Open menu",
+    "actions": "Actions",
+    "saveChanges": "Save changes"
+  },
+  "confirmDelete": {
+    "title": "Are you sure?",
+    "description": "This action cannot be undone. This will permanently delete this item."
+  },
+  "labels": {
+    "amount": "Amount",
+    "description": "Description",
+    "name": "Name",
+    "notes": "Notes",
+    "photo": "Photo",
+    "recurring": "Recurring",
+    "status": "Status",
+    "wallet": "Wallet"
+  },
+  "placeholders": {
+    "amount": "0.00",
+    "optionalNotesPayment": "Optional notes about this payment",
+    "selectCategory": "Select a category",
+    "selectCurrency": "Select a currency",
+    "selectWallet": "Select a wallet"
+  },
+  "empty": {
+    "emDash": "—",
+    "noCategoriesFound": "No categories found.",
+    "noItemsFound": "No items found.",
+    "noWalletsFound": "No wallets found.",
+    "noResults": "No results found for \"{{query}}\""
+  },
+  "loading": {
+    "wallets": "Loading wallets..."
+  },
+  "wallet": {
+    "thisWallet": "This wallet"
+  },
+  "plurals": {
+    "entry": "entry",
+    "entries": "entries",
+    "payment": "payment",
+    "payments": "payments"
+  },
+  "totals": {
+    "totalPaid": "Total paid",
+    "totalReceived": "Total received"
+  },
+  "trends": {
+    "noPriorData": "No prior data",
+    "noMonthOverMonth": "No month-over-month comparison yet",
+    "upFromLastMonth": "Up from last month",
+    "downFromLastMonth": "Down from last month"
+  },
+  "chart": {
+    "selectTimeRange": "Select time range",
+    "last3Months": "Last 3 months",
+    "last30Days": "Last 30 days",
+    "last7Days": "Last 7 days",
+    "timeRange": {
+      "last7Days": "last 7 days",
+      "last30Days": "last 30 days",
+      "last3Months": "last 3 months"
+    }
+  },
+  "gridCard": {
+    "editedRelative": "Edited {{relativeTime}}"
+  },
+  "comingSoon": {
+    "imageAlt": "Coming Soon"
+  },
+  "recurrence": {
+    "every": "Every",
+    "repeatOn": "Repeat on",
+    "onDay": "On day",
+    "ofEveryMonth": "of every month",
+    "ofEveryNMonths": "of every {{interval}} months",
+    "frequency": {
+      "day": "Day",
+      "days": "Days",
+      "week": "Week",
+      "weeks": "Weeks",
+      "month": "Month",
+      "months": "Months",
+      "year": "Year",
+      "years": "Years"
+    },
+    "units": {
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "years": "years"
+    },
+    "daysOfWeek": {
+      "sun": "S",
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S"
+    },
+    "dayNames": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "summary": {
+      "everyDay": "Repeats every day",
+      "everyNDays": "Repeats every {{interval}} days",
+      "everyWeek": "Repeats every week",
+      "everyNWeeks": "Repeats every {{interval}} weeks",
+      "everyWeekOnDays": "Repeats every week on {{days}}",
+      "everyNWeeksOnDays": "Repeats every {{interval}} weeks on {{days}}",
+      "everyMonth": "Repeats every month",
+      "everyNMonths": "Repeats every {{interval}} months",
+      "everyMonthOnDay": "Repeats every month on day {{day}}",
+      "everyNMonthsOnDay": "Repeats every {{interval}} months on day {{day}}",
+      "everyYear": "Repeats every year",
+      "everyNYears": "Repeats every {{interval}} years"
+    }
+  }
+}

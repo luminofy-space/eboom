@@ -8,19 +8,21 @@ import { useWalletDetail } from "./hooks/useWalletDetail";
 import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   id: number;
 }
 
 export default function WalletDetailPage({ id }: Props) {
+  const { t } = useTranslation("wallets");
   const { wallet, entries, payments, currencySymbol, isLoading, isError } = useWalletDetail(id);
 
   if (isError) {
     return (
       <Container>
         <Stack className="h-96" align="center" justify="center">
-          <Typography variant="muted-sm">Failed to load wallet details. Please try again.</Typography>
+          <Typography variant="muted-sm">{t("detail.loadError")}</Typography>
         </Stack>
       </Container>
     );

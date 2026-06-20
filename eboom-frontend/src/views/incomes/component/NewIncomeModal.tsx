@@ -32,6 +32,7 @@ import {
   DEFAULT_RECURRENCE_PATTERN,
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
+import { useTranslation } from "react-i18next";
 
 interface IncomeFormData {
   name: string;
@@ -59,6 +60,8 @@ const defaultValues: IncomeFormData = {
 
 export function NewIncomeModal() {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("incomes");
+  const { t: tc } = useTranslation("common");
   const { open, mode, editingItem } = useAppSelector(selectIncomeModal);
   const isEdit = mode === "edit";
 
@@ -224,23 +227,21 @@ export function NewIncomeModal() {
       <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Income" : "Add New Income"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Update the details of your income source."
-                : "Enter the details below to track your income from various sources. Keep your finances organized."}
+              {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
-              <FieldLabel htmlFor="name">Name</FieldLabel>
+              <FieldLabel htmlFor="name">{t("modal.fields.name.label")}</FieldLabel>
               <Input
                 id="name"
                 {...register("name", { required: true })}
               />
             </Field>
             <Field className="flex-1">
-              <FieldLabel htmlFor="currency">Currency</FieldLabel>
+              <FieldLabel htmlFor="currency">{t("modal.fields.currency.label")}</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
@@ -255,9 +256,9 @@ export function NewIncomeModal() {
                       field.onChange(val ? currencyLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a currency" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(label) => (
                           <ComboboxItem key={label} value={label}>
@@ -273,7 +274,7 @@ export function NewIncomeModal() {
           </Stack>
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
-              <FieldLabel htmlFor="amount">Amount</FieldLabel>
+              <FieldLabel htmlFor="amount">{t("modal.fields.amount.label")}</FieldLabel>
               <Input
                 id="amount"
                 type="number"
@@ -281,7 +282,7 @@ export function NewIncomeModal() {
               />
             </Field>
             <Field className="flex-1">
-              <FieldLabel htmlFor="income-category">Income Category</FieldLabel>
+              <FieldLabel htmlFor="income-category">{t("modal.fields.incomeCategory.label")}</FieldLabel>
               <Controller
                 name="incomeCategoryId"
                 control={control}
@@ -296,9 +297,9 @@ export function NewIncomeModal() {
                       field.onChange(val ? categoryNameToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a category" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(catName) => (
                           <ComboboxItem key={catName} value={catName}>
@@ -313,7 +314,7 @@ export function NewIncomeModal() {
             </Field>
           </Stack>
           <Field>
-            <FieldLabel htmlFor="default-wallet">Default Wallet (optional)</FieldLabel>
+            <FieldLabel htmlFor="default-wallet">{t("modal.fields.defaultWallet.label")}</FieldLabel>
             <Controller
               name="defaultWalletId"
               control={control}
@@ -327,9 +328,9 @@ export function NewIncomeModal() {
                     field.onChange(val ? walletLabelToId(val) : null)
                   }
                 >
-                  <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
+                  <ComboboxInput placeholder={isLoadingWallets ? tc("loading.wallets") : t("modal.fields.defaultWallet.placeholder")} />
                   <ComboboxContent className="z-[80]">
-                    <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                    <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
                     <ComboboxCollection>
                       {(walletLabel) => (
                         <ComboboxItem key={walletLabel} value={walletLabel}>
@@ -343,14 +344,14 @@ export function NewIncomeModal() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="description">Description</FieldLabel>
+            <FieldLabel htmlFor="description">{t("modal.fields.description.label")}</FieldLabel>
             <Input
               id="description"
               {...register("description")}
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="photo">Photo</FieldLabel>
+            <FieldLabel htmlFor="photo">{t("modal.fields.photo.label")}</FieldLabel>
             <Controller
               name="photo"
               control={control}
@@ -382,7 +383,7 @@ export function NewIncomeModal() {
                   />
                 )}
               />
-              <FieldLabel htmlFor="isRecurrent">Recurring</FieldLabel>
+              <FieldLabel htmlFor="isRecurrent">{t("modal.fields.recurring.label")}</FieldLabel>
             </Field>
             {isRecurring && (
               <Controller
@@ -399,13 +400,13 @@ export function NewIncomeModal() {
           </Stack>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{tc("actions.cancel")}</Button>
             </DialogClose>
             <Button
               disabled={!name || currencyId === null || !incomeCategoryId}
               type="submit"
             >
-              {isEdit ? "Save changes" : "Create Income"}
+              {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
             </Button>
           </DialogFooter>
           </FieldGroup>

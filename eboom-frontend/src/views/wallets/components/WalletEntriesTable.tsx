@@ -27,6 +27,9 @@ import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletEntry } from "../utils/utils";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { formatAmount } from "@/src/i18n/formatters";
 
 interface WalletEntriesTableProps {
   walletId: number;
@@ -34,32 +37,22 @@ interface WalletEntriesTableProps {
   currencySymbol?: string;
 }
 
-function formatDate(date: string | null | undefined): string {
-  if (!date) return "—";
+function formatDate(date: string | null | undefined, emDash: string): string {
+  if (!date) return emDash;
   return dayjs(date).format("MMM D, YYYY");
 }
 
-function formatAmount(amount: string | number, symbol?: string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (Number.isNaN(num)) return "—";
-  const formatted = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8,
-  }).format(num);
-  return symbol ? `${symbol}${formatted}` : formatted;
-}
-
-function getEntryStatus(entry: WalletEntry): {
+function getEntryStatus(entry: WalletEntry, t: TFunction<"wallets">): {
   label: string;
   variant: "default" | "secondary" | "outline";
 } {
   if (entry.receivedDate) {
-    return { label: "Received", variant: "default" };
+    return { label: t("status.received"), variant: "default" };
   }
   if (entry.expectedDate && dayjs(entry.expectedDate).isAfter(dayjs(), "day")) {
-    return { label: "Expected", variant: "secondary" };
+    return { label: t("status.expected"), variant: "secondary" };
   }
-  return { label: "Pending", variant: "outline" };
+  return { label: t("status.pending"), variant: "outline" };
 }
 
 function sortEntries(entries: WalletEntry[]): WalletEntry[] {
@@ -75,6 +68,9 @@ export function WalletEntriesTable({
   walletName,
   currencySymbol,
 }: WalletEntriesTableProps) {
+  const { t } = useTranslation("wallets");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const [createOpen, setCreateOpen] = useState(false);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
@@ -112,7 +108,7 @@ export function WalletEntriesTable({
     return (
       <Container>
         <Typography variant="muted-sm">
-          Failed to load income entries. Please try again.
+          {t("entriesTable.loadError")}
         </Typography>
       </Container>
     );
@@ -124,20 +120,23 @@ export function WalletEntriesTable({
         <Stack gap={4}>
         <Stack direction="row" align="center" justify="between" gap={4}>
           <div>
-            <Typography variant="heading">Income Entries</Typography>
+            <Typography variant="heading">{t("entriesTable.title")}</Typography>
             <Typography variant="muted-sm">
-              Incoming transactions to this wallet
+              {t("entriesTable.subtitle")}
             </Typography>
           </div>
           <Stack direction="row" align="center" gap={3}>
             {entries.length > 0 && (
               <Typography variant="count" className="hidden sm:block">
-                {entries.length} {entries.length === 1 ? "entry" : "entries"}
+                {t("entriesTable.count", {
+                  count: entries.length,
+                  unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
+                })}
               </Typography>
             )}
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
-              Create Entry
+              {t("entriesTable.createEntry")}
             </Button>
           </Stack>
         </Stack>
@@ -146,12 +145,12 @@ export function WalletEntriesTable({
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[140px]">Amount</TableHead>
-              <TableHead>Income</TableHead>
-              <TableHead>Expected</TableHead>
-              <TableHead>Received</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Notes</TableHead>
+              <TableHead className="w-[140px]">{t("entriesTable.headers.amount")}</TableHead>
+              <TableHead>{t("entriesTable.headers.income")}</TableHead>
+              <TableHead>{t("entriesTable.headers.expected")}</TableHead>
+              <TableHead>{t("entriesTable.headers.received")}</TableHead>
+              <TableHead>{t("entriesTable.headers.status")}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("entriesTable.headers.notes")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -160,31 +159,31 @@ export function WalletEntriesTable({
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <p className="text-muted-foreground">
-                    No income entries yet. Create an entry to record incoming funds.
+                    {t("entriesTable.empty")}
                   </p>
                 </TableCell>
               </TableRow>
             ) : (
               entries.map((entry) => {
-                const status = getEntryStatus(entry);
+                const status = getEntryStatus(entry, t);
                 return (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium tabular-nums">
-                      {formatAmount(entry.amount, currencySymbol)}
+                      {formatAmount(entry.amount, currencySymbol, emDash)}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span>{entry.incomeName ?? `Income #${entry.incomeId}`}</span>
+                        <span>{entry.incomeName ?? t("entriesTable.fallbackIncomeName", { incomeId: entry.incomeId })}</span>
                         {entry.categoryName && (
                           <Typography variant="caption">{entry.categoryName}</Typography>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(entry.expectedDate)}
+                      {formatDate(entry.expectedDate, emDash)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(entry.receivedDate)}
+                      {formatDate(entry.receivedDate, emDash)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
@@ -193,7 +192,7 @@ export function WalletEntriesTable({
                       {entry.notes ? (
                         <span title={entry.notes}>{entry.notes}</span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">{emDash}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -205,13 +204,13 @@ export function WalletEntriesTable({
                             className="text-muted-foreground size-8"
                           >
                             <MoreVertical className="size-4" />
-                            <span className="sr-only">Open menu</span>
+                            <span className="sr-only">{tc("actions.openMenu")}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem variant="destructive" disabled>
                             <Trash2 className="size-4" />
-                            Delete
+                            {tc("actions.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -225,10 +224,10 @@ export function WalletEntriesTable({
             <TableFooter>
               <TableRow>
                 <TableCell className="font-semibold tabular-nums">
-                  {formatAmount(totalReceived, currencySymbol)}
+                  {formatAmount(totalReceived, currencySymbol, emDash)}
                 </TableCell>
                 <TableCell colSpan={6} className="text-muted-foreground">
-                  Total received
+                  {t("entriesTable.footer.totalReceived")}
                 </TableCell>
               </TableRow>
             </TableFooter>

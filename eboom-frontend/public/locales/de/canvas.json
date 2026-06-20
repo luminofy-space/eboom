@@ -1,0 +1,53 @@
+{
+  "modal": {
+    "create": {
+      "title": "Neues Canvas hinzufügen",
+      "description": "Erstellen Sie ein neues Canvas, um Ihre Finanzen zu organisieren. Jedes Canvas ist ein unabhängiger Finanzarbeitsbereich."
+    },
+    "edit": {
+      "title": "Canvas bearbeiten",
+      "description": "Aktualisieren Sie Ihre Canvas-Details."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "z. B. Mein persönliches Budget"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Optionale Beschreibung"
+      },
+      "type": {
+        "label": "Typ",
+        "options": {
+          "personal": "Persönlich",
+          "business": "Geschäftlich",
+          "family": "Familie"
+        }
+      },
+      "baseCurrency": {
+        "label": "Basiswährung"
+      },
+      "backgroundColor": {
+        "label": "Hintergrundfarbe"
+      },
+      "icon": {
+        "label": "Symbol"
+      }
+    },
+    "empty": {
+      "noCurrencies": "Keine Währungen gefunden."
+    },
+    "submit": {
+      "create": "Canvas erstellen",
+      "edit": "Änderungen speichern"
+    }
+  },
+  "switcher": {
+    "placeholder": "Canvas auswählen",
+    "fallbackType": "Canvas",
+    "label": "Canvases",
+    "empty": "Noch keine Canvases",
+    "addNew": "Neues Canvas hinzufügen"
+  }
+}

@@ -16,6 +16,7 @@ import { Grid } from "@/components/ui/grid";
 import { Typography, typographyVariants } from "@/components/ui/typography";
 import { useMemo } from "react";
 import { computeWalletStats, formatMoney, WalletEntry, WalletPayment } from "../utils/utils";
+import { useTranslation } from "react-i18next";
 
 interface WalletSummaryCardsProps {
   entries: WalletEntry[];
@@ -25,10 +26,12 @@ interface WalletSummaryCardsProps {
 }
 
 function TrendBadge({ change }: { change: number | null }) {
+  const { t: tc } = useTranslation("common");
+
   if (change === null) {
     return (
       <Badge variant="outline" className="text-muted-foreground">
-        No prior data
+        {tc("trends.noPriorData")}
       </Badge>
     );
   }
@@ -51,6 +54,8 @@ export function WalletSummaryCards({
   currencySymbol,
   isLoading,
 }: WalletSummaryCardsProps) {
+  const { t } = useTranslation("wallets");
+  const { t: tc } = useTranslation("common");
   const stats = useMemo(() => computeWalletStats(entries, payments), [entries, payments]);
 
   if (isLoading) {
@@ -74,13 +79,15 @@ export function WalletSummaryCards({
   const entryIsUp = entryChange !== null && entryChange >= 0;
   const paymentChange = stats.monthOverMonthPaymentChange;
   const paymentIsUp = paymentChange !== null && paymentChange >= 0;
+  const entryUnit = stats.receivedCount === 1 ? tc("plurals.entry") : tc("plurals.entries");
+  const paymentUnit = stats.paidCount === 1 ? tc("plurals.payment") : tc("plurals.payments");
 
   return (
     <Container>
       <Grid variant="stats" gap={4}>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Received</CardDescription>
+          <CardDescription>{t("summaryCards.totalReceived.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalReceived, currencySymbol)}
           </CardTitle>
@@ -91,10 +98,10 @@ export function WalletSummaryCards({
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
             {entryChange === null
-              ? "No month-over-month comparison yet"
+              ? tc("trends.noMonthOverMonth")
               : entryIsUp
-                ? "Up from last month"
-                : "Down from last month"}
+                ? tc("trends.upFromLastMonth")
+                : tc("trends.downFromLastMonth")}
             {entryChange !== null &&
               (entryIsUp ? (
                 <IconTrendingUp className="size-4" />
@@ -103,34 +110,37 @@ export function WalletSummaryCards({
               ))}
           </Typography>
           <Typography variant="muted">
-            {stats.receivedCount} received {stats.receivedCount === 1 ? "entry" : "entries"}
+            {t("summaryCards.totalReceived.footerCount", {
+              count: stats.receivedCount,
+              unit: entryUnit,
+            })}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Pending Incoming</CardDescription>
+          <CardDescription>{t("summaryCards.pendingIncoming.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalPending, currencySymbol)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">{stats.pendingCount} open</Badge>
+            <Badge variant="outline">{t("summaryCards.pendingIncoming.badge", { count: stats.pendingCount })}</Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
-            Awaiting receipt
+            {t("summaryCards.pendingIncoming.footerTitle")}
           </Typography>
           <Typography variant="muted">
-            Entries without a received date
+            {t("summaryCards.pendingIncoming.footerDescription")}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Paid</CardDescription>
+          <CardDescription>{t("summaryCards.totalPaid.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalPaid, currencySymbol)}
           </CardTitle>
@@ -141,10 +151,10 @@ export function WalletSummaryCards({
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
             {paymentChange === null
-              ? "No month-over-month comparison yet"
+              ? tc("trends.noMonthOverMonth")
               : paymentIsUp
-                ? "Up from last month"
-                : "Down from last month"}
+                ? tc("trends.upFromLastMonth")
+                : tc("trends.downFromLastMonth")}
             {paymentChange !== null &&
               (paymentIsUp ? (
                 <IconTrendingUp className="size-4" />
@@ -153,27 +163,30 @@ export function WalletSummaryCards({
               ))}
           </Typography>
           <Typography variant="muted">
-            {stats.paidCount} paid {stats.paidCount === 1 ? "payment" : "payments"}
+            {t("summaryCards.totalPaid.footerCount", {
+              count: stats.paidCount,
+              unit: paymentUnit,
+            })}
           </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Due Outgoing</CardDescription>
+          <CardDescription>{t("summaryCards.dueOutgoing.label")}</CardDescription>
           <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalDue, currencySymbol)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">{stats.dueCount} overdue</Badge>
+            <Badge variant="outline">{t("summaryCards.dueOutgoing.badge", { count: stats.dueCount })}</Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <Typography variant="label" className="line-clamp-1 flex gap-2">
-            Awaiting payment
+            {t("summaryCards.dueOutgoing.footerTitle")}
           </Typography>
           <Typography variant="muted">
-            Payments without a paid date
+            {t("summaryCards.dueOutgoing.footerDescription")}
           </Typography>
         </CardFooter>
       </Card>

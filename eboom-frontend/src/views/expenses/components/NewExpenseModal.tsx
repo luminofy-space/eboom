@@ -39,6 +39,7 @@ import {
   DEFAULT_RECURRENCE_PATTERN,
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
+import { useTranslation } from "react-i18next";
 
 interface ExpenseFormData {
   name: string;
@@ -64,6 +65,8 @@ const defaultValues: ExpenseFormData = {
 
 export function NewExpenseModal() {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("expenses");
+  const { t: tc } = useTranslation("common");
   const { open, mode, editingItem } = useAppSelector(selectExpenseModal);
   const isEdit = mode === "edit";
   const { canvas } = useCanvas();
@@ -224,25 +227,23 @@ export function NewExpenseModal() {
       <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Expense" : "Add New Expense"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Update the details of your expense."
-                : "Enter the details below to track a new expense. Keep your spending organized and on budget."}
+              {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
 
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
-              <FieldLabel htmlFor="expense-name">Name</FieldLabel>
+              <FieldLabel htmlFor="expense-name">{t("modal.fields.name.label")}</FieldLabel>
               <Input
                 id="expense-name"
-                placeholder="e.g. Monthly Rent"
+                placeholder={t("modal.fields.name.placeholder")}
                 {...register("name", { required: true })}
               />
             </Field>
             <Field className="flex-1">
-              <FieldLabel htmlFor="expense-category">Expense Category</FieldLabel>
+              <FieldLabel htmlFor="expense-category">{t("modal.fields.expenseCategory.label")}</FieldLabel>
               <Controller
                 name="expenseCategoryId"
                 control={control}
@@ -257,9 +258,9 @@ export function NewExpenseModal() {
                       field.onChange(val ? categoryNameToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a category" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noCategoriesFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(catName) => (
                           <ComboboxItem key={catName} value={catName}>
@@ -276,7 +277,7 @@ export function NewExpenseModal() {
 
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
-              <FieldLabel htmlFor="expense-currency">Currency</FieldLabel>
+              <FieldLabel htmlFor="expense-currency">{t("modal.fields.currency.label")}</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
@@ -291,9 +292,9 @@ export function NewExpenseModal() {
                       field.onChange(val ? currencyLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a currency" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(label) => (
                           <ComboboxItem key={label} value={label}>
@@ -307,7 +308,7 @@ export function NewExpenseModal() {
               />
             </Field>
             <Field className="flex-1">
-              <FieldLabel htmlFor="expense-default-wallet">Default Wallet (optional)</FieldLabel>
+              <FieldLabel htmlFor="expense-default-wallet">{t("modal.fields.defaultWallet.label")}</FieldLabel>
               <Controller
                 name="defaultWalletId"
                 control={control}
@@ -321,9 +322,9 @@ export function NewExpenseModal() {
                       field.onChange(val ? walletLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
+                    <ComboboxInput placeholder={isLoadingWallets ? tc("loading.wallets") : t("modal.fields.defaultWallet.placeholder")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(walletLabel) => (
                           <ComboboxItem key={walletLabel} value={walletLabel}>
@@ -339,16 +340,16 @@ export function NewExpenseModal() {
           </Stack>
 
           <Field>
-            <FieldLabel htmlFor="expense-description">Description</FieldLabel>
+            <FieldLabel htmlFor="expense-description">{t("modal.fields.description.label")}</FieldLabel>
             <Input
               id="expense-description"
-              placeholder="Optional notes about this expense"
+              placeholder={t("modal.fields.description.placeholder")}
               {...register("description")}
             />
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="expense-photo">Photo</FieldLabel>
+            <FieldLabel htmlFor="expense-photo">{t("modal.fields.photo.label")}</FieldLabel>
             <Controller
               name="photo"
               control={control}
@@ -381,7 +382,7 @@ export function NewExpenseModal() {
                   />
                 )}
               />
-              <FieldLabel htmlFor="expense-recurring">Recurring</FieldLabel>
+              <FieldLabel htmlFor="expense-recurring">{t("modal.fields.recurring.label")}</FieldLabel>
             </Field>
             {isRecurring && (
               <Controller
@@ -399,13 +400,13 @@ export function NewExpenseModal() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{tc("actions.cancel")}</Button>
             </DialogClose>
             <Button
               disabled={!name || !expenseCategoryId || currencyId === null}
               type="submit"
             >
-              {isEdit ? "Save changes" : "Create Expense"}
+              {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
             </Button>
           </DialogFooter>
           </FieldGroup>

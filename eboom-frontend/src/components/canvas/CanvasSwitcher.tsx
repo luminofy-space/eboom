@@ -30,6 +30,8 @@ import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import API_ROUTES from "@/src/api/urls";
+import { useTranslation } from "react-i18next";
+import { useTextDirection } from "@/src/i18n/useTextDirection";
 
 const hasWindow = typeof window !== "undefined";
 
@@ -47,7 +49,9 @@ function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" 
 }
 
 export function CanvasSwitcher() {
+  const { t } = useTranslation("canvas");
   const { isMobile } = useSidebar();
+  const { dropdownSide } = useTextDirection();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
 
@@ -88,31 +92,31 @@ export function CanvasSwitcher() {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <CanvasIcon photoUrl={activeCanvas?.photoUrl ?? undefined} size="md" />
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-medium">
-                    {activeCanvas?.name ?? "Select a canvas"}
+                    {activeCanvas?.name ?? t("switcher.placeholder")}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {activeCanvas?.canvasType ?? "Canvas"}
+                    {activeCanvas?.canvasType ?? t("switcher.fallbackType")}
                   </span>
                 </div>
-                <ChevronsUpDown className="ml-auto" />
+                <ChevronsUpDown className="ms-auto" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent
               className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
               align="start"
-              side={isMobile ? "bottom" : "right"}
+              side={isMobile ? "bottom" : dropdownSide}
               sideOffset={4}
             >
               <DropdownMenuLabel className="text-muted-foreground text-xs">
-                Canvases
+                {t("switcher.label")}
               </DropdownMenuLabel>
 
               {canvases.length === 0 ? (
                 <DropdownMenuItem disabled className="text-muted-foreground text-sm">
-                  No canvases yet
+                  {t("switcher.empty")}
                 </DropdownMenuItem>
               ) : (
                 canvases.map((c) => (
@@ -165,7 +169,7 @@ export function CanvasSwitcher() {
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <Plus className="size-4" />
                 </div>
-                <div className="text-muted-foreground font-medium">Add a new Canvas</div>
+                <div className="text-muted-foreground font-medium">{t("switcher.addNew")}</div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

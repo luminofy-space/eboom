@@ -34,17 +34,7 @@ import {
   formatMoney,
 } from "../utils/utils";
 import { useWalletDetail } from "../hooks/useWalletDetail";
-
-const chartConfig = {
-  entries: {
-    label: "Incoming",
-    color: "var(--primary)",
-  },
-  payments: {
-    label: "Outgoing",
-    color: "hsl(var(--destructive))",
-  },
-} satisfies ChartConfig;
+import { useTranslation } from "react-i18next";
 
 interface WalletTransactionChartProps {
   walletId: number
@@ -53,10 +43,27 @@ interface WalletTransactionChartProps {
 export function WalletTransactionChart({
   walletId
 }: WalletTransactionChartProps) {
+  const { t } = useTranslation("wallets");
+  const { t: tc } = useTranslation("common");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
   const fillEntriesId = React.useId();
   const fillPaymentsId = React.useId();
+
+  const chartConfig = React.useMemo(
+    () =>
+      ({
+        entries: {
+          label: t("chart.series.incoming"),
+          color: "var(--primary)",
+        },
+        payments: {
+          label: t("chart.series.outgoing"),
+          color: "hsl(var(--destructive))",
+        },
+      }) satisfies ChartConfig,
+    [t]
+  );
 
   const { entries, payments, currencySymbol, isLoading } = useWalletDetail(walletId);
 
@@ -82,10 +89,10 @@ export function WalletTransactionChart({
 
   const timeRangeLabel =
     timeRange === "7d"
-      ? "last 7 days"
+      ? tc("chart.timeRange.last7Days")
       : timeRange === "30d"
-        ? "last 30 days"
-        : "last 3 months";
+        ? tc("chart.timeRange.last30Days")
+        : tc("chart.timeRange.last3Months");
 
   if (isLoading) {
     return (
@@ -104,12 +111,15 @@ export function WalletTransactionChart({
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Transactions Over Time</CardTitle>
+        <CardTitle>{t("chart.title")}</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
             {rangeTotal > 0
-              ? `${formatMoney(rangeTotal, currencySymbol)} incoming & outgoing for the ${timeRangeLabel}`
-              : `No transactions in the ${timeRangeLabel}`}
+              ? t("chart.description.withData", {
+                  amount: formatMoney(rangeTotal, currencySymbol),
+                  timeRange: timeRangeLabel,
+                })
+              : t("chart.description.noData", { timeRange: timeRangeLabel })}
           </span>
           <span className="@[540px]/card:hidden">{timeRangeLabel}</span>
         </CardDescription>
@@ -121,27 +131,27 @@ export function WalletTransactionChart({
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
           >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+            <ToggleGroupItem value="90d">{tc("chart.last3Months")}</ToggleGroupItem>
+            <ToggleGroupItem value="30d">{tc("chart.last30Days")}</ToggleGroupItem>
+            <ToggleGroupItem value="7d">{tc("chart.last7Days")}</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
               size="sm"
-              aria-label="Select time range"
+              aria-label={tc("chart.selectTimeRange")}
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder={tc("chart.last3Months")} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
+                {tc("chart.last3Months")}
               </SelectItem>
               <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
+                {tc("chart.last30Days")}
               </SelectItem>
               <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
+                {tc("chart.last7Days")}
               </SelectItem>
             </SelectContent>
           </Select>

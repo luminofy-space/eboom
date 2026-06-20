@@ -1,0 +1,26 @@
+{
+  "dashboard": "Dashboard",
+  "search": {
+    "placeholder": "Search..."
+  },
+  "groups": {
+    "management": "Management",
+    "explore": "Explore"
+  },
+  "routes": {
+    "incomes": "Incomes",
+    "wallets": "Wallets",
+    "expenses": "Expenses",
+    "whiteboard": "Whiteboard",
+    "budgetPlanning": "Budget & Planning",
+    "wishList": "Wish List",
+    "aiInsights": "AI Insights"
+  },
+  "badges": {
+    "soon": "Soon"
+  },
+  "account": {
+    "language": "Language",
+    "logOut": "Log out"
+  }
+}

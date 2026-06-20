@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
+import { formatMoney } from "@/src/i18n/formatters";
+
+export { formatMoney };
 
 dayjs.extend(isBetween);
 
@@ -114,16 +117,6 @@ export function computeWalletStats(entries: WalletEntry[], payments: WalletPayme
     monthOverMonthEntryChange,
     monthOverMonthPaymentChange,
   };
-}
-
-export function formatMoney(amount: number | string, symbol?: string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (Number.isNaN(num)) return "—";
-  const formatted = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8,
-  }).format(num);
-  return symbol ? `${symbol}${formatted}` : formatted;
 }
 
 interface ChartDataPoint {

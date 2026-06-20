@@ -7,8 +7,11 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { SiteHeader } from "./layout/site-header";
+import { useTextDirection } from "@/src/i18n/useTextDirection";
 
 export default function LayoutProvider({ children }: { children: React.ReactNode }) {
+  const { sidebarSide } = useTextDirection();
+
   return (
     <SidebarProvider
       style={
@@ -18,7 +21,7 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" side={sidebarSide} />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

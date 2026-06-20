@@ -1,0 +1,144 @@
+{
+  "list": {
+    "empty": {
+      "title": "افزودن هزینه",
+      "description": "هزینه‌های خود را پیگیری کنید و بودجه‌هایتان را مدیریت کنید."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "افزودن هزینه جدید",
+      "description": "جزئیات زیر را وارد کنید تا هزینه جدیدی ثبت شود. هزینه‌های خود را منظم و در چارچوب بودجه نگه دارید."
+    },
+    "edit": {
+      "title": "ویرایش هزینه",
+      "description": "جزئیات هزینه خود را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "name": {
+        "label": "نام",
+        "placeholder": "مثلاً اجاره ماهانه"
+      },
+      "expenseCategory": {
+        "label": "دسته‌بندی هزینه"
+      },
+      "currency": {
+        "label": "ارز"
+      },
+      "defaultWallet": {
+        "label": "کیف پول پیش‌فرض (اختیاری)",
+        "placeholder": "انتخاب کیف پول پیش‌فرض"
+      },
+      "description": {
+        "label": "توضیحات",
+        "placeholder": "یادداشت‌های اختیاری درباره این هزینه"
+      },
+      "photo": {
+        "label": "عکس"
+      },
+      "recurring": {
+        "label": "تکرارشونده"
+      }
+    },
+    "submit": {
+      "create": "ایجاد هزینه",
+      "edit": "ذخیره تغییرات"
+    }
+  },
+  "paymentModal": {
+    "title": "ایجاد پرداخت",
+    "description": {
+      "forExpense": "ثبت پرداخت انجام‌شده برای {{expenseName}}.",
+      "fromWallet": "ثبت وجوه خروجی از {{walletName}}.",
+      "default": "ثبت پرداخت انجام‌شده برای یک هزینه."
+    },
+    "fields": {
+      "expense": {
+        "label": "هزینه",
+        "placeholder": "انتخاب هزینه",
+        "loading": "در حال بارگذاری هزینه‌ها..."
+      },
+      "amount": {
+        "label": "مبلغ"
+      },
+      "sourceWallet": {
+        "label": "کیف پول مبدأ"
+      },
+      "dueDate": {
+        "label": "تاریخ سررسید"
+      },
+      "paidDate": {
+        "label": "تاریخ پرداخت"
+      },
+      "notes": {
+        "label": "یادداشت‌ها"
+      }
+    },
+    "empty": {
+      "noExpenses": "هزینه‌ای یافت نشد."
+    },
+    "submit": "ایجاد پرداخت",
+    "error": {
+      "required": "هزینه و کیف پول مبدأ الزامی هستند"
+    }
+  },
+  "paymentsTable": {
+    "title": "پرداخت‌ها",
+    "subtitle": "سابقه پرداخت برای {{expenseName}}",
+    "createPayment": "ایجاد پرداخت",
+    "count": "{{count}} {{unit}}",
+    "loadError": "بارگذاری پرداخت‌های هزینه ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "wallet": "کیف پول",
+      "due": "سررسید",
+      "paid": "پرداخت‌شده",
+      "status": "وضعیت",
+      "notes": "یادداشت‌ها"
+    },
+    "empty": "هنوز پرداختی ثبت نشده. برای پیگیری هزینه‌های پرداخت‌شده، یک پرداخت ثبت کنید.",
+    "footer": {
+      "totalPaid": "مجموع پرداخت‌شده"
+    }
+  },
+  "status": {
+    "paid": "پرداخت‌شده",
+    "due": "سررسید",
+    "unpaid": "پرداخت‌نشده"
+  },
+  "summaryCards": {
+    "totalPaid": {
+      "label": "مجموع پرداخت‌شده",
+      "footerCount": "{{count}} {{unit}} پرداخت‌شده"
+    },
+    "unpaid": {
+      "label": "پرداخت‌نشده",
+      "badge": "{{count}} باز",
+      "footerTitle": "در انتظار پرداخت",
+      "footerDescription": "پرداخت‌های بدون تاریخ پرداخت"
+    },
+    "totalPayments": {
+      "label": "کل پرداخت‌ها",
+      "badge": "{{paidCount}} / {{totalCount}} پرداخت‌شده",
+      "footerTitle": "همه پرداخت‌های ثبت‌شده",
+      "footerDescription": "شامل پرداخت‌شده و پرداخت‌نشده"
+    },
+    "averagePayment": {
+      "label": "میانگین پرداخت",
+      "badge": "به ازای هر پرداخت انجام‌شده",
+      "footerTitle": "بر اساس {{count}} {{unit}}",
+      "footerDescription": "میانگین مبلغ در پرداخت‌های انجام‌شده"
+    }
+  },
+  "chart": {
+    "title": "هزینه‌ها در طول زمان",
+    "description": {
+      "withData": "{{amount}} پرداخت‌شده و سررسید برای {{timeRange}}",
+      "noData": "پرداختی در {{timeRange}} وجود ندارد"
+    },
+    "series": {
+      "paid": "پرداخت‌شده",
+      "due": "سررسید"
+    }
+  }
+}

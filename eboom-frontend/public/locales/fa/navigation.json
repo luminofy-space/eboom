@@ -1,0 +1,26 @@
+{
+  "dashboard": "داشبورد",
+  "search": {
+    "placeholder": "جستجو..."
+  },
+  "groups": {
+    "management": "مدیریت",
+    "explore": "کاوش"
+  },
+  "routes": {
+    "incomes": "درآمدها",
+    "wallets": "کیف پول‌ها",
+    "expenses": "هزینه‌ها",
+    "whiteboard": "تخته سفید",
+    "budgetPlanning": "بودجه و برنامه‌ریزی",
+    "wishList": "لیست آرزوها",
+    "aiInsights": "تحلیل‌های هوش مصنوعی"
+  },
+  "badges": {
+    "soon": "به‌زودی"
+  },
+  "account": {
+    "language": "زبان",
+    "logOut": "خروج"
+  }
+}

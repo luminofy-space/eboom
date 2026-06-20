@@ -10,57 +10,54 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 export type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
 export interface RecurrencePattern {
   frequency: Frequency;
   interval: number;
-  daysOfWeek?: number[]; // 0 = Sun, 1 = Mon, ..., 6 = Sat
-  dayOfMonth?: number; // 1-31
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
 }
 
-const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
-  { value: "daily", label: "Day" },
-  { value: "weekly", label: "Week" },
-  { value: "monthly", label: "Month" },
-  { value: "yearly", label: "Year" },
-];
+const FREQUENCY_VALUES: Frequency[] = ["daily", "weekly", "monthly", "yearly"];
 
-const DAYS_OF_WEEK = [
-  { value: 0, label: "S" },
-  { value: 1, label: "M" },
-  { value: 2, label: "T" },
-  { value: 3, label: "W" },
-  { value: 4, label: "T" },
-  { value: 5, label: "F" },
-  { value: 6, label: "S" },
-];
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 interface RecurrencePatternPickerProps {
   value: RecurrencePattern;
   onChange: (pattern: RecurrencePattern) => void;
 }
 
+function frequencyLabel(t: TFunction<"common">, frequency: Frequency, interval: number): string {
+  const key = interval > 1
+    ? `recurrence.frequency.${frequency === "daily" ? "days" : frequency === "weekly" ? "weeks" : frequency === "monthly" ? "months" : "years"}`
+    : `recurrence.frequency.${frequency === "daily" ? "day" : frequency === "weekly" ? "week" : frequency === "monthly" ? "month" : "year"}`;
+  return t(key);
+}
+
 export function RecurrencePatternPicker({
   value,
   onChange,
 }: RecurrencePatternPickerProps) {
-  const pluralUnit = () => {
-    const units: Record<Frequency, string> = {
-      daily: "days",
-      weekly: "weeks",
-      monthly: "months",
-      yearly: "years",
-    };
-    return units[value.frequency];
-  };
+  const { t } = useTranslation("common");
+
+  const daysOfWeek = useMemo(
+    () =>
+      DAY_KEYS.map((key, index) => ({
+        value: index,
+        label: t(`recurrence.daysOfWeek.${key}`),
+      })),
+    [t]
+  );
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Frequency + Interval row */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground whitespace-nowrap">Every</span>
+        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("recurrence.every")}</span>
         <Input
           type="number"
           min={1}
@@ -81,7 +78,6 @@ export function RecurrencePatternPicker({
               ...value,
               frequency: freq,
             };
-            // Clear irrelevant fields
             if (freq !== "weekly") delete next.daysOfWeek;
             if (freq !== "monthly") delete next.dayOfMonth;
             onChange(next);
@@ -91,19 +87,18 @@ export function RecurrencePatternPicker({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[80]">
-            {FREQUENCY_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {value.interval > 1 ? `${opt.label}s` : opt.label}
+            {FREQUENCY_VALUES.map((freq) => (
+              <SelectItem key={freq} value={freq}>
+                {frequencyLabel(t, freq, value.interval)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Weekly: day-of-week toggles */}
       {value.frequency === "weekly" && (
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-muted-foreground">Repeat on</Label>
+          <Label className="text-xs text-muted-foreground">{t("recurrence.repeatOn")}</Label>
           <ToggleGroup
             type="multiple"
             variant="outline"
@@ -116,7 +111,7 @@ export function RecurrencePatternPicker({
               })
             }
           >
-            {DAYS_OF_WEEK.map((day) => (
+            {daysOfWeek.map((day) => (
               <ToggleGroupItem
                 key={day.value}
                 value={String(day.value)}
@@ -129,10 +124,9 @@ export function RecurrencePatternPicker({
         </div>
       )}
 
-      {/* Monthly: day of month */}
       {value.frequency === "monthly" && (
         <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">On day</Label>
+          <Label className="text-xs text-muted-foreground whitespace-nowrap">{t("recurrence.onDay")}</Label>
           <Input
             type="number"
             min={1}
@@ -147,48 +141,59 @@ export function RecurrencePatternPicker({
             className="w-16 h-8 text-center"
           />
           <span className="text-xs text-muted-foreground">
-            of every {value.interval > 1 ? `${value.interval} ` : ""}
-            {value.interval > 1 ? "months" : "month"}
+            {value.interval > 1
+              ? t("recurrence.ofEveryNMonths", { interval: value.interval })
+              : t("recurrence.ofEveryMonth")}
           </span>
         </div>
       )}
 
-      {/* Summary text */}
       <p className="text-xs text-muted-foreground">
-        {buildSummary(value)}
+        {buildSummary(value, t)}
       </p>
     </div>
   );
 }
 
-function buildSummary(pattern: RecurrencePattern): string {
+function buildSummary(pattern: RecurrencePattern, t: TFunction<"common">): string {
   const { frequency, interval, daysOfWeek, dayOfMonth } = pattern;
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNameKeys = DAY_KEYS;
 
   if (frequency === "daily") {
-    return interval === 1 ? "Repeats every day" : `Repeats every ${interval} days`;
+    return interval === 1
+      ? t("recurrence.summary.everyDay")
+      : t("recurrence.summary.everyNDays", { interval });
   }
 
   if (frequency === "weekly") {
-    const base = interval === 1 ? "Repeats every week" : `Repeats every ${interval} weeks`;
     if (daysOfWeek && daysOfWeek.length > 0) {
-      const names = daysOfWeek.map((d) => dayNames[d]).join(", ");
-      return `${base} on ${names}`;
+      const names = daysOfWeek
+        .map((d) => t(`recurrence.dayNames.${dayNameKeys[d]}`))
+        .join(", ");
+      return interval === 1
+        ? t("recurrence.summary.everyWeekOnDays", { days: names })
+        : t("recurrence.summary.everyNWeeksOnDays", { interval, days: names });
     }
-    return base;
+    return interval === 1
+      ? t("recurrence.summary.everyWeek")
+      : t("recurrence.summary.everyNWeeks", { interval });
   }
 
   if (frequency === "monthly") {
-    const base = interval === 1 ? "Repeats every month" : `Repeats every ${interval} months`;
     if (dayOfMonth) {
-      return `${base} on day ${dayOfMonth}`;
+      return interval === 1
+        ? t("recurrence.summary.everyMonthOnDay", { day: dayOfMonth })
+        : t("recurrence.summary.everyNMonthsOnDay", { interval, day: dayOfMonth });
     }
-    return base;
+    return interval === 1
+      ? t("recurrence.summary.everyMonth")
+      : t("recurrence.summary.everyNMonths", { interval });
   }
 
-  // yearly
-  return interval === 1 ? "Repeats every year" : `Repeats every ${interval} years`;
+  return interval === 1
+    ? t("recurrence.summary.everyYear")
+    : t("recurrence.summary.everyNYears", { interval });
 }
 
 export const DEFAULT_RECURRENCE_PATTERN: RecurrencePattern = {

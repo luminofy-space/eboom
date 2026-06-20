@@ -33,6 +33,7 @@ import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 interface WalletFormData {
     name: string;
@@ -48,6 +49,8 @@ const defaultValues: WalletFormData = {
 
 export function NewWalletModal() {
     const dispatch = useAppDispatch();
+    const { t } = useTranslation("wallets");
+    const { t: tc } = useTranslation("common");
     const { open, mode, editingItem } = useAppSelector(selectWalletModal);
     const isEdit = mode === "edit";
     const { canvas } = useCanvas();
@@ -137,26 +140,24 @@ export function NewWalletModal() {
             <form onSubmit={handleSubmit(onSubmit)}>
                     <FieldGroup className="gap-4">
                     <DialogHeader>
-                        <DialogTitle>{isEdit ? "Edit Wallet" : "Add New Wallet"}</DialogTitle>
+                        <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
                         <DialogDescription>
-                            {isEdit
-                                ? "Update the details of your wallet."
-                                : "Enter the details below to create a new wallet. Organize your accounts and keep track of your financial sources."}
+                            {isEdit ? t("modal.edit.description") : t("modal.create.description")}
                         </DialogDescription>
                     </DialogHeader>
 
                     <Stack direction="row" gap={5}>
                         <Field className="flex-1">
-                            <FieldLabel htmlFor="wallet-name">Wallet Name</FieldLabel>
+                            <FieldLabel htmlFor="wallet-name">{t("modal.fields.name.label")}</FieldLabel>
                             <Input
                                 id="wallet-name"
-                                placeholder="e.g. Main Bank Account"
+                                placeholder={t("modal.fields.name.placeholder")}
                                 {...register("name", { required: true })}
                             />
                         </Field>
 
                         <Field className="flex-1">
-                            <FieldLabel htmlFor="wallet-category">Wallet Category</FieldLabel>
+                            <FieldLabel htmlFor="wallet-category">{t("modal.fields.category.label")}</FieldLabel>
                             <Controller
                                 name="walletCategoryId"
                                 control={control}
@@ -171,9 +172,9 @@ export function NewWalletModal() {
                                             field.onChange(val ? categoryNameToId(val) : null)
                                         }
                                     >
-                                        <ComboboxInput placeholder="Select a category" />
+                                        <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                                         <ComboboxContent className="z-[80]">
-                                            <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                                            <ComboboxEmpty>{tc("empty.noCategoriesFound")}</ComboboxEmpty>
                                             <ComboboxCollection>
                                                 {(catName) => (
                                                     <ComboboxItem key={catName} value={catName}>
@@ -189,23 +190,23 @@ export function NewWalletModal() {
                     </Stack>
 
                     <Field>
-                        <FieldLabel htmlFor="wallet-description">Description</FieldLabel>
+                        <FieldLabel htmlFor="wallet-description">{t("modal.fields.description.label")}</FieldLabel>
                         <Input
                             id="wallet-description"
-                            placeholder="Optional notes about this wallet"
+                            placeholder={t("modal.fields.description.placeholder")}
                             {...register("description")}
                         />
                     </Field>
 
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
+                            <Button variant="outline">{tc("actions.cancel")}</Button>
                         </DialogClose>
                         <Button
                             disabled={!name || !walletCategoryId}
                             type="submit"
                         >
-                            {isEdit ? "Save changes" : "Create Wallet"}
+                            {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
                         </Button>
                     </DialogFooter>
                     </FieldGroup>

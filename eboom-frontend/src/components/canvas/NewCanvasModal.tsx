@@ -42,12 +42,7 @@ import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { closeCanvasModal, selectCanvasModal } from "@/src/redux/canvasSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-
-const canvasTypeItems: TItem[] = [
-  { key: "personal", title: "Personal" },
-  { key: "business", title: "Business" },
-  { key: "family", title: "Family" },
-];
+import { useTranslation } from "react-i18next";
 
 interface CanvasFormData {
   name: string;
@@ -71,9 +66,17 @@ const hasWindow = typeof window !== "undefined";
 
 export function NewCanvasModal() {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("canvas");
+  const { t: tc } = useTranslation("common");
   const { open, mode, editingItem } = useAppSelector(selectCanvasModal);
   const isEdit = mode === "edit";
   const queryClient = useQueryClient();
+
+  const canvasTypeItems: TItem[] = [
+    { key: "personal", title: t("modal.fields.type.options.personal") },
+    { key: "business", title: t("modal.fields.type.options.business") },
+    { key: "family", title: t("modal.fields.type.options.family") },
+  ];
 
   const { register, handleSubmit, reset, setValue, control } = useForm<CanvasFormData>({
     defaultValues,
@@ -164,11 +167,9 @@ export function NewCanvasModal() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Canvas" : "Add New Canvas"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Update your canvas details."
-                : "Create a new canvas to organize your finances. Each canvas is an independent financial workspace."}
+              {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -180,27 +181,27 @@ export function NewCanvasModal() {
                 {selectedEmoji}
               </div>
               <Field className="flex-1">
-                <FieldLabel htmlFor="canvas-name">Name</FieldLabel>
+                <FieldLabel htmlFor="canvas-name">{t("modal.fields.name.label")}</FieldLabel>
                 <Input
                   required
                   id="canvas-name"
-                  placeholder="e.g. My Personal Budget"
+                  placeholder={t("modal.fields.name.placeholder")}
                   {...register("name", { required: true })}
                 />
               </Field>
             </Stack>
 
             <Field>
-              <FieldLabel htmlFor="canvas-description">Description</FieldLabel>
+              <FieldLabel htmlFor="canvas-description">{t("modal.fields.description.label")}</FieldLabel>
               <Input
                 id="canvas-description"
-                placeholder="Optional description"
+                placeholder={t("modal.fields.description.placeholder")}
                 {...register("description")}
               />
             </Field>
 
             <Field>
-              <FieldLabel>Type</FieldLabel>
+              <FieldLabel>{t("modal.fields.type.label")}</FieldLabel>
               <GroupSelect
                 items={canvasTypeItems}
                 handleSelect={(item) => setValue("canvasType", item.key)}
@@ -210,16 +211,16 @@ export function NewCanvasModal() {
 
             {!isEdit && (
               <Field>
-                <FieldLabel>Base Currency</FieldLabel>
+                <FieldLabel>{t("modal.fields.baseCurrency.label")}</FieldLabel>
                 <Combobox
                   items={currencies.map((c) => c.code)}
                   value={effectiveCode}
                   disabled={isLoadingCurr}
                   onValueChange={(val: string | null) => setValue("baseCurrencyCode", val ?? "")}
                 >
-                  <ComboboxInput placeholder="Select a currency" />
+                  <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
                   <ComboboxContent>
-                    <ComboboxEmpty>No currencies found.</ComboboxEmpty>
+                    <ComboboxEmpty>{t("modal.empty.noCurrencies")}</ComboboxEmpty>
                     <ComboboxCollection>
                       {(code: string) => {
                         const c = currencies.find((c) => c.code === code);
@@ -236,7 +237,7 @@ export function NewCanvasModal() {
             )}
 
             <Field className="gap-2">
-              <FieldLabel>Background Color</FieldLabel>
+              <FieldLabel>{t("modal.fields.backgroundColor.label")}</FieldLabel>
               <div className="flex flex-row flex-wrap gap-2">
                 {PRESET_COLORS.map((color) => (
                   <button
@@ -258,7 +259,7 @@ export function NewCanvasModal() {
             </Field>
 
             <Field className="gap-2">
-              <FieldLabel>Icon</FieldLabel>
+              <FieldLabel>{t("modal.fields.icon.label")}</FieldLabel>
               <div className="flex flex-row flex-wrap gap-1">
                 {PRESET_EMOJIS.map((emoji) => (
                   <button
@@ -279,11 +280,11 @@ export function NewCanvasModal() {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" type="button">
-                Cancel
+                {tc("actions.cancel")}
               </Button>
             </DialogClose>
             <Button disabled={!name || isCreating || isUpdating} type="submit">
-              {isEdit ? "Save Changes" : "Create Canvas"}
+              {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
             </Button>
           </DialogFooter>
           </FieldGroup>

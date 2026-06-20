@@ -25,10 +25,12 @@ import { Grid } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
 import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
+import { useTranslation } from "react-i18next";
 
 const hasWindow = typeof window !== "undefined";
 
 export default function IncomesListPage() {
+  const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
@@ -88,7 +90,7 @@ export default function IncomesListPage() {
   if (items.length === 0 && searchQuery) {
     return (
       <Stack className="flex-1" align="center" justify="center">
-        <Typography variant="muted">No results found for &ldquo;{searchQuery}&rdquo;</Typography>
+        <Typography variant="muted">{tc("empty.noResults", { query: searchQuery })}</Typography>
       </Stack>
     );
   }

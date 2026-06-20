@@ -30,6 +30,9 @@ import dayjs from "dayjs";
 import { MoreVertical, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "./NewExpensePaymentModal";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { formatAmount } from "@/src/i18n/formatters";
 
 interface WalletCategory {
   id: number;
@@ -60,32 +63,22 @@ interface ExpensePaymentsTableProps {
 
 const hasWindow = typeof window !== "undefined";
 
-function formatDate(date: string | null | undefined): string {
-  if (!date) return "—";
+function formatDate(date: string | null | undefined, emDash: string): string {
+  if (!date) return emDash;
   return dayjs(date).format("MMM D, YYYY");
 }
 
-function formatAmount(amount: string | number, symbol?: string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (Number.isNaN(num)) return "—";
-  const formatted = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8,
-  }).format(num);
-  return symbol ? `${symbol}${formatted}` : formatted;
-}
-
-function getPaymentStatus(payment: ExpensePayment): {
+function getPaymentStatus(payment: ExpensePayment, t: TFunction<"expenses">): {
   label: string;
   variant: "default" | "secondary" | "outline";
 } {
   if (payment.paidDate) {
-    return { label: "Paid", variant: "default" };
+    return { label: t("status.paid"), variant: "default" };
   }
   if (payment.dueDate && dayjs(payment.dueDate).isAfter(dayjs(), "day")) {
-    return { label: "Due", variant: "secondary" };
+    return { label: t("status.due"), variant: "secondary" };
   }
-  return { label: "Unpaid", variant: "outline" };
+  return { label: t("status.unpaid"), variant: "outline" };
 }
 
 function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
@@ -97,6 +90,9 @@ function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
 }
 
 export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
+  const { t } = useTranslation("expenses");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -196,7 +192,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
     return (
       <Container>
         <Typography variant="muted-sm">
-          Failed to load expense payments. Please try again.
+          {t("paymentsTable.loadError")}
         </Typography>
       </Container>
     );
@@ -208,22 +204,25 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
         <Stack gap={4}>
         <Stack direction="row" align="center" justify="between" gap={4}>
           <div>
-            <Typography variant="heading">Payments</Typography>
+            <Typography variant="heading">{t("paymentsTable.title")}</Typography>
             {expenseRes?.expense?.name && (
               <Typography variant="muted-sm">
-                Payment history for {expenseRes.expense.name}
+                {t("paymentsTable.subtitle", { expenseName: expenseRes.expense.name })}
               </Typography>
             )}
           </div>
           <Stack direction="row" align="center" gap={3}>
             {payments.length > 0 && (
               <Typography variant="count" className="hidden sm:block">
-                {payments.length} {payments.length === 1 ? "payment" : "payments"}
+                {t("paymentsTable.count", {
+                  count: payments.length,
+                  unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+                })}
               </Typography>
             )}
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
-              Create Payment
+              {t("paymentsTable.createPayment")}
             </Button>
           </Stack>
         </Stack>
@@ -232,12 +231,12 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-[140px]">Amount</TableHead>
-                <TableHead>Wallet</TableHead>
-                <TableHead>Due</TableHead>
-                <TableHead>Paid</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Notes</TableHead>
+                <TableHead className="w-[140px]">{t("paymentsTable.headers.amount")}</TableHead>
+                <TableHead>{t("paymentsTable.headers.wallet")}</TableHead>
+                <TableHead>{t("paymentsTable.headers.due")}</TableHead>
+                <TableHead>{t("paymentsTable.headers.paid")}</TableHead>
+                <TableHead>{t("paymentsTable.headers.status")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("paymentsTable.headers.notes")}</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -246,21 +245,21 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     <p className="text-muted-foreground">
-                      No payments yet. Record a payment to track expenses paid.
+                      {t("paymentsTable.empty")}
                     </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 payments.map((payment) => {
-                  const status = getPaymentStatus(payment);
+                  const status = getPaymentStatus(payment, t);
                   return (
                     <TableRow key={payment.id}>
                       <TableCell className="font-medium tabular-nums">
-                        {formatAmount(payment.amount, currencySymbol)}
+                        {formatAmount(payment.amount, currencySymbol, emDash)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{payment.sourceWallet?.name ?? "—"}</span>
+                          <span>{payment.sourceWallet?.name ?? emDash}</span>
                           {payment.sourceWallet?.category?.name && (
                             <Typography variant="caption">
                               {payment.sourceWallet.category.name}
@@ -269,10 +268,10 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(payment.dueDate)}
+                        {formatDate(payment.dueDate, emDash)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(payment.paidDate)}
+                        {formatDate(payment.paidDate, emDash)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
@@ -281,7 +280,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                         {payment.notes ? (
                           <span title={payment.notes}>{payment.notes}</span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">{emDash}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -293,7 +292,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                               className="text-muted-foreground size-8"
                             >
                               <MoreVertical className="size-4" />
-                              <span className="sr-only">Open menu</span>
+                              <span className="sr-only">{tc("actions.openMenu")}</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -302,7 +301,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                               onClick={() => setDeleteId(payment.id)}
                             >
                               <Trash2 className="size-4" />
-                              Delete
+                              {tc("actions.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -316,10 +315,10 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
               <TableFooter>
                 <TableRow>
                   <TableCell className="font-semibold tabular-nums">
-                    {formatAmount(totalPaid, currencySymbol)}
+                    {formatAmount(totalPaid, currencySymbol, emDash)}
                   </TableCell>
                   <TableCell colSpan={6} className="text-muted-foreground">
-                    Total paid
+                    {t("paymentsTable.footer.totalPaid")}
                   </TableCell>
                 </TableRow>
               </TableFooter>

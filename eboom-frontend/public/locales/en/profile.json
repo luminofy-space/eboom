@@ -1,0 +1,36 @@
+{
+  "imageUploader": {
+    "title": "Update Profile Picture",
+    "description": "Upload a new profile image. Supported formats: JPEG, PNG, WebP. Max size: 5MB.",
+    "preview": {
+      "alt": "Preview",
+      "remove": "Remove"
+    },
+    "fields": {
+      "selectImage": {
+        "label": "Select Image",
+        "hint": "Click the camera icon or browse to select an image"
+      }
+    },
+    "submit": "Upload Image",
+    "submitting": "Uploading...",
+    "toast": {
+      "invalidFileType": {
+        "title": "Invalid file type",
+        "description": "Please select an image file (JPEG, PNG, etc.)"
+      },
+      "fileTooLarge": {
+        "title": "File too large",
+        "description": "Please select an image smaller than 5MB"
+      },
+      "noImageSelected": {
+        "title": "No image selected",
+        "description": "Please select an image to upload"
+      },
+      "success": {
+        "title": "Success!",
+        "description": "Profile picture updated successfully"
+      }
+    }
+  }
+}
