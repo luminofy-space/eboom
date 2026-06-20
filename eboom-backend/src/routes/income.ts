@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import {
-  canvasMembers,
   incomeCategories,
   incomeEntries,
   incomes,
@@ -10,15 +9,12 @@ import {
   wallets,
 } from "../db/schema";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
+import { checkCanvasPermission } from "../services/canvasAccessService";
 
 const router = express.Router();
 
-async function checkCanvasAccess(canvasId: number, userId: number): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(canvasMembers)
-    .where(and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId)));
-  return !!membership;
+function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
+  return res.status(access.status).json({ error: access.error });
 }
 
 function parseOptionalDate(value: unknown): Date | null {
@@ -43,8 +39,8 @@ router.delete("/entries/:id", async (req: Request, res: Response) => {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
     if (!income) return res.status(404).json({ error: "Income not found" });
 
-    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     await debitWalletBalance({
       walletId: existing.destinationWalletId,
@@ -74,8 +70,8 @@ router.get("/:incomeId/entries", async (req: Request, res: Response) => {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!income) return res.status(404).json({ error: "Income not found" });
 
-    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(income.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     const entries = await db
       .select({ entry: incomeEntries, wallet: wallets, walletCategory: walletCategories })
@@ -122,8 +118,8 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!income) return res.status(404).json({ error: "Income not found" });
 
-    const hasAccess = await checkCanvasAccess(income.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
     if (!wallet || wallet.canvasId !== income.canvasId) {
@@ -189,10 +185,8 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Income not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(record.income.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(record.income.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     res.json({
       income: {
@@ -237,10 +231,8 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Income not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     const parsedCategoryId =
       incomeCategoryId !== undefined ? Number(incomeCategoryId) : undefined;
@@ -311,10 +303,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Income not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     await db
       .update(incomes)

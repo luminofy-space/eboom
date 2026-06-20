@@ -27,9 +27,12 @@ export const useCanvas = () => {
         }
     );
 
-    const [canvas, setCanvas] = useState<number | null>(() =>
-        Number(getStoredToken("canvasId")) 
-    );
+    const [canvas, setCanvas] = useState<number | null>(() => {
+        const stored = getStoredToken("canvasId");
+        if (!stored) return null;
+        const parsed = Number(stored);
+        return Number.isNaN(parsed) ? null : parsed;
+    });
 
     const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
         method: "post",
@@ -47,19 +50,19 @@ export const useCanvas = () => {
     }, [dispatch]);
 
     const createCanvas = async (name: string, description: string, canvasType: string, photoUrl: string, baseCurrencyId: number) => {
-        await mutateAsync({
+        const response = await mutateAsync({
             name,
             description: description || undefined,
             canvasType,
             photoUrl,
             baseCurrencyId,
-        }).then((response) => {
-            const canvasId = (response as { canvas?: { id: number } })?.canvas?.id;
-            if (typeof canvasId === "number") {
-                selectCanvas(canvasId);
-            }
         });
-    }
+        const canvasId = (response as { canvas?: { id: number } })?.canvas?.id;
+        if (typeof canvasId === "number") {
+            selectCanvas(canvasId);
+        }
+        await refetch();
+    };
 
     useEffect(() => {
         if (canvas) return;
@@ -72,6 +75,7 @@ export const useCanvas = () => {
     return {
         canvases: data?.canvases ?? [],
         canvas,
+        activeCanvas: (data?.canvases ?? []).find((c) => c.id === canvas) ?? null,
         selectCanvas,
         createCanvas,
         isQueryLoading, 

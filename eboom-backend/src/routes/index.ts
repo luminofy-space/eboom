@@ -11,12 +11,22 @@ import wallets from './wallets';
 import expenses from './expenses';
 import walletCategories from './wallet-categories';
 import expenseCategories from './expense-categories';
+import canvasMembersRouter from './canvas-members';
+import canvasInvitationsRouter from './canvas-invitations';
+import canvasRolesRouter from './canvas-roles';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
 
 // Canvas routes (includes canvas-scoped lists: expenses, incomes, wallets)
+router.use('/canvases/:canvasId/members', auth, canvasMembersRouter);
 router.use('/canvases', auth, canvas);
+
+// Canvas invitations
+router.use('/canvas-invitations', auth, canvasInvitationsRouter);
+
+// Canvas roles
+router.use('/roles/canvas', auth, canvasRolesRouter);
 
 // Currency routes
 router.use('/currency', auth, currency);

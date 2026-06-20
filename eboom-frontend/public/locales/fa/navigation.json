@@ -11,6 +11,8 @@
     "incomes": "درآمدها",
     "wallets": "کیف پول‌ها",
     "expenses": "هزینه‌ها",
+    "manageMembers": "مدیریت اعضا",
+    "canvasInvitations": "دعوت‌نامه‌های بوم",
     "whiteboard": "تخته سفید",
     "budgetPlanning": "بودجه و برنامه‌ریزی",
     "wishList": "لیست آرزوها",
@@ -21,6 +23,7 @@
   },
   "account": {
     "language": "زبان",
-    "logOut": "خروج"
+    "logOut": "خروج",
+    "canvasInvitations": "دعوت‌نامه‌های بوم"
   }
 }

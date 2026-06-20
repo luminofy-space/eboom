@@ -1,0 +1,82 @@
+{
+  "roles": {
+    "collaborator": "همکار",
+    "modifier": "ویرایشگر",
+    "visitor": "بازدیدکننده",
+    "owner": "مالک"
+  },
+  "members": {
+    "title": "مدیریت اعضا",
+    "description": "افراد را دعوت کنید و نقش‌ها را برای این بوم مدیریت کنید.",
+    "canvasType": "نوع: {{type}}",
+    "canvasDetails": "نمای کلی بوم",
+    "currentMembers": "اعضای فعلی",
+    "currentMembersDescription": "افرادی که به این بوم دسترسی دارند.",
+    "pendingInvitations": "دعوت‌نامه‌های در انتظار",
+    "pendingInvitationsDescription": "دعوت‌نامه‌هایی که منتظر پاسخ هستند.",
+    "inviteSectionDescription": "افراد را از بوم‌های دیگر یا با ایمیل اضافه کنید.",
+    "noPendingInvitations": "دعوت‌نامه در انتظاری وجود ندارد.",
+    "invitedMember": "عضو دعوت‌شده",
+    "invitedRole": "نقش",
+    "inviteSection": "دعوت اعضا",
+    "suggestionsHint": "از اعضای بوم‌های دیگر خود انتخاب کنید",
+    "emailHint": "یا با آدرس ایمیل دعوت کنید",
+    "selectMembersPlaceholder": "جستجوی اعضا از بوم‌های دیگر شما…",
+    "noSuggestions": "عضوی از بوم‌های دیگر شما یافت نشد.",
+    "emailPlaceholder": "ایمیل کامل را وارد کنید",
+    "addEmail": "افزودن",
+    "sendInvitations": "ارسال دعوت‌نامه‌ها",
+    "noMembers": "هنوز عضوی وجود ندارد.",
+    "removeMember": "حذف عضو",
+    "roleUpdated": "نقش عضو به‌روزرسانی شد.",
+    "invitationCancelled": "دعوت‌نامه لغو شد.",
+    "memberRemoved": "عضو حذف شد.",
+    "removeConfirm": {
+      "title": "حذف عضو؟",
+      "description": "{{name}} دسترسی به این بوم را از دست خواهد داد. این عمل قابل بازگشت نیست.",
+      "removing": "در حال حذف..."
+    },
+    "errors": {
+      "userNotFound": "کاربری با این ایمیل یافت نشد.",
+      "alreadyAdded": "این کاربر قبلاً به لیست دعوت اضافه شده است.",
+      "emptyList": "حداقل یک عضو برای دعوت اضافه کنید."
+    }
+  },
+  "invitations": {
+    "title": "دعوت‌نامه‌های بوم",
+    "tabs": {
+      "sent": "ارسال‌شده",
+      "received": "دریافت‌شده"
+    },
+    "empty": {
+      "sent": "هنوز دعوت‌نامه‌ای ارسال نکرده‌اید.",
+      "received": "دعوت‌نامه‌ای ندارید."
+    },
+    "from": "از {{name}}",
+    "to": "به {{name}}",
+    "role": "نقش: {{role}}",
+    "status": {
+      "pending": "در انتظار",
+      "accepted": "پذیرفته‌شده",
+      "declined": "رد شده",
+      "cancelled": "لغو شده",
+      "expired": "منقضی شده"
+    },
+    "actions": {
+      "accept": "پذیرفتن",
+      "decline": "رد کردن",
+      "cancel": "لغو دعوت‌نامه"
+    }
+  },
+  "leave": {
+    "title": "ترک بوم",
+    "description": "این کار دسترسی شما به «{{name}}» را حذف می‌کند. برای تأیید نام بوم را تایپ کنید.",
+    "placeholder": "نام بوم",
+    "confirm": "ترک بوم",
+    "ownerBlocked": "مالک نمی‌تواند خارج شود. بوم را حذف کنید یا مالکیت را منتقل کنید."
+  },
+  "switcher": {
+    "manageMembers": "مدیریت اعضا",
+    "leaveCanvas": "ترک بوم"
+  }
+}

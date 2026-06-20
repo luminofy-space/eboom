@@ -31,6 +31,7 @@ import { MoreVertical, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount } from "@/src/i18n/formatters";
 
@@ -92,6 +93,7 @@ function sortEntries(entries: IncomeEntry[]): IncomeEntry[] {
 export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const { t } = useTranslation("incomes");
   const { t: tc } = useTranslation("common");
+  const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -212,10 +214,12 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                 })}
               </Typography>
             )}
+            {canEdit && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
+            )}
           </Stack>
         </Stack>
 
@@ -229,13 +233,13 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                 <TableHead>{t("entriesTable.headers.received")}</TableHead>
                 <TableHead>{t("entriesTable.headers.status")}</TableHead>
                 <TableHead className="hidden md:table-cell">{t("entriesTable.headers.notes")}</TableHead>
-                <TableHead className="w-10" />
+                {canEdit && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
               {entries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
                     <p className="text-muted-foreground">
                       {t("entriesTable.empty")}
                     </p>
@@ -275,6 +279,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                           <span className="text-muted-foreground">{emDash}</span>
                         )}
                       </TableCell>
+                      {canEdit && (
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -298,6 +303,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
+                      )}
                     </TableRow>
                   );
                 })

@@ -31,6 +31,7 @@ import { MoreVertical, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "./NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount } from "@/src/i18n/formatters";
 
@@ -92,6 +93,7 @@ function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
 export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
+  const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -220,10 +222,12 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                 })}
               </Typography>
             )}
+            {canEdit && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
               {t("paymentsTable.createPayment")}
             </Button>
+            )}
           </Stack>
         </Stack>
 
@@ -237,13 +241,13 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                 <TableHead>{t("paymentsTable.headers.paid")}</TableHead>
                 <TableHead>{t("paymentsTable.headers.status")}</TableHead>
                 <TableHead className="hidden md:table-cell">{t("paymentsTable.headers.notes")}</TableHead>
-                <TableHead className="w-10" />
+                {canEdit && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
                     <p className="text-muted-foreground">
                       {t("paymentsTable.empty")}
                     </p>
@@ -283,6 +287,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                           <span className="text-muted-foreground">{emDash}</span>
                         )}
                       </TableCell>
+                      {canEdit && (
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -306,6 +311,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
+                      )}
                     </TableRow>
                   );
                 })

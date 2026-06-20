@@ -11,6 +11,8 @@
     "incomes": "Incomes",
     "wallets": "Wallets",
     "expenses": "Expenses",
+    "manageMembers": "Manage members",
+    "canvasInvitations": "Canvas Invitations",
     "whiteboard": "Whiteboard",
     "budgetPlanning": "Budget & Planning",
     "wishList": "Wish List",
@@ -21,6 +23,7 @@
   },
   "account": {
     "language": "Language",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "canvasInvitations": "Canvas Invitations"
   }
 }

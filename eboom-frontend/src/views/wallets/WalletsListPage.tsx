@@ -2,6 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
@@ -35,6 +36,7 @@ export default function WalletsListPage() {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
+  const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
@@ -91,10 +93,12 @@ export default function WalletsListPage() {
               <Typography variant="muted-sm" className="text-center">
                 {t("list.empty.description")}
               </Typography>
+              {canEdit && (
               <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openWalletCreateModal())}>
                 <Plus className="mr-2 h-4 w-4" />
                 {tc("actions.add")}
               </Button>
+              )}
             </Stack>
           </Card>
         </Stack>
@@ -122,8 +126,8 @@ export default function WalletsListPage() {
               imageUrl={wallet.photoUrl}
               title={wallet.name}
               updatedAt={wallet.lastModifiedAt}
-              onEdit={() => dispatch(openWalletEditModal(wallet))}
-              onDelete={() => setDeleteId(wallet.id)}
+              onEdit={canEdit ? () => dispatch(openWalletEditModal(wallet)) : undefined}
+              onDelete={canEdit ? () => setDeleteId(wallet.id) : undefined}
             />
           ))}
         </Grid>
@@ -137,7 +141,7 @@ export default function WalletsListPage() {
         </Stack>
       )}
 
-      <FloatingAddButton onClick={() => dispatch(openWalletCreateModal())} />
+      {canEdit && <FloatingAddButton onClick={() => dispatch(openWalletCreateModal())} />}
       <NewWalletModal />
 
       <ConfirmDeleteDialog

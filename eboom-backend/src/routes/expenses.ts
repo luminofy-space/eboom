@@ -4,27 +4,18 @@ import {
   expenses,
   expenseCategories,
   expensePayments,
-  canvasMembers,
   currencies,
   walletCategories,
   wallets,
 } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
+import { checkCanvasPermission } from "../services/canvasAccessService";
 
 const router = express.Router();
 
-async function checkCanvasAccess(
-  canvasId: number,
-  userId: number
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(canvasMembers)
-    .where(
-      and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId))
-    );
-  return !!membership;
+function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
+  return res.status(access.status).json({ error: access.error });
 }
 
 function parseOptionalDate(value: unknown): Date | null {
@@ -55,8 +46,8 @@ router.delete("/payments/:id", async (req: Request, res: Response) => {
       .where(eq(expenses.id, existing.expenseId));
     if (!expense) return res.status(404).json({ error: "Expense not found" });
 
-    const hasAccess = await checkCanvasAccess(expense.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(expense.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     await db.transaction(async (tx) => {
       await creditWalletBalance(
@@ -91,8 +82,8 @@ router.get("/:expenseId/payments", async (req: Request, res: Response) => {
     const [expense] = await db.select().from(expenses).where(eq(expenses.id, expenseId));
     if (!expense) return res.status(404).json({ error: "Expense not found" });
 
-    const hasAccess = await checkCanvasAccess(expense.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(expense.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     const payments = await db
       .select({ payment: expensePayments, wallet: wallets, walletCategory: walletCategories })
@@ -139,8 +130,8 @@ router.post("/:expenseId/payments", async (req: Request, res: Response) => {
     const [expense] = await db.select().from(expenses).where(eq(expenses.id, expenseId));
     if (!expense) return res.status(404).json({ error: "Expense not found" });
 
-    const hasAccess = await checkCanvasAccess(expense.canvasId, user.id);
-    if (!hasAccess) return res.status(403).json({ error: "Access denied" });
+    const access = await checkCanvasPermission(expense.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
     if (!wallet || wallet.canvasId !== expense.canvasId) {
@@ -216,10 +207,8 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(expense.expense.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(expense.expense.canvasId, user.id, "view");
+    if (!access.allowed) return denyPermission(res, access);
 
     res.json({
       expense: {
@@ -267,10 +256,8 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     const parsedExpenseCategoryId =
       expenseCategoryId !== undefined ? Number(expenseCategoryId) : undefined;
@@ -344,10 +331,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    const hasAccess = await checkCanvasAccess(existing.canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
 
     await db
       .update(expenses)
