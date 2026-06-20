@@ -20,9 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field } from "@/components/ui/field";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -217,7 +221,8 @@ export function NewExpenseModal() {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="w-full">
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)}>
+          <FieldGroup className="gap-4">
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit Expense" : "Add New Expense"}</DialogTitle>
             <DialogDescription>
@@ -227,18 +232,17 @@ export function NewExpenseModal() {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Row 1: Name + Category */}
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="expense-name">Name</Label>
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="expense-name">Name</FieldLabel>
               <Input
                 id="expense-name"
                 placeholder="e.g. Monthly Rent"
                 {...register("name", { required: true })}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="expense-category">Expense Category</Label>
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="expense-category">Expense Category</FieldLabel>
               <Controller
                 name="expenseCategoryId"
                 control={control}
@@ -267,13 +271,12 @@ export function NewExpenseModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
+            </Field>
+          </Stack>
 
-          {/* Row 2: Currency + Default Wallet */}
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="expense-currency">Currency</Label>
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="expense-currency">Currency</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
@@ -302,9 +305,9 @@ export function NewExpenseModal() {
                   </Combobox>
                 )}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="expense-default-wallet">Default Wallet (optional)</Label>
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="expense-default-wallet">Default Wallet (optional)</FieldLabel>
               <Controller
                 name="defaultWalletId"
                 control={control}
@@ -332,63 +335,54 @@ export function NewExpenseModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
+            </Field>
+          </Stack>
 
-          {/* Description */}
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="expense-description">Description</Label>
-              <Input
-                id="expense-description"
-                placeholder="Optional notes about this expense"
-                {...register("description")}
-              />
-            </div>
-          </div>
+          <Field>
+            <FieldLabel htmlFor="expense-description">Description</FieldLabel>
+            <Input
+              id="expense-description"
+              placeholder="Optional notes about this expense"
+              {...register("description")}
+            />
+          </Field>
 
-          {/* Photo */}
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="expense-photo">Photo</Label>
+          <Field>
+            <FieldLabel htmlFor="expense-photo">Photo</FieldLabel>
+            <Controller
+              name="photo"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  ref={fileInputRef}
+                  id="expense-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    field.onChange(file);
+                  }}
+                  className="cursor-pointer"
+                />
+              )}
+            />
+          </Field>
+
+          <Stack gap={3}>
+            <Field orientation="horizontal" className="items-center">
               <Controller
-                name="photo"
+                name="isRecurring"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    ref={fileInputRef}
-                    id="expense-photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      field.onChange(file);
-                    }}
-                    className="cursor-pointer"
+                  <Checkbox
+                    id="expense-recurring"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(!!checked)}
                   />
                 )}
               />
-            </div>
-          </div>
-
-          {/* Recurring */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Field orientation="horizontal" className="items-center">
-                <Controller
-                  name="isRecurring"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="expense-recurring"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                    />
-                  )}
-                />
-                <Label htmlFor="expense-recurring">Recurring</Label>
-              </Field>
-            </div>
+              <FieldLabel htmlFor="expense-recurring">Recurring</FieldLabel>
+            </Field>
             {isRecurring && (
               <Controller
                 name="recurrencePattern"
@@ -401,7 +395,7 @@ export function NewExpenseModal() {
                 )}
               />
             )}
-          </div>
+          </Stack>
 
           <DialogFooter>
             <DialogClose asChild>
@@ -414,6 +408,7 @@ export function NewExpenseModal() {
               {isEdit ? "Save changes" : "Create Expense"}
             </Button>
           </DialogFooter>
+          </FieldGroup>
       </form>
         </DialogContent>
     </Dialog>

@@ -4,6 +4,7 @@ import { ExpensePaymentsChart } from "./components/ExpensePaymentsChart";
 import { ExpensePaymentsTable } from "./components/ExpensePaymentsTable";
 import { ExpenseSummaryCards } from "./components/ExpenseSummaryCards";
 import { useExpenseDetail } from "./hooks/useExpenseDetail";
+import { Container } from "@/components/ui/container";
 
 interface Props {
   id: number;
@@ -14,13 +15,13 @@ export default function ExpenseDetailPage({ id }: Props) {
 
   return (
     <>
-      <div className="px-4 lg:px-6">
+      <Container>
         <ExpensePaymentsChart
           payments={payments}
           currencySymbol={currencySymbol}
           isLoading={isLoading}
         />
-      </div>
+      </Container>
       <ExpenseSummaryCards
         payments={payments}
         currencySymbol={currencySymbol}

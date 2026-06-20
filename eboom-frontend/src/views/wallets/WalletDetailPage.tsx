@@ -5,6 +5,9 @@ import { WalletEntriesTable } from "./components/WalletEntriesTable";
 import { WalletPaymentsTable } from "./components/WalletPaymentTable";
 import { WalletSummaryCards } from "./components/WalletSummaryCards";
 import { useWalletDetail } from "./hooks/useWalletDetail";
+import { Container } from "@/components/ui/container";
+import { Stack } from "@/components/ui/stack";
+import { Typography } from "@/components/ui/typography";
 
 interface Props {
   id: number;
@@ -15,28 +18,32 @@ export default function WalletDetailPage({ id }: Props) {
 
   if (isError) {
     return (
-      <div className="flex h-96 items-center justify-center px-4 lg:px-6">
-        <p className="text-muted-foreground">Failed to load wallet details. Please try again.</p>
-      </div>
+      <Container>
+        <Stack className="h-96" align="center" justify="center">
+          <Typography variant="muted-sm">Failed to load wallet details. Please try again.</Typography>
+        </Stack>
+      </Container>
     );
   }
 
   return (
     <>
-      <div className="space-y-4 px-4 lg:px-6">
-        {wallet && (
-          <div>
-            <h1 className="text-3xl font-bold">{wallet.name}</h1>
-            {wallet.description && (
-              <p className="text-muted-foreground">{wallet.description}</p>
-            )}
-          </div>
-        )}
-      </div>
+      <Container>
+        <Stack gap={4}>
+          {wallet && (
+            <div>
+              <Typography variant="display">{wallet.name}</Typography>
+              {wallet.description && (
+                <Typography variant="muted">{wallet.description}</Typography>
+              )}
+            </div>
+          )}
+        </Stack>
+      </Container>
 
-      <div className="px-4 lg:px-6">
+      <Container>
         <WalletTransactionChart walletId={id} />
-      </div>
+      </Container>
 
       <WalletSummaryCards
         entries={entries}

@@ -11,8 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
@@ -199,7 +204,8 @@ export function NewExpensePaymentModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FieldGroup className="gap-4">
           <DialogHeader>
             <DialogTitle>Create Payment</DialogTitle>
             <DialogDescription>
@@ -211,10 +217,9 @@ export function NewExpensePaymentModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
             {showExpensePicker && (
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="payment-expense">Expense</Label>
+              <Field>
+                <FieldLabel htmlFor="payment-expense">Expense</FieldLabel>
                 <Controller
                   name="expenseId"
                   control={control}
@@ -243,11 +248,11 @@ export function NewExpensePaymentModal({
                     </Combobox>
                   )}
                 />
-              </div>
+              </Field>
             )}
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="payment-amount">Amount</Label>
+            <Field>
+              <FieldLabel htmlFor="payment-amount">Amount</FieldLabel>
               <Input
                 id="payment-amount"
                 type="number"
@@ -256,11 +261,11 @@ export function NewExpensePaymentModal({
                 placeholder="0.00"
                 {...register("amount", { required: true, valueAsNumber: true, min: 0.01 })}
               />
-            </div>
+            </Field>
 
             {showWalletPicker ? (
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="payment-wallet">Source Wallet</Label>
+              <Field>
+                <FieldLabel htmlFor="payment-wallet">Source Wallet</FieldLabel>
                 <Controller
                   name="sourceWalletId"
                   control={control}
@@ -289,43 +294,42 @@ export function NewExpensePaymentModal({
                     </Combobox>
                   )}
                 />
-              </div>
+              </Field>
             ) : (
-              <div className="flex flex-col gap-1">
-                <Label>Source Wallet</Label>
+              <Field>
+                <FieldLabel>Source Wallet</FieldLabel>
                 <Input value={walletName ?? "This wallet"} disabled />
-              </div>
+              </Field>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="payment-due-date">Due Date</Label>
+            <Stack direction="row" gap={4}>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="payment-due-date">Due Date</FieldLabel>
                 <Input
                   id="payment-due-date"
                   type="date"
                   {...register("dueDate")}
                 />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="payment-paid-date">Paid Date</Label>
+              </Field>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="payment-paid-date">Paid Date</FieldLabel>
                 <Input
                   id="payment-paid-date"
                   type="date"
                   {...register("paidDate")}
                 />
-              </div>
-            </div>
+              </Field>
+            </Stack>
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="payment-notes">Notes</Label>
+            <Field>
+              <FieldLabel htmlFor="payment-notes">Notes</FieldLabel>
               <Textarea
                 id="payment-notes"
                 placeholder="Optional notes about this payment"
                 rows={3}
                 {...register("notes")}
               />
-            </div>
-          </div>
+            </Field>
 
           <DialogFooter>
             <DialogClose asChild>
@@ -338,6 +342,7 @@ export function NewExpensePaymentModal({
               {isPending ? "Creating..." : "Create Payment"}
             </Button>
           </DialogFooter>
+          </FieldGroup>
         </form>
       </DialogContent>
     </Dialog>

@@ -13,9 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field } from "@/components/ui/field";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -217,7 +221,8 @@ export function NewIncomeModal() {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="w-full">
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)}>
+          <FieldGroup className="gap-4">
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit Income" : "Add New Income"}</DialogTitle>
             <DialogDescription>
@@ -226,16 +231,16 @@ export function NewIncomeModal() {
                 : "Enter the details below to track your income from various sources. Keep your finances organized."}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="name">Name</Label>
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="name">Name</FieldLabel>
               <Input
                 id="name"
                 {...register("name", { required: true })}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="currency">Currency</Label>
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="currency">Currency</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
@@ -264,19 +269,19 @@ export function NewIncomeModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="amount">Amount</Label>
+            </Field>
+          </Stack>
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="amount">Amount</FieldLabel>
               <Input
                 id="amount"
                 type="number"
                 {...register("amount", { required: true, valueAsNumber: true })}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="income-category">Income Category</Label>
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="income-category">Income Category</FieldLabel>
               <Controller
                 name="incomeCategoryId"
                 control={control}
@@ -305,88 +310,80 @@ export function NewIncomeModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="default-wallet">Default Wallet (optional)</Label>
+            </Field>
+          </Stack>
+          <Field>
+            <FieldLabel htmlFor="default-wallet">Default Wallet (optional)</FieldLabel>
+            <Controller
+              name="defaultWalletId"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  id="default-wallet"
+                  items={walletLabels}
+                  value={walletIdToLabel(field.value)}
+                  disabled={isLoadingWallets}
+                  onValueChange={(val) =>
+                    field.onChange(val ? walletLabelToId(val) : null)
+                  }
+                >
+                  <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
+                  <ComboboxContent className="z-[80]">
+                    <ComboboxEmpty>No wallets found.</ComboboxEmpty>
+                    <ComboboxCollection>
+                      {(walletLabel) => (
+                        <ComboboxItem key={walletLabel} value={walletLabel}>
+                          {walletLabel}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxCollection>
+                  </ComboboxContent>
+                </Combobox>
+              )}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="description">Description</FieldLabel>
+            <Input
+              id="description"
+              {...register("description")}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="photo">Photo</FieldLabel>
+            <Controller
+              name="photo"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  ref={fileInputRef}
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    field.onChange(file);
+                  }}
+                  className="cursor-pointer"
+                />
+              )}
+            />
+          </Field>
+          <Stack gap={3}>
+            <Field orientation="horizontal" className="items-center">
               <Controller
-                name="defaultWalletId"
+                name="isRecurring"
                 control={control}
                 render={({ field }) => (
-                  <Combobox
-                    id="default-wallet"
-                    items={walletLabels}
-                    value={walletIdToLabel(field.value)}
-                    disabled={isLoadingWallets}
-                    onValueChange={(val) =>
-                      field.onChange(val ? walletLabelToId(val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder={isLoadingWallets ? "Loading wallets..." : "Select a default wallet"} />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(walletLabel) => (
-                          <ComboboxItem key={walletLabel} value={walletLabel}>
-                            {walletLabel}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                {...register("description")}
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="photo">Photo</Label>
-              <Controller
-                name="photo"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    ref={fileInputRef}
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      field.onChange(file);
-                    }}
-                    className="cursor-pointer"
+                  <Checkbox
+                    id="isRecurrent"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(!!checked)}
                   />
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Field orientation="horizontal" className="items-center">
-                <Controller
-                  name="isRecurring"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isRecurrent"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                    />
-                  )}
-                />
-                <Label htmlFor="isRecurrent">Recurring</Label>
-              </Field>
-            </div>
+              <FieldLabel htmlFor="isRecurrent">Recurring</FieldLabel>
+            </Field>
             {isRecurring && (
               <Controller
                 name="recurrencePattern"
@@ -399,7 +396,7 @@ export function NewIncomeModal() {
                 )}
               />
             )}
-          </div>
+          </Stack>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
@@ -411,6 +408,7 @@ export function NewIncomeModal() {
               {isEdit ? "Save changes" : "Create Income"}
             </Button>
           </DialogFooter>
+          </FieldGroup>
       </form>
         </DialogContent>
     </Dialog>

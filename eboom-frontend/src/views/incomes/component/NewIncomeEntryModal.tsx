@@ -11,8 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
@@ -199,7 +204,8 @@ export function NewIncomeEntryModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FieldGroup className="gap-4">
           <DialogHeader>
             <DialogTitle>Create Entry</DialogTitle>
             <DialogDescription>
@@ -211,10 +217,9 @@ export function NewIncomeEntryModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
             {showIncomePicker && (
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="entry-income">Income</Label>
+              <Field>
+                <FieldLabel htmlFor="entry-income">Income</FieldLabel>
                 <Controller
                   name="incomeId"
                   control={control}
@@ -243,11 +248,11 @@ export function NewIncomeEntryModal({
                     </Combobox>
                   )}
                 />
-              </div>
+              </Field>
             )}
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="entry-amount">Amount</Label>
+            <Field>
+              <FieldLabel htmlFor="entry-amount">Amount</FieldLabel>
               <Input
                 id="entry-amount"
                 type="number"
@@ -256,11 +261,11 @@ export function NewIncomeEntryModal({
                 placeholder="0.00"
                 {...register("amount", { required: true, valueAsNumber: true, min: 0.01 })}
               />
-            </div>
+            </Field>
 
             {showWalletPicker ? (
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="entry-wallet">Destination Wallet</Label>
+              <Field>
+                <FieldLabel htmlFor="entry-wallet">Destination Wallet</FieldLabel>
                 <Controller
                   name="destinationWalletId"
                   control={control}
@@ -289,43 +294,42 @@ export function NewIncomeEntryModal({
                     </Combobox>
                   )}
                 />
-              </div>
+              </Field>
             ) : (
-              <div className="flex flex-col gap-1">
-                <Label>Destination Wallet</Label>
+              <Field>
+                <FieldLabel>Destination Wallet</FieldLabel>
                 <Input value={walletName ?? "This wallet"} disabled />
-              </div>
+              </Field>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="entry-expected-date">Expected Date</Label>
+            <Stack direction="row" gap={4}>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="entry-expected-date">Expected Date</FieldLabel>
                 <Input
                   id="entry-expected-date"
                   type="date"
                   {...register("expectedDate")}
                 />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="entry-received-date">Received Date</Label>
+              </Field>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="entry-received-date">Received Date</FieldLabel>
                 <Input
                   id="entry-received-date"
                   type="date"
                   {...register("receivedDate")}
                 />
-              </div>
-            </div>
+              </Field>
+            </Stack>
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="entry-notes">Notes</Label>
+            <Field>
+              <FieldLabel htmlFor="entry-notes">Notes</FieldLabel>
               <Textarea
                 id="entry-notes"
                 placeholder="Optional notes about this payment"
                 rows={3}
                 {...register("notes")}
               />
-            </div>
-          </div>
+            </Field>
 
           <DialogFooter>
             <DialogClose asChild>
@@ -338,6 +342,7 @@ export function NewIncomeEntryModal({
               {isPending ? "Creating..." : "Create Entry"}
             </Button>
           </DialogFooter>
+          </FieldGroup>
         </form>
       </DialogContent>
     </Dialog>

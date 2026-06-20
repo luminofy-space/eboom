@@ -11,6 +11,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Container } from "@/components/ui/container";
+import { Grid } from "@/components/ui/grid";
+import { Typography, typographyVariants } from "@/components/ui/typography";
 import { useMemo } from "react";
 import type { ExpensePayment } from "./ExpensePaymentsTable";
 import { computeExpenseStats, formatMoney } from "../utils/expensePaymentsStats";
@@ -51,16 +54,18 @@ export function ExpenseSummaryCards({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="@container/card">
-            <CardHeader>
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-32" />
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+      <Container>
+        <Grid variant="stats" gap={4}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="@container/card">
+              <CardHeader>
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+              </CardHeader>
+            </Card>
+          ))}
+        </Grid>
+      </Container>
     );
   }
 
@@ -68,11 +73,12 @@ export function ExpenseSummaryCards({
   const momIsUp = momChange !== null && momChange >= 0;
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <Container>
+      <Grid variant="stats" gap={4}>
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Paid</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalPaid, currencySymbol)}
           </CardTitle>
           <CardAction>
@@ -80,7 +86,7 @@ export function ExpenseSummaryCards({
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <Typography variant="label" className="line-clamp-1 flex gap-2">
             {momChange === null
               ? "No month-over-month comparison yet"
               : momIsUp
@@ -92,18 +98,18 @@ export function ExpenseSummaryCards({
               ) : (
                 <IconTrendingDown className="size-4" />
               ))}
-          </div>
-          <div className="text-muted-foreground">
+          </Typography>
+          <Typography variant="muted">
             {stats.paidCount} paid{" "}
             {stats.paidCount === 1 ? "payment" : "payments"}
-          </div>
+          </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Unpaid</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.totalUnpaid, currencySymbol)}
           </CardTitle>
           <CardAction>
@@ -111,19 +117,19 @@ export function ExpenseSummaryCards({
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <Typography variant="label" className="line-clamp-1 flex gap-2">
             Awaiting payment
-          </div>
-          <div className="text-muted-foreground">
+          </Typography>
+          <Typography variant="muted">
             Payments without a paid date
-          </div>
+          </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Payments</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className={typographyVariants({ variant: "stat" })}>
             {stats.paymentCount}
           </CardTitle>
           <CardAction>
@@ -133,19 +139,19 @@ export function ExpenseSummaryCards({
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <Typography variant="label" className="line-clamp-1 flex gap-2">
             All recorded payments
-          </div>
-          <div className="text-muted-foreground">
+          </Typography>
+          <Typography variant="muted">
             Includes paid and unpaid
-          </div>
+          </Typography>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Average Payment</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className={typographyVariants({ variant: "stat" })}>
             {formatMoney(stats.averagePaid, currencySymbol)}
           </CardTitle>
           <CardAction>
@@ -153,15 +159,16 @@ export function ExpenseSummaryCards({
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <Typography variant="label" className="line-clamp-1 flex gap-2">
             Based on {stats.paidCount}{" "}
             {stats.paidCount === 1 ? "payment" : "payments"}
-          </div>
-          <div className="text-muted-foreground">
+          </Typography>
+          <Typography variant="muted">
             Mean amount across paid payments
-          </div>
+          </Typography>
         </CardFooter>
       </Card>
-    </div>
+      </Grid>
+    </Container>
   );
 }
