@@ -3,7 +3,7 @@
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
-import { Badge } from "@/components/ui/badge";
+import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -71,15 +71,15 @@ function formatDate(date: string | null | undefined, emDash: string): string {
 
 function getEntryStatus(entry: IncomeEntry, t: TFunction<"incomes">): {
   label: string;
-  variant: "default" | "secondary" | "outline";
+  status: TransactionStatus;
 } {
   if (entry.receivedDate) {
-    return { label: t("status.received"), variant: "default" };
+    return { label: t("status.received"), status: "received" };
   }
   if (entry.expectedDate && dayjs(entry.expectedDate).isAfter(dayjs(), "day")) {
-    return { label: t("status.expected"), variant: "secondary" };
+    return { label: t("status.expected"), status: "expected" };
   }
-  return { label: t("status.pending"), variant: "outline" };
+  return { label: t("status.pending"), status: "pending" };
 }
 
 function sortEntries(entries: IncomeEntry[]): IncomeEntry[] {
@@ -270,7 +270,10 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                         {formatDate(entry.receivedDate, emDash)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <TransactionStatusChip
+                          status={status.status}
+                          label={status.label}
+                        />
                       </TableCell>
                       <TableCell className="hidden max-w-[200px] truncate md:table-cell">
                         {entry.notes ? (

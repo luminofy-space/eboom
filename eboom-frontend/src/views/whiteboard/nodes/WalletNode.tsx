@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wallet } from "lucide-react";
 import { formatMoney } from "@/src/i18n/formatters";
+import { ENTITY_CARD_GRADIENT } from "@/src/styles/entity-card-styles";
 import { cn } from "@/lib/utils";
 
 export interface WalletNodeData {
@@ -38,7 +39,8 @@ function WalletNodeComponent({ data, selected }: NodeProps) {
       />
       <Card
         className={cn(
-          "w-[220px] gap-0 py-0 shadow-md border-blue-500/30",
+          "w-[220px] gap-0 border-blue-500/30 py-0 shadow-md",
+          ENTITY_CARD_GRADIENT.wallet,
           selected && "ring-2 ring-primary"
         )}
       >

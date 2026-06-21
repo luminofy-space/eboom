@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,18 +45,18 @@ function formatDate(date: string | null | undefined, emDash: string): string {
 
 function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
   label: string;
-  variant: "default" | "secondary" | "outline" | "destructive";
+  status: TransactionStatus;
 } {
   if (payment.paidDate) {
-    return { label: t("status.paid"), variant: "default" };
+    return { label: t("status.paid"), status: "paid" };
   }
   if (payment.dueDate && dayjs(payment.dueDate).isBefore(dayjs(), "day")) {
-    return { label: t("status.overdue"), variant: "destructive" };
+    return { label: t("status.overdue"), status: "overdue" };
   }
   if (payment.dueDate && dayjs(payment.dueDate).isAfter(dayjs(), "day")) {
-    return { label: t("status.due"), variant: "secondary" };
+    return { label: t("status.due"), status: "due" };
   }
-  return { label: t("status.pending"), variant: "outline" };
+  return { label: t("status.pending"), status: "pending" };
 }
 
 function sortPayments(payments: WalletPayment[]): WalletPayment[] {
@@ -193,7 +193,10 @@ export function WalletPaymentsTable({
                       {formatDate(payment.paidDate, emDash)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={status.variant}>{status.label}</Badge>
+                      <TransactionStatusChip
+                        status={status.status}
+                        label={status.label}
+                      />
                     </TableCell>
                     <TableCell className="hidden max-w-[200px] truncate md:table-cell">
                       {payment.notes ? (

@@ -46,6 +46,7 @@ export default function ExpensesListPage() {
   const {
     items,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     sentinelRef,
   } = useInfiniteList<ExpenseItem>(
@@ -71,7 +72,9 @@ export default function ExpensesListPage() {
     },
   });
 
-  if (isLoading) {
+  const showLoading = isLoading || (isFetching && items.length === 0);
+
+  if (showLoading) {
     return (
       <Container>
         <Grid variant="cards" gap={4}>

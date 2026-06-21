@@ -1,0 +1,82 @@
+{
+  "title": "Dashboard",
+  "loadError": "Dashboard-Daten konnten nicht geladen werden.",
+  "retry": "Erneut versuchen",
+  "empty": {
+    "noCanvasTitle": "Kein Canvas ausgewählt",
+    "noCanvasDescription": "Wählen Sie einen Canvas in der Seitenleiste aus oder erstellen Sie einen, um Ihre Finanzübersicht zu sehen."
+  },
+  "header": {
+    "currency": "Währung"
+  },
+  "aggregations": {
+    "title": "Aggregationen",
+    "description": "Detaillierte Kennzahlen für {{currency}}"
+  },
+  "overview": {
+    "noData": "Noch keine Finanzdaten. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
+    "totalBalance": "Gesamtsaldo",
+    "totalBalanceFooter": "Kombinierte Wallet-Salden",
+    "acrossWallets": "Über alle Wallets in diesem Canvas",
+    "walletCount": "{{count}} Wallets",
+    "incomeReceived": "Einnahmen erhalten",
+    "pendingIncome": "{{amount}} ausstehend",
+    "expensesPaid": "Ausgaben bezahlt",
+    "unpaidExpenses": "{{amount}} unbezahlt",
+    "netCashFlow": "Netto-Cashflow",
+    "thisMonth": "Diesen Monat",
+    "netPositive": "Positiver Cashflow diesen Monat",
+    "netNegative": "Negativer Cashflow diesen Monat",
+    "netCashFlowFooter": "Erhaltene Einnahmen minus bezahlte Ausgaben"
+  },
+  "chart": {
+    "title": "Cashflow",
+    "description": {
+      "withData": "{{amount}} erhalten & bezahlt für {{timeRange}}",
+      "noData": "Keine Transaktionen in {{timeRange}}"
+    },
+    "series": {
+      "received": "Erhalten",
+      "paid": "Bezahlt"
+    }
+  },
+  "sections": {
+    "title": "Aufschlüsselung nach Kategorie",
+    "viewAll": "Alle anzeigen",
+    "wallets": {
+      "title": "Wallets",
+      "count": "{{count}} Wallets"
+    },
+    "incomes": {
+      "title": "Einnahmen",
+      "count": "{{count}} Einnahmen"
+    },
+    "expenses": {
+      "title": "Ausgaben",
+      "count": "{{count}} Ausgaben"
+    }
+  },
+  "quickActions": {
+    "whiteboard": "Whiteboard öffnen",
+    "members": "Mitglieder verwalten"
+  },
+  "recentActivity": {
+    "title": "Letzte Aktivitäten",
+    "empty": "Noch keine kürzlichen Transaktionen.",
+    "columns": {
+      "type": "Typ",
+      "name": "Name",
+      "date": "Datum"
+    },
+    "types": {
+      "income": "Einnahme",
+      "expense": "Ausgabe"
+    },
+    "status": {
+      "received": "Erhalten",
+      "pending": "Ausstehend",
+      "paid": "Bezahlt",
+      "due": "Fällig"
+    }
+  }
+}

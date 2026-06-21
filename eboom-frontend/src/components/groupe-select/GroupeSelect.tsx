@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SingleSelectButton from "./SingleSelectButton";
 
 export type TItem = {
@@ -14,6 +14,11 @@ type TProps = {
 
 const GroupSelect = ({ items, handleSelect, value }: TProps) => {
   const [selected, setSelected] = useState<string | null>(value);
+
+  useEffect(() => {
+    setSelected(value);
+  }, [value]);
+
   const onClick = (item: TItem) => {
     handleSelect(item);
     setSelected(item.key);

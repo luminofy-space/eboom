@@ -1,0 +1,82 @@
+{
+  "title": "داشبورد",
+  "loadError": "بارگذاری داده‌های داشبورد ناموفق بود.",
+  "retry": "تلاش مجدد",
+  "empty": {
+    "noCanvasTitle": "بوم انتخاب نشده",
+    "noCanvasDescription": "برای مشاهده نمای کلی مالی، یک بوم از نوار کناری انتخاب یا ایجاد کنید."
+  },
+  "header": {
+    "currency": "ارز"
+  },
+  "aggregations": {
+    "title": "تجمیع‌ها",
+    "description": "معیارهای تفصیلی برای {{currency}}"
+  },
+  "overview": {
+    "noData": "هنوز داده مالی وجود ندارد. کیف پول، درآمد یا هزینه اضافه کنید.",
+    "totalBalance": "موجودی کل",
+    "totalBalanceFooter": "مجموع موجودی کیف پول‌ها",
+    "acrossWallets": "در تمام کیف پول‌های این بوم",
+    "walletCount": "{{count}} کیف پول",
+    "incomeReceived": "درآمد دریافت‌شده",
+    "pendingIncome": "{{amount}} در انتظار",
+    "expensesPaid": "هزینه‌های پرداخت‌شده",
+    "unpaidExpenses": "{{amount}} پرداخت‌نشده",
+    "netCashFlow": "جریان نقدی خالص",
+    "thisMonth": "این ماه",
+    "netPositive": "جریان نقدی مثبت این ماه",
+    "netNegative": "جریان نقدی منفی این ماه",
+    "netCashFlowFooter": "درآمد دریافت‌شده منهای هزینه‌های پرداخت‌شده"
+  },
+  "chart": {
+    "title": "جریان نقدی",
+    "description": {
+      "withData": "{{amount}} دریافت و پرداخت برای {{timeRange}}",
+      "noData": "تراکنشی در {{timeRange}} وجود ندارد"
+    },
+    "series": {
+      "received": "دریافت‌شده",
+      "paid": "پرداخت‌شده"
+    }
+  },
+  "sections": {
+    "title": "تفکیک بر اساس دسته",
+    "viewAll": "مشاهده همه",
+    "wallets": {
+      "title": "کیف پول‌ها",
+      "count": "{{count}} کیف پول"
+    },
+    "incomes": {
+      "title": "درآمدها",
+      "count": "{{count}} درآمد"
+    },
+    "expenses": {
+      "title": "هزینه‌ها",
+      "count": "{{count}} هزینه"
+    }
+  },
+  "quickActions": {
+    "whiteboard": "باز کردن تخته",
+    "members": "مدیریت اعضا"
+  },
+  "recentActivity": {
+    "title": "فعالیت‌های اخیر",
+    "empty": "هنوز تراکنش اخیری وجود ندارد.",
+    "columns": {
+      "type": "نوع",
+      "name": "نام",
+      "date": "تاریخ"
+    },
+    "types": {
+      "income": "درآمد",
+      "expense": "هزینه"
+    },
+    "status": {
+      "received": "دریافت‌شده",
+      "pending": "در انتظار",
+      "paid": "پرداخت‌شده",
+      "due": "سررسید"
+    }
+  }
+}

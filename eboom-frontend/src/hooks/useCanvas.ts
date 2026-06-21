@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import API_ROUTES from "../api/urls";
 import { useMutationApi } from "../api/useMutation";
 import useQueryApi from "../api/useQuery";
@@ -40,6 +41,7 @@ export const useCanvas = () => {
     });
 
     const dispatch = useDispatch();
+    const queryClient = useQueryClient();
 
     const selectCanvas = useCallback((canvasId: number) => {
         setCanvas(canvasId);
@@ -47,7 +49,10 @@ export const useCanvas = () => {
         if (hasWindow) {
             window.localStorage.setItem("canvasId", canvasId.toString());
         }
-    }, [dispatch]);
+        queryClient.removeQueries({
+            predicate: (query) => query.queryKey[0] !== "canvases",
+        });
+    }, [dispatch, queryClient]);
 
     const createCanvas = async (name: string, description: string, canvasType: string, photoUrl: string, baseCurrencyId: number) => {
         const response = await mutateAsync({

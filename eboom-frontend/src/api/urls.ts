@@ -57,6 +57,8 @@ const API_ROUTES = {
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
 
+  CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
+
   // Canvas whiteboard
   CANVAS_WHITEBOARD: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/`,
   CANVAS_WHITEBOARD_VIEWPORT: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/viewport`,

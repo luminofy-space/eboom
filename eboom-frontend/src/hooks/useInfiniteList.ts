@@ -109,6 +109,7 @@ export function useInfiniteList<T>(
   return {
     items,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     isFetchingNextPage,
     hasNextPage: hasNextPage ?? false,
     sentinelRef: setSentinelRef,
