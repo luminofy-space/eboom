@@ -6,54 +6,36 @@
     "noCanvasTitle": "Kein Canvas ausgewählt",
     "noCanvasDescription": "Wählen Sie einen Canvas in der Seitenleiste aus oder erstellen Sie einen, um Ihre Finanzübersicht zu sehen."
   },
-  "header": {
-    "currency": "Währung"
-  },
-  "aggregations": {
-    "title": "Aggregationen",
-    "description": "Detaillierte Kennzahlen für {{currency}}"
-  },
-  "overview": {
-    "noData": "Noch keine Finanzdaten. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
-    "totalBalance": "Gesamtsaldo",
-    "totalBalanceFooter": "Kombinierte Wallet-Salden",
-    "acrossWallets": "Über alle Wallets in diesem Canvas",
-    "walletCount": "{{count}} Wallets",
-    "incomeReceived": "Einnahmen erhalten",
-    "pendingIncome": "{{amount}} ausstehend",
-    "expensesPaid": "Ausgaben bezahlt",
-    "unpaidExpenses": "{{amount}} unbezahlt",
-    "netCashFlow": "Netto-Cashflow",
-    "thisMonth": "Diesen Monat",
-    "netPositive": "Positiver Cashflow diesen Monat",
-    "netNegative": "Negativer Cashflow diesen Monat",
-    "netCashFlowFooter": "Erhaltene Einnahmen minus bezahlte Ausgaben"
+  "assets": {
+    "title": "Gesamtvermögen",
+    "totalAssets": "Gesamtvermögen",
+    "netThisMonth": "netto diesen Monat",
+    "loadAll": "Alle laden",
+    "showLess": "Weniger anzeigen",
+    "pageIndicator": "{{current}} / {{total}}",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "empty": "Noch keine Vermögenswerte. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
+    "tooltip": {
+      "wallets": "Wallets",
+      "incomes": "Einnahmen",
+      "expenses": "Ausgaben",
+      "received": "Einnahmen erhalten",
+      "pending": "Einnahmen ausstehend",
+      "paid": "Ausgaben bezahlt",
+      "unpaid": "Ausgaben unbezahlt",
+      "netCashFlow": "Netto-Cashflow (diesen Monat)"
+    }
   },
   "chart": {
     "title": "Cashflow",
     "description": {
-      "withData": "{{amount}} erhalten & bezahlt für {{timeRange}}",
+      "multiCurrency": "Erhalten und bezahlt über alle Währungen für {{timeRange}}",
       "noData": "Keine Transaktionen in {{timeRange}}"
     },
-    "series": {
+    "legend": {
       "received": "Erhalten",
       "paid": "Bezahlt"
-    }
-  },
-  "sections": {
-    "title": "Aufschlüsselung nach Kategorie",
-    "viewAll": "Alle anzeigen",
-    "wallets": {
-      "title": "Wallets",
-      "count": "{{count}} Wallets"
-    },
-    "incomes": {
-      "title": "Einnahmen",
-      "count": "{{count}} Einnahmen"
-    },
-    "expenses": {
-      "title": "Ausgaben",
-      "count": "{{count}} Ausgaben"
     }
   },
   "quickActions": {

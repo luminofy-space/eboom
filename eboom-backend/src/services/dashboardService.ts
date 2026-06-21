@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, countDistinct, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   currencies,
@@ -64,8 +64,17 @@ export interface CanvasSummaryRecentActivity {
   status: RecentActivityStatus;
 }
 
+export interface CanvasSummaryCurrencyBreakdown {
+  currencyCode: string;
+  currencySymbol: string;
+  walletCount: number;
+  incomeCount: number;
+  expenseCount: number;
+}
+
 export interface CanvasSummary {
   counts: { wallets: number; incomes: number; expenses: number };
+  currencyBreakdown: CanvasSummaryCurrencyBreakdown[];
   walletBalances: CanvasSummaryWalletBalance[];
   incomeEntries: CanvasSummaryIncomeEntry[];
   expensePayments: CanvasSummaryExpensePayment[];
@@ -96,8 +105,53 @@ function getActivitySortDate(
   return new Date(dateStr).getTime();
 }
 
+function mergeCurrencyBreakdown(
+  walletRows: Array<{ currencyCode: string; currencySymbol: string; walletCount: number }>,
+  incomeRows: Array<{ currencyCode: string; currencySymbol: string; incomeCount: number }>,
+  expenseRows: Array<{ currencyCode: string; currencySymbol: string; expenseCount: number }>
+): CanvasSummaryCurrencyBreakdown[] {
+  const map = new Map<string, CanvasSummaryCurrencyBreakdown>();
+
+  const ensure = (code: string, symbol: string) => {
+    if (!map.has(code)) {
+      map.set(code, {
+        currencyCode: code,
+        currencySymbol: symbol,
+        walletCount: 0,
+        incomeCount: 0,
+        expenseCount: 0,
+      });
+    }
+    return map.get(code)!;
+  };
+
+  for (const row of walletRows) {
+    const entry = ensure(row.currencyCode, row.currencySymbol);
+    entry.walletCount = row.walletCount;
+  }
+  for (const row of incomeRows) {
+    const entry = ensure(row.currencyCode, row.currencySymbol);
+    entry.incomeCount = row.incomeCount;
+  }
+  for (const row of expenseRows) {
+    const entry = ensure(row.currencyCode, row.currencySymbol);
+    entry.expenseCount = row.expenseCount;
+  }
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.currencyCode.localeCompare(b.currencyCode)
+  );
+}
+
 export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary> {
-  const [walletCountRow, incomeCountRow, expenseCountRow] = await Promise.all([
+  const [
+    walletCountRow,
+    incomeCountRow,
+    expenseCountRow,
+    walletBreakdownRows,
+    incomeBreakdownRows,
+    expenseBreakdownRows,
+  ] = await Promise.all([
     db
       .select({ total: count() })
       .from(wallets)
@@ -110,7 +164,56 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       .select({ total: count() })
       .from(expenses)
       .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false))),
+    db
+      .select({
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        walletCount: countDistinct(wallets.id),
+      })
+      .from(subWallets)
+      .innerJoin(wallets, eq(subWallets.walletId, wallets.id))
+      .innerJoin(currencies, eq(subWallets.currencyId, currencies.id))
+      .where(and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false)))
+      .groupBy(currencies.code, currencies.symbol),
+    db
+      .select({
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        incomeCount: count(),
+      })
+      .from(incomes)
+      .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+      .where(and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false)))
+      .groupBy(currencies.code, currencies.symbol),
+    db
+      .select({
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        expenseCount: count(),
+      })
+      .from(expenses)
+      .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+      .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false)))
+      .groupBy(currencies.code, currencies.symbol),
   ]);
+
+  const currencyBreakdown = mergeCurrencyBreakdown(
+    walletBreakdownRows.map((row) => ({
+      currencyCode: row.currencyCode,
+      currencySymbol: row.currencySymbol,
+      walletCount: row.walletCount,
+    })),
+    incomeBreakdownRows.map((row) => ({
+      currencyCode: row.currencyCode,
+      currencySymbol: row.currencySymbol,
+      incomeCount: row.incomeCount,
+    })),
+    expenseBreakdownRows.map((row) => ({
+      currencyCode: row.currencyCode,
+      currencySymbol: row.currencySymbol,
+      expenseCount: row.expenseCount,
+    }))
+  );
 
   const walletBalanceRows = await db
     .select({
@@ -250,6 +353,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       incomes: incomeCountRow[0]?.total ?? 0,
       expenses: expenseCountRow[0]?.total ?? 0,
     },
+    currencyBreakdown,
     walletBalances: walletBalanceRows.map((row) => ({
       walletId: row.walletId,
       walletName: row.walletName,

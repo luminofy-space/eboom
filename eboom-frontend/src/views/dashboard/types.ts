@@ -50,8 +50,17 @@ export interface CanvasSummaryRecentActivity {
   status: RecentActivityStatus;
 }
 
+export interface CanvasSummaryCurrencyBreakdown {
+  currencyCode: string;
+  currencySymbol: string;
+  walletCount: number;
+  incomeCount: number;
+  expenseCount: number;
+}
+
 export interface CanvasSummary {
   counts: { wallets: number; incomes: number; expenses: number };
+  currencyBreakdown: CanvasSummaryCurrencyBreakdown[];
   walletBalances: CanvasSummaryWalletBalance[];
   incomeEntries: CanvasSummaryIncomeEntry[];
   expensePayments: CanvasSummaryExpensePayment[];

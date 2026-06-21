@@ -6,54 +6,36 @@
     "noCanvasTitle": "No canvas selected",
     "noCanvasDescription": "Select or create a canvas from the sidebar to view your financial overview."
   },
-  "header": {
-    "currency": "Currency"
-  },
-  "aggregations": {
-    "title": "Aggregations",
-    "description": "Detailed metrics for {{currency}}"
-  },
-  "overview": {
-    "noData": "No financial data yet. Add wallets, incomes, or expenses to get started.",
-    "totalBalance": "Total Balance",
-    "totalBalanceFooter": "Combined wallet balances",
-    "acrossWallets": "Across all wallets in this canvas",
-    "walletCount": "{{count}} wallets",
-    "incomeReceived": "Income Received",
-    "pendingIncome": "{{amount}} pending",
-    "expensesPaid": "Expenses Paid",
-    "unpaidExpenses": "{{amount}} unpaid",
-    "netCashFlow": "Net Cash Flow",
-    "thisMonth": "This month",
-    "netPositive": "Positive cash flow this month",
-    "netNegative": "Negative cash flow this month",
-    "netCashFlowFooter": "Received income minus paid expenses"
+  "assets": {
+    "title": "Overall Assets",
+    "totalAssets": "Total assets",
+    "netThisMonth": "net this month",
+    "loadAll": "Load all",
+    "showLess": "Show less",
+    "pageIndicator": "{{current}} / {{total}}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "empty": "No assets yet. Add wallets, incomes, or expenses to get started.",
+    "tooltip": {
+      "wallets": "Wallets",
+      "incomes": "Incomes",
+      "expenses": "Expenses",
+      "received": "Income received",
+      "pending": "Income pending",
+      "paid": "Expenses paid",
+      "unpaid": "Expenses unpaid",
+      "netCashFlow": "Net cash flow (this month)"
+    }
   },
   "chart": {
     "title": "Cash Flow",
     "description": {
-      "withData": "{{amount}} received & paid for the {{timeRange}}",
+      "multiCurrency": "Received and paid across all currencies for the {{timeRange}}",
       "noData": "No transactions in the {{timeRange}}"
     },
-    "series": {
+    "legend": {
       "received": "Received",
       "paid": "Paid"
-    }
-  },
-  "sections": {
-    "title": "Breakdown by category",
-    "viewAll": "View all",
-    "wallets": {
-      "title": "Wallets",
-      "count": "{{count}} wallets"
-    },
-    "incomes": {
-      "title": "Incomes",
-      "count": "{{count}} incomes"
-    },
-    "expenses": {
-      "title": "Expenses",
-      "count": "{{count}} expenses"
     }
   },
   "quickActions": {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Card,
@@ -14,7 +14,6 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import {
@@ -31,55 +30,72 @@ import {
 } from "@/components/ui/toggle-group";
 import { formatMoney } from "@/src/i18n/formatters";
 import type { CanvasSummary } from "../types";
-import { buildCashFlowChartData } from "../utils/cashFlowChartData";
+import {
+  assignCurrencyChartColors,
+  buildMultiCurrencySeriesKeys,
+  getCurrencyFromSeriesKey,
+  isPaidSeriesKey,
+} from "../utils/assignCurrencyChartColors";
+import { buildMultiCurrencyCashFlowChartData } from "../utils/cashFlowChartData";
 import { computeDashboardStatsByCurrency } from "../utils/dashboardStats";
+import { DashboardChartLegend } from "./DashboardChartLegend";
 import { useTranslation } from "react-i18next";
 
 interface DashboardCashFlowChartProps {
   summary?: CanvasSummary;
-  currencyCode?: string;
   isLoading?: boolean;
 }
 
 export function DashboardCashFlowChart({
   summary,
-  currencyCode,
   isLoading,
 }: DashboardCashFlowChartProps) {
   const { t } = useTranslation("dashboard");
   const { t: tc } = useTranslation("common");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
-  const fillReceivedId = React.useId();
-  const fillPaidId = React.useId();
 
-  const primaryCurrency = React.useMemo(() => {
-    if (currencyCode) return currencyCode;
-    if (!summary) return undefined;
-    const stats = computeDashboardStatsByCurrency(summary);
-    return stats[0]?.currencyCode;
-  }, [summary, currencyCode]);
-
-  const currencySymbol = React.useMemo(() => {
-    if (!summary || !primaryCurrency) return undefined;
-    const stats = computeDashboardStatsByCurrency(summary);
-    return stats.find((s) => s.currencyCode === primaryCurrency)?.currencySymbol;
-  }, [summary, primaryCurrency]);
-
-  const chartConfig = React.useMemo(
-    () =>
-      ({
-        received: {
-          label: t("chart.series.received"),
-          color: "var(--primary)",
-        },
-        paid: {
-          label: t("chart.series.paid"),
-          color: "hsl(var(--destructive))",
-        },
-      }) satisfies ChartConfig,
-    [t]
+  const currencyStats = React.useMemo(
+    () => (summary ? computeDashboardStatsByCurrency(summary) : []),
+    [summary]
   );
+
+  const currencyCodes = React.useMemo(
+    () => currencyStats.map((item) => item.currencyCode),
+    [currencyStats]
+  );
+
+  const symbolByCurrency = React.useMemo(
+    () =>
+      Object.fromEntries(
+        currencyStats.map((item) => [item.currencyCode, item.currencySymbol])
+      ),
+    [currencyStats]
+  );
+
+  const seriesKeys = React.useMemo(
+    () => buildMultiCurrencySeriesKeys(currencyCodes),
+    [currencyCodes]
+  );
+
+  const colorMap = React.useMemo(
+    () => assignCurrencyChartColors(currencyCodes),
+    [currencyCodes]
+  );
+
+  const chartConfig = React.useMemo(() => {
+    const config: ChartConfig = {};
+    for (const key of seriesKeys) {
+      const currency = getCurrencyFromSeriesKey(key);
+      config[key] = {
+        label: isPaidSeriesKey(key)
+          ? `${currency} ${t("chart.legend.paid")}`
+          : `${currency} ${t("chart.legend.received")}`,
+        color: colorMap[key],
+      };
+    }
+    return config;
+  }, [seriesKeys, colorMap, t]);
 
   React.useEffect(() => {
     if (isMobile) {
@@ -87,26 +103,29 @@ export function DashboardCashFlowChart({
     }
   }, [isMobile]);
 
-  const filteredData = React.useMemo(
+  const chartData = React.useMemo(
     () =>
       summary
-        ? buildCashFlowChartData(
+        ? buildMultiCurrencyCashFlowChartData(
             summary.incomeEntries,
             summary.expensePayments,
             timeRange,
-            primaryCurrency
+            currencyCodes
           )
         : [],
-    [summary, timeRange, primaryCurrency]
+    [summary, timeRange, currencyCodes]
   );
 
   const rangeTotal = React.useMemo(
     () =>
-      filteredData.reduce(
-        (sum, point) => sum + point.received + point.paid,
-        0
-      ),
-    [filteredData]
+      chartData.reduce((sum, point) => {
+        let pointTotal = 0;
+        for (const key of seriesKeys) {
+          pointTotal += Number(point[key]) || 0;
+        }
+        return sum + pointTotal;
+      }, 0),
+    [chartData, seriesKeys]
   );
 
   const timeRangeLabel =
@@ -137,10 +156,7 @@ export function DashboardCashFlowChart({
         <CardDescription>
           <span className="hidden @[540px]/card:block">
             {rangeTotal > 0
-              ? t("chart.description.withData", {
-                  amount: formatMoney(rangeTotal, currencySymbol),
-                  timeRange: timeRangeLabel,
-                })
+              ? t("chart.description.multiCurrency", { timeRange: timeRangeLabel })
               : t("chart.description.noData", { timeRange: timeRangeLabel })}
           </span>
           <span className="@[540px]/card:hidden">{timeRangeLabel}</span>
@@ -184,17 +200,7 @@ export function DashboardCashFlowChart({
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
-          <AreaChart data={filteredData}>
-            <defs>
-              <linearGradient id={fillReceivedId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-received)" stopOpacity={1.0} />
-                <stop offset="95%" stopColor="var(--color-received)" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id={fillPaidId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-paid)" stopOpacity={0.6} />
-                <stop offset="95%" stopColor="var(--color-paid)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
+          <LineChart data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -211,43 +217,83 @@ export function DashboardCashFlowChart({
             />
             <ChartTooltip
               cursor={false}
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) =>
-                    new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                const byCurrency = new Map<
+                  string,
+                  { received?: number; paid?: number }
+                >();
+
+                for (const item of payload) {
+                  const key = String(item.dataKey);
+                  const currency = getCurrencyFromSeriesKey(key);
+                  const entry = byCurrency.get(currency) ?? {};
+                  if (isPaidSeriesKey(key)) {
+                    entry.paid = Number(item.value) || 0;
+                  } else {
+                    entry.received = Number(item.value) || 0;
                   }
-                  formatter={(value, name) => (
-                    <span className="tabular-nums">
-                      {formatMoney(Number(value), currencySymbol)}{" "}
-                      <span className="text-muted-foreground capitalize">
-                        {String(name)}
-                      </span>
-                    </span>
-                  )}
-                  indicator="dot"
-                />
-              }
+                  byCurrency.set(currency, entry);
+                }
+
+                return (
+                  <div className="rounded-lg border bg-background px-3 py-2 text-xs shadow-md">
+                    <div className="mb-2 font-medium">
+                      {new Date(String(label)).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <div className="grid gap-2">
+                      {Array.from(byCurrency.entries()).map(([currency, values]) => (
+                        <div key={currency} className="grid gap-1">
+                          <div className="font-medium">{currency}</div>
+                          {values.received != null && values.received > 0 && (
+                            <div className="flex justify-between gap-4 tabular-nums">
+                              <span className="text-muted-foreground">
+                                {t("chart.legend.received")}
+                              </span>
+                              <span>
+                                {formatMoney(values.received, symbolByCurrency[currency])}
+                              </span>
+                            </div>
+                          )}
+                          {values.paid != null && values.paid > 0 && (
+                            <div className="flex justify-between gap-4 tabular-nums">
+                              <span className="text-muted-foreground">
+                                {t("chart.legend.paid")}
+                              </span>
+                              <span>
+                                {formatMoney(values.paid, symbolByCurrency[currency])}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }}
             />
-            <Area
-              dataKey="paid"
-              type="natural"
-              fill={`url(#${fillPaidId})`}
-              stroke="var(--color-paid)"
-              stackId="a"
-            />
-            <Area
-              dataKey="received"
-              type="natural"
-              fill={`url(#${fillReceivedId})`}
-              stroke="var(--color-received)"
-              stackId="a"
-            />
-          </AreaChart>
+            {seriesKeys.map((key) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={colorMap[key]}
+                strokeWidth={2}
+                strokeDasharray={isPaidSeriesKey(key) ? "4 4" : undefined}
+                dot={false}
+                connectNulls
+              />
+            ))}
+          </LineChart>
         </ChartContainer>
+        {currencyCodes.length > 0 && (
+          <DashboardChartLegend currencyCodes={currencyCodes} />
+        )}
       </CardContent>
     </Card>
   );
