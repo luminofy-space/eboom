@@ -8,8 +8,9 @@ import {
   SidebarMenuButton,
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 
 export function NavMain({
   items,
@@ -22,9 +23,9 @@ export function NavMain({
     onClick?: () => void;
   }[];
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation("navigation");
+  const { navigate } = useNavigationProgress();
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
@@ -47,7 +48,7 @@ export function NavMain({
                 return;
               }
               if (item.url) {
-                router.push(item.url);
+                navigate(item.url);
               }
             }}
           >

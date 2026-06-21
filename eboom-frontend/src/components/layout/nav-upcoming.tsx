@@ -9,8 +9,9 @@ import {
   SidebarMenuButton,
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 
 export function NavUpcoming({
   items,
@@ -22,9 +23,9 @@ export function NavUpcoming({
     badge?: string;
   }[];
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation("navigation");
+  const { navigate } = useNavigationProgress();
 
   const isActive = (url: string) => {
     return pathname === url || pathname.startsWith(url);
@@ -39,7 +40,7 @@ export function NavUpcoming({
             <SidebarMenuButton
               isActive={isActive(item.url)}
               tooltip={item.title}
-              onClick={() => router.push(item.url)}
+              onClick={() => navigate(item.url)}
             >
               {item.icon && <item.icon />}
               <span>{item.title}</span>
