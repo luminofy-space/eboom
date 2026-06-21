@@ -138,3 +138,12 @@ body {
 [dir="rtl"] body {
   font-family: var(--font-geist-sans), system-ui, "Segoe UI", Tahoma, sans-serif;
 }
+
+@keyframes navigation-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
