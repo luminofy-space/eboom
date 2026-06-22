@@ -8,7 +8,7 @@ type TProp ={
 }
 
 const SingleSelectButton = ({isSelected, title, onClick}: TProp) => {
-    return <Button className={cn(
+    return <Button type="button" className={cn(
         isSelected && "border-primary!"
       )} variant='outline' onClick={() => onClick()}>{title}</Button>;
 }

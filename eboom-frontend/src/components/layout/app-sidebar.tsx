@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   BrainCircuit,
   Users,
+  LayoutDashboard,
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
@@ -34,6 +35,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { canManageMembers } = useCanvasPermissions();
 
   const navMain = [
+    {
+      title: t("dashboard"),
+      url: "/",
+      icon: LayoutDashboard,
+    },
     {
       title: t("routes.incomes"),
       url: "/incomes",

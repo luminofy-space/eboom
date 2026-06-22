@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BanknoteArrowDown } from "lucide-react";
+import { ENTITY_CARD_GRADIENT } from "@/src/styles/entity-card-styles";
 import { cn } from "@/lib/utils";
 
 export interface ExpenseNodeData {
@@ -29,7 +30,8 @@ function ExpenseNodeComponent({ data, selected }: NodeProps) {
       />
       <Card
         className={cn(
-          "w-[220px] gap-0 py-0 shadow-md border-red-500/30",
+          "w-[220px] gap-0 border-red-500/30 py-0 shadow-md",
+          ENTITY_CARD_GRADIENT.expense,
           selected && "ring-2 ring-primary"
         )}
       >

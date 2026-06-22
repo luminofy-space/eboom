@@ -43,6 +43,7 @@ export default function IncomesListPage() {
   const {
     items,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     sentinelRef,
   } = useInfiniteList<IncomeItem>(
@@ -68,7 +69,9 @@ export default function IncomesListPage() {
     },
   });
 
-  if (isLoading) {
+  const showLoading = isLoading || (isFetching && items.length === 0);
+
+  if (showLoading) {
     return (
       <Container>
         <Grid variant="cards" gap={4}>

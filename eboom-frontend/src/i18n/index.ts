@@ -25,6 +25,7 @@ if (!i18n.isInitialized) {
         "canvas",
         "canvas-members",
         "whiteboard",
+        "dashboard",
       ],
       defaultNS: "common",
       backend: {

@@ -42,6 +42,7 @@ import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { closeCanvasModal, selectCanvasModal } from "@/src/redux/canvasSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 import { useTranslation } from "react-i18next";
 
 interface CanvasFormData {
@@ -71,6 +72,7 @@ export function NewCanvasModal() {
   const { open, mode, editingItem } = useAppSelector(selectCanvasModal);
   const isEdit = mode === "edit";
   const queryClient = useQueryClient();
+  const { navigate } = useNavigationProgress();
 
   const canvasTypeItems: TItem[] = [
     { key: "personal", title: t("modal.fields.type.options.personal") },
@@ -155,6 +157,7 @@ export function NewCanvasModal() {
       try {
         await createCanvas(formData.name, formData.description, formData.canvasType, photoUrl, selectedCurrency.id);
         handleClose();
+        navigate("/");
       } catch (error) {
         console.error("Error creating canvas:", error);
       }

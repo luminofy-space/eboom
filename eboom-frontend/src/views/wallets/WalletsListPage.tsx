@@ -46,6 +46,7 @@ export default function WalletsListPage() {
   const {
     items,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     sentinelRef,
   } = useInfiniteList<WalletItem>(
@@ -71,7 +72,9 @@ export default function WalletsListPage() {
     },
   });
 
-  if (isLoading) {
+  const showLoading = isLoading || (isFetching && items.length === 0);
+
+  if (showLoading) {
     return (
       <Container>
         <Grid variant="cards" gap={4}>

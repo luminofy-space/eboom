@@ -21,6 +21,7 @@ import {
   getCanvasMembership,
 } from "../services/canvasAccessService";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
+import { getCanvasSummary } from "../services/dashboardService";
 
 const router = express.Router();
 
@@ -249,6 +250,33 @@ router.delete("/:id", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error deleting canvas:", err);
     res.status(500).json({ error: "Failed to delete canvas" });
+  }
+});
+
+// ============================================================================
+// CANVAS DASHBOARD SUMMARY
+// ============================================================================
+
+router.get("/:canvasId/summary", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseInt(req.params.canvasId, 10);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const summary = await getCanvasSummary(canvasId);
+    res.json(summary);
+  } catch (err) {
+    console.error("Error fetching canvas summary:", err);
+    res.status(500).json({ error: "Failed to fetch canvas summary" });
   }
 });
 
