@@ -1,32 +1,4 @@
-import nodemailer from 'nodemailer';
-
-const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
-const EMAIL_PORT = parseInt(process.env.EMAIL_PORT || '587');
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
-
-const transporter = nodemailer.createTransport({
-  host: EMAIL_HOST,
-  port: EMAIL_PORT,
-  secure: EMAIL_PORT === 465,
-  auth: EMAIL_USER && EMAIL_PASS ? {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS,
-  } : undefined,
-});
-
-if (EMAIL_USER && EMAIL_PASS) {
-  transporter.verify((error) => {
-    if (error) {
-      console.error('Email transporter verification failed:', error);
-    } else {
-      console.log('Email transporter is ready');
-    }
-  });
-}
-
+import nodemailer from "nodemailer";
 import type { OverdueNotification } from "../types/notifications";
 
 export interface EmailOptions {
@@ -36,12 +8,43 @@ export interface EmailOptions {
   text?: string;
 }
 
+const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
+const EMAIL_PORT = parseInt(process.env.EMAIL_PORT || "587", 10);
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS?.replace(/\s/g, "");
+const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
+const APP_URL = process.env.APP_URL || "http://localhost:3000";
+
+const transporter = nodemailer.createTransport({
+  host: EMAIL_HOST,
+  port: EMAIL_PORT,
+  secure: EMAIL_PORT === 465,
+  requireTLS: EMAIL_PORT === 587,
+  auth:
+    EMAIL_USER && EMAIL_PASS
+      ? {
+          user: EMAIL_USER,
+          pass: EMAIL_PASS,
+        }
+      : undefined,
+  connectionTimeout: 20_000,
+  greetingTimeout: 20_000,
+});
+
+if (EMAIL_USER && EMAIL_PASS) {
+  transporter.verify((error) => {
+    if (error) {
+      console.error("Email transporter verification failed:", error);
+    } else {
+      console.log("Email transporter is ready");
+    }
+  });
+}
+
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     if (!EMAIL_USER || !EMAIL_PASS) {
-      console.warn('Email credentials not configured. Email would be sent to:', options.to);
-      console.log('Email content:', options.html);
-      return;
+      throw new Error("Email credentials are not configured");
     }
 
     const mailOptions = {
@@ -55,8 +58,8 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     await transporter.sendMail(mailOptions);
     console.log(`Email sent successfully to ${options.to}`);
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send email');
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
   }
 };
 
