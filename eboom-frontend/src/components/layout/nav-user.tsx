@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   ChevronsUpDown,
   LogOut,
   Mail,
@@ -16,6 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -26,6 +34,8 @@ import { useState } from "react";
 import ImageUploader from "@/src/views/profile/ImageUploader";
 import { CanvasInvitationsModal } from "@/src/views/canvas-invitations/CanvasInvitationsModal";
 import { useCanvasInvitations } from "@/src/hooks/useCanvasInvitations";
+import { useNotifications } from "@/src/hooks/useNotifications";
+import { NotificationsPanel } from "@/src/components/layout/NotificationsPanel";
 import { useAuthContext } from "../AuthProvider";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "react-i18next";
@@ -45,11 +55,43 @@ export function NavUser({
   const { signOut } = useAuthContext();
   const [imageModal, setImageModal] = useState(false);
   const [invitationsOpen, setInvitationsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { t } = useTranslation("navigation");
   const { pendingReceivedCount } = useCanvasInvitations();
+  const { notifications, overdueCount, isLoading: isLoadingNotifications } = useNotifications();
   const { dropdownSide } = useTextDirection();
   return (
     <SidebarMenu>
+      <SidebarMenuItem>
+        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <PopoverTrigger asChild>
+            <SidebarMenuButton size="lg" className="relative">
+              <Bell className="size-4" />
+              <span className="flex-1 text-start">{t("notifications.title")}</span>
+              {overdueCount > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                  {overdueCount > 99 ? "99+" : overdueCount}
+                </span>
+              )}
+            </SidebarMenuButton>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-80 p-3"
+            side={isMobile ? "bottom" : dropdownSide}
+            align="end"
+            sideOffset={4}
+          >
+            <PopoverHeader className="mb-2 px-1">
+              <PopoverTitle>{t("notifications.title")}</PopoverTitle>
+            </PopoverHeader>
+            <NotificationsPanel
+              notifications={notifications}
+              isLoading={isLoadingNotifications}
+              onClose={() => setNotificationsOpen(false)}
+            />
+          </PopoverContent>
+        </Popover>
+      </SidebarMenuItem>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

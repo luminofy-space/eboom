@@ -44,7 +44,28 @@
     "submit": {
       "create": "Einnahme erstellen",
       "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Einnahme konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
     }
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "amountRequired": "Betrag ist erforderlich",
+    "amountPositive": "Betrag muss größer als null sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "currencyRequired": "Währung ist erforderlich",
+    "incomeRequired": "Einnahme ist erforderlich",
+    "walletRequired": "Wallet ist erforderlich",
+    "receivedBeforeExpected": "Eingangsdatum darf nicht vor dem erwarteten Datum liegen",
+    "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
+    "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
+    "recurrenceWeeklyDays": "Wählen Sie mindestens einen Tag für die wöchentliche Wiederholung",
+    "recurrenceInterval": "Intervall muss mindestens 1 sein",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "entryModal": {
     "title": "Eintrag erstellen",
@@ -80,7 +101,8 @@
     },
     "submit": "Eintrag erstellen",
     "error": {
-      "required": "Einnahme und Ziel-Wallet sind erforderlich"
+      "required": "Einnahme und Ziel-Wallet sind erforderlich",
+      "saveFailed": "Eintrag konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
     }
   },
   "entriesTable": {

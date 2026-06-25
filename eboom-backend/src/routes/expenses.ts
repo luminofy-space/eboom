@@ -12,6 +12,7 @@ import { eq, and } from "drizzle-orm";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
 import { checkCanvasPermission } from "../services/canvasAccessService";
 import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.delete("/payments/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const paymentId = parseInt(req.params.id, 10);
+  const paymentId = parseRouteParam(req.params.id);
   if (isNaN(paymentId)) {
     return res.status(400).json({ error: "Invalid expense payment ID" });
   }
@@ -74,7 +75,7 @@ router.get("/:expenseId/payments", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const expenseId = parseInt(req.params.expenseId, 10);
+  const expenseId = parseRouteParam(req.params.expenseId);
   if (isNaN(expenseId)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
@@ -109,7 +110,7 @@ router.post("/:expenseId/payments", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const expenseId = parseInt(req.params.expenseId, 10);
+  const expenseId = parseRouteParam(req.params.expenseId);
   if (isNaN(expenseId)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
@@ -185,7 +186,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const expenseId = parseInt(req.params.id);
+  const expenseId = parseRouteParam(req.params.id);
   if (isNaN(expenseId)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
@@ -229,7 +230,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const expenseId = parseInt(req.params.id);
+  const expenseId = parseRouteParam(req.params.id);
   if (isNaN(expenseId)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
@@ -317,7 +318,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const expenseId = parseInt(req.params.id);
+  const expenseId = parseRouteParam(req.params.id);
   if (isNaN(expenseId)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }

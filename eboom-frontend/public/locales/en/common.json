@@ -4,6 +4,7 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating...",
+    "saving": "Saving...",
     "delete": "Delete",
     "deleting": "Deleting...",
     "edit": "Edit",
@@ -77,6 +78,26 @@
   },
   "comingSoon": {
     "imageAlt": "Coming Soon"
+  },
+  "validation": {
+    "required": "This field is required",
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "amountRequired": "Amount is required",
+    "amountPositive": "Amount must be greater than zero",
+    "categoryRequired": "Category is required",
+    "currencyRequired": "Currency is required",
+    "expenseRequired": "Expense is required",
+    "incomeRequired": "Income is required",
+    "walletRequired": "Wallet is required",
+    "paidBeforeDue": "Paid date cannot be before due date",
+    "receivedBeforeExpected": "Received date cannot be before expected date",
+    "imageTooLarge": "Image must be 5 MB or smaller",
+    "imageInvalidType": "Please select a valid image file",
+    "recurrenceWeeklyDays": "Select at least one day for weekly recurrence",
+    "recurrenceInterval": "Interval must be at least 1",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again."
   },
   "recurrence": {
     "every": "Every",

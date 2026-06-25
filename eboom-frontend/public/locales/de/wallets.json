@@ -33,7 +33,18 @@
     "submit": {
       "create": "Wallet erstellen",
       "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Wallet konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
     }
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "entriesTable": {
     "title": "Einnahmeneinträge",

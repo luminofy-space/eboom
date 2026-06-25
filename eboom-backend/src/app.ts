@@ -18,6 +18,7 @@ app.use(express.json());
 
 
 import apiRouter from './routes';
+import { startNotificationEmailJob } from './jobs/notificationEmailJob';
 app.use('/api', apiRouter);
 
 
@@ -27,6 +28,8 @@ app.get('/', (req, res) => res.json({ ok: true, service: 'pfm-backend' }));
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`PFM backend listening at http://localhost:${PORT}`);
+
+  startNotificationEmailJob();
 
   // Check if testing mode is enabled
   const TEST_USER_ID = process.env.TEST_USER_ID;

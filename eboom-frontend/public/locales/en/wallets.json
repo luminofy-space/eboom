@@ -33,7 +33,18 @@
     "submit": {
       "create": "Create Wallet",
       "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save wallet. Please try again."
     }
+  },
+  "validation": {
+    "required": "This field is required",
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "categoryRequired": "Category is required",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again."
   },
   "entriesTable": {
     "title": "Income Entries",

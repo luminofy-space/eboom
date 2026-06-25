@@ -33,6 +33,10 @@ function parsePaginationParams(req: Request) {
   return { page, limit, search, offset };
 }
 
+function parseRouteParam(value: string | string[] | undefined): number {
+  return parseInt(Array.isArray(value) ? value[0] : value ?? "", 10);
+}
+
 
 async function denyCanvasPermission(res: Response, result: { status: 403; error: string }) {
   return res.status(result.status).json({ error: result.error });
@@ -84,7 +88,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -184,7 +188,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -226,7 +230,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -261,7 +265,7 @@ router.get("/:canvasId/summary", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId, 10);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -288,7 +292,7 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -344,7 +348,7 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -432,7 +436,7 @@ router.get("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -488,7 +492,7 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -578,7 +582,7 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -628,7 +632,7 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }

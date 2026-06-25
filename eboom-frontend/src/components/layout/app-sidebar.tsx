@@ -11,6 +11,7 @@ import {
   BrainCircuit,
   Users,
   LayoutDashboard,
+  CalendarDays,
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
@@ -54,6 +55,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: t("routes.expenses"),
       url: "/expenses",
       icon: BanknoteArrowDown,
+    },
+    {
+      title: t("routes.calendar"),
+      url: "/calendar",
+      icon: CalendarDays,
     },
     {
       title: t("routes.whiteboard"),

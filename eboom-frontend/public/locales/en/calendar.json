@@ -1,0 +1,31 @@
+{
+  "title": "Calendar",
+  "subtitle": "View income and expense events across the month",
+  "loading": "Loading events…",
+  "loadError": "Failed to load calendar events.",
+  "noCanvas": "Select a canvas to view the calendar.",
+  "addIncome": "Add income",
+  "addExpense": "Add expense",
+  "overdue": "Overdue",
+  "predicted": "Predicted",
+  "statusPending": "Pending",
+  "statusCompleted": "Completed",
+  "statusOverdue": "Overdue",
+  "today": "Today",
+  "month": "Month",
+  "week": "7 days",
+  "day": "1 day",
+  "allDay": "All day",
+  "income": "Income",
+  "expense": "Expense",
+  "amount": "Amount",
+  "date": "Date",
+  "statusLabel": "Status",
+  "recordId": "Record ID",
+  "entryId": "Entry ID",
+  "statuses": {
+    "pending": "Pending",
+    "completed": "Completed",
+    "overdue": "Overdue"
+  }
+}

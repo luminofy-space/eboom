@@ -11,6 +11,7 @@ import {
   type WhiteboardEntityType,
   type WhiteboardNodePositionInput,
 } from "../services/whiteboardService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router({ mergeParams: true });
 
@@ -21,13 +22,15 @@ function denyPermission(res: Response, access: { allowed: false; status: 403; er
 }
 
 function parseCanvasId(req: Request): number | null {
-  const canvasId = parseInt(req.params.canvasId, 10);
+  const canvasId = parseRouteParam(req.params.canvasId);
   return Number.isNaN(canvasId) ? null : canvasId;
 }
 
-function parseEntityType(value: string): WhiteboardEntityType | null {
-  if (VALID_ENTITY_TYPES.has(value as WhiteboardEntityType)) {
-    return value as WhiteboardEntityType;
+function parseEntityType(value: string | string[] | undefined): WhiteboardEntityType | null {
+  const entityType = Array.isArray(value) ? value[0] : value;
+  if (!entityType) return null;
+  if (VALID_ENTITY_TYPES.has(entityType as WhiteboardEntityType)) {
+    return entityType as WhiteboardEntityType;
   }
   return null;
 }
@@ -133,7 +136,7 @@ router.delete("/nodes/:entityType/:entityId", async (req: Request, res: Response
   const entityType = parseEntityType(req.params.entityType);
   if (!entityType) return res.status(400).json({ error: "Invalid entity type" });
 
-  const entityId = parseInt(req.params.entityId, 10);
+  const entityId = parseRouteParam(req.params.entityId);
   if (Number.isNaN(entityId)) return res.status(400).json({ error: "Invalid entity ID" });
 
   try {

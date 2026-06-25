@@ -43,7 +43,28 @@
     "submit": {
       "create": "Create Expense",
       "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save expense. Please try again."
     }
+  },
+  "validation": {
+    "required": "This field is required",
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "amountRequired": "Amount is required",
+    "amountPositive": "Amount must be greater than zero",
+    "categoryRequired": "Category is required",
+    "currencyRequired": "Currency is required",
+    "expenseRequired": "Expense is required",
+    "walletRequired": "Wallet is required",
+    "paidBeforeDue": "Paid date cannot be before due date",
+    "imageTooLarge": "Image must be 5 MB or smaller",
+    "imageInvalidType": "Please select a valid image file",
+    "recurrenceWeeklyDays": "Select at least one day for weekly recurrence",
+    "recurrenceInterval": "Interval must be at least 1",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again."
   },
   "paymentModal": {
     "title": "Create Payment",
@@ -79,7 +100,9 @@
     },
     "submit": "Create Payment",
     "error": {
-      "required": "Expense and source wallet are required"
+      "required": "Expense and source wallet are required",
+      "saveFailed": "Failed to create payment. Please try again.",
+      "insufficientBalance": "Insufficient wallet balance for this payment"
     }
   },
   "paymentsTable": {

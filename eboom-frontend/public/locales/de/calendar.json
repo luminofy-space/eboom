@@ -1,0 +1,31 @@
+{
+  "title": "Kalender",
+  "subtitle": "Einnahmen und Ausgaben im Monatsüberblick",
+  "loading": "Ereignisse werden geladen…",
+  "loadError": "Kalenderereignisse konnten nicht geladen werden.",
+  "noCanvas": "Wählen Sie ein Canvas aus, um den Kalender anzuzeigen.",
+  "addIncome": "Einnahme hinzufügen",
+  "addExpense": "Ausgabe hinzufügen",
+  "overdue": "Überfällig",
+  "predicted": "Vorhergesagt",
+  "statusPending": "Ausstehend",
+  "statusCompleted": "Abgeschlossen",
+  "statusOverdue": "Überfällig",
+  "today": "Heute",
+  "month": "Monat",
+  "week": "7 Tage",
+  "day": "1 Tag",
+  "allDay": "Ganztägig",
+  "income": "Einnahme",
+  "expense": "Ausgabe",
+  "amount": "Betrag",
+  "date": "Datum",
+  "statusLabel": "Status",
+  "recordId": "Datensatz-ID",
+  "entryId": "Eintrag-ID",
+  "statuses": {
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "overdue": "Überfällig"
+  }
+}

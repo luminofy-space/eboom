@@ -11,6 +11,7 @@ import {
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
 import { checkCanvasPermission } from "../services/canvasAccessService";
 import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.delete("/entries/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const entryId = parseInt(req.params.id, 10);
+  const entryId = parseRouteParam(req.params.id);
   if (isNaN(entryId)) {
     return res.status(400).json({ error: "Invalid income entry ID" });
   }
@@ -62,7 +63,7 @@ router.get("/:incomeId/entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.incomeId, 10);
+  const incomeId = parseRouteParam(req.params.incomeId);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -97,7 +98,7 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.incomeId, 10);
+  const incomeId = parseRouteParam(req.params.incomeId);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -169,7 +170,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -206,7 +207,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -293,7 +294,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }

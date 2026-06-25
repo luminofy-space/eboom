@@ -15,23 +15,27 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
+import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
-import { useEffect, useRef } from "react";
+import { translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { useEffect, useRef, useState } from "react";
 import {
   RecurrencePatternPicker,
   DEFAULT_RECURRENCE_PATTERN,
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
+import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface IncomeFormData {
@@ -66,17 +70,26 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation("incomes");
   const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const { open, mode, editingItem } = useAppSelector(selectIncomeModal);
   const isEdit = mode === "edit";
+  const { canvas } = useCanvas();
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit, control, reset, watch } = useForm<IncomeFormData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<IncomeFormData>({
     defaultValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const isRecurring = watch("isRecurring");
-  const name = watch("name");
-  const currencyId = watch("currencyId");
-  const incomeCategoryId = watch("incomeCategoryId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
@@ -100,8 +113,6 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
       enabled: open,
     }
   );
-
-  const { canvas } = useCanvas();
 
   const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
     wallets?: { id: number; name: string; category?: { name: string } | null }[];
@@ -150,7 +161,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: createIncome } = useMutationApi(
+  const { mutateAsync: createIncome, isPending: isCreating } = useMutationApi(
     API_ROUTES.CANVASES_INCOMES_CREATE(canvas ?? -1),
     {
       method: "post",
@@ -158,13 +169,15 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     }
   );
 
-  const { mutateAsync: updateIncome } = useMutationApi(
+  const { mutateAsync: updateIncome, isPending: isUpdating } = useMutationApi(
     editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
     }
   );
+
+  const isSaving = isCreating || isUpdating || isSubmitting;
 
   useEffect(() => {
     if (open && isEdit && editingItem) {
@@ -183,12 +196,16 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     } else if (open && !isEdit) {
       reset(defaultValues);
     }
+    if (open) {
+      setSubmitError(null);
+    }
   }, [open, isEdit, editingItem, reset]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {
       dispatch(closeIncomeModal());
       reset(defaultValues);
+      setSubmitError(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -196,16 +213,23 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   };
 
   const onSubmit = async (formData: IncomeFormData) => {
+    setSubmitError(null);
+
+    if (!canvas) {
+      setSubmitError(tv("noCanvas"));
+      return;
+    }
+
     try {
       const data = {
-        name: formData.name,
+        name: formData.name.trim(),
         currencyId: formData.currencyId,
         amount: Number(formData.amount),
         isRecurring: formData.isRecurring,
         incomeCategoryId: formData.incomeCategoryId ?? undefined,
         defaultWalletId: formData.defaultWalletId,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
-        description: formData.description,
+        description: formData.description.trim(),
         photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
       };
 
@@ -220,19 +244,20 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
       }
 
       reset(defaultValues);
+      setSubmitError(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
       dispatch(closeIncomeModal());
     } catch (error) {
-      console.error("Error saving income:", error);
+      setSubmitError(translateSubmitError(error, tv("incomeSaveFailed"), tv));
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="w-full">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup className="gap-4">
           <DialogHeader>
             <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
@@ -240,20 +265,35 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
               {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
+
+          <FormSubmitError message={submitError} />
+
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
               <FieldLabel htmlFor="name">{t("modal.fields.name.label")}</FieldLabel>
               <Input
                 id="name"
-                {...register("name", { required: true })}
+                aria-invalid={!!errors.name}
+                {...register("name", {
+                  required: tv("nameRequired"),
+                  maxLength: {
+                    value: 255,
+                    message: tv("nameMaxLength"),
+                  },
+                  validate: (value) =>
+                    value.trim().length > 0 || tv("nameRequired"),
+                })}
               />
+              <FieldError errors={[errors.name]} />
             </Field>
             <Field className="flex-1">
               <FieldLabel htmlFor="currency">{t("modal.fields.currency.label")}</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
-                rules={{ required: true }}
+                rules={{
+                  validate: (value) => value !== null || tv("currencyRequired"),
+                }}
                 render={({ field }) => (
                   <Combobox
                     items={currencyLabels}
@@ -278,6 +318,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                   </Combobox>
                 )}
               />
+              <FieldError errors={[errors.currencyId]} />
             </Field>
           </Stack>
           <Stack direction="row" gap={5}>
@@ -286,15 +327,30 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
               <Input
                 id="amount"
                 type="number"
-                {...register("amount", { required: true, valueAsNumber: true })}
+                step="any"
+                min="0"
+                aria-invalid={!!errors.amount}
+                {...register("amount", {
+                  required: tv("amountRequired"),
+                  valueAsNumber: true,
+                  min: {
+                    value: 0.01,
+                    message: tv("amountPositive"),
+                  },
+                  validate: (value) =>
+                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                })}
               />
+              <FieldError errors={[errors.amount]} />
             </Field>
             <Field className="flex-1">
               <FieldLabel htmlFor="income-category">{t("modal.fields.incomeCategory.label")}</FieldLabel>
               <Controller
                 name="incomeCategoryId"
                 control={control}
-                rules={{ required: true }}
+                rules={{
+                  validate: (value) => value !== null || tv("categoryRequired"),
+                }}
                 render={({ field }) => (
                   <Combobox
                     id="income-category"
@@ -319,6 +375,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                   </Combobox>
                 )}
               />
+              <FieldError errors={[errors.incomeCategoryId]} />
             </Field>
           </Stack>
           <Field>
@@ -363,12 +420,20 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
             <Controller
               name="photo"
               control={control}
+              rules={{
+                validate: (file) =>
+                  validateOptionalImage(file, {
+                    invalidType: tv("imageInvalidType"),
+                    tooLarge: tv("imageTooLarge"),
+                  }),
+              }}
               render={({ field }) => (
                 <Input
                   ref={fileInputRef}
                   id="photo"
                   type="file"
                   accept="image/*"
+                  aria-invalid={!!errors.photo}
                   onChange={(e) => {
                     const file = e.target.files?.[0] ?? null;
                     field.onChange(file);
@@ -377,6 +442,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                 />
               )}
             />
+            <FieldError errors={[errors.photo]} />
           </Field>
           <Stack gap={3}>
             <Field orientation="horizontal" className="items-center">
@@ -397,6 +463,19 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
               <Controller
                 name="recurrencePattern"
                 control={control}
+                rules={{
+                  validate: (pattern, formValues) => {
+                    if (!formValues.isRecurring) return true;
+                    if (pattern.interval < 1) return tv("recurrenceInterval");
+                    if (
+                      pattern.frequency === "weekly" &&
+                      (!pattern.daysOfWeek || pattern.daysOfWeek.length === 0)
+                    ) {
+                      return tv("recurrenceWeeklyDays");
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <RecurrencePatternPicker
                     value={field.value}
@@ -405,16 +484,23 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                 )}
               />
             )}
+            {isRecurring && <FieldError errors={[errors.recurrencePattern]} />}
           </Stack>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">{tc("actions.cancel")}</Button>
+              <Button type="button" variant="outline" disabled={isSaving}>
+                {tc("actions.cancel")}
+              </Button>
             </DialogClose>
-            <Button
-              disabled={!name || currencyId === null || !incomeCategoryId}
-              type="submit"
-            >
-              {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="size-4 animate-spin" />}
+              {isSaving
+                ? isEdit
+                  ? tc("actions.saving")
+                  : tc("actions.creating")
+                : isEdit
+                  ? t("modal.submit.edit")
+                  : t("modal.submit.create")}
             </Button>
           </DialogFooter>
           </FieldGroup>

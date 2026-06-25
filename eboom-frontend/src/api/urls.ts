@@ -59,6 +59,10 @@ const API_ROUTES = {
 
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
 
+  CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
+
+  NOTIFICATIONS_OVERDUE: '/api/notifications/overdue',
+
   // Canvas whiteboard
   CANVAS_WHITEBOARD: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/`,
   CANVAS_WHITEBOARD_VIEWPORT: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/viewport`,

@@ -18,6 +18,7 @@ import {
   checkCanvasPermission,
 } from "../services/canvasAccessService";
 import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -40,7 +41,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -85,7 +86,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -132,7 +133,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -169,7 +170,7 @@ router.get("/:walletId/income-entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -212,7 +213,7 @@ router.get("/:walletId/expense-payments", async (req: Request, res: Response) =>
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -255,7 +256,7 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -324,7 +325,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -370,7 +371,7 @@ router.get("/:walletId/sub-wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
