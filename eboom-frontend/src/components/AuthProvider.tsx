@@ -218,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "/login",
       "/signup",
       "/forgot-password",
+      "/reset-password",
       "/verify-email",
       "/confirm-email",
     ];

@@ -28,7 +28,7 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
-import { translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
 import { useEffect, useRef, useState } from "react";
 import {
   RecurrencePatternPicker,
@@ -230,7 +230,9 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
         defaultWalletId: formData.defaultWalletId,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
         description: formData.description.trim(),
-        photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
+        ...(formData.photo
+          ? { photoUrl: await fileToDataUrl(formData.photo) }
+          : {}),
       };
 
       if (isEdit) {

@@ -42,6 +42,23 @@ export function validateOptionalImage(
   return true;
 }
 
+/**
+ * Reads an image File into a persistent base64 data URL.
+ *
+ * The backend stores `photoUrl` as a plain string with no file storage, so we
+ * persist the image inline. `URL.createObjectURL` must NOT be used here: it
+ * returns an ephemeral `blob:` URL that is only valid within the current
+ * document session and breaks after a reload.
+ */
+export function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function validateDateNotBefore(
   laterDate: string,
   earlierDate: string,

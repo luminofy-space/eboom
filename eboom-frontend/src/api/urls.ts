@@ -6,6 +6,8 @@ const API_ROUTES = {
   AUTH_LOGIN: "/api/auth/login/",
   AUTH_SIGNUP: "/api/auth/signup/",
   AUTH_VERIFY_EMAIL: "/api/auth/verify-email",
+  AUTH_FORGOT_PASSWORD: "/api/auth/forgot-password/",
+  AUTH_RESET_PASSWORD: "/api/auth/reset-password/",
   USERS_GET_ME: "/api/auth/user-info/",
   USERS_UPDATE_PROFILE_IMAGE: "/api/auth/change-photo/",
 

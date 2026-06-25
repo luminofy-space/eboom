@@ -34,21 +34,23 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
-import { translateSubmitError } from "@/src/utils/formUtils";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface WalletFormData {
     name: string;
     walletCategoryId: number | null;
     description: string;
+    photo: File | null;
 }
 
 const defaultValues: WalletFormData = {
     name: "",
     walletCategoryId: null,
     description: "",
+    photo: null,
 };
 
 interface NewWalletModalProps {
@@ -64,6 +66,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const isEdit = mode === "edit";
     const { canvas } = useCanvas();
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const {
         register,
@@ -113,6 +116,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                 name: editingItem.name ?? "",
                 walletCategoryId: editingItem.walletCategoryId ?? null,
                 description: typeof editingItem.description === "string" ? editingItem.description : "",
+                photo: null,
             });
         } else if (open && !isEdit) {
             reset(defaultValues);
@@ -140,6 +144,9 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                 name: formData.name.trim(),
                 walletCategoryId: formData.walletCategoryId,
                 description: formData.description.trim(),
+                ...(formData.photo
+                    ? { photoUrl: await fileToDataUrl(formData.photo) }
+                    : {}),
             };
 
             if (isEdit) {
@@ -154,6 +161,9 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
 
             reset(defaultValues);
             setSubmitError(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             dispatch(closeWalletModal());
         } catch (error) {
             setSubmitError(translateSubmitError(error, tv("walletSaveFailed"), tv));
@@ -244,6 +254,35 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                             placeholder={t("modal.fields.description.placeholder")}
                             {...register("description")}
                         />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="wallet-photo">{t("modal.fields.photo.label")}</FieldLabel>
+                        <Controller
+                            name="photo"
+                            control={control}
+                            rules={{
+                                validate: (file) =>
+                                    validateOptionalImage(file, {
+                                        invalidType: tv("imageInvalidType"),
+                                        tooLarge: tv("imageTooLarge"),
+                                    }),
+                            }}
+                            render={({ field }) => (
+                                <Input
+                                    ref={fileInputRef}
+                                    id="wallet-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    aria-invalid={!!errors.photo}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] ?? null;
+                                        field.onChange(file);
+                                    }}
+                                />
+                            )}
+                        />
+                        <FieldError errors={[errors.photo]} />
                     </Field>
 
                     <DialogFooter>

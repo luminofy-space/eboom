@@ -28,6 +28,9 @@
       "description": {
         "label": "Description",
         "placeholder": "Optional notes about this wallet"
+      },
+      "photo": {
+        "label": "Photo"
       }
     },
     "submit": {

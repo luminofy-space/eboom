@@ -35,7 +35,7 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectExpenseModal, closeExpenseModal } from "@/src/redux/expenseSlice";
-import { translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
 import { useEffect, useRef, useState } from "react";
 import {
   RecurrencePatternPicker,
@@ -227,7 +227,9 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
         description: formData.description.trim(),
         isRecurring: formData.isRecurring,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
-        photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
+        ...(formData.photo
+          ? { photoUrl: await fileToDataUrl(formData.photo) }
+          : {}),
       };
 
       if (isEdit) {

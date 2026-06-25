@@ -28,6 +28,9 @@
       "description": {
         "label": "توضیحات",
         "placeholder": "یادداشت‌های اختیاری درباره این کیف پول"
+      },
+      "photo": {
+        "label": "تصویر"
       }
     },
     "submit": {
