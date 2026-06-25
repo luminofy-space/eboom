@@ -61,6 +61,7 @@ interface NewIncomeEntryModalProps {
   incomeName?: string;
   walletName?: string;
   defaultExpectedDate?: string;
+  defaultReceivedDate?: string;
   defaultAmount?: number;
   extraInvalidateKeys?: unknown[][];
 }
@@ -74,6 +75,7 @@ export function NewIncomeEntryModal({
   incomeName,
   walletName,
   defaultExpectedDate,
+  defaultReceivedDate,
   defaultAmount,
   extraInvalidateKeys = [],
 }: NewIncomeEntryModalProps) {
@@ -192,7 +194,7 @@ export function NewIncomeEntryModal({
         destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
         expectedDate: defaultExpectedDate ?? "",
         amount: defaultAmount ?? 0,
-        receivedDate: new Date().toISOString().slice(0, 10),
+        receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
       });
       setSubmitError(null);
     }
@@ -202,6 +204,7 @@ export function NewIncomeEntryModal({
     defaultWalletId,
     fixedDestinationWalletId,
     defaultExpectedDate,
+    defaultReceivedDate,
     defaultAmount,
     reset,
   ]);

@@ -1,18 +1,35 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { DatesSetArg, EventClickArg, EventContentArg } from "@fullcalendar/core";
+import type {
+  DatesSetArg,
+  EventClickArg,
+  EventContentArg,
+} from "@fullcalendar/core";
+import type { DateClickArg } from "@fullcalendar/interaction";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Container } from "@/components/ui/container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Stack } from "@/components/ui/stack";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Typography } from "@/components/ui/typography";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useCalendarData, type CalendarEvent } from "@/src/hooks/useCalendarData";
 import { EventModal } from "@/src/components/EventModal";
+import { CalendarCreateChoiceModal } from "@/src/components/CalendarCreateChoiceModal";
+import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
+import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
 import styles from "@/app/(dashboard)/calendar/calendar.module.css";
 
@@ -31,6 +48,22 @@ type HoveredEvent = {
   y: number;
 };
 
+function clampTooltipPosition(
+  clientX: number,
+  clientY: number,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const x = Math.min(clientX + 14, viewportWidth - width - 12);
+  const y = Math.min(clientY + 14, viewportHeight - height - 12);
+  return {
+    x: Math.max(12, x),
+    y: Math.max(12, y),
+  };
+}
+
 function monthRange(date: Date): { start: Date; end: Date } {
   const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
   const end = new Date(
@@ -46,15 +79,28 @@ function eventClassNames(event: CalendarEvent): string[] {
   return classes;
 }
 
+type CalendarViewType = "dayGridMonth" | "dayGridWeek" | "dayGridDay";
+
 export default function CalendarView() {
   const { t, i18n } = useTranslation("calendar");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
+  const calendarRef = useRef<FullCalendar>(null);
   const initialRange = useMemo(() => monthRange(new Date()), []);
   const [range, setRange] = useState(initialRange);
+  const [calendarView, setCalendarView] = useState<CalendarViewType>("dayGridMonth");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [hoveredEvent, setHoveredEvent] = useState<HoveredEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [choiceModalOpen, setChoiceModalOpen] = useState(false);
+  const [createEntryOpen, setCreateEntryOpen] = useState(false);
+  const [createPaymentOpen, setCreatePaymentOpen] = useState(false);
+  const [createEntryDate, setCreateEntryDate] = useState<string | null>(null);
+  const [createPaymentDate, setCreatePaymentDate] = useState<string | null>(null);
+
+  const monthDayMaxEvents = 1 ;
+  const dayMaxEvents = calendarView === "dayGridMonth" ? monthDayMaxEvents : false;
 
   const { events, isLoading, error } = useCalendarData(canvas, range.start, range.end);
 
@@ -81,18 +127,25 @@ export default function CalendarView() {
     () =>
       events.map((event) => ({
         id: String(event.id),
-        title: `${event.info ?? event.type} ${event.amount} ${event.currency}`,
+        title: `${event.info ?? event.type} ${amountFormatter.format(Number(event.amount) || 0)} ${event.currency}`,
         start: event.date,
         allDay: true,
         display: "block",
         classNames: eventClassNames(event),
         extendedProps: { event },
       })),
-    [events]
+    [events, amountFormatter]
   );
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setRange(monthRange(arg.view.currentStart));
+  }, []);
+
+  const handleCalendarViewChange = useCallback((value: string) => {
+    if (!value) return;
+    const nextView = value as CalendarViewType;
+    setCalendarView(nextView);
+    calendarRef.current?.getApi().changeView(nextView);
   }, []);
 
   const handleEventClick = useCallback(
@@ -105,21 +158,48 @@ export default function CalendarView() {
     [canEdit]
   );
 
+  const handleDateClick = useCallback(
+    (info: DateClickArg) => {
+      if (!canEdit) return;
+      setSelectedDate(info.dateStr.slice(0, 10));
+      setChoiceModalOpen(true);
+    },
+    [canEdit]
+  );
+
+  const handleChooseIncomeEntry = useCallback(() => {
+    if (!selectedDate) return;
+    setCreateEntryDate(selectedDate);
+    setChoiceModalOpen(false);
+    setSelectedDate(null);
+    setCreateEntryOpen(true);
+  }, [selectedDate]);
+
+  const handleChooseExpensePayment = useCallback(() => {
+    if (!selectedDate) return;
+    setCreatePaymentDate(selectedDate);
+    setChoiceModalOpen(false);
+    setSelectedDate(null);
+    setCreatePaymentOpen(true);
+  }, [selectedDate]);
+
+  const handleChoiceModalOpenChange = useCallback((open: boolean) => {
+    setChoiceModalOpen(open);
+    if (!open) setSelectedDate(null);
+  }, []);
+
+  const selectedDateLabel = useMemo(() => {
+    if (!selectedDate) return "";
+    return dateFormatter.format(new Date(`${selectedDate}T00:00:00Z`));
+  }, [selectedDate, dateFormatter]);
+
   const handleEventMouseEnter = useCallback((info: CalendarEventHoverArg) => {
     const event = info.event.extendedProps.event;
     if (!event) return;
 
-    const tooltipWidth = 280;
-    const tooltipHeight = 210;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const x = Math.min(info.jsEvent.clientX + 14, viewportWidth - tooltipWidth - 12);
-    const y = Math.min(info.jsEvent.clientY + 14, viewportHeight - tooltipHeight - 12);
-
     setHoveredEvent({
       event,
-      x: Math.max(12, x),
-      y: Math.max(12, y),
+      ...clampTooltipPosition(info.jsEvent.clientX, info.jsEvent.clientY, 280, 210),
     });
   }, []);
 
@@ -156,14 +236,7 @@ export default function CalendarView() {
   }
 
   return (
-    <Stack gap={4} className="pb-8">
-      <Container>
-        <Stack gap={1}>
-          <Typography variant="heading">{t("title")}</Typography>
-          <Typography variant="muted-sm">{t("subtitle")}</Typography>
-        </Stack>
-      </Container>
-
+    <Stack className="pb-2">
       <Container className={styles.calendarWrapper}>
         {isLoading && (
           <Stack direction="row" align="center" gap={2} className="mb-2">
@@ -178,36 +251,76 @@ export default function CalendarView() {
           </Typography>
         )}
 
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          timeZone="UTC"
-          events={calendarEvents}
-          datesSet={handleDatesSet}
-          eventClick={handleEventClick}
-          eventMouseEnter={handleEventMouseEnter}
-          eventMouseLeave={handleEventMouseLeave}
-          eventContent={renderEventContent}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,dayGridWeek,dayGridDay",
-          }}
-          height="auto"
-          eventDisplay="block"
-          dayMaxEvents={3}
-          allDayText={t("allDay")}
-          buttonText={{
-            today: t("today"),
-            month: t("month"),
-            week: t("week"),
-            day: t("day"),
-          }}
-        />
+        <div className={styles.calendarHost}>
+          <div className={styles.viewSwitcher}>
+            <ToggleGroup
+              type="single"
+              value={calendarView}
+              onValueChange={handleCalendarViewChange}
+              variant="outline"
+              className="hidden *:data-[slot=toggle-group-item]:!px-4 md:flex"
+            >
+              <ToggleGroupItem value="dayGridMonth">{t("month")}</ToggleGroupItem>
+              <ToggleGroupItem value="dayGridWeek">{t("week")}</ToggleGroupItem>
+              <ToggleGroupItem value="dayGridDay">{t("day")}</ToggleGroupItem>
+            </ToggleGroup>
+            <Select value={calendarView} onValueChange={handleCalendarViewChange}>
+              <SelectTrigger
+                className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate md:hidden"
+                size="sm"
+                aria-label={`${t("month")}, ${t("week")}, ${t("day")}`}
+              >
+                <SelectValue placeholder={t("month")} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="dayGridMonth" className="rounded-lg">
+                  {t("month")}
+                </SelectItem>
+                <SelectItem value="dayGridWeek" className="rounded-lg">
+                  {t("week")}
+                </SelectItem>
+                <SelectItem value="dayGridDay" className="rounded-lg">
+                  {t("day")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView={calendarView}
+            timeZone="UTC"
+            events={calendarEvents}
+            datesSet={handleDatesSet}
+            dateClick={handleDateClick}
+            eventClick={handleEventClick}
+            eventMouseEnter={handleEventMouseEnter}
+            eventMouseLeave={handleEventMouseLeave}
+            eventContent={renderEventContent}
+            dayMaxEvents={dayMaxEvents}
+            moreLinkText={(num) => t("moreEvents", { count: num })}
+            moreLinkClick="popover"
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "",
+            }}
+            height="auto"
+            eventDisplay="block"
+            allDayText={t("allDay")}
+            buttonText={{
+              today: t("today"),
+            }}
+          />
+        </div>
 
         {hoveredEvent && (
           <div
-            className={styles.eventTooltip}
+            className={cn(
+              styles.eventTooltip,
+              "border bg-popover text-popover-foreground shadow-md"
+            )}
             style={{ left: hoveredEvent.x, top: hoveredEvent.y }}
             role="tooltip"
           >
@@ -257,6 +370,7 @@ export default function CalendarView() {
             </div>
           </div>
         )}
+
       </Container>
 
       {canEdit && selectedEvent && (
@@ -268,6 +382,39 @@ export default function CalendarView() {
             if (!open) setSelectedEvent(null);
           }}
         />
+      )}
+
+      {canEdit && selectedDate && (
+        <CalendarCreateChoiceModal
+          open={choiceModalOpen}
+          onOpenChange={handleChoiceModalOpenChange}
+          dateLabel={selectedDateLabel}
+          onChooseIncomeEntry={handleChooseIncomeEntry}
+          onChooseExpensePayment={handleChooseExpensePayment}
+        />
+      )}
+
+      {canEdit && (
+        <>
+          <NewIncomeEntryModal
+            open={createEntryOpen}
+            onOpenChange={(open) => {
+              setCreateEntryOpen(open);
+              if (!open) setCreateEntryDate(null);
+            }}
+            defaultReceivedDate={createEntryDate ?? undefined}
+            extraInvalidateKeys={[["calendar"]]}
+          />
+          <NewExpensePaymentModal
+            open={createPaymentOpen}
+            onOpenChange={(open) => {
+              setCreatePaymentOpen(open);
+              if (!open) setCreatePaymentDate(null);
+            }}
+            defaultPaidDate={createPaymentDate ?? undefined}
+            extraInvalidateKeys={[["calendar"]]}
+          />
+        </>
       )}
     </Stack>
   );

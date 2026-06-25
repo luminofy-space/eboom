@@ -61,6 +61,7 @@ interface NewExpensePaymentModalProps {
   expenseName?: string;
   walletName?: string;
   defaultDueDate?: string;
+  defaultPaidDate?: string;
   defaultAmount?: number;
   extraInvalidateKeys?: unknown[][];
 }
@@ -74,6 +75,7 @@ export function NewExpensePaymentModal({
   expenseName,
   walletName,
   defaultDueDate,
+  defaultPaidDate,
   defaultAmount,
   extraInvalidateKeys = [],
 }: NewExpensePaymentModalProps) {
@@ -192,7 +194,7 @@ export function NewExpensePaymentModal({
         sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
         dueDate: defaultDueDate ?? "",
         amount: defaultAmount ?? 0,
-        paidDate: new Date().toISOString().slice(0, 10),
+        paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
       });
       setSubmitError(null);
     }
@@ -202,6 +204,7 @@ export function NewExpensePaymentModal({
     defaultWalletId,
     fixedSourceWalletId,
     defaultDueDate,
+    defaultPaidDate,
     defaultAmount,
     reset,
   ]);
