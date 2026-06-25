@@ -183,6 +183,7 @@ export function NewIncomeEntryModal({
       for (const key of extraInvalidateKeys) {
         await queryClient.invalidateQueries({ queryKey: key });
       }
+      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
     },
   });
 

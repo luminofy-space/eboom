@@ -10,8 +10,9 @@ import type {
   EventContentArg,
 } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import {
   Select,
@@ -89,6 +90,7 @@ export default function CalendarView() {
   const initialRange = useMemo(() => monthRange(new Date()), []);
   const [range, setRange] = useState(initialRange);
   const [calendarView, setCalendarView] = useState<CalendarViewType>("dayGridMonth");
+  const [toolbarTitle, setToolbarTitle] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [hoveredEvent, setHoveredEvent] = useState<HoveredEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -139,6 +141,19 @@ export default function CalendarView() {
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setRange(monthRange(arg.view.currentStart));
+    setToolbarTitle(arg.view.title);
+  }, []);
+
+  const handlePrev = useCallback(() => {
+    calendarRef.current?.getApi().prev();
+  }, []);
+
+  const handleNext = useCallback(() => {
+    calendarRef.current?.getApi().next();
+  }, []);
+
+  const handleToday = useCallback(() => {
+    calendarRef.current?.getApi().today();
   }, []);
 
   const handleCalendarViewChange = useCallback((value: string) => {
@@ -252,7 +267,41 @@ export default function CalendarView() {
         )}
 
         <div className={styles.calendarHost}>
-          <div className={styles.viewSwitcher}>
+          <Stack
+            direction="row"
+            align="center"
+            gap={2}
+            className={styles.calendarToolbar}
+          >
+            <Stack direction="row" align="center" gap={2} className={styles.calendarNav}>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={handlePrev}
+                aria-label={t("previous")}
+              >
+                <ChevronLeft />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={handleNext}
+                aria-label={t("next")}
+              >
+                <ChevronRight />
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleToday}>
+                {t("today")}
+              </Button>
+            </Stack>
+
+            <Typography variant="title" className={styles.calendarTitle}>
+              {toolbarTitle}
+            </Typography>
+
+            <div className={styles.viewSwitcher}>
             <ToggleGroup
               type="single"
               value={calendarView}
@@ -284,7 +333,8 @@ export default function CalendarView() {
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
+            </div>
+          </Stack>
 
           <FullCalendar
             ref={calendarRef}
@@ -301,17 +351,10 @@ export default function CalendarView() {
             dayMaxEvents={dayMaxEvents}
             moreLinkText={(num) => t("moreEvents", { count: num })}
             moreLinkClick="popover"
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "",
-            }}
+            headerToolbar={false}
             height="auto"
             eventDisplay="block"
             allDayText={t("allDay")}
-            buttonText={{
-              today: t("today"),
-            }}
           />
         </div>
 

@@ -16,6 +16,8 @@
   "statusCompleted": "Completed",
   "statusOverdue": "Overdue",
   "today": "Today",
+  "previous": "Previous",
+  "next": "Next",
   "month": "Month",
   "week": "7 days",
   "day": "1 day",

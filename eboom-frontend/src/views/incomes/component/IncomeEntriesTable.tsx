@@ -141,6 +141,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     onSuccess: () => {
       setDeleteId(null);
       queryClient.invalidateQueries({ queryKey: ["income-entries", incomeId] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
     },
   });
 

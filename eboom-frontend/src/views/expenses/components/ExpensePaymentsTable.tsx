@@ -142,6 +142,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
     onSuccess: () => {
       setDeleteId(null);
       queryClient.invalidateQueries({ queryKey: ["expense-payments", expenseId] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
     },
   });
 

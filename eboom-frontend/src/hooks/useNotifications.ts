@@ -30,6 +30,7 @@ export function useNotifications() {
       queryKey: ["notifications", "overdue"],
       hasToken: true,
       refetchInterval: 5 * 60 * 1000,
+      refetchOnWindowFocus: true,
     }
   );
 

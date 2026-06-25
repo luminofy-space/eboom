@@ -141,7 +141,7 @@
 
 .calendarWrapper {
   --calendar-cell-border: color-mix(in srgb, var(--muted-foreground) 38%, transparent);
-  --calendar-cell-height: 108px;
+  --calendar-cell-height: 107px;
   --fc-border-color: var(--calendar-cell-border);
   --fc-page-bg-color: var(--card);
   --fc-neutral-bg-color: var(--card);
@@ -161,36 +161,22 @@
 }
 
 .calendarWrapper :global(.fc-header-toolbar) {
-  gap: 8px;
+  display: none;
+}
+
+.calendarToolbar {
   margin-bottom: 8px;
+  width: 100%;
 }
 
-.calendarWrapper :global(.fc-toolbar-chunk) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.calendarNav {
+  flex: 0 0 auto;
 }
 
-.calendarWrapper :global(.fc-toolbar-title) {
-  font-size: 1.375rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: hsl(var(--foreground));
-}
-
-.calendarWrapper :global(.fc-button) {
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  box-shadow: none;
-  font-weight: 500;
-  text-transform: none;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+.calendarTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
 }
 
 .calendarHost {
@@ -198,35 +184,7 @@
 }
 
 .viewSwitcher {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 2;
-}
-
-.calendarWrapper :global(.fc-button-primary:not(:disabled):hover),
-.calendarWrapper :global(.fc-button-primary:not(:disabled):focus) {
-  background: hsl(var(--muted));
-  border-color: hsl(var(--border));
-  color: hsl(var(--foreground));
-  box-shadow: none;
-}
-
-.calendarWrapper :global(.fc-button-primary:not(:disabled).fc-button-active) {
-  background: hsl(var(--primary));
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-}
-
-.calendarWrapper :global(.fc-prev-button),
-.calendarWrapper :global(.fc-next-button) {
-  width: 36px;
-  padding: 0;
-  border-color: transparent;
-}
-
-.calendarWrapper :global(.fc-today-button) {
-  padding-inline: 18px;
+  flex: 0 0 auto;
 }
 
 .calendarWrapper :global(.fc-scrollgrid) {
@@ -434,24 +392,27 @@
 
 @media (max-width: 768px) {
   .calendarWrapper {
-    --calendar-cell-height: 68px;
+    --calendar-cell-height: 66px;
     border-radius: 16px;
     padding: 4px 8px 8px;
   }
 
+  .calendarToolbar {
+    flex-wrap: wrap;
+  }
+
   .viewSwitcher {
-    position: static;
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 12px;
+    margin-inline-start: auto;
+  }
+
+  .calendarTitle {
+    flex-basis: 100%;
+    text-align: center;
   }
 
   .calendarWrapper :global(.fc-header-toolbar) {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .calendarWrapper :global(.fc-toolbar-title) {
-    font-size: 1.125rem;
+    display: none;
   }
 }
