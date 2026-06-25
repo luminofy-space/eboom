@@ -38,6 +38,31 @@
       "paid": "Bezahlt"
     }
   },
+  "heatmap": {
+    "title": "Jahresverlauf Gewinn vs. Ausgaben",
+    "description": "Tägliches Nettoergebnis für {{year}}",
+    "noData": "Keine gebuchten Transaktionen in {{year}}",
+    "empty": "Noch keine Währungen mit gebuchten Transaktionen.",
+    "controls": {
+      "selectYear": "Jahr auswählen",
+      "selectCurrency": "Währung auswählen",
+      "currency": "Währung"
+    },
+    "weekdays": {
+      "mon": "Mo",
+      "wed": "Mi",
+      "fri": "Fr"
+    },
+    "tooltip": {
+      "income": "Einnahmen",
+      "expense": "Ausgaben",
+      "net": "Netto"
+    },
+    "legend": {
+      "less": "Weniger",
+      "more": "Mehr"
+    }
+  },
   "quickActions": {
     "whiteboard": "Whiteboard öffnen",
     "members": "Mitglieder verwalten"

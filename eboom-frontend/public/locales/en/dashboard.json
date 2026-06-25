@@ -38,6 +38,31 @@
       "paid": "Paid"
     }
   },
+  "heatmap": {
+    "title": "Yearly Profit vs Expense",
+    "description": "Daily net result for {{year}}",
+    "noData": "No settled transactions in {{year}}",
+    "empty": "No currencies with settled transactions yet.",
+    "controls": {
+      "selectYear": "Select year",
+      "selectCurrency": "Select currency",
+      "currency": "Currency"
+    },
+    "weekdays": {
+      "mon": "Mon",
+      "wed": "Wed",
+      "fri": "Fri"
+    },
+    "tooltip": {
+      "income": "Income",
+      "expense": "Expense",
+      "net": "Net"
+    },
+    "legend": {
+      "less": "Lower",
+      "more": "Higher"
+    }
+  },
   "quickActions": {
     "whiteboard": "Open whiteboard",
     "members": "Manage members"
