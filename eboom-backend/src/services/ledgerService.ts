@@ -12,7 +12,7 @@ function subtractAmounts(current: string, delta: string): string {
   return (Number(current) - Number(delta)).toString();
 }
 
-async function getOrCreateSubWalletRow(
+export async function getOrCreateSubWalletRow(
   tx: BalanceTx,
   walletId: number,
   currencyId: number
@@ -90,6 +90,80 @@ export async function debitWalletBalance(
       .returning();
 
     return updated;
+  };
+
+  return tx ? run(tx) : db.transaction(run);
+}
+
+export async function transferWalletBalance(
+  input: {
+    sourceWalletId: number;
+    sourceCurrencyId: number;
+    destinationWalletId: number;
+    destinationCurrencyId: number;
+    sourceAmount: string;
+    destinationAmount: string;
+    transactionFee?: string;
+    allowNegative?: boolean;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    await debitWalletBalance(
+      {
+        walletId: input.sourceWalletId,
+        currencyId: input.sourceCurrencyId,
+        amount: input.sourceAmount,
+        allowNegative: input.allowNegative,
+      },
+      transaction
+    );
+
+    await creditWalletBalance(
+      {
+        walletId: input.destinationWalletId,
+        currencyId: input.destinationCurrencyId,
+        amount: input.destinationAmount,
+      },
+      transaction
+    );
+  };
+
+  return tx ? run(tx) : db.transaction(run);
+}
+
+export async function reverseTransferBalance(
+  input: {
+    sourceWalletId: number;
+    sourceCurrencyId: number;
+    destinationWalletId: number;
+    destinationCurrencyId: number;
+    sourceAmount: string;
+    destinationAmount: string;
+    transactionFee?: string;
+    allowNegative?: boolean;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    await creditWalletBalance(
+      {
+        walletId: input.sourceWalletId,
+        currencyId: input.sourceCurrencyId,
+        amount: input.sourceAmount,
+      },
+      transaction
+    );
+
+    await debitWalletBalance(
+      {
+        walletId: input.destinationWalletId,
+        currencyId: input.destinationCurrencyId,
+        amount: input.destinationAmount,
+        allowNegative: input.allowNegative,
+      },
+      transaction
+    );
   };
 
   return tx ? run(tx) : db.transaction(run);

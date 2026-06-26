@@ -22,6 +22,7 @@ import {
 } from "../services/canvasAccessService";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { getCanvasSummary } from "../services/dashboardService";
+import { listCanvasTransfersHandler } from "./transfers";
 
 const router = express.Router();
 
@@ -260,6 +261,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
 // ============================================================================
 // CANVAS DASHBOARD SUMMARY
 // ============================================================================
+
+router.get("/:canvasId/transfers", listCanvasTransfersHandler);
 
 router.get("/:canvasId/summary", async (req: Request, res: Response) => {
   const user = req.appUser;

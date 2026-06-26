@@ -8,12 +8,12 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { ExpenseFlow, IncomeFlow } from "../types";
+import type { ExpenseFlow, IncomeFlow, TransferFlow } from "../types";
 import { whiteboardEdgeColor } from "../utils/theme";
 
 export interface FlowEdgeData {
-  kind: "income" | "expense";
-  flow: IncomeFlow | ExpenseFlow;
+  kind: "income" | "expense" | "transfer";
+  flow: IncomeFlow | ExpenseFlow | TransferFlow;
   selected?: boolean;
 }
 
@@ -46,10 +46,12 @@ function FlowEdgeComponent({
   const flow = edgeData?.flow;
   const label =
     flow && kind === "income"
-      ? `${(flow as IncomeFlow).entryCount} · ${formatMoney(flow.totalAmount, flow.currencySymbol)}`
+      ? `${(flow as IncomeFlow).entryCount} · ${formatMoney((flow as IncomeFlow).totalAmount, (flow as IncomeFlow).currencySymbol)}`
       : flow && kind === "expense"
-        ? `${(flow as ExpenseFlow).paymentCount} · ${formatMoney(flow.totalAmount, flow.currencySymbol)}`
-        : "";
+        ? `${(flow as ExpenseFlow).paymentCount} · ${formatMoney((flow as ExpenseFlow).totalAmount, (flow as ExpenseFlow).currencySymbol)}`
+        : flow && kind === "transfer"
+          ? `${(flow as TransferFlow).transferCount} · ${formatMoney((flow as TransferFlow).totalSourceAmount, (flow as TransferFlow).sourceCurrencySymbol)}`
+          : "";
 
   return (
     <>

@@ -23,10 +23,13 @@
   "sidePanel": {
     "incomeFlow": "Income flow",
     "expenseFlow": "Expense flow",
+    "transferFlow": "Transfer flow",
     "incomeSummary": "{{count}} entries · {{amount}} total",
     "expenseSummary": "{{count}} payments · {{amount}} total",
+    "transferSummary": "{{count}} transfers · {{amount}} total",
     "addEntry": "Add income entry",
     "addPayment": "Add expense payment",
+    "addTransfer": "Add transfer",
     "empty": "No movements for this connection yet."
   },
   "empty": {

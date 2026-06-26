@@ -17,6 +17,7 @@ import canvasRolesRouter from './canvas-roles';
 import whiteboardRouter from './whiteboard';
 import calendarRouter from './calendar';
 import notificationsRouter from './notifications';
+import transfersRouter from './transfers';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
@@ -42,6 +43,9 @@ router.use('/income', auth, income);
 // Wallet routes (individual wallet operations)
 router.use('/wallets', auth, wallets);
 router.use('/wallet/categories', auth, walletCategories)
+
+// Transfer routes
+router.use('/transfers', auth, transfersRouter);
 
 // Expense routes (individual expense operations)
 router.use('/expenses', auth, expenses);

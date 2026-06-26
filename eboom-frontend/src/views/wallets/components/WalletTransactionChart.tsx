@@ -49,6 +49,8 @@ export function WalletTransactionChart({
   const [timeRange, setTimeRange] = React.useState("90d");
   const fillEntriesId = React.useId();
   const fillPaymentsId = React.useId();
+  const fillTransferInId = React.useId();
+  const fillTransferOutId = React.useId();
 
   const chartConfig = React.useMemo(
     () =>
@@ -61,11 +63,19 @@ export function WalletTransactionChart({
           label: t("chart.series.outgoing"),
           color: "hsl(var(--destructive))",
         },
+        transferIn: {
+          label: t("chart.series.transferIn"),
+          color: "hsl(142 76% 36%)",
+        },
+        transferOut: {
+          label: t("chart.series.transferOut"),
+          color: "hsl(38 92% 50%)",
+        },
       }) satisfies ChartConfig,
     [t]
   );
 
-  const { entries, payments, currencySymbol, isLoading } = useWalletDetail(walletId);
+  const { entries, payments, transfers, currencySymbol, isLoading } = useWalletDetail(walletId);
 
   React.useEffect(() => {
     if (isMobile) {
@@ -74,14 +84,14 @@ export function WalletTransactionChart({
   }, [isMobile]);
 
   const filteredData = React.useMemo(
-    () => buildChartData(entries, payments, timeRange),
-    [entries, payments, timeRange]
+    () => buildChartData(entries, payments, transfers, walletId, timeRange),
+    [entries, payments, transfers, walletId, timeRange]
   );
 
   const rangeTotal = React.useMemo(
     () =>
       filteredData.reduce(
-        (sum, point) => sum + point.entries + point.payments,
+        (sum, point) => sum + point.entries + point.payments + point.transferIn + point.transferOut,
         0
       ),
     [filteredData]
@@ -176,17 +186,17 @@ export function WalletTransactionChart({
                     stopOpacity={0.1}
                   />
                 </linearGradient>
+                <linearGradient id={fillTransferOutId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-transferOut)" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="var(--color-transferOut)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id={fillTransferInId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-transferIn)" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="var(--color-transferIn)" stopOpacity={0.05} />
+                </linearGradient>
                 <linearGradient id={fillPaymentsId} x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--color-payments)"
-                    stopOpacity={0.6}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--color-payments)"
-                    stopOpacity={0.05}
-                  />
+                  <stop offset="5%" stopColor="var(--color-payments)" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="var(--color-payments)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
@@ -225,6 +235,20 @@ export function WalletTransactionChart({
                     indicator="dot"
                   />
                 }
+              />
+              <Area
+                dataKey="transferOut"
+                type="natural"
+                fill={`url(#${fillTransferOutId})`}
+                stroke="var(--color-transferOut)"
+                stackId="a"
+              />
+              <Area
+                dataKey="transferIn"
+                type="natural"
+                fill={`url(#${fillTransferInId})`}
+                stroke="var(--color-transferIn)"
+                stackId="a"
               />
               <Area
                 dataKey="payments"

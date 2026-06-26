@@ -47,7 +47,12 @@
     "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
     "categoryRequired": "Kategorie ist erforderlich",
     "noCanvas": "Wählen Sie zuerst ein Canvas aus",
-    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "currencyRequired": "Währung ist erforderlich",
+    "exchangeRateRequired": "Wechselkurs ist für Währungsumtausch erforderlich",
+    "transferDateRequired": "Überweisungsdatum ist erforderlich",
+    "feeNonNegative": "Gebühr muss null oder größer sein",
+    "feeLessThanSource": "Gebühr muss kleiner als der Quellbetrag sein"
   },
   "entriesTable": {
     "title": "Einnahmeneinträge",
@@ -127,7 +132,69 @@
     },
     "series": {
       "incoming": "Eingehend",
-      "outgoing": "Ausgehend"
+      "outgoing": "Ausgehend",
+      "transferIn": "Transfer eingehend",
+      "transferOut": "Transfer ausgehend"
+    }
+  },
+  "transfersTable": {
+    "title": "Transfers",
+    "subtitle": "Geld zwischen Wallets verschoben",
+    "createTransfer": "Transfer",
+    "count": "{{count}} Transfers",
+    "loadError": "Transfers konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "direction": "Richtung",
+      "counterparty": "Gegenpartei",
+      "date": "Datum",
+      "rate": "Kurs",
+      "fee": "Gebühr",
+      "notes": "Notizen"
+    },
+    "direction": {
+      "in": "Eingang von {{wallet}}",
+      "out": "Ausgang nach {{wallet}}"
+    },
+    "empty": "Noch keine Transfers. Verschieben Sie Geld zwischen Ihren Wallets.",
+    "footer": {
+      "netIn": "Gesamt eingehend",
+      "netOut": "gesamt ausgehend"
+    },
+    "delete": {
+      "title": "Transfer löschen",
+      "description": "Dies kehrt die Saldoänderungen für beide Wallets um."
+    }
+  },
+  "transferModal": {
+    "title": "Geld überweisen",
+    "editTitle": "Transfer bearbeiten",
+    "description": {
+      "default": "Geld zwischen Wallets im selben Canvas verschieben.",
+      "fromWallet": "Von {{walletName}} zu einem anderen Wallet überweisen.",
+      "toWallet": "Zu {{walletName}} von einem anderen Wallet überweisen."
+    },
+    "fields": {
+      "sourceWallet": { "label": "Quell-Wallet" },
+      "sourceCurrency": { "label": "Quellwährung", "placeholder": "Währung wählen" },
+      "destinationWallet": { "label": "Ziel-Wallet" },
+      "destinationCurrency": { "label": "Zielwährung", "placeholder": "Währung wählen" },
+      "sourceAmount": { "label": "Quellbetrag" },
+      "destinationAmount": { "label": "Zielbetrag" },
+      "exchangeRate": { "label": "Wechselkurs" },
+      "transactionFee": { "label": "Transaktionsgebühr (optional, vom erhaltenen Betrag abgezogen)" },
+      "transferDate": { "label": "Überweisungsdatum" },
+      "notes": { "label": "Notizen" }
+    },
+    "empty": {
+      "noCurrencies": "Keine Währungen verfügbar"
+    },
+    "submit": {
+      "create": "Überweisen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Transfer konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
     }
   }
 }

@@ -15,12 +15,14 @@ import { Container } from "@/components/ui/container";
 import { Grid } from "@/components/ui/grid";
 import { Typography, typographyVariants } from "@/components/ui/typography";
 import { useMemo } from "react";
-import { computeWalletStats, formatMoney, WalletEntry, WalletPayment } from "../utils/utils";
+import { computeWalletStats, formatMoney, WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { useTranslation } from "react-i18next";
 
 interface WalletSummaryCardsProps {
+  walletId: number;
   entries: WalletEntry[];
   payments: WalletPayment[];
+  transfers?: WalletTransfer[];
   currencySymbol?: string;
   isLoading?: boolean;
 }
@@ -49,14 +51,19 @@ function TrendBadge({ change }: { change: number | null }) {
 }
 
 export function WalletSummaryCards({
+  walletId,
   entries,
   payments,
+  transfers = [],
   currencySymbol,
   isLoading,
 }: WalletSummaryCardsProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
-  const stats = useMemo(() => computeWalletStats(entries, payments), [entries, payments]);
+  const stats = useMemo(
+    () => computeWalletStats(entries, payments, transfers, walletId),
+    [entries, payments, transfers, walletId]
+  );
 
   if (isLoading) {
     return (

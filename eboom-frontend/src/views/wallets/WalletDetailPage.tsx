@@ -3,6 +3,7 @@
 import { WalletTransactionChart } from "./components/WalletTransactionChart";
 import { WalletEntriesTable } from "./components/WalletEntriesTable";
 import { WalletPaymentsTable } from "./components/WalletPaymentTable";
+import { WalletTransfersTable } from "./components/WalletTransfersTable";
 import { WalletSummaryCards } from "./components/WalletSummaryCards";
 import { useWalletDetail } from "./hooks/useWalletDetail";
 import { Container } from "@/components/ui/container";
@@ -16,7 +17,7 @@ interface Props {
 
 export default function WalletDetailPage({ id }: Props) {
   const { t } = useTranslation("wallets");
-  const { wallet, entries, payments, currencySymbol, isLoading, isError } = useWalletDetail(id);
+  const { wallet, entries, payments, transfers, currencySymbol, isLoading, isError } = useWalletDetail(id);
 
   if (isError) {
     return (
@@ -48,13 +49,19 @@ export default function WalletDetailPage({ id }: Props) {
       </Container>
 
       <WalletSummaryCards
+        walletId={id}
         entries={entries}
         payments={payments}
+        transfers={transfers}
         currencySymbol={currencySymbol}
         isLoading={isLoading}
       />
 
       <WalletEntriesTable walletId={id} walletName={wallet?.name} currencySymbol={currencySymbol} />
+
+      <div className="my-8" />
+
+      <WalletTransfersTable walletId={id} walletName={wallet?.name} />
 
       <div className="my-8" />
 

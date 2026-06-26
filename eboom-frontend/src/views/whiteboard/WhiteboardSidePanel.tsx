@@ -11,6 +11,7 @@ import useQueryApi from "@/src/api/useQuery";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { formatMoney } from "@/src/i18n/formatters";
+import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
 import { Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SelectedWhiteboardEdge } from "./types";
@@ -40,8 +41,10 @@ interface WhiteboardSidePanelProps {
   onClose: () => void;
   onAddEntry?: () => void;
   onAddPayment?: () => void;
+  onAddTransfer?: () => void;
   onEditEntry?: (entryId: number) => void;
   onEditPayment?: (paymentId: number) => void;
+  onEditTransfer?: (transferId: number) => void;
   onMovementDeleted?: () => void;
 }
 
@@ -51,8 +54,10 @@ export function WhiteboardSidePanel({
   onClose,
   onAddEntry,
   onAddPayment,
+  onAddTransfer,
   onEditEntry,
   onEditPayment,
+  onEditTransfer,
   onMovementDeleted,
 }: WhiteboardSidePanelProps) {
   const { t } = useTranslation("whiteboard");
@@ -82,13 +87,26 @@ export function WhiteboardSidePanel({
     }
   );
 
+  const transferQuery = useQueryApi<{ transfers?: WalletTransfer[] }>(
+    selectedEdge?.kind === "transfer" && canvas
+      ? API_ROUTES.CANVAS_TRANSFERS_LIST(canvas)
+      : "",
+    {
+      queryKey: ["canvas-transfers", canvas],
+      hasToken: true,
+      enabled: selectedEdge?.kind === "transfer" && !!canvas,
+    }
+  );
+
   const deleteMovementMutation = useMutation({
     mutationFn: async (movementId: number) => {
       if (!selectedEdge) return;
       const url =
         selectedEdge.kind === "income"
           ? API_ROUTES.INCOME_ENTRIES_DELETE(movementId)
-          : API_ROUTES.EXPENSE_PAYMENTS_DELETE(movementId);
+          : selectedEdge.kind === "expense"
+            ? API_ROUTES.EXPENSE_PAYMENTS_DELETE(movementId)
+            : API_ROUTES.TRANSFERS_DELETE(movementId);
       await whiteboardApiDelete(url);
     },
     onSuccess: async () => {
@@ -101,6 +119,8 @@ export function WhiteboardSidePanel({
         await queryClient.invalidateQueries({
           queryKey: ["expense-payments", selectedEdge.flow.expenseId],
         });
+      } else if (selectedEdge?.kind === "transfer" && canvas) {
+        await queryClient.invalidateQueries({ queryKey: ["canvas-transfers", canvas] });
       }
       if (canvas) {
         await queryClient.invalidateQueries({ queryKey: ["whiteboard", canvas] });
@@ -112,23 +132,62 @@ export function WhiteboardSidePanel({
   if (!selectedEdge) return null;
 
   const isIncome = selectedEdge.kind === "income";
+  const isExpense = selectedEdge.kind === "expense";
+  const isTransfer = selectedEdge.kind === "transfer";
   const flow = selectedEdge.flow;
-  const isLoading = isIncome ? incomeQuery.isLoading : expenseQuery.isLoading;
+
+  const isLoading = isIncome
+    ? incomeQuery.isLoading
+    : isExpense
+      ? expenseQuery.isLoading
+      : transferQuery.isLoading;
 
   const rows = isIncome
     ? (incomeQuery.data?.entries ?? []).filter(
         (entry) => selectedEdge.kind === "income" && entry.destinationWalletId === selectedEdge.flow.walletId
       )
-    : (expenseQuery.data?.payments ?? []).filter(
-        (payment) => selectedEdge.kind === "expense" && payment.sourceWalletId === selectedEdge.flow.walletId
-      );
+    : isExpense
+      ? (expenseQuery.data?.payments ?? []).filter(
+          (payment) => selectedEdge.kind === "expense" && payment.sourceWalletId === selectedEdge.flow.walletId
+        )
+      : (transferQuery.data?.transfers ?? []).filter(
+          (transfer) =>
+            selectedEdge.kind === "transfer" &&
+            transfer.sourceWalletId === selectedEdge.flow.sourceWalletId &&
+            transfer.destinationWalletId === selectedEdge.flow.destinationWalletId &&
+            transfer.sourceCurrencyId === selectedEdge.flow.sourceCurrencyId
+        );
+
+  const panelTitle = isIncome
+    ? t("sidePanel.incomeFlow")
+    : isExpense
+      ? t("sidePanel.expenseFlow")
+      : t("sidePanel.transferFlow");
+
+  const summaryText = isIncome
+    ? t("sidePanel.incomeSummary", {
+        count: selectedEdge.flow.entryCount,
+        amount: formatMoney(selectedEdge.flow.totalAmount, selectedEdge.flow.currencySymbol),
+      })
+    : isExpense
+      ? t("sidePanel.expenseSummary", {
+          count: selectedEdge.flow.paymentCount,
+          amount: formatMoney(selectedEdge.flow.totalAmount, selectedEdge.flow.currencySymbol),
+        })
+      : t("sidePanel.transferSummary", {
+          count: selectedEdge.flow.transferCount,
+          amount: formatMoney(
+            selectedEdge.flow.totalSourceAmount,
+            selectedEdge.flow.sourceCurrencySymbol
+          ),
+        });
 
   return (
     <>
       <div className="absolute right-0 top-0 z-20 flex h-full w-[320px] flex-col border-l bg-background shadow-lg">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <Typography variant="heading" className="text-sm font-semibold">
-            {isIncome ? t("sidePanel.incomeFlow") : t("sidePanel.expenseFlow")}
+            {panelTitle}
           </Typography>
           <Button size="icon-xs" variant="ghost" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -136,25 +195,20 @@ export function WhiteboardSidePanel({
         </div>
 
         <div className="border-b px-4 py-3">
-          <p className="text-xs text-muted-foreground">
-            {isIncome
-              ? t("sidePanel.incomeSummary", {
-                  count: selectedEdge.flow.entryCount,
-                  amount: formatMoney(selectedEdge.flow.totalAmount, selectedEdge.flow.currencySymbol),
-                })
-              : t("sidePanel.expenseSummary", {
-                  count: selectedEdge.flow.paymentCount,
-                  amount: formatMoney(selectedEdge.flow.totalAmount, selectedEdge.flow.currencySymbol),
-                })}
-          </p>
+          <p className="text-xs text-muted-foreground">{summaryText}</p>
           {isIncome && onAddEntry && canEdit ? (
             <Button size="sm" className="mt-3 w-full" onClick={onAddEntry}>
               {t("sidePanel.addEntry")}
             </Button>
           ) : null}
-          {!isIncome && onAddPayment && canEdit ? (
+          {isExpense && onAddPayment && canEdit ? (
             <Button size="sm" className="mt-3 w-full" onClick={onAddPayment}>
               {t("sidePanel.addPayment")}
+            </Button>
+          ) : null}
+          {isTransfer && onAddTransfer && canEdit ? (
+            <Button size="sm" className="mt-3 w-full" onClick={onAddTransfer}>
+              {t("sidePanel.addTransfer")}
             </Button>
           ) : null}
         </div>
@@ -173,8 +227,21 @@ export function WhiteboardSidePanel({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">
-                        {formatMoney(row.amount, flow.currencySymbol)}
+                        {isTransfer
+                          ? formatMoney(
+                              (row as WalletTransfer).sourceAmount,
+                              (row as WalletTransfer).sourceCurrencySymbol
+                            )
+                          : formatMoney(
+                              (row as IncomeEntryRow | ExpensePaymentRow).amount,
+                              isIncome
+                                ? (flow as { currencySymbol: string }).currencySymbol
+                                : (flow as { currencySymbol: string }).currencySymbol
+                            )}
                       </p>
+                      {"transferDate" in row && row.transferDate ? (
+                        <p className="text-xs text-muted-foreground">{row.transferDate.slice(0, 10)}</p>
+                      ) : null}
                       {"receivedDate" in row && row.receivedDate ? (
                         <p className="text-xs text-muted-foreground">{row.receivedDate}</p>
                       ) : null}
@@ -196,11 +263,20 @@ export function WhiteboardSidePanel({
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         ) : null}
-                        {!isIncome && onEditPayment ? (
+                        {isExpense && onEditPayment ? (
                           <Button
                             size="icon-xs"
                             variant="ghost"
                             onClick={() => onEditPayment(row.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                        {isTransfer && onEditTransfer ? (
+                          <Button
+                            size="icon-xs"
+                            variant="ghost"
+                            onClick={() => onEditTransfer(row.id)}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>

@@ -1,15 +1,21 @@
 "use client";
 
-import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import API_ROUTES from "@/src/api/urls";
 import { useMemo } from "react";
-import type { WalletEntry, WalletPayment } from "../utils/utils";
+import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { Wallet } from "@backend/db/schema";
 
 export function useWalletDetail(walletId: number) {
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
-      wallet: Wallet;
+      wallet: Wallet & {
+        subWallets?: Array<{
+          currencyId: number;
+          amount: string;
+          currency?: { id: number; code: string; symbol: string } | null;
+        }>;
+      };
     }>(API_ROUTES.WALLETS_GET(walletId), {
       queryKey: ["wallet", walletId],
       enabled: !!walletId,
@@ -39,24 +45,33 @@ export function useWalletDetail(walletId: number) {
     }
   );
 
-  const { data: currenciesRes } = useQueryApi<{
-    currencies?: { id: number; code: string; symbol: string }[];
-  }>(API_ROUTES.CURRENCIES_METADATA, {
-    queryKey: ["currencies"],
-  });
+  const {
+    data: transfersRes,
+    isLoading: isLoadingTransfers,
+    isError: isTransfersError,
+  } = useQueryApi<{ transfers: WalletTransfer[] }>(
+    API_ROUTES.WALLET_TRANSFERS(walletId),
+    {
+      queryKey: ["wallet-transfers", walletId],
+      enabled: !!walletId,
+    }
+  );
 
   const currencySymbol = useMemo(() => {
-    // Use the first sub-wallet's currency if available
-    if (!currenciesRes?.currencies) return undefined;
-    return currenciesRes.currencies[0]?.symbol;
-  }, [currenciesRes?.currencies]);
+    const subWallets = walletRes?.wallet?.subWallets ?? [];
+    if (subWallets.length > 0) {
+      return subWallets[0]?.currency?.symbol;
+    }
+    return undefined;
+  }, [walletRes?.wallet?.subWallets]);
 
   return {
     wallet: walletRes?.wallet,
     entries: entriesRes?.incomeEntries ?? [],
     payments: paymentsRes?.expensePayments ?? [],
+    transfers: transfersRes?.transfers ?? [],
     currencySymbol,
-    isLoading: isLoadingWallet || isLoadingEntries || isLoadingPayments,
-    isError: isWalletError || isEntriesError || isPaymentsError,
+    isLoading: isLoadingWallet || isLoadingEntries || isLoadingPayments || isLoadingTransfers,
+    isError: isWalletError || isEntriesError || isPaymentsError || isTransfersError,
   };
 }
