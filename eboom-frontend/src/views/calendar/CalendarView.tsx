@@ -74,7 +74,13 @@ function monthRange(date: Date): { start: Date; end: Date } {
 }
 
 function eventClassNames(event: CalendarEvent): string[] {
-  const classes = [event.type === "income" ? styles.incomeEvent : styles.expenseEvent];
+  const classes = [
+    event.type === "income"
+      ? styles.incomeEvent
+      : event.type === "expense"
+        ? styles.expenseEvent
+        : styles.transferEvent,
+  ];
   if (event.status === "overdue") classes.push(styles.overdue);
   if (event.isPredicted) classes.push(styles.predicted);
   return classes;
@@ -370,7 +376,11 @@ export default function CalendarView() {
             <div className={styles.tooltipHeader}>
               <span
                 className={`${styles.tooltipTypeDot} ${
-                  hoveredEvent.event.type === "income" ? styles.incomeDot : styles.expenseDot
+                  hoveredEvent.event.type === "income"
+                    ? styles.incomeDot
+                    : hoveredEvent.event.type === "expense"
+                      ? styles.expenseDot
+                      : styles.transferDot
                 }`}
               />
               <div className={styles.tooltipTitleBlock}>
@@ -392,6 +402,17 @@ export default function CalendarView() {
                   {hoveredEvent.event.currency}
                 </strong>
               </div>
+              {hoveredEvent.event.type === "transfer" &&
+                hoveredEvent.event.secondaryAmount &&
+                hoveredEvent.event.secondaryCurrency && (
+                  <div>
+                    <span>{t("sourceAmount")}</span>
+                    <strong>
+                      {amountFormatter.format(Number(hoveredEvent.event.secondaryAmount) || 0)}{" "}
+                      {hoveredEvent.event.secondaryCurrency}
+                    </strong>
+                  </div>
+                )}
               <div>
                 <span>{t("date")}</span>
                 <strong>{dateFormatter.format(new Date(hoveredEvent.event.date))}</strong>

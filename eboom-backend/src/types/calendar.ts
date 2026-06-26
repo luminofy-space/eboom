@@ -1,6 +1,6 @@
 export interface CalendarEvent {
   id: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
   entityId: number;
   entryId?: number;
   date: string;
@@ -9,6 +9,8 @@ export interface CalendarEvent {
   status: "pending" | "completed" | "overdue";
   isPredicted: boolean;
   info?: string;
+  secondaryAmount?: string;
+  secondaryCurrency?: string;
 }
 
 export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "yearly";

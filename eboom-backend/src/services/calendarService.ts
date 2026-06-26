@@ -1,4 +1,5 @@
 import { and, eq, gte, inArray, isNotNull, lte, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../db/client";
 import {
   currencies,
@@ -6,6 +7,9 @@ import {
   expenses,
   incomeEntries,
   incomes,
+  subWallets,
+  transfers,
+  wallets,
 } from "../db/schema";
 import type { CalendarEvent, RecurrencePatternInput } from "../types/calendar";
 
@@ -449,6 +453,59 @@ export async function getCalendarEvents(
         });
       }
     }
+  }
+
+  const calSourceSubWallet = alias(subWallets, "cal_source_sub_wallet");
+  const calDestSubWallet = alias(subWallets, "cal_dest_sub_wallet");
+  const calSourceWallet = alias(wallets, "cal_source_wallet");
+  const calDestWallet = alias(wallets, "cal_dest_wallet");
+  const calSourceCurrency = alias(currencies, "cal_source_currency");
+  const calDestCurrency = alias(currencies, "cal_dest_currency");
+
+  const transferRows = await db
+    .select({
+      id: transfers.id,
+      sourceAmount: transfers.sourceAmount,
+      destinationAmount: transfers.destinationAmount,
+      transactionFee: transfers.transactionFee,
+      transferDate: transfers.transferDate,
+      sourceWalletName: calSourceWallet.name,
+      destinationWalletName: calDestWallet.name,
+      sourceCurrencyCode: calSourceCurrency.code,
+      destinationCurrencyCode: calDestCurrency.code,
+    })
+    .from(transfers)
+    .innerJoin(calSourceSubWallet, eq(transfers.sourceWalletId, calSourceSubWallet.id))
+    .innerJoin(calSourceWallet, eq(calSourceSubWallet.walletId, calSourceWallet.id))
+    .innerJoin(calSourceCurrency, eq(calSourceSubWallet.currencyId, calSourceCurrency.id))
+    .innerJoin(calDestSubWallet, eq(transfers.destinationWalletId, calDestSubWallet.id))
+    .innerJoin(calDestWallet, eq(calDestSubWallet.walletId, calDestWallet.id))
+    .innerJoin(calDestCurrency, eq(calDestSubWallet.currencyId, calDestCurrency.id))
+    .where(
+      and(
+        eq(calSourceWallet.canvasId, canvasId),
+        gte(transfers.transferDate, rangeStart),
+        lte(transfers.transferDate, rangeEnd)
+      )
+    );
+
+  for (const transfer of transferRows) {
+    if (!transfer.transferDate) continue;
+
+    events.push({
+      id: transfer.id + 2_000_000_000,
+      type: "transfer",
+      entityId: transfer.id,
+      entryId: transfer.id,
+      date: new Date(transfer.transferDate).toISOString(),
+      amount: String(transfer.destinationAmount),
+      currency: transfer.destinationCurrencyCode,
+      secondaryAmount: String(transfer.sourceAmount),
+      secondaryCurrency: transfer.sourceCurrencyCode,
+      status: "completed",
+      isPredicted: false,
+      info: `${transfer.sourceWalletName} → ${transfer.destinationWalletName}`,
+    });
   }
 
   return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

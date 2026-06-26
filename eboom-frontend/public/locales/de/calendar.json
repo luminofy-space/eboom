@@ -1,6 +1,6 @@
 {
   "title": "Kalender",
-  "subtitle": "Einnahmen und Ausgaben im Monatsüberblick",
+  "subtitle": "Einnahmen, Ausgaben und Transfers im Monatsüberblick",
   "loading": "Ereignisse werden geladen…",
   "loadError": "Kalenderereignisse konnten nicht geladen werden.",
   "noCanvas": "Wählen Sie ein Canvas aus, um den Kalender anzuzeigen.",
@@ -25,7 +25,9 @@
   "allDay": "Ganztägig",
   "income": "Einnahme",
   "expense": "Ausgabe",
+  "transfer": "Transfer",
   "amount": "Betrag",
+  "sourceAmount": "Quellbetrag",
   "date": "Datum",
   "statusLabel": "Status",
   "recordId": "Datensatz-ID",

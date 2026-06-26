@@ -2,6 +2,7 @@
 
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
+import { NewTransferModal } from "@/src/views/wallets/components/NewTransferModal";
 import type { CalendarEvent } from "@/src/hooks/useCalendarData";
 
 interface EventModalProps {
@@ -30,15 +31,26 @@ export function EventModal({ event, open, onOpenChange }: EventModalProps) {
     );
   }
 
+  if (event.type === "expense") {
+    return (
+      <NewExpensePaymentModal
+        expenseId={event.entityId}
+        paymentId={isExistingRecord ? event.entryId : undefined}
+        open={open}
+        onOpenChange={onOpenChange}
+        expenseName={event.info}
+        defaultDueDate={isExistingRecord ? undefined : dateKey}
+        defaultAmount={isExistingRecord ? undefined : amount}
+        extraInvalidateKeys={[["calendar"]]}
+      />
+    );
+  }
+
   return (
-    <NewExpensePaymentModal
-      expenseId={event.entityId}
-      paymentId={isExistingRecord ? event.entryId : undefined}
+    <NewTransferModal
+      transferId={isExistingRecord ? event.entryId : undefined}
       open={open}
       onOpenChange={onOpenChange}
-      expenseName={event.info}
-      defaultDueDate={isExistingRecord ? undefined : dateKey}
-      defaultAmount={isExistingRecord ? undefined : amount}
       extraInvalidateKeys={[["calendar"]]}
     />
   );
