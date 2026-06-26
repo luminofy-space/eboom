@@ -75,10 +75,20 @@ export default function WhiteboardPage() {
   const [selectedEdge, setSelectedEdge] = useState<SelectedWhiteboardEdge | null>(null);
   const [contextMenu, setContextMenu] = useState<WhiteboardContextMenuState | null>(null);
   const [deleteNodeId, setDeleteNodeId] = useState<string | null>(null);
-  const [entryModal, setEntryModal] = useState<{ open: boolean; incomeId?: number; walletId?: number }>({
+  const [entryModal, setEntryModal] = useState<{
+    open: boolean;
+    incomeId?: number;
+    walletId?: number;
+    entryId?: number;
+  }>({
     open: false,
   });
-  const [paymentModal, setPaymentModal] = useState<{ open: boolean; expenseId?: number; walletId?: number }>({
+  const [paymentModal, setPaymentModal] = useState<{
+    open: boolean;
+    expenseId?: number;
+    walletId?: number;
+    paymentId?: number;
+  }>({
     open: false,
   });
 
@@ -414,6 +424,7 @@ export default function WhiteboardPage() {
                       open: true,
                       incomeId: selectedEdge.flow.incomeId,
                       walletId: selectedEdge.flow.walletId,
+                      entryId: undefined,
                     })
                 : undefined
             }
@@ -424,6 +435,29 @@ export default function WhiteboardPage() {
                       open: true,
                       expenseId: selectedEdge.flow.expenseId,
                       walletId: selectedEdge.flow.walletId,
+                      paymentId: undefined,
+                    })
+                : undefined
+            }
+            onEditEntry={
+              selectedEdge?.kind === "income"
+                ? (entryId) =>
+                    setEntryModal({
+                      open: true,
+                      incomeId: selectedEdge.flow.incomeId,
+                      walletId: selectedEdge.flow.walletId,
+                      entryId,
+                    })
+                : undefined
+            }
+            onEditPayment={
+              selectedEdge?.kind === "expense"
+                ? (paymentId) =>
+                    setPaymentModal({
+                      open: true,
+                      expenseId: selectedEdge.flow.expenseId,
+                      walletId: selectedEdge.flow.walletId,
+                      paymentId,
                     })
                 : undefined
             }
@@ -455,15 +489,29 @@ export default function WhiteboardPage() {
 
       <NewIncomeEntryModal
         open={entryModal.open}
-        onOpenChange={(open) => setEntryModal((prev) => ({ ...prev, open }))}
+        onOpenChange={(open) =>
+          setEntryModal((prev) => ({
+            ...prev,
+            open,
+            ...(open ? {} : { entryId: undefined }),
+          }))
+        }
         incomeId={entryModal.incomeId}
+        entryId={entryModal.entryId}
         fixedDestinationWalletId={entryModal.walletId}
         extraInvalidateKeys={[["whiteboard", canvas]]}
       />
       <NewExpensePaymentModal
         open={paymentModal.open}
-        onOpenChange={(open) => setPaymentModal((prev) => ({ ...prev, open }))}
+        onOpenChange={(open) =>
+          setPaymentModal((prev) => ({
+            ...prev,
+            open,
+            ...(open ? {} : { paymentId: undefined }),
+          }))
+        }
         expenseId={paymentModal.expenseId}
+        paymentId={paymentModal.paymentId}
         fixedSourceWalletId={paymentModal.walletId}
         extraInvalidateKeys={[["whiteboard", canvas]]}
       />

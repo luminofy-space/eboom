@@ -11,7 +11,7 @@ import useQueryApi from "@/src/api/useQuery";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { formatMoney } from "@/src/i18n/formatters";
-import { Trash2, X } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SelectedWhiteboardEdge } from "./types";
 import { whiteboardApiDelete } from "./utils/api";
@@ -40,6 +40,8 @@ interface WhiteboardSidePanelProps {
   onClose: () => void;
   onAddEntry?: () => void;
   onAddPayment?: () => void;
+  onEditEntry?: (entryId: number) => void;
+  onEditPayment?: (paymentId: number) => void;
   onMovementDeleted?: () => void;
 }
 
@@ -49,6 +51,8 @@ export function WhiteboardSidePanel({
   onClose,
   onAddEntry,
   onAddPayment,
+  onEditEntry,
+  onEditPayment,
   onMovementDeleted,
 }: WhiteboardSidePanelProps) {
   const { t } = useTranslation("whiteboard");
@@ -182,14 +186,34 @@ export function WhiteboardSidePanel({
                       ) : null}
                     </div>
                     {canEdit ? (
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        className="shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteMovementId(row.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex shrink-0 gap-1">
+                        {isIncome && onEditEntry ? (
+                          <Button
+                            size="icon-xs"
+                            variant="ghost"
+                            onClick={() => onEditEntry(row.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                        {!isIncome && onEditPayment ? (
+                          <Button
+                            size="icon-xs"
+                            variant="ghost"
+                            onClick={() => onEditPayment(row.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteMovementId(row.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     ) : null}
                   </div>
                 </div>

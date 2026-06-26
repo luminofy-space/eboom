@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
@@ -73,7 +73,8 @@ export function WalletEntriesTable({
   const { t: tc } = useTranslation("common");
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<WalletEntry | null>(null);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
   const entries = useMemo(
@@ -137,7 +138,13 @@ export function WalletEntriesTable({
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingEntry(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
@@ -216,6 +223,15 @@ export function WalletEntriesTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingEntry(entry);
+                              setModalOpen(true);
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                            {tc("actions.edit")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem variant="destructive" disabled>
                             <Trash2 className="size-4" />
                             {tc("actions.delete")}
@@ -247,8 +263,13 @@ export function WalletEntriesTable({
       </Container>
 
       <NewIncomeEntryModal
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        incomeId={editingEntry?.incomeId}
+        entryId={editingEntry?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         fixedDestinationWalletId={walletId}
         walletName={walletName}
         extraInvalidateKeys={[["wallet-entries", walletId], ["wallet", walletId]]}

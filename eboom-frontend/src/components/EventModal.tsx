@@ -13,16 +13,18 @@ interface EventModalProps {
 export function EventModal({ event, open, onOpenChange }: EventModalProps) {
   const dateKey = event.date.slice(0, 10);
   const amount = Number(event.amount) || undefined;
+  const isExistingRecord = !event.isPredicted && event.entryId != null;
 
   if (event.type === "income") {
     return (
       <NewIncomeEntryModal
         incomeId={event.entityId}
+        entryId={isExistingRecord ? event.entryId : undefined}
         open={open}
         onOpenChange={onOpenChange}
         incomeName={event.info}
-        defaultExpectedDate={dateKey}
-        defaultAmount={amount}
+        defaultExpectedDate={isExistingRecord ? undefined : dateKey}
+        defaultAmount={isExistingRecord ? undefined : amount}
         extraInvalidateKeys={[["calendar"]]}
       />
     );
@@ -31,11 +33,12 @@ export function EventModal({ event, open, onOpenChange }: EventModalProps) {
   return (
     <NewExpensePaymentModal
       expenseId={event.entityId}
+      paymentId={isExistingRecord ? event.entryId : undefined}
       open={open}
       onOpenChange={onOpenChange}
       expenseName={event.info}
-      defaultDueDate={dateKey}
-      defaultAmount={amount}
+      defaultDueDate={isExistingRecord ? undefined : dateKey}
+      defaultAmount={isExistingRecord ? undefined : amount}
       extraInvalidateKeys={[["calendar"]]}
     />
   );

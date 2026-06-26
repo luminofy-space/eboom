@@ -68,6 +68,7 @@
   },
   "paymentModal": {
     "title": "Create Payment",
+    "editTitle": "Edit Payment",
     "description": {
       "forExpense": "Record a payment made for {{expenseName}}.",
       "fromWallet": "Record outgoing funds from {{walletName}}.",

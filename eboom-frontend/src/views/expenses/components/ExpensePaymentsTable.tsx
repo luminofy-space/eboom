@@ -27,7 +27,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "./NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
@@ -97,7 +97,8 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<ExpensePayment | null>(null);
 
   const { data: expenseRes, isLoading: isLoadingExpense } = useQueryApi<{
     expense: {
@@ -224,7 +225,13 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingPayment(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("paymentsTable.createPayment")}
             </Button>
@@ -306,6 +313,15 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
+                              onClick={() => {
+                                setEditingPayment(payment);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <Pencil className="size-4" />
+                              {tc("actions.edit")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               variant="destructive"
                               onClick={() => setDeleteId(payment.id)}
                             >
@@ -351,8 +367,12 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
 
       <NewExpensePaymentModal
         expenseId={expenseId}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        paymentId={editingPayment?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingPayment(null);
+        }}
         defaultWalletId={
           expenseRes?.expense?.defaultWalletId ??
           expenseRes?.expense?.defaultWallet?.id

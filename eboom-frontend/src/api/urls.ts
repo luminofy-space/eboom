@@ -82,6 +82,7 @@ const API_ROUTES = {
   // Income Entries
   INCOME_ENTRIES_LIST: (incomeId: number) => `/api/income/${incomeId}/entries/`,
   INCOME_ENTRIES_CREATE: (incomeId: number) => `/api/income/${incomeId}/entries/`,
+  INCOME_ENTRIES_UPDATE: (id: number) => `/api/income/entries/${id}/`,
   INCOME_ENTRIES_DELETE: (id: number) => `/api/income/entries/${id}/`,
 
   // Income Categories
@@ -111,6 +112,7 @@ const API_ROUTES = {
   // Expense Payments
   EXPENSE_PAYMENTS_LIST: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
   EXPENSE_PAYMENTS_CREATE: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_UPDATE: (id: number) => `/api/expenses/payments/${id}/`,
   EXPENSE_PAYMENTS_DELETE: (id: number) => `/api/expenses/payments/${id}/`,
 
   WALLET_CATEGORIES: '/api/wallet/categories',

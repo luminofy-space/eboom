@@ -26,6 +26,100 @@ function parseOptionalDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+router.put("/payments/:id", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const paymentId = parseRouteParam(req.params.id);
+  if (isNaN(paymentId)) {
+    return res.status(400).json({ error: "Invalid expense payment ID" });
+  }
+
+  const { sourceWalletId, amount, dueDate, paidDate, notes } = req.body;
+
+  const parsedWalletId = Number(sourceWalletId);
+  const parsedAmount = Number(amount);
+
+  if (!parsedWalletId || Number.isNaN(parsedWalletId)) {
+    return res.status(400).json({ error: "Source wallet is required" });
+  }
+
+  if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+    return res.status(400).json({ error: "A valid amount greater than zero is required" });
+  }
+
+  try {
+    const [existing] = await db
+      .select()
+      .from(expensePayments)
+      .where(eq(expensePayments.id, paymentId));
+    if (!existing) return res.status(404).json({ error: "Expense payment not found" });
+
+    const [expense] = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.id, existing.expenseId));
+    if (!expense) return res.status(404).json({ error: "Expense not found" });
+
+    const access = await checkCanvasPermission(expense.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
+
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
+    if (!wallet || wallet.canvasId !== expense.canvasId) {
+      return res.status(400).json({ error: "Source wallet is invalid for this canvas" });
+    }
+
+    const amountStr = String(parsedAmount);
+    const parsedDueDate = parseOptionalDate(dueDate);
+    const parsedPaidDate = parseOptionalDate(paidDate);
+
+    const updated = await db.transaction(async (tx) => {
+      await creditWalletBalance(
+        {
+          walletId: existing.sourceWalletId,
+          currencyId: expense.currencyId,
+          amount: String(existing.amount),
+        },
+        tx
+      );
+
+      const [payment] = await tx
+        .update(expensePayments)
+        .set({
+          sourceWalletId: parsedWalletId,
+          amount: amountStr,
+          dueDate: parsedDueDate,
+          paidDate: parsedPaidDate,
+          notes: notes || null,
+          lastModifiedBy: user.id,
+          lastModifiedAt: new Date(),
+        })
+        .where(eq(expensePayments.id, paymentId))
+        .returning();
+
+      await debitWalletBalance(
+        {
+          walletId: parsedWalletId,
+          currencyId: expense.currencyId,
+          amount: amountStr,
+          allowNegative: false,
+        },
+        tx
+      );
+
+      return payment;
+    });
+
+    res.json({ payment: updated });
+  } catch (err) {
+    console.error("Error updating expense payment:", err);
+    const message = err instanceof Error && err.message === "Insufficient wallet balance"
+      ? "Insufficient wallet balance"
+      : "Failed to update expense payment";
+    res.status(500).json({ error: message });
+  }
+});
+
 router.delete("/payments/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });

@@ -13,6 +13,7 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { User } from "@backend/db/schema";
 import { env } from "@/utils/env";
+import { LANGUAGE_STORAGE_KEY } from "@/src/i18n/languages";
 
 const hasWindow = typeof window !== "undefined";
 const isTestMode = env("NEXT_PUBLIC_TEST_MODE") === "true";
@@ -69,6 +70,8 @@ function clearStoredTokens() {
   if (!hasWindow) return;
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
+  localStorage.removeItem("canvasId");
+  localStorage.removeItem(LANGUAGE_STORAGE_KEY);
 }
 
 export interface AuthContextType {

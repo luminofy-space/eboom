@@ -68,6 +68,7 @@
   },
   "paymentModal": {
     "title": "ایجاد پرداخت",
+    "editTitle": "ویرایش پرداخت",
     "description": {
       "forExpense": "ثبت پرداخت انجام‌شده برای {{expenseName}}.",
       "fromWallet": "ثبت وجوه خروجی از {{walletName}}.",

@@ -69,6 +69,7 @@
   },
   "entryModal": {
     "title": "ایجاد ورودی",
+    "editTitle": "ویرایش ورودی",
     "description": {
       "forIncome": "ثبت پرداخت دریافت‌شده برای {{incomeName}}.",
       "toWallet": "ثبت وجوه ورودی به {{walletName}}.",

@@ -69,6 +69,7 @@
   },
   "entryModal": {
     "title": "Eintrag erstellen",
+    "editTitle": "Eintrag bearbeiten",
     "description": {
       "forIncome": "Erfassen Sie eine erhaltene Zahlung für {{incomeName}}.",
       "toWallet": "Erfassen Sie eingehende Mittel auf {{walletName}}.",

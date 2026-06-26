@@ -28,7 +28,7 @@ import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUti
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -52,8 +52,14 @@ const defaultValues: EntryFormData = {
 
 const hasWindow = typeof window !== "undefined";
 
+function toDateInputValue(date: string | null | undefined): string {
+  if (!date) return "";
+  return date.slice(0, 10);
+}
+
 interface NewIncomeEntryModalProps {
   incomeId?: number;
+  entryId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultWalletId?: number | null;
@@ -63,11 +69,13 @@ interface NewIncomeEntryModalProps {
   defaultExpectedDate?: string;
   defaultReceivedDate?: string;
   defaultAmount?: number;
+  defaultNotes?: string;
   extraInvalidateKeys?: unknown[][];
 }
 
 export function NewIncomeEntryModal({
   incomeId,
+  entryId,
   open,
   onOpenChange,
   defaultWalletId,
@@ -77,6 +85,7 @@ export function NewIncomeEntryModal({
   defaultExpectedDate,
   defaultReceivedDate,
   defaultAmount,
+  defaultNotes,
   extraInvalidateKeys = [],
 }: NewIncomeEntryModalProps) {
   const { t } = useTranslation("incomes");
@@ -85,6 +94,7 @@ export function NewIncomeEntryModal({
   const queryClient = useQueryClient();
   const { canvas } = useCanvas();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const isEditMode = entryId != null;
   const showIncomePicker = incomeId === undefined;
   const showWalletPicker = fixedDestinationWalletId === undefined;
 
@@ -118,6 +128,31 @@ export function NewIncomeEntryModal({
     hasToken: true,
     enabled: open && !!canvas && showWalletPicker,
   });
+
+  const resolvedIncomeIdForFetch = incomeId;
+  const { data: entriesRes, isLoading: isLoadingEntry } = useQueryApi<{
+    entries?: {
+      id: number;
+      incomeId: number;
+      destinationWalletId: number;
+      amount: string;
+      expectedDate: string | null;
+      receivedDate: string | null;
+      notes: string | null;
+    }[];
+  }>(
+    resolvedIncomeIdForFetch ? API_ROUTES.INCOME_ENTRIES_LIST(resolvedIncomeIdForFetch) : "",
+    {
+      queryKey: ["income-entries", resolvedIncomeIdForFetch],
+      hasToken: true,
+      enabled: open && isEditMode && !!resolvedIncomeIdForFetch,
+    }
+  );
+
+  const editingEntry = useMemo(
+    () => entriesRes?.entries?.find((entry) => entry.id === entryId),
+    [entriesRes?.entries, entryId]
+  );
 
   const incomes = incomesRes?.incomes ?? [];
   const incomeLabels = incomes.map((income) => {
@@ -153,27 +188,28 @@ export function NewIncomeEntryModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: createEntry, isPending } = useMutation({
+  const { mutateAsync: saveEntry, isPending } = useMutation({
     mutationFn: async (formData: EntryFormData) => {
       const resolvedIncomeId = incomeId ?? formData.incomeId;
       const resolvedWalletId = fixedDestinationWalletId ?? formData.destinationWalletId;
+      const payload = {
+        destinationWalletId: resolvedWalletId,
+        amount: Number(formData.amount),
+        expectedDate: formData.expectedDate || null,
+        receivedDate: formData.receivedDate || null,
+        notes: formData.notes.trim() || null,
+      };
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      if (isEditMode && entryId) {
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_UPDATE(entryId)}`;
+        await axios.put(url, payload, { headers });
+        return;
+      }
 
       const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_CREATE(resolvedIncomeId!)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-
-      await axios.post(
-        url,
-        {
-          destinationWalletId: resolvedWalletId,
-          amount: Number(formData.amount),
-          expectedDate: formData.expectedDate || null,
-          receivedDate: formData.receivedDate || null,
-          notes: formData.notes.trim() || null,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      await axios.post(url, payload, { headers });
     },
     onSuccess: async (_, formData) => {
       const resolvedIncomeId = incomeId ?? formData.incomeId;
@@ -188,25 +224,46 @@ export function NewIncomeEntryModal({
   });
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (isEditMode) {
+      if (!editingEntry) return;
       reset({
-        ...defaultValues,
-        incomeId: incomeId ?? null,
-        destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
-        expectedDate: defaultExpectedDate ?? "",
-        amount: defaultAmount ?? 0,
-        receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
+        incomeId: incomeId ?? editingEntry.incomeId,
+        destinationWalletId: fixedDestinationWalletId ?? editingEntry.destinationWalletId,
+        amount: Number(editingEntry.amount),
+        expectedDate: toDateInputValue(editingEntry.expectedDate),
+        receivedDate:
+          toDateInputValue(editingEntry.receivedDate) ||
+          new Date().toISOString().slice(0, 10),
+        notes: editingEntry.notes ?? "",
       });
       setSubmitError(null);
+      return;
     }
+
+    reset({
+      ...defaultValues,
+      incomeId: incomeId ?? null,
+      destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
+      expectedDate: defaultExpectedDate ?? "",
+      amount: defaultAmount ?? 0,
+      receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
+      notes: defaultNotes ?? "",
+    });
+    setSubmitError(null);
   }, [
     open,
+    isEditMode,
+    editingEntry,
     incomeId,
+    entryId,
     defaultWalletId,
     fixedDestinationWalletId,
     defaultExpectedDate,
     defaultReceivedDate,
     defaultAmount,
+    defaultNotes,
     reset,
   ]);
 
@@ -227,7 +284,7 @@ export function NewIncomeEntryModal({
     }
 
     try {
-      await createEntry(formData);
+      await saveEntry(formData);
       reset(defaultValues);
       setSubmitError(null);
       onOpenChange(false);
@@ -236,7 +293,7 @@ export function NewIncomeEntryModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting;
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingEntry);
 
   const description = incomeName
     ? t("entryModal.description.forIncome", { incomeName })
@@ -250,7 +307,9 @@ export function NewIncomeEntryModal({
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{t("entryModal.title")}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? t("entryModal.editTitle") : t("entryModal.title")}
+            </DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
@@ -400,7 +459,13 @@ export function NewIncomeEntryModal({
             </DialogClose>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <Loader2 className="size-4 animate-spin" />}
-              {isSaving ? tc("actions.creating") : t("entryModal.submit")}
+              {isSaving
+                ? isEditMode
+                  ? tc("actions.saving")
+                  : tc("actions.creating")
+                : isEditMode
+                  ? tc("actions.saveChanges")
+                  : t("entryModal.submit")}
             </Button>
           </DialogFooter>
           </FieldGroup>

@@ -28,7 +28,7 @@ import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUti
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -52,8 +52,14 @@ const defaultValues: PaymentFormData = {
 
 const hasWindow = typeof window !== "undefined";
 
+function toDateInputValue(date: string | null | undefined): string {
+  if (!date) return "";
+  return date.slice(0, 10);
+}
+
 interface NewExpensePaymentModalProps {
   expenseId?: number;
+  paymentId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultWalletId?: number | null;
@@ -63,11 +69,13 @@ interface NewExpensePaymentModalProps {
   defaultDueDate?: string;
   defaultPaidDate?: string;
   defaultAmount?: number;
+  defaultNotes?: string;
   extraInvalidateKeys?: unknown[][];
 }
 
 export function NewExpensePaymentModal({
   expenseId,
+  paymentId,
   open,
   onOpenChange,
   defaultWalletId,
@@ -77,6 +85,7 @@ export function NewExpensePaymentModal({
   defaultDueDate,
   defaultPaidDate,
   defaultAmount,
+  defaultNotes,
   extraInvalidateKeys = [],
 }: NewExpensePaymentModalProps) {
   const { t } = useTranslation("expenses");
@@ -85,6 +94,7 @@ export function NewExpensePaymentModal({
   const queryClient = useQueryClient();
   const { canvas } = useCanvas();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const isEditMode = paymentId != null;
   const showExpensePicker = expenseId === undefined;
   const showWalletPicker = fixedSourceWalletId === undefined;
 
@@ -118,6 +128,33 @@ export function NewExpensePaymentModal({
     hasToken: true,
     enabled: open && !!canvas && showWalletPicker,
   });
+
+  const resolvedExpenseIdForFetch = expenseId;
+  const { data: paymentsRes, isLoading: isLoadingPayment } = useQueryApi<{
+    payments?: {
+      id: number;
+      expenseId: number;
+      sourceWalletId: number;
+      amount: string;
+      dueDate: string | null;
+      paidDate: string | null;
+      notes: string | null;
+    }[];
+  }>(
+    resolvedExpenseIdForFetch
+      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(resolvedExpenseIdForFetch)
+      : "",
+    {
+      queryKey: ["expense-payments", resolvedExpenseIdForFetch],
+      hasToken: true,
+      enabled: open && isEditMode && !!resolvedExpenseIdForFetch,
+    }
+  );
+
+  const editingPayment = useMemo(
+    () => paymentsRes?.payments?.find((payment) => payment.id === paymentId),
+    [paymentsRes?.payments, paymentId]
+  );
 
   const expenses = expensesRes?.expenses ?? [];
   const expenseLabels = expenses.map((expense) => {
@@ -153,27 +190,28 @@ export function NewExpensePaymentModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: createPayment, isPending } = useMutation({
+  const { mutateAsync: savePayment, isPending } = useMutation({
     mutationFn: async (formData: PaymentFormData) => {
       const resolvedExpenseId = expenseId ?? formData.expenseId;
       const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
+      const payload = {
+        sourceWalletId: resolvedWalletId,
+        amount: Number(formData.amount),
+        dueDate: formData.dueDate || null,
+        paidDate: formData.paidDate || null,
+        notes: formData.notes.trim() || null,
+      };
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      if (isEditMode && paymentId) {
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_UPDATE(paymentId)}`;
+        await axios.put(url, payload, { headers });
+        return;
+      }
 
       const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId!)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-
-      await axios.post(
-        url,
-        {
-          sourceWalletId: resolvedWalletId,
-          amount: Number(formData.amount),
-          dueDate: formData.dueDate || null,
-          paidDate: formData.paidDate || null,
-          notes: formData.notes.trim() || null,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      await axios.post(url, payload, { headers });
     },
     onSuccess: async (_, formData) => {
       const resolvedExpenseId = expenseId ?? formData.expenseId;
@@ -188,25 +226,46 @@ export function NewExpensePaymentModal({
   });
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (isEditMode) {
+      if (!editingPayment) return;
       reset({
-        ...defaultValues,
-        expenseId: expenseId ?? null,
-        sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
-        dueDate: defaultDueDate ?? "",
-        amount: defaultAmount ?? 0,
-        paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
+        expenseId: expenseId ?? editingPayment.expenseId,
+        sourceWalletId: fixedSourceWalletId ?? editingPayment.sourceWalletId,
+        amount: Number(editingPayment.amount),
+        dueDate: toDateInputValue(editingPayment.dueDate),
+        paidDate:
+          toDateInputValue(editingPayment.paidDate) ||
+          new Date().toISOString().slice(0, 10),
+        notes: editingPayment.notes ?? "",
       });
       setSubmitError(null);
+      return;
     }
+
+    reset({
+      ...defaultValues,
+      expenseId: expenseId ?? null,
+      sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
+      dueDate: defaultDueDate ?? "",
+      amount: defaultAmount ?? 0,
+      paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
+      notes: defaultNotes ?? "",
+    });
+    setSubmitError(null);
   }, [
     open,
+    isEditMode,
+    editingPayment,
     expenseId,
+    paymentId,
     defaultWalletId,
     fixedSourceWalletId,
     defaultDueDate,
     defaultPaidDate,
     defaultAmount,
+    defaultNotes,
     reset,
   ]);
 
@@ -227,7 +286,7 @@ export function NewExpensePaymentModal({
     }
 
     try {
-      await createPayment(formData);
+      await savePayment(formData);
       reset(defaultValues);
       setSubmitError(null);
       onOpenChange(false);
@@ -236,7 +295,7 @@ export function NewExpensePaymentModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting;
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingPayment);
 
   const description = expenseName
     ? t("paymentModal.description.forExpense", { expenseName })
@@ -250,7 +309,9 @@ export function NewExpensePaymentModal({
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{t("paymentModal.title")}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? t("paymentModal.editTitle") : t("paymentModal.title")}
+            </DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
@@ -400,7 +461,13 @@ export function NewExpensePaymentModal({
             </DialogClose>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <Loader2 className="size-4 animate-spin" />}
-              {isSaving ? tc("actions.creating") : t("paymentModal.submit")}
+              {isSaving
+                ? isEditMode
+                  ? tc("actions.saving")
+                  : tc("actions.creating")
+                : isEditMode
+                  ? tc("actions.saveChanges")
+                  : t("paymentModal.submit")}
             </Button>
           </DialogFooter>
           </FieldGroup>

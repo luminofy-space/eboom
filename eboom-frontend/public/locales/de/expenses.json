@@ -68,6 +68,7 @@
   },
   "paymentModal": {
     "title": "Zahlung erstellen",
+    "editTitle": "Zahlung bearbeiten",
     "description": {
       "forExpense": "Erfassen Sie eine Zahlung für {{expenseName}}.",
       "fromWallet": "Erfassen Sie ausgehende Mittel aus {{walletName}}.",

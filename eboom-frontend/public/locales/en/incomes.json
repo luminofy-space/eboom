@@ -69,6 +69,7 @@
   },
   "entryModal": {
     "title": "Create Entry",
+    "editTitle": "Edit Entry",
     "description": {
       "forIncome": "Record a payment received for {{incomeName}}.",
       "toWallet": "Record incoming funds to {{walletName}}.",

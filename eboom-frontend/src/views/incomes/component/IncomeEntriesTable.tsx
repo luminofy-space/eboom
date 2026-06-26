@@ -27,7 +27,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
@@ -97,7 +97,8 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
 
   const { data: incomeRes, isLoading: isLoadingIncome } = useQueryApi<{
     income: {
@@ -216,7 +217,13 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingEntry(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
@@ -298,6 +305,15 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
+                              onClick={() => {
+                                setEditingEntry(entry);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <Pencil className="size-4" />
+                              {tc("actions.edit")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               variant="destructive"
                               onClick={() => setDeleteId(entry.id)}
                             >
@@ -343,8 +359,12 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
 
       <NewIncomeEntryModal
         incomeId={incomeId}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        entryId={editingEntry?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         defaultWalletId={
           incomeRes?.income?.defaultWalletId ??
           incomeRes?.income?.defaultWallet?.id
