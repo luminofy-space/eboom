@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { formatRelativeEdit } from "@/src/utils/date";
+import { formatRelativeTime } from "@/src/utils/date";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -108,7 +108,9 @@ export function GridCard({ href, imageUrl, title, updatedAt, className, onEdit, 
           <h3 className="text-white font-semibold text-sm truncate w-full">{title}</h3>
           {updatedAt && (
             <p className="text-white/70 text-xs mt-0.5">
-              {formatRelativeEdit(updatedAt)}
+              {t("gridCard.editedRelative", {
+                relativeTime: formatRelativeTime(updatedAt),
+              })}
             </p>
           )}
         </CardFooter>
