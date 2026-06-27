@@ -12,6 +12,7 @@ import {
   Users,
   LayoutDashboard,
   CalendarDays,
+  Landmark,
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
@@ -55,6 +56,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: t("routes.expenses"),
       url: "/expenses",
       icon: BanknoteArrowDown,
+    },
+    {
+      title: t("routes.assets"),
+      url: "/assets",
+      icon: Landmark,
     },
     {
       title: t("routes.calendar"),

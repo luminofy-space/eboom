@@ -59,6 +59,10 @@ const API_ROUTES = {
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
 
+  // Canvas-scoped Assets
+  CANVASES_ASSETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
+  CANVASES_ASSETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
+
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
 
   CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
@@ -127,6 +131,14 @@ const API_ROUTES = {
 
   // Expense Categories
   EXPENSE_CATEGORIES: '/api/expense/categories',
+
+  // ============================================================================
+  // ASSETS
+  // ============================================================================
+  ASSETS_GET: (id: number) => `/api/assets/${id}/`,
+  ASSETS_UPDATE: (id: number) => `/api/assets/${id}/`,
+  ASSETS_DELETE: (id: number) => `/api/assets/${id}/`,
+  ASSET_CATEGORIES: '/api/asset/categories',
 } as const;
 
 export default API_ROUTES;

@@ -56,6 +56,18 @@ export function CurrencyAssetDetail({ stats, compact }: CurrencyAssetDetailProps
         label={t("assets.tooltip.expenses")}
         value={String(stats.entityCounts.expenses)}
       />
+      {stats.entityCounts.assets > 0 && (
+        <>
+          <DetailRow
+            label={t("assets.tooltip.holdings")}
+            value={String(stats.entityCounts.assets)}
+          />
+          <DetailRow
+            label={t("assets.tooltip.holdingsValue")}
+            value={formatMoney(stats.totalAssetValue, currencySymbol)}
+          />
+        </>
+      )}
       <DetailRow
         label={t("assets.tooltip.received")}
         value={formatMoney(stats.incomeStats.totalReceived, currencySymbol)}

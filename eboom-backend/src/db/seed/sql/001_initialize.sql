@@ -90,4 +90,14 @@ VALUES
   ('Other Expenses', NOW())
 ON CONFLICT DO NOTHING;
 
+-- asset categories
+INSERT INTO asset_categories (name, is_systematic, created_at)
+VALUES
+  ('Vehicle', true, NOW()),
+  ('Real Estate', true, NOW()),
+  ('Land', true, NOW()),
+  ('Equipment', true, NOW()),
+  ('Other', true, NOW())
+ON CONFLICT DO NOTHING;
+
 COMMIT;

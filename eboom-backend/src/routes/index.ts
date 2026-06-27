@@ -11,6 +11,8 @@ import wallets from './wallets';
 import expenses from './expenses';
 import walletCategories from './wallet-categories';
 import expenseCategories from './expense-categories';
+import assetCategories from './asset-categories';
+import assets from './assets';
 import canvasMembersRouter from './canvas-members';
 import canvasInvitationsRouter from './canvas-invitations';
 import canvasRolesRouter from './canvas-roles';
@@ -50,6 +52,8 @@ router.use('/transfers', auth, transfersRouter);
 // Expense routes (individual expense operations)
 router.use('/expenses', auth, expenses);
 router.use('/expense/categories', auth, expenseCategories);
+router.use('/assets', auth, assets);
+router.use('/asset/categories', auth, assetCategories);
 
 // Calendar routes
 router.use('/calendar', auth, calendarRouter);

@@ -16,12 +16,14 @@ export interface CurrencyDashboardStats {
   currencyCode: string;
   currencySymbol: string;
   totalBalance: number;
-  entityCounts: { wallets: number; incomes: number; expenses: number };
+  entityCounts: { wallets: number; incomes: number; expenses: number; assets: number };
   incomeStats: ReturnType<typeof computeIncomeStats>;
   expenseStats: ReturnType<typeof computeExpenseStats>;
   walletStats: ReturnType<typeof computeWalletStats>;
   topWallets: Array<{ walletId: number; walletName: string; balance: number }>;
   netCashFlowThisMonth: number;
+  assetCount: number;
+  totalAssetValue: number;
 }
 
 function toWalletEntry(entry: CanvasSummaryIncomeEntry): WalletEntry {
@@ -88,13 +90,14 @@ function getCurrencyCodes(summary: CanvasSummary): string[] {
   summary.walletBalances.forEach((b) => codes.add(b.currencyCode));
   summary.incomeEntries.forEach((e) => codes.add(e.currencyCode));
   summary.expensePayments.forEach((p) => codes.add(p.currencyCode));
+  summary.assetsByCurrency?.forEach((a) => codes.add(a.currencyCode));
   return Array.from(codes).sort();
 }
 
 function getEntityCounts(
   summary: CanvasSummary,
   currencyCode: string
-): { wallets: number; incomes: number; expenses: number } {
+): { wallets: number; incomes: number; expenses: number; assets: number } {
   const breakdown = summary.currencyBreakdown?.find(
     (b) => b.currencyCode === currencyCode
   );
@@ -102,6 +105,7 @@ function getEntityCounts(
     wallets: breakdown?.walletCount ?? 0,
     incomes: breakdown?.incomeCount ?? 0,
     expenses: breakdown?.expenseCount ?? 0,
+    assets: breakdown?.assetCount ?? 0,
   };
 }
 
@@ -114,7 +118,9 @@ function getCurrencySymbol(
   const fromEntry = summary.incomeEntries.find((e) => e.currencyCode === currencyCode);
   if (fromEntry) return fromEntry.currencySymbol;
   const fromPayment = summary.expensePayments.find((p) => p.currencyCode === currencyCode);
-  return fromPayment?.currencySymbol ?? currencyCode;
+  if (fromPayment) return fromPayment.currencySymbol;
+  const fromAsset = summary.assetsByCurrency?.find((a) => a.currencyCode === currencyCode);
+  return fromAsset?.currencySymbol ?? currencyCode;
 }
 
 function computeNetCashFlowThisMonth(
@@ -163,6 +169,7 @@ export function computeDashboardStatsByCurrency(
     const entries = summary.incomeEntries.filter((e) => e.currencyCode === currencyCode);
     const payments = summary.expensePayments.filter((p) => p.currencyCode === currencyCode);
     const balances = summary.walletBalances.filter((b) => b.currencyCode === currencyCode);
+    const assetRow = summary.assetsByCurrency?.find((a) => a.currencyCode === currencyCode);
 
     const walletEntries = entries.map(toWalletEntry);
     const walletPayments = payments.map(toWalletPayment);
@@ -177,6 +184,8 @@ export function computeDashboardStatsByCurrency(
       walletStats: computeWalletStats(walletEntries, walletPayments),
       topWallets: getTopWallets(summary.walletBalances, currencyCode),
       netCashFlowThisMonth: computeNetCashFlowThisMonth(entries, payments),
+      assetCount: assetRow?.count ?? 0,
+      totalAssetValue: parseFloat(assetRow?.totalEstimatedValue ?? "0") || 0,
     };
   });
 }
