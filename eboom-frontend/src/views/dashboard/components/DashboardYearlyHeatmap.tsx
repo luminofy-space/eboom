@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatMoney } from "@/src/i18n/formatters";
+import { formatDate, formatMoney } from "@/src/i18n/formatters";
 import { useTranslation } from "react-i18next";
 import type { CanvasSummary } from "../types";
 import {
@@ -56,6 +56,8 @@ export function DashboardYearlyHeatmap({
   isLoading,
 }: DashboardYearlyHeatmapProps) {
   const { t, i18n } = useTranslation("dashboard");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
 
   const currencyCodes = React.useMemo(
     () =>
@@ -135,13 +137,13 @@ export function DashboardYearlyHeatmap({
     if (!heatmapData) return {};
     const labels: Record<number, string> = {};
     for (const monthLabel of heatmapData.monthLabels) {
-      labels[monthLabel.weekIndex] = new Date(selectedYear, monthLabel.monthIndex, 1).toLocaleString(
-        i18n.language,
-        { month: "short" }
+      labels[monthLabel.weekIndex] = formatDate(
+        new Date(selectedYear, monthLabel.monthIndex, 1),
+        { preset: "monthShort", fallback: emDash }
       );
     }
     return labels;
-  }, [heatmapData, i18n.language, selectedYear]);
+  }, [heatmapData, emDash, i18n.language, selectedYear]);
 
   const activeDayCount = React.useMemo(
     () =>
@@ -274,11 +276,7 @@ export function DashboardYearlyHeatmap({
                           <div className={`${CELL_SIZE_CLASS} ${getHeatmapCellColor(day)}`} />
                           <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border bg-popover px-2 py-1.5 text-xs shadow-md group-hover:block">
                             <div className="font-medium">
-                              {new Date(day.date).toLocaleDateString(i18n.language, {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}
+                              {formatDate(day.date, { preset: "short", fallback: emDash })}
                             </div>
                             <div className="mt-1 grid gap-0.5 text-muted-foreground">
                               <div className="flex justify-between gap-4">

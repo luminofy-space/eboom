@@ -33,6 +33,7 @@ import {
   buildChartData,
   formatMoney,
 } from "../utils/utils";
+import { formatDate } from "@/src/i18n/formatters";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import { useTranslation } from "react-i18next";
 
@@ -45,6 +46,7 @@ export function WalletTransactionChart({
 }: WalletTransactionChartProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
   const fillEntriesId = React.useId();
@@ -207,10 +209,7 @@ export function WalletTransactionChart({
                 tickMargin={8}
                 minTickGap={32}
                 tickFormatter={(value) =>
-                  new Date(value).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
+                  formatDate(value, { preset: "monthDay", fallback: emDash })
                 }
               />
               <ChartTooltip
@@ -218,11 +217,7 @@ export function WalletTransactionChart({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
+                      formatDate(value, { preset: "short", fallback: emDash })
                     }
                     formatter={(value, name) => (
                       <span className="tabular-nums">

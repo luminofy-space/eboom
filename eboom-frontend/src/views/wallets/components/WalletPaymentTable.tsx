@@ -30,17 +30,12 @@ import type { WalletPayment } from "../utils/utils";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
 interface WalletPaymentsTableProps {
   walletId: number;
   walletName?: string;
   currencySymbol?: string;
-}
-
-function formatDate(date: string | null | undefined, emDash: string): string {
-  if (!date) return emDash;
-  return dayjs(date).format("MMM D, YYYY");
 }
 
 function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
@@ -194,10 +189,10 @@ export function WalletPaymentsTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.dueDate, emDash)}
+                      {formatDate(payment.dueDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.paidDate, emDash)}
+                      {formatDate(payment.paidDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell>
                       <TransactionStatusChip

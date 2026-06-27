@@ -8,20 +8,7 @@ import { Typography } from "@/components/ui/typography";
 import { Stack } from "@/components/ui/stack";
 import { cn } from "@/lib/utils";
 import type { OverdueNotification } from "@/src/hooks/useNotifications";
-
-function formatAmount(amount: string, symbol: string): string {
-  const num = parseFloat(amount);
-  if (Number.isNaN(num)) return `${symbol}${amount}`;
-  return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-}
-
-function formatDueDate(date: string, locale: string): string {
-  return new Date(date).toLocaleDateString(locale, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { formatCurrency, formatDate } from "@/src/i18n/formatters";
 
 function NotificationItem({
   notification,
@@ -30,7 +17,8 @@ function NotificationItem({
   notification: OverdueNotification;
   onNavigate: () => void;
 }) {
-  const { t, i18n } = useTranslation("navigation");
+  const { t } = useTranslation("navigation");
+  const { t: tc } = useTranslation("common");
   const isExpense = notification.type === "expense_payment";
   const Icon = isExpense ? BanknoteArrowDown : BanknoteArrowUp;
 
@@ -58,10 +46,15 @@ function NotificationItem({
             ? t("notifications.overdueExpense")
             : t("notifications.overdueIncome")}
           {" · "}
-          {formatAmount(notification.amount, notification.currencySymbol)}
+          {formatCurrency(notification.amount, notification.currencySymbol, {
+            preset: "compact",
+          })}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {formatDueDate(notification.dueDate, i18n.language)}
+          {formatDate(notification.dueDate, {
+            preset: "short",
+            fallback: tc("empty.emDash"),
+          })}
           {" · "}
           {t("notifications.daysOverdue", { count: notification.daysOverdue })}
         </p>

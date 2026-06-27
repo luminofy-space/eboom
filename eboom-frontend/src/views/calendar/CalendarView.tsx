@@ -32,6 +32,7 @@ import { CalendarCreateChoiceModal } from "@/src/components/CalendarCreateChoice
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatNumber } from "@/src/i18n/formatters";
 import styles from "@/app/(dashboard)/calendar/calendar.module.css";
 
 type CalendarEventHoverArg = {
@@ -89,7 +90,9 @@ function eventClassNames(event: CalendarEvent): string[] {
 type CalendarViewType = "dayGridMonth" | "dayGridWeek" | "dayGridDay";
 
 export default function CalendarView() {
-  const { t, i18n } = useTranslation("calendar");
+  const { t } = useTranslation("calendar");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const calendarRef = useRef<FullCalendar>(null);
@@ -112,37 +115,18 @@ export default function CalendarView() {
 
   const { events, isLoading, error } = useCalendarData(canvas, range.start, range.end);
 
-  const dateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-    [i18n.language]
-  );
-
-  const amountFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat(i18n.language, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }),
-    [i18n.language]
-  );
-
   const calendarEvents = useMemo(
     () =>
       events.map((event) => ({
         id: String(event.id),
-        title: `${event.info ?? event.type} ${amountFormatter.format(Number(event.amount) || 0)} ${event.currency}`,
+        title: `${event.info ?? event.type} ${formatNumber(Number(event.amount) || 0, { preset: "compact" })} ${event.currency}`,
         start: event.date,
         allDay: true,
         display: "block",
         classNames: eventClassNames(event),
         extendedProps: { event },
       })),
-    [events, amountFormatter]
+    [events]
   );
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
@@ -211,8 +195,8 @@ export default function CalendarView() {
 
   const selectedDateLabel = useMemo(() => {
     if (!selectedDate) return "";
-    return dateFormatter.format(new Date(`${selectedDate}T00:00:00Z`));
-  }, [selectedDate, dateFormatter]);
+    return formatDate(`${selectedDate}T00:00:00Z`, { preset: "short", fallback: emDash });
+  }, [selectedDate, emDash]);
 
   const handleEventMouseEnter = useCallback((info: CalendarEventHoverArg) => {
     const event = info.event.extendedProps.event;
@@ -398,7 +382,9 @@ export default function CalendarView() {
               <div>
                 <span>{t("amount")}</span>
                 <strong>
-                  {amountFormatter.format(Number(hoveredEvent.event.amount) || 0)}{" "}
+                  {formatNumber(Number(hoveredEvent.event.amount) || 0, {
+                    preset: "compact",
+                  })}{" "}
                   {hoveredEvent.event.currency}
                 </strong>
               </div>
@@ -408,14 +394,16 @@ export default function CalendarView() {
                   <div>
                     <span>{t("sourceAmount")}</span>
                     <strong>
-                      {amountFormatter.format(Number(hoveredEvent.event.secondaryAmount) || 0)}{" "}
+                      {formatNumber(Number(hoveredEvent.event.secondaryAmount) || 0, {
+                        preset: "compact",
+                      })}{" "}
                       {hoveredEvent.event.secondaryCurrency}
                     </strong>
                   </div>
                 )}
               <div>
                 <span>{t("date")}</span>
-                <strong>{dateFormatter.format(new Date(hoveredEvent.event.date))}</strong>
+                <strong>{formatDate(hoveredEvent.event.date, { preset: "short", fallback: emDash })}</strong>
               </div>
               <div>
                 <span>{t("statusLabel")}</span>

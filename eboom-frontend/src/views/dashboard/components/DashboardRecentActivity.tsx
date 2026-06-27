@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import dayjs from "dayjs";
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
@@ -15,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import type { CanvasSummaryRecentActivity } from "../types";
 import { StatusChip } from "./StatusChip";
 import { useTranslation } from "react-i18next";
@@ -90,9 +89,7 @@ export function DashboardRecentActivity({
                       {formatAmount(activity.amount, activity.currencySymbol)}
                     </TableCell>
                     <TableCell>
-                      {activity.date
-                        ? dayjs(activity.date).format("MMM D, YYYY")
-                        : tc("empty.emDash")}
+                      {formatDate(activity.date, { fallback: tc("empty.emDash") })}
                     </TableCell>
                     <TableCell>
                       <StatusChip

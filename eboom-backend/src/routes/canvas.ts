@@ -23,6 +23,7 @@ import {
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { getCanvasSummary } from "../services/dashboardService";
 import { listCanvasTransfersHandler } from "./transfers";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -32,10 +33,6 @@ function parsePaginationParams(req: Request) {
   const search = (req.query.search as string) || "";
   const offset = (page - 1) * limit;
   return { page, limit, search, offset };
-}
-
-function parseRouteParam(value: string | string[] | undefined): number {
-  return parseInt(Array.isArray(value) ? value[0] : value ?? "", 10);
 }
 
 

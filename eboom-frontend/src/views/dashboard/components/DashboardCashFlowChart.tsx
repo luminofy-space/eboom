@@ -28,7 +28,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
-import { formatMoney } from "@/src/i18n/formatters";
+import { formatDate, formatMoney } from "@/src/i18n/formatters";
 import type { CanvasSummary } from "../types";
 import {
   assignCurrencyChartColors,
@@ -52,6 +52,7 @@ export function DashboardCashFlowChart({
 }: DashboardCashFlowChartProps) {
   const { t } = useTranslation("dashboard");
   const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
 
@@ -209,10 +210,7 @@ export function DashboardCashFlowChart({
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value) =>
-                new Date(value).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })
+                formatDate(value, { preset: "monthDay", fallback: emDash })
               }
             />
             <ChartTooltip
@@ -240,11 +238,7 @@ export function DashboardCashFlowChart({
                 return (
                   <div className="rounded-lg border bg-background px-3 py-2 text-xs shadow-md">
                     <div className="mb-2 font-medium">
-                      {new Date(String(label)).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatDate(String(label), { preset: "short", fallback: emDash })}
                     </div>
                     <div className="grid gap-2">
                       {Array.from(byCurrency.entries()).map(([currency, values]) => (

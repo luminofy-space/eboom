@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -37,11 +37,6 @@ import { NewTransferModal } from "./NewTransferModal";
 interface WalletTransfersTableProps {
   walletId: number;
   walletName?: string;
-}
-
-function formatDate(date: string | null | undefined, emDash: string): string {
-  if (!date) return emDash;
-  return dayjs(date).format("MMM D, YYYY");
 }
 
 function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
@@ -220,7 +215,7 @@ export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTa
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(transfer.transferDate, emDash)}
+                        {formatDate(transfer.transferDate, { fallback: emDash })}
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">
                         {transfer.exchangeRate ?? emDash}
