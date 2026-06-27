@@ -111,10 +111,9 @@ export function formatAmount(
   });
 }
 
-export function formatRelativeEdit(
+export function formatRelativeTime(
   date: string | Date | null | undefined
 ): string {
   if (!date) return "";
-  const relativeTime = dayjs(date).fromNow();
-  return i18n.t("common:gridCard.editedRelative", { relativeTime });
+  return dayjs(date).fromNow();
 }

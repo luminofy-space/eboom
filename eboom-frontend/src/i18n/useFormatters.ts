@@ -7,7 +7,7 @@ import {
   formatDate,
   formatMoney,
   formatNumber,
-  formatRelativeEdit,
+  formatRelativeTime,
   getIntlLocale,
   type FormatCurrencyOptions,
   type FormatDateOptions,
@@ -46,6 +46,6 @@ export function useFormatters() {
       symbol?: string,
       emDash?: string
     ) => formatAmount(amount, symbol, emDash),
-    formatRelativeEdit,
+    formatRelativeTime,
   };
 }
