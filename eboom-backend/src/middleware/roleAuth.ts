@@ -4,11 +4,11 @@ export type UserRole = 'admin' | 'user';
 
 export const requireRole = (...roles: UserRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
+    if (!req.appUser) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const userRole = req.user.user_metadata?.role || req.user.app_metadata?.role || 'user';
+    const userRole = 'user';
 
     if (!roles.includes(userRole as UserRole)) {
       return res.status(403).json({ 

@@ -1,0 +1,60 @@
+{
+  "list": {
+    "empty": {
+      "title": "Add Asset",
+      "description": "Track vehicles, property, land, and other non-liquid holdings."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "Add New Asset",
+      "description": "Record a non-liquid asset with its estimated value and category."
+    },
+    "edit": {
+      "title": "Edit Asset",
+      "description": "Update the details of your asset."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "e.g. Family Car"
+      },
+      "category": {
+        "label": "Category"
+      },
+      "currency": {
+        "label": "Currency"
+      },
+      "estimatedValue": {
+        "label": "Estimated Value",
+        "placeholder": "0.00"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Optional notes about this asset"
+      },
+      "photo": {
+        "label": "Photo"
+      }
+    },
+    "submit": {
+      "create": "Create Asset",
+      "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save asset. Please try again."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "categoryRequired": "Category is required",
+    "currencyRequired": "Currency is required",
+    "estimatedValueRequired": "Estimated value is required",
+    "estimatedValueNonNegative": "Estimated value must be zero or greater",
+    "imageTooLarge": "Image must be 5 MB or smaller",
+    "imageInvalidType": "Please select a valid image file",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again."
+  }
+}

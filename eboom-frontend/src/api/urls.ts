@@ -5,6 +5,9 @@ const API_ROUTES = {
   AUTH_REFRESH: "/api/auth/refresh/",
   AUTH_LOGIN: "/api/auth/login/",
   AUTH_SIGNUP: "/api/auth/signup/",
+  AUTH_VERIFY_EMAIL: "/api/auth/verify-email",
+  AUTH_FORGOT_PASSWORD: "/api/auth/forgot-password/",
+  AUTH_RESET_PASSWORD: "/api/auth/reset-password/",
   USERS_GET_ME: "/api/auth/user-info/",
   USERS_UPDATE_PROFILE_IMAGE: "/api/auth/change-photo/",
 
@@ -22,6 +25,28 @@ const API_ROUTES = {
   CANVASES_UPDATE: (id: number) => `/api/canvases/${id}/`,
   CANVASES_DELETE: (id: number) => `/api/canvases/${id}/`,
 
+  // Canvas members
+  CANVAS_MEMBERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/members/`,
+  CANVAS_MEMBERS_LOOKUP: (canvasId: number) => `/api/canvases/${canvasId}/members/lookup/`,
+  CANVAS_MEMBERS_INVITE: (canvasId: number) => `/api/canvases/${canvasId}/members/invitations/`,
+  CANVAS_MEMBERS_PENDING_INVITATIONS: (canvasId: number) =>
+    `/api/canvases/${canvasId}/members/invitations/`,
+  CANVAS_MEMBERS_SUGGESTIONS: (canvasId: number) =>
+    `/api/canvases/${canvasId}/members/suggestions/`,
+  CANVAS_MEMBERS_UPDATE: (canvasId: number, memberId: number) =>
+    `/api/canvases/${canvasId}/members/${memberId}/`,
+  CANVAS_MEMBERS_REMOVE: (canvasId: number, memberId: number) =>
+    `/api/canvases/${canvasId}/members/${memberId}/`,
+  CANVAS_MEMBERS_LEAVE: (canvasId: number) => `/api/canvases/${canvasId}/members/leave/`,
+
+  // Canvas invitations
+  CANVAS_INVITATIONS_SENT: '/api/canvas-invitations/sent/',
+  CANVAS_INVITATIONS_RECEIVED: '/api/canvas-invitations/received/',
+  CANVAS_INVITATIONS_ACCEPT: (id: number) => `/api/canvas-invitations/${id}/accept/`,
+  CANVAS_INVITATIONS_DECLINE: (id: number) => `/api/canvas-invitations/${id}/decline/`,
+  CANVAS_INVITATIONS_CANCEL: (id: number) => `/api/canvas-invitations/${id}/`,
+  CANVAS_ROLES: '/api/roles/canvas/',
+
   // Canvas-scoped Expenses
   CANVASES_EXPENSES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
   CANVASES_EXPENSES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
@@ -34,6 +59,23 @@ const API_ROUTES = {
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
 
+  // Canvas-scoped Assets
+  CANVASES_ASSETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
+  CANVASES_ASSETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
+
+  CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
+
+  CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
+
+  NOTIFICATIONS_OVERDUE: '/api/notifications/overdue',
+
+  // Canvas whiteboard
+  CANVAS_WHITEBOARD: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/`,
+  CANVAS_WHITEBOARD_VIEWPORT: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/viewport`,
+  CANVAS_WHITEBOARD_NODES: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/nodes`,
+  CANVAS_WHITEBOARD_NODE: (canvasId: number, entityType: string, entityId: number) =>
+    `/api/canvases/${canvasId}/whiteboard/nodes/${entityType}/${entityId}`,
+
   // ============================================================================
   // INCOMES
   // ============================================================================
@@ -44,6 +86,7 @@ const API_ROUTES = {
   // Income Entries
   INCOME_ENTRIES_LIST: (incomeId: number) => `/api/income/${incomeId}/entries/`,
   INCOME_ENTRIES_CREATE: (incomeId: number) => `/api/income/${incomeId}/entries/`,
+  INCOME_ENTRIES_UPDATE: (id: number) => `/api/income/entries/${id}/`,
   INCOME_ENTRIES_DELETE: (id: number) => `/api/income/entries/${id}/`,
 
   // Income Categories
@@ -58,6 +101,18 @@ const API_ROUTES = {
   WALLETS_GET: (id: number) => `/api/wallets/${id}/`,
   WALLETS_UPDATE: (id: number) => `/api/wallets/${id}/`,
   WALLETS_DELETE: (id: number) => `/api/wallets/${id}/`,
+  SUB_WALLETS_LIST: (walletId: number) => `/api/wallets/${walletId}/sub-wallets/`,
+  WALLET_ENTRIES: (id: number) => `/api/wallets/${id}/income-entries/`,
+  WALLET_PAYMENTS: (id: number) => `/api/wallets/${id}/expense-payments/`,
+  WALLET_TRANSFERS: (id: number) => `/api/wallets/${id}/transfers/`,
+  WALLET_TRANSACTIONS: (id: number) => `/api/wallets/${id}/transactions/`,
+
+  // Transfers
+  TRANSFERS_CREATE: "/api/transfers/",
+  TRANSFERS_GET: (id: number) => `/api/transfers/${id}/`,
+  TRANSFERS_UPDATE: (id: number) => `/api/transfers/${id}/`,
+  TRANSFERS_DELETE: (id: number) => `/api/transfers/${id}/`,
+  CANVAS_TRANSFERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/transfers`,
 
   // ============================================================================
   // EXPENSES
@@ -66,10 +121,24 @@ const API_ROUTES = {
   EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
   EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
 
+  // Expense Payments
+  EXPENSE_PAYMENTS_LIST: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_CREATE: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_UPDATE: (id: number) => `/api/expenses/payments/${id}/`,
+  EXPENSE_PAYMENTS_DELETE: (id: number) => `/api/expenses/payments/${id}/`,
+
   WALLET_CATEGORIES: '/api/wallet/categories',
 
   // Expense Categories
   EXPENSE_CATEGORIES: '/api/expense/categories',
+
+  // ============================================================================
+  // ASSETS
+  // ============================================================================
+  ASSETS_GET: (id: number) => `/api/assets/${id}/`,
+  ASSETS_UPDATE: (id: number) => `/api/assets/${id}/`,
+  ASSETS_DELETE: (id: number) => `/api/assets/${id}/`,
+  ASSET_CATEGORIES: '/api/asset/categories',
 } as const;
 
 export default API_ROUTES;

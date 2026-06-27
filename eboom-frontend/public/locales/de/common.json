@@ -1,0 +1,157 @@
+{
+  "actions": {
+    "add": "Hinzufügen",
+    "cancel": "Abbrechen",
+    "create": "Erstellen",
+    "creating": "Wird erstellt...",
+    "saving": "Wird gespeichert...",
+    "delete": "Löschen",
+    "deleting": "Wird gelöscht...",
+    "edit": "Bearbeiten",
+    "openMenu": "Menü öffnen",
+    "actions": "Aktionen",
+    "saveChanges": "Änderungen speichern"
+  },
+  "confirmDelete": {
+    "title": "Sind Sie sicher?",
+    "description": "Diese Aktion kann nicht rückgängig gemacht werden. Der Eintrag wird dauerhaft gelöscht."
+  },
+  "labels": {
+    "amount": "Betrag",
+    "description": "Beschreibung",
+    "name": "Name",
+    "notes": "Notizen",
+    "photo": "Foto",
+    "recurring": "Wiederkehrend",
+    "status": "Status",
+    "wallet": "Wallet"
+  },
+  "placeholders": {
+    "amount": "0,00",
+    "optionalNotesPayment": "Optionale Notizen zu dieser Zahlung",
+    "selectCategory": "Kategorie auswählen",
+    "selectCurrency": "Währung auswählen",
+    "selectWallet": "Wallet auswählen"
+  },
+  "empty": {
+    "emDash": "—",
+    "noCategoriesFound": "Keine Kategorien gefunden.",
+    "noItemsFound": "Keine Einträge gefunden.",
+    "noWalletsFound": "Keine Wallets gefunden.",
+    "noResults": "Keine Ergebnisse für \"{{query}}\" gefunden"
+  },
+  "loading": {
+    "wallets": "Wallets werden geladen..."
+  },
+  "wallet": {
+    "thisWallet": "Dieses Wallet"
+  },
+  "plurals": {
+    "entry": "Eintrag",
+    "entries": "Einträge",
+    "payment": "Zahlung",
+    "payments": "Zahlungen"
+  },
+  "totals": {
+    "totalPaid": "Gesamt bezahlt",
+    "totalReceived": "Gesamt erhalten"
+  },
+  "trends": {
+    "noPriorData": "Keine Vorperiodendaten",
+    "noMonthOverMonth": "Noch kein Monatsvergleich verfügbar",
+    "upFromLastMonth": "Anstieg gegenüber dem Vormonat",
+    "downFromLastMonth": "Rückgang gegenüber dem Vormonat"
+  },
+  "chart": {
+    "selectTimeRange": "Zeitraum auswählen",
+    "last3Months": "Letzte 3 Monate",
+    "last30Days": "Letzte 30 Tage",
+    "last7Days": "Letzte 7 Tage",
+    "timeRange": {
+      "last7Days": "letzten 7 Tage",
+      "last30Days": "letzten 30 Tage",
+      "last3Months": "letzten 3 Monate"
+    }
+  },
+  "gridCard": {
+    "editedRelative": "Bearbeitet {{relativeTime}}"
+  },
+  "comingSoon": {
+    "imageAlt": "Demnächst verfügbar"
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "amountRequired": "Betrag ist erforderlich",
+    "amountPositive": "Betrag muss größer als null sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "currencyRequired": "Währung ist erforderlich",
+    "expenseRequired": "Ausgabe ist erforderlich",
+    "incomeRequired": "Einnahme ist erforderlich",
+    "walletRequired": "Wallet ist erforderlich",
+    "paidBeforeDue": "Zahlungsdatum darf nicht vor dem Fälligkeitsdatum liegen",
+    "receivedBeforeExpected": "Eingangsdatum darf nicht vor dem erwarteten Datum liegen",
+    "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
+    "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
+    "recurrenceWeeklyDays": "Wählen Sie mindestens einen Tag für die wöchentliche Wiederholung",
+    "recurrenceInterval": "Intervall muss mindestens 1 sein",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "recurrence": {
+    "every": "Alle",
+    "repeatOn": "Wiederholen am",
+    "onDay": "Am Tag",
+    "ofEveryMonth": "jedes Monats",
+    "ofEveryNMonths": "alle {{interval}} Monate",
+    "frequency": {
+      "day": "Tag",
+      "days": "Tage",
+      "week": "Woche",
+      "weeks": "Wochen",
+      "month": "Monat",
+      "months": "Monate",
+      "year": "Jahr",
+      "years": "Jahre"
+    },
+    "units": {
+      "days": "Tage",
+      "weeks": "Wochen",
+      "months": "Monate",
+      "years": "Jahre"
+    },
+    "daysOfWeek": {
+      "sun": "S",
+      "mon": "M",
+      "tue": "D",
+      "wed": "M",
+      "thu": "D",
+      "fri": "F",
+      "sat": "S"
+    },
+    "dayNames": {
+      "sun": "So",
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "summary": {
+      "everyDay": "Wiederholt sich täglich",
+      "everyNDays": "Wiederholt sich alle {{interval}} Tage",
+      "everyWeek": "Wiederholt sich wöchentlich",
+      "everyNWeeks": "Wiederholt sich alle {{interval}} Wochen",
+      "everyWeekOnDays": "Wiederholt sich wöchentlich am {{days}}",
+      "everyNWeeksOnDays": "Wiederholt sich alle {{interval}} Wochen am {{days}}",
+      "everyMonth": "Wiederholt sich monatlich",
+      "everyNMonths": "Wiederholt sich alle {{interval}} Monate",
+      "everyMonthOnDay": "Wiederholt sich monatlich am Tag {{day}}",
+      "everyNMonthsOnDay": "Wiederholt sich alle {{interval}} Monate am Tag {{day}}",
+      "everyYear": "Wiederholt sich jährlich",
+      "everyNYears": "Wiederholt sich alle {{interval}} Jahre"
+    }
+  }
+}

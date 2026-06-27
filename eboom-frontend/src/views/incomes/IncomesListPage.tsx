@@ -2,6 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
@@ -20,12 +21,19 @@ import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
-import { Loader2 } from "lucide-react";
+import { Container } from "@/components/ui/container";
+import { Grid } from "@/components/ui/grid";
+import { Stack } from "@/components/ui/stack";
+import { Spinner } from "@/components/ui/spinner";
+import { Typography } from "@/components/ui/typography";
+import { useTranslation } from "react-i18next";
 
 const hasWindow = typeof window !== "undefined";
 
 export default function IncomesListPage() {
+  const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
+  const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
@@ -35,6 +43,7 @@ export default function IncomesListPage() {
   const {
     items,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     sentinelRef,
   } = useInfiniteList<IncomeItem>(
@@ -60,20 +69,24 @@ export default function IncomesListPage() {
     },
   });
 
-  if (isLoading) {
+  const showLoading = isLoading || (isFetching && items.length === 0);
+
+  if (showLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <GridCardSkeleton key={i} />
-        ))}
-      </div>
+      <Container>
+        <Grid variant="cards" gap={4}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <GridCardSkeleton key={i} />
+          ))}
+        </Grid>
+      </Container>
     );
   }
 
   if (items.length === 0 && !searchQuery) {
     return (
       <>
-        <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />
+        {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
         <NewIncomeModal />
       </>
     );
@@ -81,37 +94,39 @@ export default function IncomesListPage() {
 
   if (items.length === 0 && searchQuery) {
     return (
-      <div className="flex-1 flex items-center justify-center px-4">
-        <p className="text-muted-foreground">No results found for &ldquo;{searchQuery}&rdquo;</p>
-      </div>
+      <Stack className="flex-1" align="center" justify="center">
+        <Typography variant="muted">{tc("empty.noResults", { query: searchQuery })}</Typography>
+      </Stack>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map((income) => (
-          <GridCard
-            key={income.id}
-            href={`/income/${income.id}`}
-            imageUrl={income.photoUrl}
-            title={income.name}
-            updatedAt={income.lastModifiedAt}
-            onEdit={() => dispatch(openIncomeEditModal(income))}
-            onDelete={() => setDeleteId(income.id)}
-          />
-        ))}
-      </div>
+      <Container>
+        <Grid variant="cards" gap={4}>
+          {items.map((income) => (
+            <GridCard
+              key={income.id}
+              href={`/income/${income.id}`}
+              imageUrl={income.photoUrl}
+              title={income.name}
+              updatedAt={income.lastModifiedAt}
+              onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
+              onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
+            />
+          ))}
+        </Grid>
+      </Container>
 
       <div ref={sentinelRef} className="h-1" />
 
       {isFetchingNextPage && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <Stack direction="row" justify="center" className="py-4">
+          <Spinner className="size-6 text-muted-foreground" />
+        </Stack>
       )}
 
-      <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />
+      {canEdit && <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />}
       <NewIncomeModal />
 
       <ConfirmDeleteDialog

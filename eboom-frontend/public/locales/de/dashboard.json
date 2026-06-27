@@ -1,0 +1,99 @@
+{
+  "title": "Dashboard",
+  "loadError": "Dashboard-Daten konnten nicht geladen werden.",
+  "retry": "Erneut versuchen",
+  "empty": {
+    "noCanvasTitle": "Kein Canvas ausgewählt",
+    "noCanvasDescription": "Wählen Sie einen Canvas in der Seitenleiste aus oder erstellen Sie einen, um Ihre Finanzübersicht zu sehen."
+  },
+  "assets": {
+    "title": "Gesamtvermögen",
+    "totalAssets": "Gesamtvermögen",
+    "netThisMonth": "netto diesen Monat",
+    "loadAll": "Alle laden",
+    "showLess": "Weniger anzeigen",
+    "pageIndicator": "{{current}} / {{total}}",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "empty": "Noch keine Vermögenswerte. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
+    "tooltip": {
+      "wallets": "Wallets",
+      "incomes": "Einnahmen",
+      "expenses": "Ausgaben",
+      "received": "Einnahmen erhalten",
+      "pending": "Einnahmen ausstehend",
+      "paid": "Ausgaben bezahlt",
+      "unpaid": "Ausgaben unbezahlt",
+      "netCashFlow": "Netto-Cashflow (diesen Monat)",
+      "holdings": "Vermögenswerte",
+      "holdingsValue": "Geschätzter Wert"
+    }
+  },
+  "holdings": {
+    "title": "Immobilien & Vermögenswerte",
+    "empty": "Noch keine Vermögenswerte. Fügen Sie Fahrzeuge, Immobilien oder Grundstücke hinzu.",
+    "viewAll": "Alle anzeigen",
+    "assetCount_one": "{{count}} Vermögenswert",
+    "assetCount_other": "{{count}} Vermögenswerte",
+    "totalValue": "Geschätzter Gesamtwert"
+  },
+  "chart": {
+    "title": "Cashflow",
+    "description": {
+      "multiCurrency": "Erhalten und bezahlt über alle Währungen für {{timeRange}}",
+      "noData": "Keine Transaktionen in {{timeRange}}"
+    },
+    "legend": {
+      "received": "Erhalten",
+      "paid": "Bezahlt"
+    }
+  },
+  "heatmap": {
+    "title": "Jahresverlauf Gewinn vs. Ausgaben",
+    "description": "Tägliches Nettoergebnis für {{year}}",
+    "noData": "Keine gebuchten Transaktionen in {{year}}",
+    "empty": "Noch keine Währungen mit gebuchten Transaktionen.",
+    "controls": {
+      "selectYear": "Jahr auswählen",
+      "selectCurrency": "Währung auswählen",
+      "currency": "Währung"
+    },
+    "weekdays": {
+      "mon": "Mo",
+      "wed": "Mi",
+      "fri": "Fr"
+    },
+    "tooltip": {
+      "income": "Einnahmen",
+      "expense": "Ausgaben",
+      "net": "Netto"
+    },
+    "legend": {
+      "less": "Weniger",
+      "more": "Mehr"
+    }
+  },
+  "quickActions": {
+    "whiteboard": "Whiteboard öffnen",
+    "members": "Mitglieder verwalten"
+  },
+  "recentActivity": {
+    "title": "Letzte Aktivitäten",
+    "empty": "Noch keine kürzlichen Transaktionen.",
+    "columns": {
+      "type": "Typ",
+      "name": "Name",
+      "date": "Datum"
+    },
+    "types": {
+      "income": "Einnahme",
+      "expense": "Ausgabe"
+    },
+    "status": {
+      "received": "Erhalten",
+      "pending": "Ausstehend",
+      "paid": "Bezahlt",
+      "due": "Fällig"
+    }
+  }
+}

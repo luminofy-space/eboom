@@ -19,40 +19,66 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
+import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
-import { useEffect } from "react";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface WalletFormData {
     name: string;
     walletCategoryId: number | null;
     description: string;
+    photo: File | null;
 }
 
 const defaultValues: WalletFormData = {
     name: "",
     walletCategoryId: null,
     description: "",
+    photo: null,
 };
 
-export function NewWalletModal() {
+interface NewWalletModalProps {
+    onCreateSuccess?: (entity: { id: number }) => void;
+}
+
+export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const dispatch = useAppDispatch();
+    const { t } = useTranslation("wallets");
+    const { t: tc } = useTranslation("common");
+    const { t: tv } = useTranslation("validation");
     const { open, mode, editingItem } = useAppSelector(selectWalletModal);
     const isEdit = mode === "edit";
     const { canvas } = useCanvas();
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { register, handleSubmit, control, reset, watch } = useForm<WalletFormData>({
+    const {
+        register,
+        handleSubmit,
+        control,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<WalletFormData>({
         defaultValues,
+        mode: "onSubmit",
+        reValidateMode: "onChange",
     });
-
-    const name = watch("name");
-    const walletCategoryId = watch("walletCategoryId");
 
     const { data: categoriesRes, isLoading: isLoadingCategories } =
         useQueryApi<{
@@ -64,13 +90,9 @@ export function NewWalletModal() {
         });
 
     const categories = categoriesRes?.categories ?? [];
-    const categoryNames = categories.map((c) => c.name);
-    const categoryNameToId = (catName: string) =>
-        categories.find((c) => c.name === catName)?.id ?? null;
-    const categoryIdToName = (id: number | null) =>
-        id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
+    const categoryIds = categories.map((c) => String(c.id));
 
-    const { mutateAsync: createWallet } = useMutationApi(
+    const { mutateAsync: createWallet, isPending: isCreating } = useMutationApi(
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
         {
             method: "post",
@@ -78,7 +100,7 @@ export function NewWalletModal() {
         }
     );
 
-    const { mutateAsync: updateWallet } = useMutationApi(
+    const { mutateAsync: updateWallet, isPending: isUpdating } = useMutationApi(
         editingItem ? API_ROUTES.WALLETS_UPDATE(editingItem.id) : "",
         {
             method: "put",
@@ -86,12 +108,15 @@ export function NewWalletModal() {
         }
     );
 
+    const isSaving = isCreating || isUpdating || isSubmitting;
+
     useEffect(() => {
         if (open && isEdit && editingItem) {
             reset({
                 name: editingItem.name ?? "",
                 walletCategoryId: editingItem.walletCategoryId ?? null,
                 description: typeof editingItem.description === "string" ? editingItem.description : "",
+                photo: null,
             });
         } else if (open && !isEdit) {
             reset(defaultValues);
@@ -102,108 +127,182 @@ export function NewWalletModal() {
         if (!openState) {
             dispatch(closeWalletModal());
             reset(defaultValues);
+            setSubmitError(null);
         }
     };
 
     const onSubmit = async (formData: WalletFormData) => {
+        setSubmitError(null);
+
+        if (!canvas) {
+            setSubmitError(tv("noCanvas"));
+            return;
+        }
+
         try {
             const data = {
-                name: formData.name,
+                name: formData.name.trim(),
                 walletCategoryId: formData.walletCategoryId,
-                description: formData.description,
+                description: formData.description.trim(),
+                ...(formData.photo
+                    ? { photoUrl: await fileToDataUrl(formData.photo) }
+                    : {}),
             };
 
             if (isEdit) {
                 await updateWallet(data);
             } else {
-                await createWallet(data);
+                const response = await createWallet(data);
+                const walletId = (response as { wallet?: { id: number } })?.wallet?.id;
+                if (typeof walletId === "number") {
+                    onCreateSuccess?.({ id: walletId });
+                }
             }
 
             reset(defaultValues);
+            setSubmitError(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             dispatch(closeWalletModal());
         } catch (error) {
-            console.error("Error saving wallet:", error);
+            setSubmitError(translateSubmitError(error, tv("walletSaveFailed"), tv));
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent className="w-full">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <FieldGroup className="gap-4">
                     <DialogHeader>
-                        <DialogTitle>{isEdit ? "Edit Wallet" : "Add New Wallet"}</DialogTitle>
+                        <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
                         <DialogDescription>
-                            {isEdit
-                                ? "Update the details of your wallet."
-                                : "Enter the details below to create a new wallet. Organize your accounts and keep track of your financial sources."}
+                            {isEdit ? t("modal.edit.description") : t("modal.create.description")}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex flex-row gap-5">
-                        <div className="w-1/2 flex flex-col gap-1">
-                            <Label htmlFor="wallet-name">Wallet Name</Label>
+                    <FormSubmitError message={submitError} />
+
+                    <Stack direction="row" gap={5}>
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="wallet-name">{t("modal.fields.name.label")}</FieldLabel>
                             <Input
                                 id="wallet-name"
-                                placeholder="e.g. Main Bank Account"
-                                {...register("name", { required: true })}
+                                placeholder={t("modal.fields.name.placeholder")}
+                                aria-invalid={!!errors.name}
+                                {...register("name", {
+                                    required: tv("nameRequired"),
+                                    maxLength: {
+                                        value: 255,
+                                        message: tv("nameMaxLength"),
+                                    },
+                                    validate: (value) =>
+                                        value.trim().length > 0 || tv("nameRequired"),
+                                })}
                             />
-                        </div>
+                            <FieldError errors={[errors.name]} />
+                        </Field>
 
-                        <div className="w-1/2 flex flex-col gap-1">
-                            <Label htmlFor="wallet-category">Wallet Category</Label>
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="wallet-category">{t("modal.fields.category.label")}</FieldLabel>
                             <Controller
                                 name="walletCategoryId"
                                 control={control}
-                                rules={{ required: true }}
+                                rules={{
+                                    validate: (value) =>
+                                        value !== null || tv("categoryRequired"),
+                                }}
                                 render={({ field }) => (
                                     <Combobox
                                         id="wallet-category"
-                                        items={categoryNames}
-                                        value={categoryIdToName(field.value)}
+                                        items={categoryIds}
+                                        value={field.value !== null ? String(field.value) : ""}
                                         disabled={isLoadingCategories}
                                         onValueChange={(val) =>
-                                            field.onChange(val ? categoryNameToId(val) : null)
+                                            field.onChange(val ? Number(val) : null)
                                         }
                                     >
-                                        <ComboboxInput placeholder="Select a category" />
+                                        <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                                         <ComboboxContent className="z-[80]">
-                                            <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                                            <ComboboxEmpty>{tc("empty.noCategoriesFound")}</ComboboxEmpty>
                                             <ComboboxCollection>
-                                                {(catName) => (
-                                                    <ComboboxItem key={catName} value={catName}>
-                                                        {catName}
-                                                    </ComboboxItem>
-                                                )}
+                                                {(categoryId) => {
+                                                    const category = categories.find(
+                                                        (c) => String(c.id) === categoryId
+                                                    );
+                                                    if (!category) return null;
+                                                    return (
+                                                        <ComboboxItem key={categoryId} value={categoryId}>
+                                                            {category.name}
+                                                        </ComboboxItem>
+                                                    );
+                                                }}
                                             </ComboboxCollection>
                                         </ComboboxContent>
                                     </Combobox>
                                 )}
                             />
-                        </div>
-                    </div>
+                            <FieldError errors={[errors.walletCategoryId]} />
+                        </Field>
+                    </Stack>
 
-                    <div className="flex flex-row gap-5">
-                        <div className="w-full flex flex-col gap-1">
-                            <Label htmlFor="wallet-description">Description</Label>
-                            <Input
-                                id="wallet-description"
-                                placeholder="Optional notes about this wallet"
-                                {...register("description")}
-                            />
-                        </div>
-                    </div>
+                    <Field>
+                        <FieldLabel htmlFor="wallet-description">{t("modal.fields.description.label")}</FieldLabel>
+                        <Input
+                            id="wallet-description"
+                            placeholder={t("modal.fields.description.placeholder")}
+                            {...register("description")}
+                        />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="wallet-photo">{t("modal.fields.photo.label")}</FieldLabel>
+                        <Controller
+                            name="photo"
+                            control={control}
+                            rules={{
+                                validate: (file) =>
+                                    validateOptionalImage(file, {
+                                        invalidType: tv("imageInvalidType"),
+                                        tooLarge: tv("imageTooLarge"),
+                                    }),
+                            }}
+                            render={({ field }) => (
+                                <Input
+                                    ref={fileInputRef}
+                                    id="wallet-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    aria-invalid={!!errors.photo}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] ?? null;
+                                        field.onChange(file);
+                                    }}
+                                />
+                            )}
+                        />
+                        <FieldError errors={[errors.photo]} />
+                    </Field>
 
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
+                            <Button type="button" variant="outline" disabled={isSaving}>
+                                {tc("actions.cancel")}
+                            </Button>
                         </DialogClose>
-                        <Button
-                            disabled={!name || !walletCategoryId}
-                            type="submit"
-                        >
-                            {isEdit ? "Save changes" : "Create Wallet"}
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className="size-4 animate-spin" />}
+                            {isSaving
+                                ? isEdit
+                                  ? tc("actions.saving")
+                                  : tc("actions.creating")
+                                : isEdit
+                                  ? t("modal.submit.edit")
+                                  : t("modal.submit.create")}
                         </Button>
                     </DialogFooter>
+                    </FieldGroup>
             </form>
                 </DialogContent>
         </Dialog>

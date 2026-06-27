@@ -13,21 +13,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
+import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
-import { useEffect, useRef } from "react";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { useEffect, useRef, useState } from "react";
 import {
   RecurrencePatternPicker,
   DEFAULT_RECURRENCE_PATTERN,
   type RecurrencePattern,
 } from "@/src/components/RecurrencePatternPicker";
+import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface IncomeFormData {
   name: string;
@@ -53,20 +62,34 @@ const defaultValues: IncomeFormData = {
   photo: null,
 };
 
-export function NewIncomeModal() {
+interface NewIncomeModalProps {
+  onCreateSuccess?: (entity: { id: number }) => void;
+}
+
+export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("incomes");
+  const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const { open, mode, editingItem } = useAppSelector(selectIncomeModal);
   const isEdit = mode === "edit";
+  const { canvas } = useCanvas();
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit, control, reset, watch } = useForm<IncomeFormData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<IncomeFormData>({
     defaultValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const isRecurring = watch("isRecurring");
-  const name = watch("name");
-  const currencyId = watch("currencyId");
-  const incomeCategoryId = watch("incomeCategoryId");
-  const defaultWalletId = watch("defaultWalletId");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
@@ -91,14 +114,12 @@ export function NewIncomeModal() {
     }
   );
 
-  const { canvas } = useCanvas();
-
   const { data: walletsRes, isLoading: isLoadingWallets } = useQueryApi<{
-    wallets?: { id: number; name: string }[];
+    wallets?: { id: number; name: string; category?: { name: string } | null }[];
   }>(
-    canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
+    canvas ? `${API_ROUTES.CANVASES_WALLETS_LIST(canvas)}?limit=100` : "",
     {
-      queryKey: ["wallets", canvas],
+      queryKey: ["wallets", canvas, "all"],
       hasToken: true,
       enabled: open && !!canvas,
     }
@@ -124,13 +145,23 @@ export function NewIncomeModal() {
     id !== null ? incomeCategories.find((c) => c.id === id)?.name ?? "" : "";
 
   const wallets = walletsRes?.wallets ?? [];
-  const walletNames = wallets.map((w) => w.name);
-  const walletNameToId = (walletName: string) =>
-    wallets.find((w) => w.name === walletName)?.id ?? null;
-  const walletIdToName = (id: number | null) =>
-    id !== null ? wallets.find((w) => w.id === id)?.name ?? "" : "";
+  const walletLabels = wallets.map((w) => {
+    const categorySuffix = w.category?.name ? ` (${w.category.name})` : "";
+    return `${w.name}${categorySuffix} – #${w.id}`;
+  });
+  const walletLabelToId = (label: string) => {
+    const idMatch = label.match(/#(\d+)$/);
+    return idMatch ? Number(idMatch[1]) : null;
+  };
+  const walletIdToLabel = (id: number | null) => {
+    if (id === null) return "";
+    const wallet = wallets.find((w) => w.id === id);
+    if (!wallet) return "";
+    const categorySuffix = wallet.category?.name ? ` (${wallet.category.name})` : "";
+    return `${wallet.name}${categorySuffix} – #${wallet.id}`;
+  };
 
-  const { mutateAsync: createIncome } = useMutationApi(
+  const { mutateAsync: createIncome, isPending: isCreating } = useMutationApi(
     API_ROUTES.CANVASES_INCOMES_CREATE(canvas ?? -1),
     {
       method: "post",
@@ -138,13 +169,15 @@ export function NewIncomeModal() {
     }
   );
 
-  const { mutateAsync: updateIncome } = useMutationApi(
+  const { mutateAsync: updateIncome, isPending: isUpdating } = useMutationApi(
     editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
     }
   );
+
+  const isSaving = isCreating || isUpdating || isSubmitting;
 
   useEffect(() => {
     if (open && isEdit && editingItem) {
@@ -163,12 +196,16 @@ export function NewIncomeModal() {
     } else if (open && !isEdit) {
       reset(defaultValues);
     }
+    if (open) {
+      setSubmitError(null);
+    }
   }, [open, isEdit, editingItem, reset]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {
       dispatch(closeIncomeModal());
       reset(defaultValues);
+      setSubmitError(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -176,61 +213,89 @@ export function NewIncomeModal() {
   };
 
   const onSubmit = async (formData: IncomeFormData) => {
+    setSubmitError(null);
+
+    if (!canvas) {
+      setSubmitError(tv("noCanvas"));
+      return;
+    }
+
     try {
       const data = {
-        name: formData.name,
+        name: formData.name.trim(),
         currencyId: formData.currencyId,
         amount: Number(formData.amount),
         isRecurring: formData.isRecurring,
         incomeCategoryId: formData.incomeCategoryId ?? undefined,
-        defaultWalletId: formData.defaultWalletId ?? undefined,
+        defaultWalletId: formData.defaultWalletId,
         recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
-        description: formData.description,
-        photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null,
+        description: formData.description.trim(),
+        ...(formData.photo
+          ? { photoUrl: await fileToDataUrl(formData.photo) }
+          : {}),
       };
 
       if (isEdit) {
         await updateIncome(data);
       } else {
-        await createIncome(data);
+        const response = await createIncome(data);
+        const incomeId = (response as { income?: { id: number } })?.income?.id;
+        if (typeof incomeId === "number") {
+          onCreateSuccess?.({ id: incomeId });
+        }
       }
 
       reset(defaultValues);
+      setSubmitError(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
       dispatch(closeIncomeModal());
     } catch (error) {
-      console.error("Error saving income:", error);
+      setSubmitError(translateSubmitError(error, tv("incomeSaveFailed"), tv));
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="w-full">
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Income" : "Add New Income"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Update the details of your income source."
-                : "Enter the details below to track your income from various sources. Keep your finances organized."}
+              {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="name">Name</Label>
+
+          <FormSubmitError message={submitError} />
+
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="name">{t("modal.fields.name.label")}</FieldLabel>
               <Input
                 id="name"
-                {...register("name", { required: true })}
+                aria-invalid={!!errors.name}
+                {...register("name", {
+                  required: tv("nameRequired"),
+                  maxLength: {
+                    value: 255,
+                    message: tv("nameMaxLength"),
+                  },
+                  validate: (value) =>
+                    value.trim().length > 0 || tv("nameRequired"),
+                })}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="currency">Currency</Label>
+              <FieldError errors={[errors.name]} />
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="currency">{t("modal.fields.currency.label")}</FieldLabel>
               <Controller
                 name="currencyId"
                 control={control}
-                rules={{ required: true }}
+                rules={{
+                  validate: (value) => value !== null || tv("currencyRequired"),
+                }}
                 render={({ field }) => (
                   <Combobox
                     items={currencyLabels}
@@ -241,9 +306,9 @@ export function NewIncomeModal() {
                       field.onChange(val ? currencyLabelToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a currency" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(label) => (
                           <ComboboxItem key={label} value={label}>
@@ -255,23 +320,39 @@ export function NewIncomeModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="amount">Amount</Label>
+              <FieldError errors={[errors.currencyId]} />
+            </Field>
+          </Stack>
+          <Stack direction="row" gap={5}>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="amount">{t("modal.fields.amount.label")}</FieldLabel>
               <Input
                 id="amount"
                 type="number"
-                {...register("amount", { required: true, valueAsNumber: true })}
+                step="any"
+                min="0"
+                aria-invalid={!!errors.amount}
+                {...register("amount", {
+                  required: tv("amountRequired"),
+                  valueAsNumber: true,
+                  min: {
+                    value: 0.01,
+                    message: tv("amountPositive"),
+                  },
+                  validate: (value) =>
+                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                })}
               />
-            </div>
-            <div className="w-1/2 flex flex-col gap-1">
-              <Label htmlFor="income-category">Income Category</Label>
+              <FieldError errors={[errors.amount]} />
+            </Field>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="income-category">{t("modal.fields.incomeCategory.label")}</FieldLabel>
               <Controller
                 name="incomeCategoryId"
                 control={control}
-                rules={{ required: true }}
+                rules={{
+                  validate: (value) => value !== null || tv("categoryRequired"),
+                }}
                 render={({ field }) => (
                   <Combobox
                     id="income-category"
@@ -282,9 +363,9 @@ export function NewIncomeModal() {
                       field.onChange(val ? categoryNameToId(val) : null)
                     }
                   >
-                    <ComboboxInput placeholder="Select a category" />
+                    <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                     <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
                       <ComboboxCollection>
                         {(catName) => (
                           <ComboboxItem key={catName} value={catName}>
@@ -296,93 +377,107 @@ export function NewIncomeModal() {
                   </Combobox>
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="default-wallet">Default Wallet</Label>
+              <FieldError errors={[errors.incomeCategoryId]} />
+            </Field>
+          </Stack>
+          <Field>
+            <FieldLabel htmlFor="default-wallet">{t("modal.fields.defaultWallet.label")}</FieldLabel>
+            <Controller
+              name="defaultWalletId"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  id="default-wallet"
+                  items={walletLabels}
+                  value={walletIdToLabel(field.value)}
+                  disabled={isLoadingWallets}
+                  onValueChange={(val) =>
+                    field.onChange(val ? walletLabelToId(val) : null)
+                  }
+                >
+                  <ComboboxInput placeholder={isLoadingWallets ? tc("loading.wallets") : t("modal.fields.defaultWallet.placeholder")} />
+                  <ComboboxContent className="z-[80]">
+                    <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
+                    <ComboboxCollection>
+                      {(walletLabel) => (
+                        <ComboboxItem key={walletLabel} value={walletLabel}>
+                          {walletLabel}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxCollection>
+                  </ComboboxContent>
+                </Combobox>
+              )}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="description">{t("modal.fields.description.label")}</FieldLabel>
+            <Input
+              id="description"
+              {...register("description")}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="photo">{t("modal.fields.photo.label")}</FieldLabel>
+            <Controller
+              name="photo"
+              control={control}
+              rules={{
+                validate: (file) =>
+                  validateOptionalImage(file, {
+                    invalidType: tv("imageInvalidType"),
+                    tooLarge: tv("imageTooLarge"),
+                  }),
+              }}
+              render={({ field }) => (
+                <Input
+                  ref={fileInputRef}
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  aria-invalid={!!errors.photo}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    field.onChange(file);
+                  }}
+                  className="cursor-pointer"
+                />
+              )}
+            />
+            <FieldError errors={[errors.photo]} />
+          </Field>
+          <Stack gap={3}>
+            <Field orientation="horizontal" className="items-center">
               <Controller
-                name="defaultWalletId"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <Combobox
-                    id="default-wallet"
-                    items={walletNames}
-                    value={walletIdToName(field.value)}
-                    disabled={isLoadingWallets}
-                    onValueChange={(val) =>
-                      field.onChange(val ? walletNameToId(val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder="Select a wallet" />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>No wallets found.</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(walletName) => (
-                          <ComboboxItem key={walletName} value={walletName}>
-                            {walletName}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                {...register("description")}
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-5">
-            <div className="w-full flex flex-col gap-1">
-              <Label htmlFor="photo">Photo</Label>
-              <Controller
-                name="photo"
+                name="isRecurring"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    ref={fileInputRef}
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      field.onChange(file);
-                    }}
-                    className="cursor-pointer"
+                  <Checkbox
+                    id="isRecurrent"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(!!checked)}
                   />
                 )}
               />
-            </div>
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Field orientation="horizontal" className="items-center">
-                <Controller
-                  name="isRecurring"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isRecurrent"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                    />
-                  )}
-                />
-                <Label htmlFor="isRecurrent">Recurring</Label>
-              </Field>
-            </div>
+              <FieldLabel htmlFor="isRecurrent">{t("modal.fields.recurring.label")}</FieldLabel>
+            </Field>
             {isRecurring && (
               <Controller
                 name="recurrencePattern"
                 control={control}
+                rules={{
+                  validate: (pattern, formValues) => {
+                    if (!formValues.isRecurring) return true;
+                    if (pattern.interval < 1) return tv("recurrenceInterval");
+                    if (
+                      pattern.frequency === "weekly" &&
+                      (!pattern.daysOfWeek || pattern.daysOfWeek.length === 0)
+                    ) {
+                      return tv("recurrenceWeeklyDays");
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <RecurrencePatternPicker
                     value={field.value}
@@ -391,18 +486,26 @@ export function NewIncomeModal() {
                 )}
               />
             )}
-          </div>
+            {isRecurring && <FieldError errors={[errors.recurrencePattern]} />}
+          </Stack>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button type="button" variant="outline" disabled={isSaving}>
+                {tc("actions.cancel")}
+              </Button>
             </DialogClose>
-            <Button
-              disabled={!name || currencyId === null || !incomeCategoryId || defaultWalletId === null}
-              type="submit"
-            >
-              {isEdit ? "Save changes" : "Create Income"}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="size-4 animate-spin" />}
+              {isSaving
+                ? isEdit
+                  ? tc("actions.saving")
+                  : tc("actions.creating")
+                : isEdit
+                  ? t("modal.submit.edit")
+                  : t("modal.submit.create")}
             </Button>
           </DialogFooter>
+          </FieldGroup>
       </form>
         </DialogContent>
     </Dialog>

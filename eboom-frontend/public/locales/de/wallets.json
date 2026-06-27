@@ -1,0 +1,200 @@
+{
+  "list": {
+    "empty": {
+      "title": "Wallet hinzufügen",
+      "description": "Erstellen Sie Wallets, um Ihre Vermögenswerte zu verwalten."
+    }
+  },
+  "detail": {
+    "loadError": "Wallet-Details konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+  },
+  "modal": {
+    "create": {
+      "title": "Neues Wallet hinzufügen",
+      "description": "Geben Sie die Details ein, um ein neues Wallet zu erstellen. Organisieren Sie Ihre Konten und behalten Sie Ihre Finanzquellen im Blick."
+    },
+    "edit": {
+      "title": "Wallet bearbeiten",
+      "description": "Aktualisieren Sie die Details Ihres Wallets."
+    },
+    "fields": {
+      "name": {
+        "label": "Wallet-Name",
+        "placeholder": "z. B. Hauptbankkonto"
+      },
+      "category": {
+        "label": "Wallet-Kategorie"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Optionale Notizen zu diesem Wallet"
+      },
+      "photo": {
+        "label": "Foto"
+      }
+    },
+    "submit": {
+      "create": "Wallet erstellen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Wallet konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "currencyRequired": "Währung ist erforderlich",
+    "exchangeRateRequired": "Wechselkurs ist für Währungsumtausch erforderlich",
+    "transferDateRequired": "Überweisungsdatum ist erforderlich",
+    "feeNonNegative": "Gebühr muss null oder größer sein",
+    "feeLessThanSource": "Gebühr muss kleiner als der Quellbetrag sein"
+  },
+  "entriesTable": {
+    "title": "Einnahmeneinträge",
+    "subtitle": "Eingehende Transaktionen auf dieses Wallet",
+    "createEntry": "Eintrag erstellen",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Einnahmeneinträge konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "income": "Einnahme",
+      "expected": "Erwartet",
+      "received": "Erhalten",
+      "status": "Status",
+      "notes": "Notizen"
+    },
+    "empty": "Noch keine Einnahmeneinträge. Erstellen Sie einen Eintrag, um eingehende Mittel zu erfassen.",
+    "fallbackIncomeName": "Einnahme #{{incomeId}}",
+    "footer": {
+      "totalReceived": "Gesamt erhalten"
+    }
+  },
+  "paymentsTable": {
+    "title": "Ausgabenzahlungen",
+    "subtitle": "Ausgehende Transaktionen von diesem Wallet",
+    "createPayment": "Zahlung erstellen",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Ausgabenzahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "expense": "Ausgabe",
+      "due": "Fällig",
+      "paid": "Bezahlt",
+      "status": "Status",
+      "notes": "Notizen"
+    },
+    "empty": "Noch keine Ausgabenzahlungen. Erstellen Sie eine Zahlung, um ausgehende Mittel zu erfassen.",
+    "fallbackExpenseName": "Ausgabe #{{expenseId}}",
+    "footer": {
+      "totalPaid": "Gesamt bezahlt"
+    }
+  },
+  "status": {
+    "received": "Erhalten",
+    "expected": "Erwartet",
+    "pending": "Ausstehend",
+    "paid": "Bezahlt",
+    "due": "Fällig",
+    "overdue": "Überfällig"
+  },
+  "summaryCards": {
+    "totalReceived": {
+      "label": "Gesamt erhalten",
+      "footerCount": "{{count}} erhaltene {{unit}}"
+    },
+    "pendingIncoming": {
+      "label": "Ausstehend eingehend",
+      "badge": "{{count}} offen",
+      "footerTitle": "Eingang ausstehend",
+      "footerDescription": "Einträge ohne Eingangsdatum"
+    },
+    "totalPaid": {
+      "label": "Gesamt bezahlt",
+      "footerCount": "{{count}} bezahlte {{unit}}"
+    },
+    "dueOutgoing": {
+      "label": "Fällig ausgehend",
+      "badge": "{{count}} überfällig",
+      "footerTitle": "Zahlung ausstehend",
+      "footerDescription": "Zahlungen ohne Zahlungsdatum"
+    }
+  },
+  "chart": {
+    "title": "Transaktionen im Zeitverlauf",
+    "description": {
+      "withData": "{{amount}} eingehend & ausgehend für die {{timeRange}}",
+      "noData": "Keine Transaktionen in den {{timeRange}}"
+    },
+    "series": {
+      "incoming": "Eingehend",
+      "outgoing": "Ausgehend",
+      "transferIn": "Transfer eingehend",
+      "transferOut": "Transfer ausgehend"
+    }
+  },
+  "transfersTable": {
+    "title": "Transfers",
+    "subtitle": "Geld zwischen Wallets verschoben",
+    "createTransfer": "Transfer",
+    "count": "{{count}} Transfers",
+    "loadError": "Transfers konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "direction": "Richtung",
+      "counterparty": "Gegenpartei",
+      "date": "Datum",
+      "rate": "Kurs",
+      "fee": "Gebühr",
+      "notes": "Notizen"
+    },
+    "direction": {
+      "in": "Eingang von {{wallet}}",
+      "out": "Ausgang nach {{wallet}}"
+    },
+    "empty": "Noch keine Transfers. Verschieben Sie Geld zwischen Ihren Wallets.",
+    "footer": {
+      "netIn": "Gesamt eingehend",
+      "netOut": "gesamt ausgehend"
+    },
+    "delete": {
+      "title": "Transfer löschen",
+      "description": "Dies kehrt die Saldoänderungen für beide Wallets um."
+    }
+  },
+  "transferModal": {
+    "title": "Geld überweisen",
+    "editTitle": "Transfer bearbeiten",
+    "description": {
+      "default": "Geld zwischen Wallets im selben Canvas verschieben.",
+      "fromWallet": "Von {{walletName}} zu einem anderen Wallet überweisen.",
+      "toWallet": "Zu {{walletName}} von einem anderen Wallet überweisen."
+    },
+    "fields": {
+      "sourceWallet": { "label": "Quell-Wallet" },
+      "sourceCurrency": { "label": "Quellwährung", "placeholder": "Währung wählen" },
+      "destinationWallet": { "label": "Ziel-Wallet" },
+      "destinationCurrency": { "label": "Zielwährung", "placeholder": "Währung wählen" },
+      "sourceAmount": { "label": "Quellbetrag" },
+      "destinationAmount": { "label": "Zielbetrag" },
+      "exchangeRate": { "label": "Wechselkurs" },
+      "transactionFee": { "label": "Transaktionsgebühr (optional, vom erhaltenen Betrag abgezogen)" },
+      "transferDate": { "label": "Überweisungsdatum" },
+      "notes": { "label": "Notizen" }
+    },
+    "empty": {
+      "noCurrencies": "Keine Währungen verfügbar"
+    },
+    "submit": {
+      "create": "Überweisen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Transfer konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    }
+  }
+}

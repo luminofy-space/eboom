@@ -1,0 +1,99 @@
+{
+  "title": "Dashboard",
+  "loadError": "Failed to load dashboard data.",
+  "retry": "Try again",
+  "empty": {
+    "noCanvasTitle": "No canvas selected",
+    "noCanvasDescription": "Select or create a canvas from the sidebar to view your financial overview."
+  },
+  "assets": {
+    "title": "Overall Assets",
+    "totalAssets": "Total assets",
+    "netThisMonth": "net this month",
+    "loadAll": "Load all",
+    "showLess": "Show less",
+    "pageIndicator": "{{current}} / {{total}}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "empty": "No assets yet. Add wallets, incomes, or expenses to get started.",
+    "tooltip": {
+      "wallets": "Wallets",
+      "incomes": "Incomes",
+      "expenses": "Expenses",
+      "received": "Income received",
+      "pending": "Income pending",
+      "paid": "Expenses paid",
+      "unpaid": "Expenses unpaid",
+      "netCashFlow": "Net cash flow (this month)",
+      "holdings": "Holdings",
+      "holdingsValue": "Holdings value"
+    }
+  },
+  "holdings": {
+    "title": "Property & Holdings",
+    "empty": "No holdings yet. Add vehicles, property, or land to track their estimated value.",
+    "viewAll": "View all",
+    "assetCount_one": "{{count}} asset",
+    "assetCount_other": "{{count}} assets",
+    "totalValue": "Total estimated value"
+  },
+  "chart": {
+    "title": "Cash Flow",
+    "description": {
+      "multiCurrency": "Received and paid across all currencies for the {{timeRange}}",
+      "noData": "No transactions in the {{timeRange}}"
+    },
+    "legend": {
+      "received": "Received",
+      "paid": "Paid"
+    }
+  },
+  "heatmap": {
+    "title": "Yearly Profit vs Expense",
+    "description": "Daily net result for {{year}}",
+    "noData": "No settled transactions in {{year}}",
+    "empty": "No currencies with settled transactions yet.",
+    "controls": {
+      "selectYear": "Select year",
+      "selectCurrency": "Select currency",
+      "currency": "Currency"
+    },
+    "weekdays": {
+      "mon": "Mon",
+      "wed": "Wed",
+      "fri": "Fri"
+    },
+    "tooltip": {
+      "income": "Income",
+      "expense": "Expense",
+      "net": "Net"
+    },
+    "legend": {
+      "less": "Lower",
+      "more": "Higher"
+    }
+  },
+  "quickActions": {
+    "whiteboard": "Open whiteboard",
+    "members": "Manage members"
+  },
+  "recentActivity": {
+    "title": "Recent activity",
+    "empty": "No recent transactions yet.",
+    "columns": {
+      "type": "Type",
+      "name": "Name",
+      "date": "Date"
+    },
+    "types": {
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "status": {
+      "received": "Received",
+      "pending": "Pending",
+      "paid": "Paid",
+      "due": "Due"
+    }
+  }
+}

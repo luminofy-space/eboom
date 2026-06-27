@@ -19,8 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import GroupSelect, { TItem } from "@/src/components/groupe-select/GroupeSelect";
@@ -37,12 +42,8 @@ import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { closeCanvasModal, selectCanvasModal } from "@/src/redux/canvasSlice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-
-const canvasTypeItems: TItem[] = [
-  { key: "personal", title: "Personal" },
-  { key: "business", title: "Business" },
-  { key: "family", title: "Family" },
-];
+import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
+import { useTranslation } from "react-i18next";
 
 interface CanvasFormData {
   name: string;
@@ -66,9 +67,18 @@ const hasWindow = typeof window !== "undefined";
 
 export function NewCanvasModal() {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("canvas");
+  const { t: tc } = useTranslation("common");
   const { open, mode, editingItem } = useAppSelector(selectCanvasModal);
   const isEdit = mode === "edit";
   const queryClient = useQueryClient();
+  const { navigate } = useNavigationProgress();
+
+  const canvasTypeItems: TItem[] = [
+    { key: "personal", title: t("modal.fields.type.options.personal") },
+    { key: "business", title: t("modal.fields.type.options.business") },
+    { key: "family", title: t("modal.fields.type.options.family") },
+  ];
 
   const { register, handleSubmit, reset, setValue, control } = useForm<CanvasFormData>({
     defaultValues,
@@ -147,6 +157,7 @@ export function NewCanvasModal() {
       try {
         await createCanvas(formData.name, formData.description, formData.canvasType, photoUrl, selectedCurrency.id);
         handleClose();
+        navigate("/");
       } catch (error) {
         console.error("Error creating canvas:", error);
       }
@@ -156,69 +167,63 @@ export function NewCanvasModal() {
   return (
     <Dialog open={open} onOpenChange={(openState) => { if (!openState) handleClose(); }}>
       <DialogContent className="w-full max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Canvas" : "Add New Canvas"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Update your canvas details."
-                : "Create a new canvas to organize your finances. Each canvas is an independent financial workspace."}
+              {isEdit ? t("modal.edit.description") : t("modal.create.description")}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
-            {/* Preview + Name row */}
-            <div className="flex flex-row items-end gap-3">
+            <Stack direction="row" align="end" gap={3}>
               <div
                 className="flex shrink-0 size-12 items-center justify-center rounded-xl text-2xl select-none"
                 style={{ backgroundColor: selectedColor }}
               >
                 {selectedEmoji}
               </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <Label htmlFor="canvas-name">Name</Label>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="canvas-name">{t("modal.fields.name.label")}</FieldLabel>
                 <Input
                   required
                   id="canvas-name"
-                  placeholder="e.g. My Personal Budget"
+                  placeholder={t("modal.fields.name.placeholder")}
                   {...register("name", { required: true })}
                 />
-              </div>
-            </div>
+              </Field>
+            </Stack>
 
-            {/* Description */}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="canvas-description">Description</Label>
+            <Field>
+              <FieldLabel htmlFor="canvas-description">{t("modal.fields.description.label")}</FieldLabel>
               <Input
                 id="canvas-description"
-                placeholder="Optional description"
+                placeholder={t("modal.fields.description.placeholder")}
                 {...register("description")}
               />
-            </div>
+            </Field>
 
-            {/* Type */}
-            <div className="flex flex-col gap-1">
-              <Label>Type</Label>
+            <Field>
+              <FieldLabel>{t("modal.fields.type.label")}</FieldLabel>
               <GroupSelect
                 items={canvasTypeItems}
                 handleSelect={(item) => setValue("canvasType", item.key)}
                 value={canvasType}
               />
-            </div>
+            </Field>
 
-            {/* Base Currency — only in create mode */}
             {!isEdit && (
-              <div className="flex flex-col gap-1">
-                <Label>Base Currency</Label>
+              <Field>
+                <FieldLabel>{t("modal.fields.baseCurrency.label")}</FieldLabel>
                 <Combobox
                   items={currencies.map((c) => c.code)}
                   value={effectiveCode}
                   disabled={isLoadingCurr}
                   onValueChange={(val: string | null) => setValue("baseCurrencyCode", val ?? "")}
                 >
-                  <ComboboxInput placeholder="Select a currency" />
+                  <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
                   <ComboboxContent>
-                    <ComboboxEmpty>No currencies found.</ComboboxEmpty>
+                    <ComboboxEmpty>{t("modal.empty.noCurrencies")}</ComboboxEmpty>
                     <ComboboxCollection>
                       {(code: string) => {
                         const c = currencies.find((c) => c.code === code);
@@ -231,12 +236,11 @@ export function NewCanvasModal() {
                     </ComboboxCollection>
                   </ComboboxContent>
                 </Combobox>
-              </div>
+              </Field>
             )}
 
-            {/* Color picker */}
-            <div className="flex flex-col gap-2">
-              <Label>Background Color</Label>
+            <Field className="gap-2">
+              <FieldLabel>{t("modal.fields.backgroundColor.label")}</FieldLabel>
               <div className="flex flex-row flex-wrap gap-2">
                 {PRESET_COLORS.map((color) => (
                   <button
@@ -255,11 +259,10 @@ export function NewCanvasModal() {
                   </button>
                 ))}
               </div>
-            </div>
+            </Field>
 
-            {/* Emoji picker */}
-            <div className="flex flex-col gap-2">
-              <Label>Icon</Label>
+            <Field className="gap-2">
+              <FieldLabel>{t("modal.fields.icon.label")}</FieldLabel>
               <div className="flex flex-row flex-wrap gap-1">
                 {PRESET_EMOJIS.map((emoji) => (
                   <button
@@ -275,19 +278,19 @@ export function NewCanvasModal() {
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
+            </Field>
 
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" type="button">
-                Cancel
+                {tc("actions.cancel")}
               </Button>
             </DialogClose>
             <Button disabled={!name || isCreating || isUpdating} type="submit">
-              {isEdit ? "Save Changes" : "Create Canvas"}
+              {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
             </Button>
           </DialogFooter>
+          </FieldGroup>
         </form>
       </DialogContent>
     </Dialog>

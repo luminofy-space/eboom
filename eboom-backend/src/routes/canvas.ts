@@ -5,14 +5,27 @@ import {
   canvasMembers,
   expenses,
   expenseCategories,
+  assets,
+  assetCategories,
   currencies,
   incomes,
   incomeCategories,
   wallets,
   walletCategories,
   userSettings,
+  roles,
 } from "../db/schema";
 import { eq, and, ilike, count, desc } from "drizzle-orm";
+import {
+  computePermissions,
+  checkCanvasPermission,
+  formatMembershipForResponse,
+  getCanvasMembership,
+} from "../services/canvasAccessService";
+import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
+import { getCanvasSummary } from "../services/dashboardService";
+import { listCanvasTransfersHandler } from "./transfers";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -24,17 +37,9 @@ function parsePaginationParams(req: Request) {
   return { page, limit, search, offset };
 }
 
-async function checkCanvasAccess(
-  canvasId: number,
-  userId: number
-): Promise<boolean> {
-  const [membership] = await db
-    .select()
-    .from(canvasMembers)
-    .where(
-      and(eq(canvasMembers.canvasId, canvasId), eq(canvasMembers.userId, userId))
-    );
-  return !!membership;
+
+async function denyCanvasPermission(res: Response, result: { status: 403; error: string }) {
+  return res.status(result.status).json({ error: result.error });
 }
 
 // ============================================================================
@@ -50,16 +55,27 @@ router.get("/", async (req: Request, res: Response) => {
       .select({
         canvas: canvases,
         member: canvasMembers,
+        role: roles,
       })
       .from(canvasMembers)
       .innerJoin(canvases, eq(canvasMembers.canvasId, canvases.id))
+      .leftJoin(roles, eq(canvasMembers.roleId, roles.id))
       .where(and(eq(canvasMembers.userId, user.id), eq(canvases.isArchived, false)));
 
-    const userCanvases = memberships.map((m) => ({
-      ...m.canvas,
-      isOwner: m.member.isOwner,
-      roleId: m.member.roleId,
-    }));
+    const userCanvases = memberships.map((m) => {
+      const rolePermissions =
+        m.role?.permissions && typeof m.role.permissions === "object"
+          ? (m.role.permissions as Record<string, boolean>)
+          : {};
+      const permissions = computePermissions(m.member.isOwner ?? false, rolePermissions);
+      return {
+        ...m.canvas,
+        isOwner: m.member.isOwner,
+        roleId: m.member.roleId,
+        roleName: m.role?.name ?? null,
+        permissions,
+      };
+    });
 
     res.json({ canvases: userCanvases });
   } catch (err) {
@@ -72,22 +88,13 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
+    const membership = await getCanvasMembership(canvasId, user.id);
     if (!membership) {
       return res.status(403).json({ error: "Access denied to this canvas" });
     }
@@ -104,8 +111,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     res.json({
       canvas: {
         ...canvas,
-        isOwner: membership.isOwner,
-        roleId: membership.roleId,
+        ...formatMembershipForResponse(membership),
       },
     });
   } catch (err) {
@@ -182,7 +188,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -190,24 +196,9 @@ router.put("/:id", async (req: Request, res: Response) => {
   const { name, description, canvasType, photoUrl, isArchived } = req.body;
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
-    if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
-    }
-
-    if (!membership.isOwner) {
-      return res
-        .status(403)
-        .json({ error: "Only canvas owner can update canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "manage_canvas");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const [updatedCanvas] = await db
@@ -239,30 +230,15 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.id);
+  const canvasId = parseRouteParam(req.params.id);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
 
   try {
-    const [membership] = await db
-      .select()
-      .from(canvasMembers)
-      .where(
-        and(
-          eq(canvasMembers.canvasId, canvasId),
-          eq(canvasMembers.userId, user.id)
-        )
-      );
-
-    if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
-    }
-
-    if (!membership.isOwner) {
-      return res
-        .status(403)
-        .json({ error: "Only canvas owner can delete canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "manage_canvas");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     await db
@@ -282,6 +258,35 @@ router.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // ============================================================================
+// CANVAS DASHBOARD SUMMARY
+// ============================================================================
+
+router.get("/:canvasId/transfers", listCanvasTransfersHandler);
+
+router.get("/:canvasId/summary", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const summary = await getCanvasSummary(canvasId);
+    res.json(summary);
+  } catch (err) {
+    console.error("Error fetching canvas summary:", err);
+    res.status(500).json({ error: "Failed to fetch canvas summary" });
+  }
+});
+
+// ============================================================================
 // CANVAS EXPENSES ROUTES
 // ============================================================================
 
@@ -289,15 +294,15 @@ router.get("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -345,7 +350,7 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -362,35 +367,40 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
     status,
   } = req.body;
 
-  if (!name || !expenseCategoryId || !currencyId || !defaultWalletId) {
+  if (!name || !expenseCategoryId || !currencyId) {
     return res.status(400).json({
-      error: "Expense name, category, currency, and default wallet are required",
+      error: "Expense name, category, and currency are required",
     });
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedExpenseCategoryId = Number(expenseCategoryId);
     const parsedCurrencyId = Number(currencyId);
-    const parsedDefaultWalletId = Number(defaultWalletId);
-    if (
-      Number.isNaN(parsedExpenseCategoryId) ||
-      Number.isNaN(parsedCurrencyId) ||
-      Number.isNaN(parsedDefaultWalletId)
-    ) {
-      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    const hasDefaultWallet =
+      defaultWalletId !== undefined && defaultWalletId !== null && defaultWalletId !== "";
+    const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
+
+    if (Number.isNaN(parsedExpenseCategoryId) || Number.isNaN(parsedCurrencyId)) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
     }
 
-    const [wallet] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, parsedDefaultWalletId));
-    if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+    if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
+      return res.status(400).json({ error: "Invalid wallet ID" });
+    }
+
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
     }
 
     const [newExpense] = await db
@@ -400,7 +410,7 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
         name,
         expenseCategoryId: parsedExpenseCategoryId,
         currencyId: parsedCurrencyId,
-        defaultWalletId: parsedDefaultWalletId,
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         description: description || null,
@@ -410,6 +420,8 @@ router.post("/:canvasId/expenses", async (req: Request, res: Response) => {
         lastModifiedBy: user.id,
       })
       .returning();
+
+    await registerWhiteboardNode(canvasId, "expense", newExpense.id);
 
     res.status(201).json({ expense: newExpense });
   } catch (err) {
@@ -426,15 +438,15 @@ router.get("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -482,7 +494,7 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -500,35 +512,40 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
     status,
   } = req.body;
 
-  if (!name || !incomeCategoryId || !currencyId || !defaultWalletId) {
+  if (!name || !incomeCategoryId || !currencyId) {
     return res.status(400).json({
-      error: "Name, category, currency, and default wallet are required",
+      error: "Name, category, and currency are required",
     });
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedIncomeCategoryId = Number(incomeCategoryId);
     const parsedCurrencyId = Number(currencyId);
-    const parsedDefaultWalletId = Number(defaultWalletId);
-    if (
-      Number.isNaN(parsedIncomeCategoryId) ||
-      Number.isNaN(parsedCurrencyId) ||
-      Number.isNaN(parsedDefaultWalletId)
-    ) {
-      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+    const hasDefaultWallet =
+      defaultWalletId !== undefined && defaultWalletId !== null && defaultWalletId !== "";
+    const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
+
+    if (Number.isNaN(parsedIncomeCategoryId) || Number.isNaN(parsedCurrencyId)) {
+      return res.status(400).json({ error: "Invalid category or currency ID" });
     }
 
-    const [wallet] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.id, parsedDefaultWalletId));
-    if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+    if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
+      return res.status(400).json({ error: "Invalid wallet ID" });
+    }
+
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
     }
 
     const [newIncome] = await db
@@ -538,7 +555,7 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
         name,
         incomeCategoryId: parsedIncomeCategoryId,
         currencyId: parsedCurrencyId,
-        defaultWalletId: parsedDefaultWalletId,
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
         amount: Number(amount) || 0,
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
@@ -549,6 +566,8 @@ router.post("/:canvasId/incomes", async (req: Request, res: Response) => {
         lastModifiedBy: user.id,
       })
       .returning();
+
+    await registerWhiteboardNode(canvasId, "income", newIncome.id);
 
     res.status(201).json({ income: newIncome });
   } catch (err) {
@@ -565,15 +584,15 @@ router.get("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const { page, limit, search, offset } = parsePaginationParams(req);
@@ -615,7 +634,7 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const canvasId = parseInt(req.params.canvasId);
+  const canvasId = parseRouteParam(req.params.canvasId);
   if (isNaN(canvasId)) {
     return res.status(400).json({ error: "Invalid canvas ID" });
   }
@@ -634,9 +653,9 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   }
 
   try {
-    const hasAccess = await checkCanvasAccess(canvasId, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
     }
 
     const parsedWalletCategoryId = Number(walletCategoryId);
@@ -658,10 +677,135 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
       })
       .returning();
 
+    await registerWhiteboardNode(canvasId, "wallet", newWallet.id);
+
     res.status(201).json({ wallet: newWallet });
   } catch (err) {
     console.error("Error creating wallet:", err);
     res.status(500).json({ error: "Failed to create wallet" });
+  }
+});
+
+// ============================================================================
+// CANVAS ASSETS ROUTES
+// ============================================================================
+
+router.get("/:canvasId/assets", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false), ilike(assets.name, `%${search}%`))
+      : and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(assets)
+      .where(whereCondition);
+
+    const assetsList = await db
+      .select({
+        asset: assets,
+        category: assetCategories,
+        currency: currencies,
+      })
+      .from(assets)
+      .leftJoin(assetCategories, eq(assets.assetCategoryId, assetCategories.id))
+      .leftJoin(currencies, eq(assets.currencyId, currencies.id))
+      .where(whereCondition)
+      .orderBy(desc(assets.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const formattedAssets = assetsList.map((a) => ({
+      ...a.asset,
+      category: a.category,
+      currency: a.currency,
+    }));
+
+    res.json({ assets: formattedAssets, items: formattedAssets, total, page, limit });
+  } catch (err) {
+    console.error("Error fetching assets:", err);
+    res.status(500).json({ error: "Failed to fetch assets" });
+  }
+});
+
+router.post("/:canvasId/assets", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  const { name, assetCategoryId, currencyId, estimatedValue, description, photoUrl } = req.body;
+
+  if (!name || !assetCategoryId || !currencyId || estimatedValue === undefined || estimatedValue === null) {
+    return res.status(400).json({
+      error: "Asset name, category, currency, and estimated value are required",
+    });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const parsedAssetCategoryId = Number(assetCategoryId);
+    const parsedCurrencyId = Number(currencyId);
+    const parsedEstimatedValue = Number(estimatedValue);
+
+    if (
+      Number.isNaN(parsedAssetCategoryId) ||
+      Number.isNaN(parsedCurrencyId) ||
+      Number.isNaN(parsedEstimatedValue) ||
+      parsedEstimatedValue < 0
+    ) {
+      return res.status(400).json({ error: "Invalid category, currency, or estimated value" });
+    }
+
+    const [category] = await db
+      .select()
+      .from(assetCategories)
+      .where(eq(assetCategories.id, parsedAssetCategoryId));
+    if (!category) {
+      return res.status(400).json({ error: "Invalid asset category" });
+    }
+
+    const [newAsset] = await db
+      .insert(assets)
+      .values({
+        canvasId,
+        name,
+        assetCategoryId: parsedAssetCategoryId,
+        currencyId: parsedCurrencyId,
+        estimatedValue: String(parsedEstimatedValue),
+        photoUrl: photoUrl || null,
+        description: description || null,
+        createdBy: user.id,
+        lastModifiedBy: user.id,
+      })
+      .returning();
+
+    res.status(201).json({ asset: newAsset });
+  } catch (err) {
+    console.error("Error creating asset:", err);
+    res.status(500).json({ error: "Failed to create asset" });
   }
 });
 

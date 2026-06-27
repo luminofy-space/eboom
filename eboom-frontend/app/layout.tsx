@@ -5,6 +5,7 @@ import QueryProvider from "@/src/components/QueryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/src/components/AuthProvider";
 import ReduxProvider from "@/src/redux/ReduxProvider";
+import { I18nProvider } from "@/src/i18n/I18nProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
@@ -29,19 +30,24 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <style data-fullcalendar />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                <TooltipProvider>
-                  {children}
-                </TooltipProvider>
-              </ThemeProvider>
-            </AuthProvider>
-          </QueryProvider>
+          <I18nProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                  <TooltipProvider>
+                    {children}
+                  </TooltipProvider>
+                </ThemeProvider>
+              </AuthProvider>
+            </QueryProvider>
+          </I18nProvider>
         </ReduxProvider>
       </body>
     </html>

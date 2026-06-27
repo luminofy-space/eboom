@@ -17,6 +17,8 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/src/hooks/useToast";
+import { useTranslation } from "react-i18next";
+import { fileToDataUrl } from "@/src/utils/formUtils";
 
 interface ImageUploaderProps {
   open: boolean;
@@ -25,19 +27,17 @@ interface ImageUploaderProps {
 }
 
 const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
+  const { t } = useTranslation("profile");
+  const { t: tc } = useTranslation("common");
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // API mutation for uploading profile photo
   const { mutate, isPending, fieldError, generalError } = useMutationApi(
     API_ROUTES.USERS_UPDATE_PROFILE_IMAGE,
     {
       method: "post",
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
       hasToken: true,
     }
   );
@@ -45,21 +45,19 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         toast({
-          title: "Invalid file type",
-          description: "Please select an image file (JPEG, PNG, etc.)",
+          title: t("imageUploader.toast.invalidFileType.title"),
+          description: t("imageUploader.toast.invalidFileType.description"),
           variant: "destructive",
         });
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "File too large",
-          description: "Please select an image smaller than 5MB",
+          title: t("imageUploader.toast.fileTooLarge.title"),
+          description: t("imageUploader.toast.fileTooLarge.description"),
           variant: "destructive",
         });
         return;
@@ -67,7 +65,6 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
 
       setSelectedFile(file);
 
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -89,47 +86,37 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
 
     if (!selectedFile) {
       toast({
-        title: "No image selected",
-        description: "Please select an image to upload",
+        title: t("imageUploader.toast.noImageSelected.title"),
+        description: t("imageUploader.toast.noImageSelected.description"),
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Create FormData with the image file
-      const formData = new FormData();
-      formData.append("photo_url", selectedFile);
+      const photoDataUrl = await fileToDataUrl(selectedFile);
 
-      // Execute the mutation
-      await mutate(formData);
+      await mutate({ photo_url: photoDataUrl });
 
-      // Show success message
       toast({
-        title: "Success!",
-        description: "Profile picture updated successfully",
+        title: t("imageUploader.toast.success.title"),
+        description: t("imageUploader.toast.success.description"),
       });
 
-      // Reset form
       handleRemoveImage();
-
-      // Close dialog
       setOpen(false);
 
-      // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
 
     } catch (error) {
-      // Error is already handled by useMutationApi hook
       console.error("Error uploading image:", error);
     }
   };
 
   const handleDialogChange = (newOpen: boolean) => {
     if (!newOpen) {
-      // Reset form when closing
       handleRemoveImage();
     }
     setOpen(newOpen);
@@ -140,20 +127,19 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
       <form onSubmit={handleSubmit}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Update Profile Picture</DialogTitle>
+            <DialogTitle>{t("imageUploader.title")}</DialogTitle>
             <DialogDescription>
-              Upload a new profile image. Supported formats: JPEG, PNG, WebP. Max size: 5MB.
+              {t("imageUploader.description")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            {/* Preview Section */}
             {previewUrl && (
               <div className="flex flex-col items-center gap-2">
                 <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200">
                   <img
                     src={previewUrl}
-                    alt="Preview"
+                    alt={t("imageUploader.preview.alt")}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -164,15 +150,14 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
                   onClick={handleRemoveImage}
                   className="text-red-600 hover:text-red-700"
                 >
-                  Remove
+                  {t("imageUploader.preview.remove")}
                 </Button>
               </div>
             )}
 
-            {/* File Input Section */}
             <div className="grid gap-3">
               <Label htmlFor="profile-image">
-                Select Image
+                {t("imageUploader.fields.selectImage.label")}
               </Label>
               <div className="flex items-center gap-4">
                 <Input
@@ -196,11 +181,10 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
                 </Button>
               </div>
               <p className="text-xs text-gray-500">
-                Click the camera icon or browse to select an image
+                {t("imageUploader.fields.selectImage.hint")}
               </p>
             </div>
 
-            {/* Error Display */}
             {fieldError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">
@@ -225,21 +209,20 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
                 variant="outline"
                 disabled={isPending}
               >
-                Cancel
+                {tc("actions.cancel")}
               </Button>
             </DialogClose>
             <Button 
-              // type="submit" 
               onClick={handleSubmit}
               disabled={!selectedFile || isPending}
             >
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
+                  {t("imageUploader.submitting")}
                 </>
               ) : (
-                "Upload Image"
+                t("imageUploader.submit")
               )}
             </Button>
           </DialogFooter>

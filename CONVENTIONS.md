@@ -40,7 +40,7 @@ For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.
 |---------|------|----------|
 | Server / API data | TanStack Query | Lists, details, currencies |
 | UI chrome | Redux | Modal open/close, search query, canvas ID |
-| Auth tokens | `useAuth` hook + localStorage | Not Redux |
+| Auth tokens | `AuthProvider` context + localStorage | Not Redux |
 
 Use `useQueryApi` and `useMutationApi` from `src/api/` for API calls. Do not fetch server data into Redux slices.
 
@@ -130,7 +130,7 @@ Use early returns for `400`, `401`, `403`, and `404`. Response shape: `{ error: 
 ### Authentication
 
 - Clients send `Authorization: Bearer <token>`
-- [`middleware/auth.ts`](eboom-backend/src/middleware/auth.ts) validates the token via Supabase and attaches `req.appUser`
+- [`middleware/auth.ts`](eboom-backend/src/middleware/auth.ts) validates the JWT locally and attaches `req.appUser`
 - Dev bypass: set `TEST_USER_ID` in backend `.env` (never in production)
 
 ### Money movement rule
@@ -181,9 +181,25 @@ For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 ## UI Conventions
 
 - **Primary UI:** shadcn/ui + Tailwind CSS 4
+- **Layout primitives:** `Stack`, `Grid`, `Container`, `Center` from [`components/ui/`](eboom-frontend/components/ui/) — use these instead of repeating flex/grid/padding classes on raw `div`s
+- **Typography:** `Typography` from [`components/ui/typography.tsx`](eboom-frontend/components/ui/typography.tsx) — use variants (`display`, `heading`, `title`, `muted-sm`, `stat`, etc.) instead of repeating text size/color classes on raw elements
+- **Page loading:** `PageLoader` from [`components/ui/page-loader.tsx`](eboom-frontend/components/ui/page-loader.tsx) in route `loading.tsx` files; use `Spinner` for inline/button loading states
+- **Forms:** shadcn `Field`, `FieldGroup`, `FieldLabel` for form layout; combine with `Stack` for multi-column rows
 - **Icons:** Lucide for sidebar and navigation; Tabler where already used in a feature
 - **Toasts:** Prefer `sonner` (wired in the app layout). Do not add another toast library.
 - **Themes:** Dark mode supported via `next-themes`
+
+## Internationalization (i18n)
+
+- **Stack:** `i18next` + `react-i18next` with JSON files in [`public/locales/{lng}/`](eboom-frontend/public/locales/)
+- **Config:** [`src/i18n/index.ts`](eboom-frontend/src/i18n/index.ts), wrapped by `I18nProvider` in the root layout
+- **Namespaces:** One JSON file per feature area — `common`, `auth`, `navigation`, `expenses`, `incomes`, `wallets`, `profile`, `canvas`
+- **Usage:** `const { t } = useTranslation("expenses")` then `t("modal.create.title")` — never hardcode user-facing strings in JSX
+- **Key naming:** Nested camelCase objects grouped by section (e.g. `actions.add`, `status.paid`); use `{{variable}}` for interpolation
+- **Shared strings:** Put reusable labels (`Add`, `Cancel`, `Delete`) in `common.json`
+- **Formatting:** Use `formatMoney` / `formatAmount` / `formatRelativeEdit` from [`src/i18n/formatters.ts`](eboom-frontend/src/i18n/formatters.ts) instead of hardcoded `Intl.NumberFormat("en-US", ...)`
+- **Language selector:** `LanguageSwitcher` in the sidebar account menu; preference stored in localStorage (`eboom-language`)
+- **Adding locales:** Mirror the `en/` JSON structure under a new folder (e.g. `de/`, `fa/`), extend `SUPPORTED_LANGUAGES` in [`src/i18n/languages.ts`](eboom-frontend/src/i18n/languages.ts), and add the locale to `supportedLngs` in `index.ts`. RTL languages (currently `fa`) set `document.documentElement.dir` automatically.
 
 ## Environment and Security
 
@@ -201,7 +217,7 @@ Do not extend these patterns; match nearby code when touching related areas:
 | Mixed request body casing | Signup uses `first_name`; some updates use `entityId` — follow the existing route you extend |
 | Trailing slashes | Auth routes use trailing slashes (`/api/auth/login/`); most others do not — follow `urls.ts` per route group |
 | Duplicate sidebar components | Use `src/components/layout/app-sidebar.tsx`, not `components/layout/SideBar.tsx` |
-| Unused dependencies | `joi`, `roleAuth` middleware, and `i18next` are installed but not wired — do not build on them until integrated |
+| Unused dependencies | `joi` and `roleAuth` middleware are installed but not wired — do not build on them until integrated |
 | Toast libraries | Both `sonner` and `react-toastify` exist — use `sonner` for new code |
 | Redux persist whitelist | Store references `auth` reducer that does not exist — do not add auth to Redux |
 

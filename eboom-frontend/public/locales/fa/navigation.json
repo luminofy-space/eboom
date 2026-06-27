@@ -1,0 +1,39 @@
+{
+  "dashboard": "داشبورد",
+  "search": {
+    "placeholder": "جستجو..."
+  },
+  "groups": {
+    "management": "مدیریت",
+    "explore": "کاوش"
+  },
+  "routes": {
+    "incomes": "درآمدها",
+    "wallets": "کیف پول‌ها",
+    "expenses": "هزینه‌ها",
+    "assets": "دارایی‌ها",
+    "manageMembers": "مدیریت اعضا",
+    "canvasInvitations": "دعوت‌نامه‌های بوم",
+    "whiteboard": "تخته سفید",
+    "calendar": "تقویم",
+    "budgetPlanning": "بودجه و برنامه‌ریزی",
+    "wishList": "لیست آرزوها",
+    "aiInsights": "تحلیل‌های هوش مصنوعی"
+  },
+  "badges": {
+    "soon": "به‌زودی"
+  },
+  "account": {
+    "language": "زبان",
+    "logOut": "خروج",
+    "canvasInvitations": "دعوت‌نامه‌های بوم"
+  },
+  "notifications": {
+    "title": "اعلان‌ها",
+    "empty": "پرداخت یا درآمد معوقی وجود ندارد.",
+    "overdueExpense": "پرداخت معوق",
+    "overdueIncome": "درآمد دریافت نشده",
+    "daysOverdue_one": "{{count}} روز معوق",
+    "daysOverdue_other": "{{count}} روز معوق"
+  }
+}

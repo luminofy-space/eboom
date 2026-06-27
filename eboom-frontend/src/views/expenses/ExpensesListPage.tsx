@@ -2,6 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useInfiniteList } from "@/src/hooks/useInfiniteList";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectSearchQuery } from "@/src/redux/searchSlice";
@@ -16,17 +17,26 @@ import axios from "axios";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2 } from "lucide-react";
+import { Container } from "@/components/ui/container";
+import { Grid } from "@/components/ui/grid";
+import { Stack } from "@/components/ui/stack";
+import { Spinner } from "@/components/ui/spinner";
+import { Typography } from "@/components/ui/typography";
+import { Plus } from "lucide-react";
 import { NewExpenseModal } from "./components/NewExpenseModal";
 import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import { useTranslation } from "react-i18next";
 
 const hasWindow = typeof window !== "undefined";
 
 export default function ExpensesListPage() {
+  const { t } = useTranslation("expenses");
+  const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
+  const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
@@ -36,6 +46,7 @@ export default function ExpensesListPage() {
   const {
     items,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     sentinelRef,
   } = useInfiniteList<ExpenseItem>(
@@ -61,31 +72,39 @@ export default function ExpensesListPage() {
     },
   });
 
-  if (isLoading) {
+  const showLoading = isLoading || (isFetching && items.length === 0);
+
+  if (showLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <GridCardSkeleton key={i} />
-        ))}
-      </div>
+      <Container>
+        <Grid variant="cards" gap={4}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <GridCardSkeleton key={i} />
+          ))}
+        </Grid>
+      </Container>
     );
   }
 
   if (items.length === 0 && !searchQuery) {
     return (
       <>
-        <div className="flex-1 flex items-center justify-center px-4">
-          <Card className="w-[375px] flex flex-col items-center justify-center gap-3 py-8">
-            <div className="text-center text-2xl font-semibold">Add Expense</div>
-            <div className="text-center text-sm text-muted-foreground">
-              Track your spending and manage your budgets.
-            </div>
-            <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openExpenseCreateModal())}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add
-            </Button>
+        <Stack className="flex-1" align="center" justify="center">
+          <Card className="w-[375px] py-8">
+            <Stack align="center" gap={3}>
+              <Typography variant="title" className="text-center">{t("list.empty.title")}</Typography>
+              <Typography variant="muted-sm" className="text-center">
+                {t("list.empty.description")}
+              </Typography>
+              {canEdit && (
+              <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openExpenseCreateModal())}>
+                <Plus className="mr-2 h-4 w-4" />
+                {tc("actions.add")}
+              </Button>
+              )}
+            </Stack>
           </Card>
-        </div>
+        </Stack>
         <NewExpenseModal />
       </>
     );
@@ -93,38 +112,39 @@ export default function ExpensesListPage() {
 
   if (items.length === 0 && searchQuery) {
     return (
-      <div className="flex-1 flex items-center justify-center px-4">
-        <p className="text-muted-foreground">No results found for &ldquo;{searchQuery}&rdquo;</p>
-      </div>
+      <Stack className="flex-1" align="center" justify="center">
+        <Typography variant="muted">{tc("empty.noResults", { query: searchQuery })}</Typography>
+      </Stack>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map((expense) => (
-          <GridCard
-            key={expense.id}
-            href={`/expense/${expense.id}`}
-            imageUrl={expense.photoUrl}
-            title={expense.name}
-            updatedAt={expense.lastModifiedAt}
-            onEdit={() => dispatch(openExpenseEditModal(expense))}
-            onDelete={() => setDeleteId(expense.id)}
-          />
-        ))}
-      </div>
+      <Container>
+        <Grid variant="cards" gap={4}>
+          {items.map((expense) => (
+            <GridCard
+              key={expense.id}
+              href={`/expense/${expense.id}`}
+              imageUrl={expense.photoUrl}
+              title={expense.name}
+              updatedAt={expense.lastModifiedAt}
+              onEdit={canEdit ? () => dispatch(openExpenseEditModal(expense)) : undefined}
+              onDelete={canEdit ? () => setDeleteId(expense.id) : undefined}
+            />
+          ))}
+        </Grid>
+      </Container>
 
-      {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} className="h-1" />
 
       {isFetchingNextPage && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <Stack direction="row" justify="center" className="py-4">
+          <Spinner className="size-6 text-muted-foreground" />
+        </Stack>
       )}
 
-      <FloatingAddButton onClick={() => dispatch(openExpenseCreateModal())} />
+      {canEdit && <FloatingAddButton onClick={() => dispatch(openExpenseCreateModal())} />}
       <NewExpenseModal />
 
       <ConfirmDeleteDialog

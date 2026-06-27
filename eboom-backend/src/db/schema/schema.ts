@@ -31,6 +31,20 @@ export const recurrenceFrequencyEnum = pgEnum("recurrence_frequency", [
   "yearly",
 ]);
 
+export const canvasInvitationStatusEnum = pgEnum("canvas_invitation_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "cancelled",
+  "expired",
+]);
+
+export const whiteboardEntityTypeEnum = pgEnum("whiteboard_entity_type", [
+  "wallet",
+  "income",
+  "expense",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -42,6 +56,7 @@ export const users = pgTable(
     age: integer("age").$type<number | null>(),
     phone: varchar("phone", { length: 50 }),
     emailVerified: boolean("email_verified").default(false),
+    passwordHash: varchar("password_hash", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").references((): AnyPgColumn => users.id),
     lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
@@ -114,6 +129,29 @@ export const canvasMembers = pgTable(
   })
 );
 
+export const canvasInvitations = pgTable(
+  "canvas_invitations",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    inviteeUserId: integer("invitee_user_id").notNull().references(() => users.id),
+    inviteeEmail: varchar("invitee_email", { length: 255 }).notNull(),
+    roleId: integer("role_id").notNull().references(() => roles.id),
+    invitedBy: integer("invited_by").notNull().references(() => users.id),
+    status: canvasInvitationStatusEnum("status").default("pending").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    uniqueCanvasInvitee: unique("canvas_invitations_canvas_invitee_unique").on(
+      table.canvasId,
+      table.inviteeUserId
+    ),
+  })
+);
+
 export const walletCategories = pgTable("wallet_categories", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -169,7 +207,7 @@ export const incomes = pgTable("incomes", {
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
   name: varchar("name", { length: 255 }).notNull(),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
-  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
+  defaultWalletId: integer("wallet_id").references(() => wallets.id),
   amount: integer("amount").notNull(),
   incomeCategoryId: integer("income_category_id")
     .notNull()
@@ -214,13 +252,23 @@ export const expenseCategories = pgTable("expense_categories", {
   // lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
+export const assetCategories = pgTable("asset_categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  isSystematic: boolean("is_systematic").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+});
+
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
   name: varchar("name", { length: 255 }).notNull(),
   expenseCategoryId: integer("expense_category_id").notNull().references(() => expenseCategories.id),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
-  defaultWalletId: integer("wallet_id").notNull().references(() => wallets.id),
+  defaultWalletId: integer("wallet_id").references(() => wallets.id),
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: jsonb("recurrence_pattern"),
   status: transactionStatusEnum("status").default("pending"),
@@ -232,6 +280,28 @@ export const expenses = pgTable("expenses", {
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
+
+export const assets = pgTable(
+  "assets",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    assetCategoryId: integer("asset_category_id")
+      .notNull()
+      .references(() => assetCategories.id),
+    currencyId: integer("currency_id").notNull().references(() => currencies.id),
+    estimatedValue: numeric("estimated_value", { precision: 20, scale: 8 }).notNull(),
+    photoUrl: text("photo_url"),
+    description: jsonb("description"),
+    isArchived: boolean("is_archived").default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+    lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  },
+  (table) => [check("asset_estimated_value_check", sql`${table.estimatedValue} >= 0`)]
+);
 
 export const expensePayments = pgTable(
   "expense_payments",
@@ -341,3 +411,31 @@ export const recurrencePatterns = pgTable("recurrence_patterns", {
   endDate: date("end_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
+export const whiteboardViewports = pgTable("whiteboard_viewports", {
+  canvasId: integer("canvas_id")
+    .primaryKey()
+    .references(() => canvases.id),
+  x: numeric("x", { precision: 12, scale: 4 }).notNull().default("0"),
+  y: numeric("y", { precision: 12, scale: 4 }).notNull().default("0"),
+  zoom: numeric("zoom", { precision: 8, scale: 4 }).notNull().default("1"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const whiteboardNodePositions = pgTable(
+  "whiteboard_node_positions",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id")
+      .notNull()
+      .references(() => canvases.id),
+    entityType: whiteboardEntityTypeEnum("entity_type").notNull(),
+    entityId: integer("entity_id").notNull(),
+    x: numeric("x", { precision: 12, scale: 4 }).notNull(),
+    y: numeric("y", { precision: 12, scale: 4 }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    uniqueCanvasEntity: unique().on(table.canvasId, table.entityType, table.entityId),
+  })
+);

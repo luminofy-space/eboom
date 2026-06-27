@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  Bell,
   ChevronsUpDown,
   LogOut,
+  Mail,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -23,6 +32,14 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ImageUploader from "@/src/views/profile/ImageUploader";
+import { CanvasInvitationsModal } from "@/src/views/canvas-invitations/CanvasInvitationsModal";
+import { useCanvasInvitations } from "@/src/hooks/useCanvasInvitations";
+import { useNotifications } from "@/src/hooks/useNotifications";
+import { NotificationsPanel } from "@/src/components/layout/NotificationsPanel";
+import { useAuthContext } from "../AuthProvider";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import { useTextDirection } from "@/src/i18n/useTextDirection";
 
 export function NavUser({
   user,
@@ -35,9 +52,46 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const { signOut } = useAuthContext();
   const [imageModal, setImageModal] = useState(false);
+  const [invitationsOpen, setInvitationsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { t } = useTranslation("navigation");
+  const { pendingReceivedCount } = useCanvasInvitations();
+  const { notifications, overdueCount, isLoading: isLoadingNotifications } = useNotifications();
+  const { dropdownSide } = useTextDirection();
   return (
     <SidebarMenu>
+      <SidebarMenuItem>
+        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <PopoverTrigger asChild>
+            <SidebarMenuButton size="lg" className="relative">
+              <Bell className="size-4" />
+              <span className="flex-1 text-start">{t("notifications.title")}</span>
+              {overdueCount > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                  {overdueCount > 99 ? "99+" : overdueCount}
+                </span>
+              )}
+            </SidebarMenuButton>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-80 p-3"
+            side={isMobile ? "bottom" : dropdownSide}
+            align="end"
+            sideOffset={4}
+          >
+            <PopoverHeader className="mb-2 px-1">
+              <PopoverTitle>{t("notifications.title")}</PopoverTitle>
+            </PopoverHeader>
+            <NotificationsPanel
+              notifications={notifications}
+              isLoading={isLoadingNotifications}
+              onClose={() => setNotificationsOpen(false)}
+            />
+          </PopoverContent>
+        </Popover>
+      </SidebarMenuItem>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -49,21 +103,21 @@ export function NavUser({
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-start text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ms-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? "bottom" : dropdownSide}
             align="end"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                 <Avatar
                   className="h-8 w-8 rounded-lg"
                   onClick={() => {
@@ -75,49 +129,41 @@ export function NavUser({
                     user.name.split(" ")[0][0]
                   }${user.name.split(" ")[1][0]}`}</AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <LanguageSwitcher />
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
             <DropdownMenuItem
-              onClick={() => {
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
+              onClick={() => setInvitationsOpen(true)}
+            >
+              <Mail />
+              <span className="flex-1">{t("account.canvasInvitations")}</span>
+              {pendingReceivedCount > 0 && (
+                <span className="ms-auto flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  {pendingReceivedCount}
+                </span>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={async () => {
+                await signOut();
                 router.push("/login");
               }}
             >
               <LogOut />
-              Log out
+              {t("account.logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
       <ImageUploader open={imageModal} setOpen={setImageModal} />
+      <CanvasInvitationsModal open={invitationsOpen} onOpenChange={setInvitationsOpen} />
     </SidebarMenu>
   );
 }

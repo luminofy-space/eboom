@@ -1,10 +1,18 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { subWallets } from "../db/schema";
 
 type BalanceTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-async function getOrCreateSubWalletRow(
+function addAmounts(current: string, delta: string): string {
+  return (Number(current) + Number(delta)).toString();
+}
+
+function subtractAmounts(current: string, delta: string): string {
+  return (Number(current) - Number(delta)).toString();
+}
+
+export async function getOrCreateSubWalletRow(
   tx: BalanceTx,
   walletId: number,
   currencyId: number
@@ -28,35 +36,43 @@ async function getOrCreateSubWalletRow(
   return created;
 }
 
-export async function creditWalletBalance(input: {
-  walletId: number;
-  currencyId: number;
-  amount: string;
-}) {
-  return db.transaction(async (tx) => {
-    const row = await getOrCreateSubWalletRow(tx, input.walletId, input.currencyId);
+export async function creditWalletBalance(
+  input: {
+    walletId: number;
+    currencyId: number;
+    amount: string;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    const row = await getOrCreateSubWalletRow(transaction, input.walletId, input.currencyId);
 
-    const [updated] = await tx
+    const [updated] = await transaction
       .update(subWallets)
       .set({
-        amount: sql`${subWallets.amount} + ${input.amount}`,
+        amount: addAmounts(String(row.amount), input.amount),
         lastModifiedAt: new Date(),
       })
       .where(eq(subWallets.id, row.id))
       .returning();
 
     return updated;
-  });
+  };
+
+  return tx ? run(tx) : db.transaction(run);
 }
 
-export async function debitWalletBalance(input: {
-  walletId: number;
-  currencyId: number;
-  amount: string;
-  allowNegative?: boolean;
-}) {
-  return db.transaction(async (tx) => {
-    const row = await getOrCreateSubWalletRow(tx, input.walletId, input.currencyId);
+export async function debitWalletBalance(
+  input: {
+    walletId: number;
+    currencyId: number;
+    amount: string;
+    allowNegative?: boolean;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    const row = await getOrCreateSubWalletRow(transaction, input.walletId, input.currencyId);
     const current = Number(row.amount);
     const debit = Number(input.amount);
 
@@ -64,15 +80,91 @@ export async function debitWalletBalance(input: {
       throw new Error("Insufficient wallet balance");
     }
 
-    const [updated] = await tx
+    const [updated] = await transaction
       .update(subWallets)
       .set({
-        amount: sql`${subWallets.amount} - ${input.amount}`,
+        amount: subtractAmounts(String(row.amount), input.amount),
         lastModifiedAt: new Date(),
       })
       .where(eq(subWallets.id, row.id))
       .returning();
 
     return updated;
-  });
+  };
+
+  return tx ? run(tx) : db.transaction(run);
+}
+
+export async function transferWalletBalance(
+  input: {
+    sourceWalletId: number;
+    sourceCurrencyId: number;
+    destinationWalletId: number;
+    destinationCurrencyId: number;
+    sourceAmount: string;
+    destinationAmount: string;
+    transactionFee?: string;
+    allowNegative?: boolean;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    await debitWalletBalance(
+      {
+        walletId: input.sourceWalletId,
+        currencyId: input.sourceCurrencyId,
+        amount: input.sourceAmount,
+        allowNegative: input.allowNegative,
+      },
+      transaction
+    );
+
+    await creditWalletBalance(
+      {
+        walletId: input.destinationWalletId,
+        currencyId: input.destinationCurrencyId,
+        amount: input.destinationAmount,
+      },
+      transaction
+    );
+  };
+
+  return tx ? run(tx) : db.transaction(run);
+}
+
+export async function reverseTransferBalance(
+  input: {
+    sourceWalletId: number;
+    sourceCurrencyId: number;
+    destinationWalletId: number;
+    destinationCurrencyId: number;
+    sourceAmount: string;
+    destinationAmount: string;
+    transactionFee?: string;
+    allowNegative?: boolean;
+  },
+  tx?: BalanceTx
+) {
+  const run = async (transaction: BalanceTx) => {
+    await creditWalletBalance(
+      {
+        walletId: input.sourceWalletId,
+        currencyId: input.sourceCurrencyId,
+        amount: input.sourceAmount,
+      },
+      transaction
+    );
+
+    await debitWalletBalance(
+      {
+        walletId: input.destinationWalletId,
+        currencyId: input.destinationCurrencyId,
+        amount: input.destinationAmount,
+        allowNegative: input.allowNegative,
+      },
+      transaction
+    );
+  };
+
+  return tx ? run(tx) : db.transaction(run);
 }

@@ -1,0 +1,43 @@
+.whiteboard-canvas .react-flow__controls {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  overflow: hidden;
+}
+
+.whiteboard-canvas .react-flow__controls-button {
+  background: var(--card);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  fill: var(--foreground);
+  width: 28px;
+  height: 28px;
+}
+
+.whiteboard-canvas .react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+.whiteboard-canvas .react-flow__controls-button:hover {
+  background: var(--accent);
+}
+
+.whiteboard-canvas .react-flow__controls-button svg {
+  fill: currentColor;
+  max-width: 14px;
+  max-height: 14px;
+}
+
+.whiteboard-canvas .react-flow__minimap {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--card) 75%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  overflow: hidden;
+}
+
+.whiteboard-canvas .react-flow__minimap-mask {
+  fill: color-mix(in oklch, var(--background) 55%, transparent);
+}

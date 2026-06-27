@@ -7,28 +7,35 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { SiteHeader } from "./layout/site-header";
+import { useTextDirection } from "@/src/i18n/useTextDirection";
+import { NavigationProgressBar, NavigationProgressProvider } from "@/src/components/navigation/NavigationProgress";
 
 export default function LayoutProvider({ children }: { children: React.ReactNode }) {
+  const { sidebarSide } = useTextDirection();
+
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 md:gap-6 h-full">
-              {children}
+    <NavigationProgressProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" side={sidebarSide} />
+        <SidebarInset>
+          <SiteHeader />
+          <NavigationProgressBar />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 md:gap-6 h-full">
+                {children}
+              </div>
             </div>
           </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </NavigationProgressProvider>
   );
 }

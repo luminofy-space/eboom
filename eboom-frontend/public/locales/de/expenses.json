@@ -1,0 +1,168 @@
+{
+  "list": {
+    "empty": {
+      "title": "Ausgabe hinzufügen",
+      "description": "Verfolgen Sie Ihre Ausgaben und verwalten Sie Ihre Budgets."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "Neue Ausgabe hinzufügen",
+      "description": "Geben Sie die Details ein, um eine neue Ausgabe zu erfassen. Behalten Sie Ihre Ausgaben im Blick und halten Sie sich an Ihr Budget."
+    },
+    "edit": {
+      "title": "Ausgabe bearbeiten",
+      "description": "Aktualisieren Sie die Details Ihrer Ausgabe."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "z. B. Monatsmiete"
+      },
+      "expenseCategory": {
+        "label": "Ausgabenkategorie"
+      },
+      "currency": {
+        "label": "Währung"
+      },
+      "defaultWallet": {
+        "label": "Standard-Wallet (optional)",
+        "placeholder": "Standard-Wallet auswählen"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Optionale Notizen zu dieser Ausgabe"
+      },
+      "photo": {
+        "label": "Foto"
+      },
+      "recurring": {
+        "label": "Wiederkehrend"
+      }
+    },
+    "submit": {
+      "create": "Ausgabe erstellen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Ausgabe konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "amountRequired": "Betrag ist erforderlich",
+    "amountPositive": "Betrag muss größer als null sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "currencyRequired": "Währung ist erforderlich",
+    "expenseRequired": "Ausgabe ist erforderlich",
+    "walletRequired": "Wallet ist erforderlich",
+    "paidBeforeDue": "Zahlungsdatum darf nicht vor dem Fälligkeitsdatum liegen",
+    "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
+    "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
+    "recurrenceWeeklyDays": "Wählen Sie mindestens einen Tag für die wöchentliche Wiederholung",
+    "recurrenceInterval": "Intervall muss mindestens 1 sein",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "paymentModal": {
+    "title": "Zahlung erstellen",
+    "editTitle": "Zahlung bearbeiten",
+    "description": {
+      "forExpense": "Erfassen Sie eine Zahlung für {{expenseName}}.",
+      "fromWallet": "Erfassen Sie ausgehende Mittel aus {{walletName}}.",
+      "default": "Erfassen Sie eine Zahlung für eine Ausgabe."
+    },
+    "fields": {
+      "expense": {
+        "label": "Ausgabe",
+        "placeholder": "Ausgabe auswählen",
+        "loading": "Ausgaben werden geladen..."
+      },
+      "amount": {
+        "label": "Betrag"
+      },
+      "sourceWallet": {
+        "label": "Quell-Wallet"
+      },
+      "dueDate": {
+        "label": "Fälligkeitsdatum"
+      },
+      "paidDate": {
+        "label": "Zahlungsdatum"
+      },
+      "notes": {
+        "label": "Notizen"
+      }
+    },
+    "empty": {
+      "noExpenses": "Keine Ausgaben gefunden."
+    },
+    "submit": "Zahlung erstellen",
+    "error": {
+      "required": "Ausgabe und Quell-Wallet sind erforderlich",
+      "saveFailed": "Zahlung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "insufficientBalance": "Unzureichendes Wallet-Guthaben für diese Zahlung"
+    }
+  },
+  "paymentsTable": {
+    "title": "Zahlungen",
+    "subtitle": "Zahlungshistorie für {{expenseName}}",
+    "createPayment": "Zahlung erstellen",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Ausgabenzahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "headers": {
+      "amount": "Betrag",
+      "wallet": "Wallet",
+      "due": "Fällig",
+      "paid": "Bezahlt",
+      "status": "Status",
+      "notes": "Notizen"
+    },
+    "empty": "Noch keine Zahlungen. Erfassen Sie eine Zahlung, um bezahlte Ausgaben zu verfolgen.",
+    "footer": {
+      "totalPaid": "Gesamt bezahlt"
+    }
+  },
+  "status": {
+    "paid": "Bezahlt",
+    "due": "Fällig",
+    "unpaid": "Unbezahlt"
+  },
+  "summaryCards": {
+    "totalPaid": {
+      "label": "Gesamt bezahlt",
+      "footerCount": "{{count}} bezahlte {{unit}}"
+    },
+    "unpaid": {
+      "label": "Unbezahlt",
+      "badge": "{{count}} offen",
+      "footerTitle": "Zahlung ausstehend",
+      "footerDescription": "Zahlungen ohne Zahlungsdatum"
+    },
+    "totalPayments": {
+      "label": "Zahlungen gesamt",
+      "badge": "{{paidCount}} / {{totalCount}} bezahlt",
+      "footerTitle": "Alle erfassten Zahlungen",
+      "footerDescription": "Einschließlich bezahlter und unbezahlter"
+    },
+    "averagePayment": {
+      "label": "Durchschnittliche Zahlung",
+      "badge": "Pro bezahlter Zahlung",
+      "footerTitle": "Basierend auf {{count}} {{unit}}",
+      "footerDescription": "Durchschnittsbetrag bezahlter Zahlungen"
+    }
+  },
+  "chart": {
+    "title": "Ausgaben im Zeitverlauf",
+    "description": {
+      "withData": "{{amount}} bezahlt & fällig für die {{timeRange}}",
+      "noData": "Keine Zahlungen in den {{timeRange}}"
+    },
+    "series": {
+      "paid": "Bezahlt",
+      "due": "Fällig"
+    }
+  }
+}

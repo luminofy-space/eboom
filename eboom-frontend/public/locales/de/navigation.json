@@ -1,0 +1,39 @@
+{
+  "dashboard": "Dashboard",
+  "search": {
+    "placeholder": "Suchen..."
+  },
+  "groups": {
+    "management": "Verwaltung",
+    "explore": "Entdecken"
+  },
+  "routes": {
+    "incomes": "Einnahmen",
+    "wallets": "Wallets",
+    "expenses": "Ausgaben",
+    "assets": "Vermögenswerte",
+    "manageMembers": "Mitglieder verwalten",
+    "canvasInvitations": "Canvas-Einladungen",
+    "whiteboard": "Whiteboard",
+    "calendar": "Kalender",
+    "budgetPlanning": "Budget & Planung",
+    "wishList": "Wunschliste",
+    "aiInsights": "KI-Einblicke"
+  },
+  "badges": {
+    "soon": "Bald"
+  },
+  "account": {
+    "language": "Sprache",
+    "logOut": "Abmelden",
+    "canvasInvitations": "Canvas-Einladungen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "empty": "Keine überfälligen Zahlungen oder Einnahmen.",
+    "overdueExpense": "Zahlung überfällig",
+    "overdueIncome": "Einnahme nicht erhalten",
+    "daysOverdue_one": "{{count}} Tag überfällig",
+    "daysOverdue_other": "{{count}} Tage überfällig"
+  }
+}

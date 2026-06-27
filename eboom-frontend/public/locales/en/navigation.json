@@ -1,0 +1,39 @@
+{
+  "dashboard": "Dashboard",
+  "search": {
+    "placeholder": "Search..."
+  },
+  "groups": {
+    "management": "Management",
+    "explore": "Explore"
+  },
+  "routes": {
+    "incomes": "Incomes",
+    "wallets": "Wallets",
+    "expenses": "Expenses",
+    "assets": "Assets",
+    "manageMembers": "Manage members",
+    "canvasInvitations": "Canvas Invitations",
+    "whiteboard": "Whiteboard",
+    "calendar": "Calendar",
+    "budgetPlanning": "Budget & Planning",
+    "wishList": "Wish List",
+    "aiInsights": "AI Insights"
+  },
+  "badges": {
+    "soon": "Soon"
+  },
+  "account": {
+    "language": "Language",
+    "logOut": "Log out",
+    "canvasInvitations": "Canvas Invitations"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No overdue payments or income entries.",
+    "overdueExpense": "Payment overdue",
+    "overdueIncome": "Income not received",
+    "daysOverdue_one": "{{count}} day overdue",
+    "daysOverdue_other": "{{count}} days overdue"
+  }
+}

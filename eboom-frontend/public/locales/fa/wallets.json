@@ -1,0 +1,200 @@
+{
+  "list": {
+    "empty": {
+      "title": "افزودن کیف پول",
+      "description": "کیف پول ایجاد کنید تا دارایی‌های خود را مدیریت کنید."
+    }
+  },
+  "detail": {
+    "loadError": "بارگذاری جزئیات کیف پول ناموفق بود. لطفاً دوباره تلاش کنید."
+  },
+  "modal": {
+    "create": {
+      "title": "افزودن کیف پول جدید",
+      "description": "جزئیات زیر را وارد کنید تا کیف پول جدیدی ایجاد شود. حساب‌های خود را سازماندهی کنید و منابع مالی‌تان را پیگیری کنید."
+    },
+    "edit": {
+      "title": "ویرایش کیف پول",
+      "description": "جزئیات کیف پول خود را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "name": {
+        "label": "نام کیف پول",
+        "placeholder": "مثلاً حساب بانکی اصلی"
+      },
+      "category": {
+        "label": "دسته‌بندی کیف پول"
+      },
+      "description": {
+        "label": "توضیحات",
+        "placeholder": "یادداشت‌های اختیاری درباره این کیف پول"
+      },
+      "photo": {
+        "label": "تصویر"
+      }
+    },
+    "submit": {
+      "create": "ایجاد کیف پول",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره کیف پول ناموفق بود. لطفاً دوباره تلاش کنید."
+    }
+  },
+  "validation": {
+    "required": "این فیلد الزامی است",
+    "nameRequired": "نام الزامی است",
+    "nameMaxLength": "نام باید حداکثر ۲۵۵ کاراکتر باشد",
+    "categoryRequired": "دسته‌بندی الزامی است",
+    "noCanvas": "ابتدا یک بوم انتخاب کنید",
+    "saveFailed": "ذخیره‌سازی ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "currencyRequired": "ارز الزامی است",
+    "exchangeRateRequired": "نرخ ارز برای انتقال بین ارزی الزامی است",
+    "transferDateRequired": "تاریخ انتقال الزامی است",
+    "feeNonNegative": "کارمزد باید صفر یا بیشتر باشد",
+    "feeLessThanSource": "کارمزد باید کمتر از مبلغ مبدأ باشد"
+  },
+  "entriesTable": {
+    "title": "ورودی‌های درآمد",
+    "subtitle": "تراکنش‌های ورودی به این کیف پول",
+    "createEntry": "ایجاد ورودی",
+    "count": "{{count}} {{unit}}",
+    "loadError": "بارگذاری ورودی‌های درآمد ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "income": "درآمد",
+      "expected": "مورد انتظار",
+      "received": "دریافت‌شده",
+      "status": "وضعیت",
+      "notes": "یادداشت‌ها"
+    },
+    "empty": "هنوز ورودی درآمدی ثبت نشده. برای ثبت وجوه ورودی، یک ورودی ایجاد کنید.",
+    "fallbackIncomeName": "درآمد #{{incomeId}}",
+    "footer": {
+      "totalReceived": "مجموع دریافت‌شده"
+    }
+  },
+  "paymentsTable": {
+    "title": "پرداخت‌های هزینه",
+    "subtitle": "تراکنش‌های خروجی از این کیف پول",
+    "createPayment": "ایجاد پرداخت",
+    "count": "{{count}} {{unit}}",
+    "loadError": "بارگذاری پرداخت‌های هزینه ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "expense": "هزینه",
+      "due": "سررسید",
+      "paid": "پرداخت‌شده",
+      "status": "وضعیت",
+      "notes": "یادداشت‌ها"
+    },
+    "empty": "هنوز پرداخت هزینه‌ای ثبت نشده. برای ثبت وجوه خروجی، یک پرداخت ایجاد کنید.",
+    "fallbackExpenseName": "هزینه #{{expenseId}}",
+    "footer": {
+      "totalPaid": "مجموع پرداخت‌شده"
+    }
+  },
+  "status": {
+    "received": "دریافت‌شده",
+    "expected": "مورد انتظار",
+    "pending": "در انتظار",
+    "paid": "پرداخت‌شده",
+    "due": "سررسید",
+    "overdue": "معوق"
+  },
+  "summaryCards": {
+    "totalReceived": {
+      "label": "مجموع دریافت‌شده",
+      "footerCount": "{{count}} {{unit}} دریافت‌شده"
+    },
+    "pendingIncoming": {
+      "label": "ورودی در انتظار",
+      "badge": "{{count}} باز",
+      "footerTitle": "در انتظار دریافت",
+      "footerDescription": "ورودی‌های بدون تاریخ دریافت"
+    },
+    "totalPaid": {
+      "label": "مجموع پرداخت‌شده",
+      "footerCount": "{{count}} {{unit}} پرداخت‌شده"
+    },
+    "dueOutgoing": {
+      "label": "خروجی سررسید",
+      "badge": "{{count}} معوق",
+      "footerTitle": "در انتظار پرداخت",
+      "footerDescription": "پرداخت‌های بدون تاریخ پرداخت"
+    }
+  },
+  "chart": {
+    "title": "تراکنش‌ها در طول زمان",
+    "description": {
+      "withData": "{{amount}} ورودی و خروجی برای {{timeRange}}",
+      "noData": "تراکنشی در {{timeRange}} وجود ندارد"
+    },
+    "series": {
+      "incoming": "ورودی",
+      "outgoing": "خروجی",
+      "transferIn": "انتقال ورودی",
+      "transferOut": "انتقال خروجی"
+    }
+  },
+  "transfersTable": {
+    "title": "انتقالات",
+    "subtitle": "وجوه منتقل‌شده بین کیف پول‌ها",
+    "createTransfer": "انتقال",
+    "count": "{{count}} انتقال",
+    "loadError": "بارگذاری انتقالات ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "direction": "جهت",
+      "counterparty": "طرف مقابل",
+      "date": "تاریخ",
+      "rate": "نرخ",
+      "fee": "کارمزد",
+      "notes": "یادداشت‌ها"
+    },
+    "direction": {
+      "in": "ورود از {{wallet}}",
+      "out": "خروج به {{wallet}}"
+    },
+    "empty": "هنوز انتقالی ثبت نشده. وجوه را بین کیف پول‌های خود منتقل کنید.",
+    "footer": {
+      "netIn": "مجموع ورودی",
+      "netOut": "مجموع خروجی"
+    },
+    "delete": {
+      "title": "حذف انتقال",
+      "description": "این کار تغییرات موجودی هر دو کیف پول را برمی‌گرداند."
+    }
+  },
+  "transferModal": {
+    "title": "انتقال وجه",
+    "editTitle": "ویرایش انتقال",
+    "description": {
+      "default": "انتقال وجه بین کیف پول‌ها در یک بوم.",
+      "fromWallet": "انتقال از {{walletName}} به کیف پول دیگر.",
+      "toWallet": "انتقال به {{walletName}} از کیف پول دیگر."
+    },
+    "fields": {
+      "sourceWallet": { "label": "کیف پول مبدأ" },
+      "sourceCurrency": { "label": "ارز مبدأ", "placeholder": "انتخاب ارز" },
+      "destinationWallet": { "label": "کیف پول مقصد" },
+      "destinationCurrency": { "label": "ارز مقصد", "placeholder": "انتخاب ارز" },
+      "sourceAmount": { "label": "مبلغ مبدأ" },
+      "destinationAmount": { "label": "مبلغ مقصد" },
+      "exchangeRate": { "label": "نرخ ارز" },
+      "transactionFee": { "label": "کارمزد تراکنش (اختیاری، از مبلغ دریافتی کسر می‌شود)" },
+      "transferDate": { "label": "تاریخ انتقال" },
+      "notes": { "label": "یادداشت‌ها" }
+    },
+    "empty": {
+      "noCurrencies": "ارزی در دسترس نیست"
+    },
+    "submit": {
+      "create": "انتقال",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره انتقال ناموفق بود. لطفاً دوباره تلاش کنید."
+    }
+  }
+}

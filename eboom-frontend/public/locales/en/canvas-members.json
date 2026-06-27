@@ -1,0 +1,82 @@
+{
+  "roles": {
+    "collaborator": "Collaborator",
+    "modifier": "Modifier",
+    "visitor": "Visitor",
+    "owner": "Owner"
+  },
+  "members": {
+    "title": "Manage members",
+    "description": "Invite people and manage roles for this canvas.",
+    "canvasType": "Type: {{type}}",
+    "canvasDetails": "Canvas overview",
+    "currentMembers": "Current members",
+    "currentMembersDescription": "People who have access to this canvas.",
+    "pendingInvitations": "Pending invitations",
+    "pendingInvitationsDescription": "Invitations waiting for a response.",
+    "inviteSectionDescription": "Add people from your other canvases or by email.",
+    "noPendingInvitations": "No pending invitations.",
+    "invitedMember": "Invited member",
+    "invitedRole": "Role",
+    "inviteSection": "Invite members",
+    "suggestionsHint": "Pick from members on your other canvases",
+    "emailHint": "Or invite by email address",
+    "selectMembersPlaceholder": "Search members from your other canvases…",
+    "noSuggestions": "No members found from your other canvases.",
+    "emailPlaceholder": "Enter full email address",
+    "addEmail": "Add",
+    "sendInvitations": "Send invitations",
+    "noMembers": "No members yet.",
+    "removeMember": "Remove member",
+    "roleUpdated": "Member role updated.",
+    "invitationCancelled": "Invitation cancelled.",
+    "memberRemoved": "Member removed.",
+    "removeConfirm": {
+      "title": "Remove member?",
+      "description": "{{name}} will lose access to this canvas. This action cannot be undone.",
+      "removing": "Removing..."
+    },
+    "errors": {
+      "userNotFound": "No user found with this email.",
+      "alreadyAdded": "This user is already in the invite list.",
+      "emptyList": "Add at least one member to invite."
+    }
+  },
+  "invitations": {
+    "title": "Canvas invitations",
+    "tabs": {
+      "sent": "Sent",
+      "received": "Received"
+    },
+    "empty": {
+      "sent": "You haven't sent any invitations yet.",
+      "received": "You have no invitations."
+    },
+    "from": "From {{name}}",
+    "to": "To {{name}}",
+    "role": "Role: {{role}}",
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    },
+    "actions": {
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancel": "Cancel invitation"
+    }
+  },
+  "leave": {
+    "title": "Leave canvas",
+    "description": "This will remove your access to \"{{name}}\". Type the canvas name to confirm.",
+    "placeholder": "Canvas name",
+    "confirm": "Leave canvas",
+    "ownerBlocked": "Owners cannot leave. Delete the canvas or transfer ownership first."
+  },
+  "switcher": {
+    "manageMembers": "Manage members",
+    "leaveCanvas": "Leave canvas"
+  }
+}

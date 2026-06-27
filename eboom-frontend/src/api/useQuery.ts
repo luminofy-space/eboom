@@ -1,7 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
-import { useAuth } from "../hooks/useAuth";
+import { useContext } from "react";
+import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "./utils";
+import { env } from "@/utils/env";
+
+type AuthOptions = {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  refresh?: () => Promise<string | null>;
+};
 
 const useQueryApi = <T>(
   url: string,
@@ -18,6 +26,7 @@ const useQueryApi = <T>(
     retry?: number;
     refetchOnWindowFocus?: boolean;
     needBaseUrl?: boolean;
+    auth?: AuthOptions;
   },
   axiosProp?: AxiosRequestConfig
 ) => {
@@ -34,12 +43,23 @@ const useQueryApi = <T>(
     retry = 1,
     refetchOnWindowFocus = false,
     needBaseUrl = true,
+    auth: optionsAuth,
   } = options || {};
 
-  const { accessToken, logout } = useAuth();
+  const authContext = useContext(AuthContext);
+
+  const accessToken = hasToken
+    ? optionsAuth?.accessToken ?? authContext?.accessToken ?? null
+    : null;
+  const refreshToken = hasToken
+    ? optionsAuth?.refreshToken ?? authContext?.refreshToken ?? null
+    : null;
+  const refreshFn = hasToken
+    ? optionsAuth?.refresh ?? authContext?.refreshAccessToken ?? null
+    : null;
 
   const buildUrl = () => {
-    let finalUrl = needBaseUrl ? `${process.env.NEXT_PUBLIC_BASE_URL}${url}` : url;
+    let finalUrl = needBaseUrl ? `${env("NEXT_PUBLIC_BASE_URL")}${url}` : url;
 
     if (urlParams?.length) finalUrl += "/" + urlParams.join("/");
 
@@ -50,11 +70,11 @@ const useQueryApi = <T>(
     if (!hasAccess) throw new Error("Forbidden");
 
     const finalUrl = buildUrl();
-
     const requestHeaders: Record<string, string> = { ...headers };
 
-    if (hasToken && accessToken) {
-      requestHeaders["Authorization"] = `Bearer ${accessToken}`;
+    const token = accessToken;
+    if (token) {
+      requestHeaders["Authorization"] = `Bearer ${token}`;
     }
 
     const config: AxiosRequestConfig = {
@@ -71,8 +91,24 @@ const useQueryApi = <T>(
     } catch (err) {
       const axiosErr = err as AxiosError;
       const status = axiosErr.response?.status;
-      if (status === 401 || status === 403) {
-        logout();
+
+      if (status === 401 && hasToken && refreshToken && refreshFn) {
+        const newToken = await refreshFn();
+
+        if (newToken) {
+          const retryRes = await axios({
+            ...config,
+            headers: {
+              ...requestHeaders,
+              Authorization: `Bearer ${newToken}`,
+            },
+          });
+          return snakeToCamel(retryRes.data) as T;
+        }
+      }
+
+      if ((status === 401 || status === 403) && authContext) {
+        authContext.signOut();
       }
       throw err;
     }

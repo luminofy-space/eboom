@@ -17,8 +17,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/src/hooks/useAuth";
+import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface SignupFormData {
   firstName: string;
@@ -31,6 +32,7 @@ interface SignupFormData {
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation("auth");
 
   const {
     register,
@@ -41,7 +43,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
   const password = watch("password");
 
-  const { signup, loading } = useAuth();
+  const { signup, loading } = useAuthContext();
 
   const onSubmit = (data: SignupFormData) => {
     signup({
@@ -50,8 +52,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       email: data.email,
       password: data.password,
     })
-      .then(() => {
-        router.push("/confirm-email");
+      .then((res) => {
+        router.push(res?.user?.emailVerified ? "/" : "/confirm-email");
       })
       .catch((error) => {
         console.error("error", error);
@@ -62,10 +64,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   return (
     <Card {...props}>
       <CardHeader>
-        <CardTitle>Create an account</CardTitle>
-        <CardDescription>
-          Enter your information below to create your account
-        </CardDescription>
+        <CardTitle>{t("signup.title")}</CardTitle>
+        <CardDescription>{t("signup.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -76,16 +76,16 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               </Field>
             )}
             <Field>
-              <FieldLabel htmlFor="firstName">First Name</FieldLabel>
+              <FieldLabel htmlFor="firstName">{t("signup.firstName.label")}</FieldLabel>
               <Input
                 id="firstName"
                 type="text"
-                placeholder="John"
+                placeholder={t("signup.firstName.placeholder")}
                 {...register("firstName", {
-                  required: "First name is required",
+                  required: t("signup.firstName.required"),
                   minLength: {
                     value: 2,
-                    message: "First name must be at least 2 characters",
+                    message: t("signup.firstName.minLength"),
                   },
                 })}
               />
@@ -96,16 +96,16 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               )}
             </Field>
             <Field>
-              <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
+              <FieldLabel htmlFor="lastName">{t("signup.lastName.label")}</FieldLabel>
               <Input
                 id="lastName"
                 type="text"
-                placeholder="Doe"
+                placeholder={t("signup.lastName.placeholder")}
                 {...register("lastName", {
-                  required: "Last name is required",
+                  required: t("signup.lastName.required"),
                   minLength: {
                     value: 2,
-                    message: "Last name must be at least 2 characters",
+                    message: t("signup.lastName.minLength"),
                   },
                 })}
               />
@@ -116,16 +116,16 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               )}
             </Field>
             <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldLabel htmlFor="email">{t("signup.email.label")}</FieldLabel>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder={t("signup.email.placeholder")}
                 {...register("email", {
-                  required: "Email is required",
+                  required: t("signup.email.required"),
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
+                    message: t("signup.email.invalid"),
                   },
                 })}
               />
@@ -134,21 +134,17 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   {errors.email.message}
                 </FieldDescription>
               )}
-              {/* <FieldDescription>
-                We&apos;ll use this to contact you. We will not share your email
-                with anyone else.
-              </FieldDescription> */}
             </Field>
             <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <FieldLabel htmlFor="password">{t("signup.password.label")}</FieldLabel>
               <Input
                 id="password"
                 type="password"
                 {...register("password", {
-                  required: "Password is required",
+                  required: t("signup.password.required"),
                   minLength: {
                     value: 8,
-                    message: "Password must be at least 8 characters",
+                    message: t("signup.password.minLength"),
                   },
                 })}
               />
@@ -157,21 +153,18 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   {errors.password.message}
                 </FieldDescription>
               )}
-              {/* <FieldDescription>
-                Must be at least 8 characters long.
-              </FieldDescription> */}
             </Field>
             <Field>
               <FieldLabel htmlFor="confirmPassword">
-                Confirm Password
+                {t("signup.confirmPassword.label")}
               </FieldLabel>
               <Input
                 id="confirmPassword"
                 type="password"
                 {...register("confirmPassword", {
-                  required: "Please confirm your password",
+                  required: t("signup.confirmPassword.required"),
                   validate: (value) =>
-                    value === password || "Passwords do not match",
+                    value === password || t("signup.confirmPassword.mismatch"),
                 })}
               />
               {errors.confirmPassword && (
@@ -179,15 +172,15 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   {errors.confirmPassword.message}
                 </FieldDescription>
               )}
-              {/* <FieldDescription>Please confirm your password.</FieldDescription> */}
             </Field>
             <FieldGroup>
               <Field>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Creating account..." : "Create Account"}
+                  {loading ? t("signup.submitting") : t("signup.submit")}
                 </Button>
                 <FieldDescription className="px-6 text-center">
-                  Already have an account? <a href="/login">Sign in</a>
+                  {t("signup.loginPrompt")}{" "}
+                  <a href="/login">{t("signup.loginLink")}</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>

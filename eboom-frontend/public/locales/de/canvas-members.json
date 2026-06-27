@@ -1,0 +1,82 @@
+{
+  "roles": {
+    "collaborator": "Mitarbeiter",
+    "modifier": "Bearbeiter",
+    "visitor": "Besucher",
+    "owner": "Inhaber"
+  },
+  "members": {
+    "title": "Mitglieder verwalten",
+    "description": "Personen einladen und Rollen für dieses Canvas verwalten.",
+    "canvasType": "Typ: {{type}}",
+    "canvasDetails": "Canvas-Übersicht",
+    "currentMembers": "Aktuelle Mitglieder",
+    "currentMembersDescription": "Personen mit Zugriff auf dieses Canvas.",
+    "pendingInvitations": "Ausstehende Einladungen",
+    "pendingInvitationsDescription": "Einladungen, die auf eine Antwort warten.",
+    "inviteSectionDescription": "Personen aus anderen Canvases oder per E-Mail hinzufügen.",
+    "noPendingInvitations": "Keine ausstehenden Einladungen.",
+    "invitedMember": "Eingeladenes Mitglied",
+    "invitedRole": "Rolle",
+    "inviteSection": "Mitglieder einladen",
+    "suggestionsHint": "Aus Mitgliedern Ihrer anderen Canvases auswählen",
+    "emailHint": "Oder per E-Mail-Adresse einladen",
+    "selectMembersPlaceholder": "Mitglieder aus Ihren anderen Canvases suchen…",
+    "noSuggestions": "Keine Mitglieder aus Ihren anderen Canvases gefunden.",
+    "emailPlaceholder": "Vollständige E-Mail-Adresse eingeben",
+    "addEmail": "Hinzufügen",
+    "sendInvitations": "Einladungen senden",
+    "noMembers": "Noch keine Mitglieder.",
+    "removeMember": "Mitglied entfernen",
+    "roleUpdated": "Mitgliedsrolle aktualisiert.",
+    "invitationCancelled": "Einladung storniert.",
+    "memberRemoved": "Mitglied entfernt.",
+    "removeConfirm": {
+      "title": "Mitglied entfernen?",
+      "description": "{{name}} verliert den Zugriff auf dieses Canvas. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "removing": "Wird entfernt..."
+    },
+    "errors": {
+      "userNotFound": "Kein Benutzer mit dieser E-Mail gefunden.",
+      "alreadyAdded": "Dieser Benutzer ist bereits in der Einladungsliste.",
+      "emptyList": "Mindestens ein Mitglied zum Einladen hinzufügen."
+    }
+  },
+  "invitations": {
+    "title": "Canvas-Einladungen",
+    "tabs": {
+      "sent": "Gesendet",
+      "received": "Empfangen"
+    },
+    "empty": {
+      "sent": "Sie haben noch keine Einladungen gesendet.",
+      "received": "Sie haben keine Einladungen."
+    },
+    "from": "Von {{name}}",
+    "to": "An {{name}}",
+    "role": "Rolle: {{role}}",
+    "status": {
+      "pending": "Ausstehend",
+      "accepted": "Angenommen",
+      "declined": "Abgelehnt",
+      "cancelled": "Storniert",
+      "expired": "Abgelaufen"
+    },
+    "actions": {
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "cancel": "Einladung stornieren"
+    }
+  },
+  "leave": {
+    "title": "Canvas verlassen",
+    "description": "Dies entfernt Ihren Zugriff auf \"{{name}}\". Geben Sie den Canvas-Namen zur Bestätigung ein.",
+    "placeholder": "Canvas-Name",
+    "confirm": "Canvas verlassen",
+    "ownerBlocked": "Inhaber können nicht austreten. Löschen Sie das Canvas oder übertragen Sie die Inhaberschaft."
+  },
+  "switcher": {
+    "manageMembers": "Mitglieder verwalten",
+    "leaveCanvas": "Canvas verlassen"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "imageUploader": {
+    "title": "Profilbild aktualisieren",
+    "description": "Laden Sie ein neues Profilbild hoch. Unterstützte Formate: JPEG, PNG, WebP. Maximale Größe: 5 MB.",
+    "preview": {
+      "alt": "Vorschau",
+      "remove": "Entfernen"
+    },
+    "fields": {
+      "selectImage": {
+        "label": "Bild auswählen",
+        "hint": "Klicken Sie auf das Kamera-Symbol oder durchsuchen Sie, um ein Bild auszuwählen"
+      }
+    },
+    "submit": "Bild hochladen",
+    "submitting": "Wird hochgeladen...",
+    "toast": {
+      "invalidFileType": {
+        "title": "Ungültiger Dateityp",
+        "description": "Bitte wählen Sie eine Bilddatei (JPEG, PNG usw.)"
+      },
+      "fileTooLarge": {
+        "title": "Datei zu groß",
+        "description": "Bitte wählen Sie ein Bild kleiner als 5 MB"
+      },
+      "noImageSelected": {
+        "title": "Kein Bild ausgewählt",
+        "description": "Bitte wählen Sie ein Bild zum Hochladen"
+      },
+      "success": {
+        "title": "Erfolg!",
+        "description": "Profilbild erfolgreich aktualisiert"
+      }
+    }
+  }
+}

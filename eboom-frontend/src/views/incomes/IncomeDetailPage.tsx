@@ -1,22 +1,33 @@
 "use client";
 
-import { ChartAreaInteractive } from "@/src/components/details/chart-area-interactive";
-import { DataTable } from "@/src/components/details/data-table";
-import { SectionCards } from "@/src/components/details/section-cards";
-import data from "@/src/_mocks/data.json";
+import { IncomeEntriesChart } from "./component/IncomeEntriesChart";
+import { IncomeEntriesTable } from "./component/IncomeEntriesTable";
+import { IncomeSummaryCards } from "./component/IncomeSummaryCards";
+import { useIncomeDetail } from "./hooks/useIncomeDetail";
+import { Container } from "@/components/ui/container";
 
 interface Props {
   id: number;
 }
 
 export default function IncomeDetailPage({ id }: Props) {
+  const { entries, currencySymbol, isLoading } = useIncomeDetail(id);
+
   return (
     <>
-      <div className="px-4 lg:px-6">
-        <ChartAreaInteractive />
-      </div>
-      <SectionCards />
-      <DataTable data={data} />
+      <Container>
+        <IncomeEntriesChart
+          entries={entries}
+          currencySymbol={currencySymbol}
+          isLoading={isLoading}
+        />
+      </Container>
+      <IncomeSummaryCards
+        entries={entries}
+        currencySymbol={currencySymbol}
+        isLoading={isLoading}
+      />
+      <IncomeEntriesTable incomeId={id} />
     </>
   );
 }

@@ -17,8 +17,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/src/hooks/useAuth";
+import { Stack } from "@/components/ui/stack";
+import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface LoginFormData {
   email: string;
@@ -31,6 +33,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation("auth");
 
   const {
     register,
@@ -38,7 +41,7 @@ export function LoginForm({
     formState: { errors },
   } = useForm<LoginFormData>();
 
-  const { login, loading } = useAuth();
+  const { login, loading } = useAuthContext();
 
   const onSubmit = async (data: LoginFormData) => {
     await login(data)
@@ -54,13 +57,11 @@ export function LoginForm({
   };
 
   return (
-    <div className={`flex flex-col gap-6 ${className}`} {...props}>
+    <Stack gap={6} className={className} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle>{t("login.title")}</CardTitle>
+          <CardDescription>{t("login.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -71,16 +72,16 @@ export function LoginForm({
                 </Field>
               )}
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">{t("login.email.label")}</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder={t("login.email.placeholder")}
                   {...register("email", {
-                    required: "Email is required",
+                    required: t("login.email.required"),
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
+                      message: t("login.email.invalid"),
                     },
                   })}
                 />
@@ -92,22 +93,22 @@ export function LoginForm({
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">{t("login.password.label")}</FieldLabel>
                   <a
-                    href="#"
+                    href="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
+                    {t("login.password.forgot")}
                   </a>
                 </div>
                 <Input
                   id="password"
                   type="password"
                   {...register("password", {
-                    required: "Password is required",
+                    required: t("login.password.required"),
                     minLength: {
                       value: 6,
-                      message: "Password must be at least 6 characters",
+                      message: t("login.password.minLength"),
                     },
                   })}
                 />
@@ -119,19 +120,17 @@ export function LoginForm({
               </Field>
               <Field>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? t("login.submitting") : t("login.submit")}
                 </Button>
-                {/* <Button variant="outline" type="button" disabled={loginMutation.isPending}>
-                  Login with Google
-                </Button> */}
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="/signup">Sign up</a>
+                  {t("login.signupPrompt")}{" "}
+                  <a href="/signup">{t("login.signupLink")}</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
-    </div>
+    </Stack>
   );
 }

@@ -1,0 +1,168 @@
+{
+  "list": {
+    "empty": {
+      "title": "Add Expense",
+      "description": "Track your spending and manage your budgets."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "Add New Expense",
+      "description": "Enter the details below to track a new expense. Keep your spending organized and on budget."
+    },
+    "edit": {
+      "title": "Edit Expense",
+      "description": "Update the details of your expense."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "e.g. Monthly Rent"
+      },
+      "expenseCategory": {
+        "label": "Expense Category"
+      },
+      "currency": {
+        "label": "Currency"
+      },
+      "defaultWallet": {
+        "label": "Default Wallet (optional)",
+        "placeholder": "Select a default wallet"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Optional notes about this expense"
+      },
+      "photo": {
+        "label": "Photo"
+      },
+      "recurring": {
+        "label": "Recurring"
+      }
+    },
+    "submit": {
+      "create": "Create Expense",
+      "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save expense. Please try again."
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "amountRequired": "Amount is required",
+    "amountPositive": "Amount must be greater than zero",
+    "categoryRequired": "Category is required",
+    "currencyRequired": "Currency is required",
+    "expenseRequired": "Expense is required",
+    "walletRequired": "Wallet is required",
+    "paidBeforeDue": "Paid date cannot be before due date",
+    "imageTooLarge": "Image must be 5 MB or smaller",
+    "imageInvalidType": "Please select a valid image file",
+    "recurrenceWeeklyDays": "Select at least one day for weekly recurrence",
+    "recurrenceInterval": "Interval must be at least 1",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again."
+  },
+  "paymentModal": {
+    "title": "Create Payment",
+    "editTitle": "Edit Payment",
+    "description": {
+      "forExpense": "Record a payment made for {{expenseName}}.",
+      "fromWallet": "Record outgoing funds from {{walletName}}.",
+      "default": "Record a payment made for an expense."
+    },
+    "fields": {
+      "expense": {
+        "label": "Expense",
+        "placeholder": "Select an expense",
+        "loading": "Loading expenses..."
+      },
+      "amount": {
+        "label": "Amount"
+      },
+      "sourceWallet": {
+        "label": "Source Wallet"
+      },
+      "dueDate": {
+        "label": "Due Date"
+      },
+      "paidDate": {
+        "label": "Paid Date"
+      },
+      "notes": {
+        "label": "Notes"
+      }
+    },
+    "empty": {
+      "noExpenses": "No expenses found."
+    },
+    "submit": "Create Payment",
+    "error": {
+      "required": "Expense and source wallet are required",
+      "saveFailed": "Failed to create payment. Please try again.",
+      "insufficientBalance": "Insufficient wallet balance for this payment"
+    }
+  },
+  "paymentsTable": {
+    "title": "Payments",
+    "subtitle": "Payment history for {{expenseName}}",
+    "createPayment": "Create Payment",
+    "count": "{{count}} {{unit}}",
+    "loadError": "Failed to load expense payments. Please try again.",
+    "headers": {
+      "amount": "Amount",
+      "wallet": "Wallet",
+      "due": "Due",
+      "paid": "Paid",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "empty": "No payments yet. Record a payment to track expenses paid.",
+    "footer": {
+      "totalPaid": "Total paid"
+    }
+  },
+  "status": {
+    "paid": "Paid",
+    "due": "Due",
+    "unpaid": "Unpaid"
+  },
+  "summaryCards": {
+    "totalPaid": {
+      "label": "Total Paid",
+      "footerCount": "{{count}} paid {{unit}}"
+    },
+    "unpaid": {
+      "label": "Unpaid",
+      "badge": "{{count}} open",
+      "footerTitle": "Awaiting payment",
+      "footerDescription": "Payments without a paid date"
+    },
+    "totalPayments": {
+      "label": "Total Payments",
+      "badge": "{{paidCount}} / {{totalCount}} paid",
+      "footerTitle": "All recorded payments",
+      "footerDescription": "Includes paid and unpaid"
+    },
+    "averagePayment": {
+      "label": "Average Payment",
+      "badge": "Per paid payment",
+      "footerTitle": "Based on {{count}} {{unit}}",
+      "footerDescription": "Mean amount across paid payments"
+    }
+  },
+  "chart": {
+    "title": "Expenses Over Time",
+    "description": {
+      "withData": "{{amount}} paid & due for the {{timeRange}}",
+      "noData": "No payments in the {{timeRange}}"
+    },
+    "series": {
+      "paid": "Paid",
+      "due": "Due"
+    }
+  }
+}

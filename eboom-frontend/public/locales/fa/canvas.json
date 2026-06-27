@@ -1,0 +1,58 @@
+{
+  "modal": {
+    "create": {
+      "title": "افزودن بوم جدید",
+      "description": "بوم جدیدی برای سازماندهی امور مالی خود ایجاد کنید. هر بوم یک فضای کاری مالی مستقل است."
+    },
+    "edit": {
+      "title": "ویرایش بوم",
+      "description": "جزئیات بوم خود را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "name": {
+        "label": "نام",
+        "placeholder": "مثلاً بودجه شخصی من"
+      },
+      "description": {
+        "label": "توضیحات",
+        "placeholder": "توضیحات اختیاری"
+      },
+      "type": {
+        "label": "نوع",
+        "options": {
+          "personal": "شخصی",
+          "business": "کسب‌وکار",
+          "family": "خانوادگی"
+        }
+      },
+      "baseCurrency": {
+        "label": "ارز پایه"
+      },
+      "backgroundColor": {
+        "label": "رنگ پس‌زمینه"
+      },
+      "icon": {
+        "label": "آیکون"
+      }
+    },
+    "empty": {
+      "noCurrencies": "ارزی یافت نشد."
+    },
+    "errors": {
+      "createFailed": "ایجاد بوم ناموفق بود. لطفاً دوباره تلاش کنید."
+    },
+    "submit": {
+      "create": "ایجاد بوم",
+      "edit": "ذخیره تغییرات"
+    }
+  },
+  "switcher": {
+    "placeholder": "انتخاب بوم",
+    "fallbackType": "بوم",
+    "label": "بوم‌ها",
+    "owned": "مالک",
+    "joined": "عضو شده",
+    "empty": "هنوز بومی وجود ندارد",
+    "addNew": "افزودن بوم جدید"
+  }
+}
