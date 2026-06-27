@@ -8,6 +8,7 @@ import searchReducer from './searchSlice';
 import incomeReducer from './incomeSlice';
 import expenseReducer from './expenseSlice';
 import walletReducer from './walletSlice';
+import assetReducer from './assetSlice';
 import storage from './storage';
 
 const persistConfig = {
@@ -38,6 +39,7 @@ const rootReducer = combineReducers({
     income: incomeReducer,
     expense: expenseReducer,
     wallet: walletReducer,
+    asset: assetReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

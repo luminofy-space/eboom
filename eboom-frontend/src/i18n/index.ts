@@ -22,6 +22,7 @@ if (!i18n.isInitialized) {
         "expenses",
         "incomes",
         "wallets",
+        "assets",
         "profile",
         "canvas",
         "canvas-members",

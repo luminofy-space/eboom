@@ -24,8 +24,18 @@
       "pending": "Einnahmen ausstehend",
       "paid": "Ausgaben bezahlt",
       "unpaid": "Ausgaben unbezahlt",
-      "netCashFlow": "Netto-Cashflow (diesen Monat)"
+      "netCashFlow": "Netto-Cashflow (diesen Monat)",
+      "holdings": "Vermögenswerte",
+      "holdingsValue": "Geschätzter Wert"
     }
+  },
+  "holdings": {
+    "title": "Immobilien & Vermögenswerte",
+    "empty": "Noch keine Vermögenswerte. Fügen Sie Fahrzeuge, Immobilien oder Grundstücke hinzu.",
+    "viewAll": "Alle anzeigen",
+    "assetCount_one": "{{count}} Vermögenswert",
+    "assetCount_other": "{{count}} Vermögenswerte",
+    "totalValue": "Geschätzter Gesamtwert"
   },
   "chart": {
     "title": "Cashflow",

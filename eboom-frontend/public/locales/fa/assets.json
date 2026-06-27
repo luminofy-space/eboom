@@ -1,0 +1,60 @@
+{
+  "list": {
+    "empty": {
+      "title": "افزودن دارایی",
+      "description": "خودرو، ملک، زمین و سایر دارایی‌های غیرنقدی را ثبت کنید."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "افزودن دارایی جدید",
+      "description": "یک دارایی غیرنقدی با ارزش برآوردی و دسته‌بندی ثبت کنید."
+    },
+    "edit": {
+      "title": "ویرایش دارایی",
+      "description": "جزئیات دارایی خود را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "name": {
+        "label": "نام",
+        "placeholder": "مثلاً خودروی خانواده"
+      },
+      "category": {
+        "label": "دسته‌بندی"
+      },
+      "currency": {
+        "label": "ارز"
+      },
+      "estimatedValue": {
+        "label": "ارزش برآوردی",
+        "placeholder": "۰٫۰۰"
+      },
+      "description": {
+        "label": "توضیحات",
+        "placeholder": "یادداشت اختیاری درباره این دارایی"
+      },
+      "photo": {
+        "label": "عکس"
+      }
+    },
+    "submit": {
+      "create": "ایجاد دارایی",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره دارایی ناموفق بود. لطفاً دوباره تلاش کنید."
+    }
+  },
+  "validation": {
+    "nameRequired": "نام الزامی است",
+    "nameMaxLength": "نام باید حداکثر ۲۵۵ کاراکتر باشد",
+    "categoryRequired": "دسته‌بندی الزامی است",
+    "currencyRequired": "ارز الزامی است",
+    "estimatedValueRequired": "ارزش برآوردی الزامی است",
+    "estimatedValueNonNegative": "ارزش برآوردی باید صفر یا بیشتر باشد",
+    "imageTooLarge": "تصویر باید حداکثر ۵ مگابایت باشد",
+    "imageInvalidType": "لطفاً یک فایل تصویر معتبر انتخاب کنید",
+    "noCanvas": "ابتدا یک بوم انتخاب کنید",
+    "saveFailed": "ذخیره ناموفق بود. لطفاً دوباره تلاش کنید."
+  }
+}

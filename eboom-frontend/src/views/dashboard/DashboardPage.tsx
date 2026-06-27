@@ -7,6 +7,7 @@ import { Typography } from "@/components/ui/typography";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useDashboardSummary } from "./hooks/useDashboardSummary";
 import { DashboardAssetsSection } from "./components/DashboardAssetsSection";
+import { DashboardHoldingsSection } from "./components/DashboardHoldingsSection";
 import { DashboardCashFlowChart } from "./components/DashboardCashFlowChart";
 import { DashboardEmptyState } from "./components/DashboardEmptyState";
 import { DashboardHeader } from "./components/DashboardHeader";
@@ -41,6 +42,8 @@ export default function DashboardPage() {
       <DashboardHeader canvas={activeCanvas} />
 
       <DashboardAssetsSection summary={summary} isLoading={isLoading} />
+
+      <DashboardHoldingsSection summary={summary} isLoading={isLoading} />
 
       <Container>
         <DashboardCashFlowChart summary={summary} isLoading={isLoading} />

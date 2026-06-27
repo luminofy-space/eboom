@@ -1,0 +1,60 @@
+{
+  "list": {
+    "empty": {
+      "title": "Vermögenswert hinzufügen",
+      "description": "Erfassen Sie Fahrzeuge, Immobilien, Grundstücke und andere illiquide Vermögenswerte."
+    }
+  },
+  "modal": {
+    "create": {
+      "title": "Neuen Vermögenswert hinzufügen",
+      "description": "Erfassen Sie einen illiquiden Vermögenswert mit geschätztem Wert und Kategorie."
+    },
+    "edit": {
+      "title": "Vermögenswert bearbeiten",
+      "description": "Aktualisieren Sie die Details Ihres Vermögenswerts."
+    },
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "z. B. Familienauto"
+      },
+      "category": {
+        "label": "Kategorie"
+      },
+      "currency": {
+        "label": "Währung"
+      },
+      "estimatedValue": {
+        "label": "Geschätzter Wert",
+        "placeholder": "0,00"
+      },
+      "description": {
+        "label": "Beschreibung",
+        "placeholder": "Optionale Notizen zu diesem Vermögenswert"
+      },
+      "photo": {
+        "label": "Foto"
+      }
+    },
+    "submit": {
+      "create": "Vermögenswert erstellen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Vermögenswert konnte nicht gespeichert werden. Bitte erneut versuchen."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "currencyRequired": "Währung ist erforderlich",
+    "estimatedValueRequired": "Geschätzter Wert ist erforderlich",
+    "estimatedValueNonNegative": "Geschätzter Wert muss null oder größer sein",
+    "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
+    "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen."
+  }
+}

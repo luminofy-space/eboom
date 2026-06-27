@@ -252,6 +252,16 @@ export const expenseCategories = pgTable("expense_categories", {
   // lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
+export const assetCategories = pgTable("asset_categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  isSystematic: boolean("is_systematic").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+});
+
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
   canvasId: integer("canvas_id").notNull().references(() => canvases.id),
@@ -270,6 +280,28 @@ export const expenses = pgTable("expenses", {
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
+
+export const assets = pgTable(
+  "assets",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    assetCategoryId: integer("asset_category_id")
+      .notNull()
+      .references(() => assetCategories.id),
+    currencyId: integer("currency_id").notNull().references(() => currencies.id),
+    estimatedValue: numeric("estimated_value", { precision: 20, scale: 8 }).notNull(),
+    photoUrl: text("photo_url"),
+    description: jsonb("description"),
+    isArchived: boolean("is_archived").default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+    lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  },
+  (table) => [check("asset_estimated_value_check", sql`${table.estimatedValue} >= 0`)]
+);
 
 export const expensePayments = pgTable(
   "expense_payments",

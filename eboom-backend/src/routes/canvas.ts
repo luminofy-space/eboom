@@ -5,6 +5,8 @@ import {
   canvasMembers,
   expenses,
   expenseCategories,
+  assets,
+  assetCategories,
   currencies,
   incomes,
   incomeCategories,
@@ -681,6 +683,129 @@ router.post("/:canvasId/wallets", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error creating wallet:", err);
     res.status(500).json({ error: "Failed to create wallet" });
+  }
+});
+
+// ============================================================================
+// CANVAS ASSETS ROUTES
+// ============================================================================
+
+router.get("/:canvasId/assets", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false), ilike(assets.name, `%${search}%`))
+      : and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(assets)
+      .where(whereCondition);
+
+    const assetsList = await db
+      .select({
+        asset: assets,
+        category: assetCategories,
+        currency: currencies,
+      })
+      .from(assets)
+      .leftJoin(assetCategories, eq(assets.assetCategoryId, assetCategories.id))
+      .leftJoin(currencies, eq(assets.currencyId, currencies.id))
+      .where(whereCondition)
+      .orderBy(desc(assets.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const formattedAssets = assetsList.map((a) => ({
+      ...a.asset,
+      category: a.category,
+      currency: a.currency,
+    }));
+
+    res.json({ assets: formattedAssets, items: formattedAssets, total, page, limit });
+  } catch (err) {
+    console.error("Error fetching assets:", err);
+    res.status(500).json({ error: "Failed to fetch assets" });
+  }
+});
+
+router.post("/:canvasId/assets", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  const { name, assetCategoryId, currencyId, estimatedValue, description, photoUrl } = req.body;
+
+  if (!name || !assetCategoryId || !currencyId || estimatedValue === undefined || estimatedValue === null) {
+    return res.status(400).json({
+      error: "Asset name, category, currency, and estimated value are required",
+    });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "edit");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const parsedAssetCategoryId = Number(assetCategoryId);
+    const parsedCurrencyId = Number(currencyId);
+    const parsedEstimatedValue = Number(estimatedValue);
+
+    if (
+      Number.isNaN(parsedAssetCategoryId) ||
+      Number.isNaN(parsedCurrencyId) ||
+      Number.isNaN(parsedEstimatedValue) ||
+      parsedEstimatedValue < 0
+    ) {
+      return res.status(400).json({ error: "Invalid category, currency, or estimated value" });
+    }
+
+    const [category] = await db
+      .select()
+      .from(assetCategories)
+      .where(eq(assetCategories.id, parsedAssetCategoryId));
+    if (!category) {
+      return res.status(400).json({ error: "Invalid asset category" });
+    }
+
+    const [newAsset] = await db
+      .insert(assets)
+      .values({
+        canvasId,
+        name,
+        assetCategoryId: parsedAssetCategoryId,
+        currencyId: parsedCurrencyId,
+        estimatedValue: String(parsedEstimatedValue),
+        photoUrl: photoUrl || null,
+        description: description || null,
+        createdBy: user.id,
+        lastModifiedBy: user.id,
+      })
+      .returning();
+
+    res.status(201).json({ asset: newAsset });
+  } catch (err) {
+    console.error("Error creating asset:", err);
+    res.status(500).json({ error: "Failed to create asset" });
   }
 });
 

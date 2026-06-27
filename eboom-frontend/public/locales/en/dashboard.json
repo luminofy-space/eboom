@@ -24,8 +24,18 @@
       "pending": "Income pending",
       "paid": "Expenses paid",
       "unpaid": "Expenses unpaid",
-      "netCashFlow": "Net cash flow (this month)"
+      "netCashFlow": "Net cash flow (this month)",
+      "holdings": "Holdings",
+      "holdingsValue": "Holdings value"
     }
+  },
+  "holdings": {
+    "title": "Property & Holdings",
+    "empty": "No holdings yet. Add vehicles, property, or land to track their estimated value.",
+    "viewAll": "View all",
+    "assetCount_one": "{{count}} asset",
+    "assetCount_other": "{{count}} assets",
+    "totalValue": "Total estimated value"
   },
   "chart": {
     "title": "Cash Flow",

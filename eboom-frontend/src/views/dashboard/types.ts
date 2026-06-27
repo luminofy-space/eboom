@@ -40,7 +40,7 @@ export type RecentActivityStatus = "received" | "pending" | "paid" | "due";
 
 export interface CanvasSummaryRecentActivity {
   id: number;
-  type: "income_entry" | "expense_payment";
+  type: "income_entry" | "expense_payment" | "transfer";
   entityId: number;
   entityName: string;
   amount: string;
@@ -48,6 +48,9 @@ export interface CanvasSummaryRecentActivity {
   currencyCode: string;
   date: string | null;
   status: RecentActivityStatus;
+  secondaryAmount?: string;
+  secondaryCurrencySymbol?: string;
+  secondaryCurrencyCode?: string;
 }
 
 export interface CanvasSummaryCurrencyBreakdown {
@@ -56,13 +59,34 @@ export interface CanvasSummaryCurrencyBreakdown {
   walletCount: number;
   incomeCount: number;
   expenseCount: number;
+  assetCount: number;
+}
+
+export interface CanvasSummaryAssetSummary {
+  id: number;
+  name: string;
+  categoryName: string | null;
+  currencyCode: string;
+  currencySymbol: string;
+  estimatedValue: string;
+  photoUrl: string | null;
+  lastModifiedAt: string;
+}
+
+export interface CanvasSummaryAssetsByCurrency {
+  currencyCode: string;
+  currencySymbol: string;
+  totalEstimatedValue: string;
+  count: number;
 }
 
 export interface CanvasSummary {
-  counts: { wallets: number; incomes: number; expenses: number };
+  counts: { wallets: number; incomes: number; expenses: number; assets: number };
   currencyBreakdown: CanvasSummaryCurrencyBreakdown[];
   walletBalances: CanvasSummaryWalletBalance[];
   incomeEntries: CanvasSummaryIncomeEntry[];
   expensePayments: CanvasSummaryExpensePayment[];
   recentActivity: CanvasSummaryRecentActivity[];
+  assetSummaries: CanvasSummaryAssetSummary[];
+  assetsByCurrency: CanvasSummaryAssetsByCurrency[];
 }
