@@ -28,12 +28,31 @@
       "description": {
         "label": "توضیحات",
         "placeholder": "یادداشت‌های اختیاری درباره این کیف پول"
+      },
+      "photo": {
+        "label": "تصویر"
       }
     },
     "submit": {
       "create": "ایجاد کیف پول",
       "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره کیف پول ناموفق بود. لطفاً دوباره تلاش کنید."
     }
+  },
+  "validation": {
+    "required": "این فیلد الزامی است",
+    "nameRequired": "نام الزامی است",
+    "nameMaxLength": "نام باید حداکثر ۲۵۵ کاراکتر باشد",
+    "categoryRequired": "دسته‌بندی الزامی است",
+    "noCanvas": "ابتدا یک بوم انتخاب کنید",
+    "saveFailed": "ذخیره‌سازی ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "currencyRequired": "ارز الزامی است",
+    "exchangeRateRequired": "نرخ ارز برای انتقال بین ارزی الزامی است",
+    "transferDateRequired": "تاریخ انتقال الزامی است",
+    "feeNonNegative": "کارمزد باید صفر یا بیشتر باشد",
+    "feeLessThanSource": "کارمزد باید کمتر از مبلغ مبدأ باشد"
   },
   "entriesTable": {
     "title": "ورودی‌های درآمد",
@@ -113,7 +132,69 @@
     },
     "series": {
       "incoming": "ورودی",
-      "outgoing": "خروجی"
+      "outgoing": "خروجی",
+      "transferIn": "انتقال ورودی",
+      "transferOut": "انتقال خروجی"
+    }
+  },
+  "transfersTable": {
+    "title": "انتقالات",
+    "subtitle": "وجوه منتقل‌شده بین کیف پول‌ها",
+    "createTransfer": "انتقال",
+    "count": "{{count}} انتقال",
+    "loadError": "بارگذاری انتقالات ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "headers": {
+      "amount": "مبلغ",
+      "direction": "جهت",
+      "counterparty": "طرف مقابل",
+      "date": "تاریخ",
+      "rate": "نرخ",
+      "fee": "کارمزد",
+      "notes": "یادداشت‌ها"
+    },
+    "direction": {
+      "in": "ورود از {{wallet}}",
+      "out": "خروج به {{wallet}}"
+    },
+    "empty": "هنوز انتقالی ثبت نشده. وجوه را بین کیف پول‌های خود منتقل کنید.",
+    "footer": {
+      "netIn": "مجموع ورودی",
+      "netOut": "مجموع خروجی"
+    },
+    "delete": {
+      "title": "حذف انتقال",
+      "description": "این کار تغییرات موجودی هر دو کیف پول را برمی‌گرداند."
+    }
+  },
+  "transferModal": {
+    "title": "انتقال وجه",
+    "editTitle": "ویرایش انتقال",
+    "description": {
+      "default": "انتقال وجه بین کیف پول‌ها در یک بوم.",
+      "fromWallet": "انتقال از {{walletName}} به کیف پول دیگر.",
+      "toWallet": "انتقال به {{walletName}} از کیف پول دیگر."
+    },
+    "fields": {
+      "sourceWallet": { "label": "کیف پول مبدأ" },
+      "sourceCurrency": { "label": "ارز مبدأ", "placeholder": "انتخاب ارز" },
+      "destinationWallet": { "label": "کیف پول مقصد" },
+      "destinationCurrency": { "label": "ارز مقصد", "placeholder": "انتخاب ارز" },
+      "sourceAmount": { "label": "مبلغ مبدأ" },
+      "destinationAmount": { "label": "مبلغ مقصد" },
+      "exchangeRate": { "label": "نرخ ارز" },
+      "transactionFee": { "label": "کارمزد تراکنش (اختیاری، از مبلغ دریافتی کسر می‌شود)" },
+      "transferDate": { "label": "تاریخ انتقال" },
+      "notes": { "label": "یادداشت‌ها" }
+    },
+    "empty": {
+      "noCurrencies": "ارزی در دسترس نیست"
+    },
+    "submit": {
+      "create": "انتقال",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره انتقال ناموفق بود. لطفاً دوباره تلاش کنید."
     }
   }
 }

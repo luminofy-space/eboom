@@ -21,30 +21,36 @@ import {
 } from "@/components/ui/dialog";
 import {
     Field,
+    FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
+import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
-import { useEffect } from "react";
+import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
+import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface WalletFormData {
     name: string;
     walletCategoryId: number | null;
     description: string;
+    photo: File | null;
 }
 
 const defaultValues: WalletFormData = {
     name: "",
     walletCategoryId: null,
     description: "",
+    photo: null,
 };
 
 interface NewWalletModalProps {
@@ -55,16 +61,24 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const dispatch = useAppDispatch();
     const { t } = useTranslation("wallets");
     const { t: tc } = useTranslation("common");
+    const { t: tv } = useTranslation("validation");
     const { open, mode, editingItem } = useAppSelector(selectWalletModal);
     const isEdit = mode === "edit";
     const { canvas } = useCanvas();
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { register, handleSubmit, control, reset, watch } = useForm<WalletFormData>({
+    const {
+        register,
+        handleSubmit,
+        control,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<WalletFormData>({
         defaultValues,
+        mode: "onSubmit",
+        reValidateMode: "onChange",
     });
-
-    const name = watch("name");
-    const walletCategoryId = watch("walletCategoryId");
 
     const { data: categoriesRes, isLoading: isLoadingCategories } =
         useQueryApi<{
@@ -78,7 +92,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const categories = categoriesRes?.categories ?? [];
     const categoryIds = categories.map((c) => String(c.id));
 
-    const { mutateAsync: createWallet } = useMutationApi(
+    const { mutateAsync: createWallet, isPending: isCreating } = useMutationApi(
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
         {
             method: "post",
@@ -86,7 +100,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
         }
     );
 
-    const { mutateAsync: updateWallet } = useMutationApi(
+    const { mutateAsync: updateWallet, isPending: isUpdating } = useMutationApi(
         editingItem ? API_ROUTES.WALLETS_UPDATE(editingItem.id) : "",
         {
             method: "put",
@@ -94,12 +108,15 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
         }
     );
 
+    const isSaving = isCreating || isUpdating || isSubmitting;
+
     useEffect(() => {
         if (open && isEdit && editingItem) {
             reset({
                 name: editingItem.name ?? "",
                 walletCategoryId: editingItem.walletCategoryId ?? null,
                 description: typeof editingItem.description === "string" ? editingItem.description : "",
+                photo: null,
             });
         } else if (open && !isEdit) {
             reset(defaultValues);
@@ -110,15 +127,26 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
         if (!openState) {
             dispatch(closeWalletModal());
             reset(defaultValues);
+            setSubmitError(null);
         }
     };
 
     const onSubmit = async (formData: WalletFormData) => {
+        setSubmitError(null);
+
+        if (!canvas) {
+            setSubmitError(tv("noCanvas"));
+            return;
+        }
+
         try {
             const data = {
-                name: formData.name,
+                name: formData.name.trim(),
                 walletCategoryId: formData.walletCategoryId,
-                description: formData.description,
+                description: formData.description.trim(),
+                ...(formData.photo
+                    ? { photoUrl: await fileToDataUrl(formData.photo) }
+                    : {}),
             };
 
             if (isEdit) {
@@ -132,16 +160,20 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
             }
 
             reset(defaultValues);
+            setSubmitError(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             dispatch(closeWalletModal());
         } catch (error) {
-            console.error("Error saving wallet:", error);
+            setSubmitError(translateSubmitError(error, tv("walletSaveFailed"), tv));
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent className="w-full">
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
                     <FieldGroup className="gap-4">
                     <DialogHeader>
                         <DialogTitle>{isEdit ? t("modal.edit.title") : t("modal.create.title")}</DialogTitle>
@@ -150,14 +182,26 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                         </DialogDescription>
                     </DialogHeader>
 
+                    <FormSubmitError message={submitError} />
+
                     <Stack direction="row" gap={5}>
                         <Field className="flex-1">
                             <FieldLabel htmlFor="wallet-name">{t("modal.fields.name.label")}</FieldLabel>
                             <Input
                                 id="wallet-name"
                                 placeholder={t("modal.fields.name.placeholder")}
-                                {...register("name", { required: true })}
+                                aria-invalid={!!errors.name}
+                                {...register("name", {
+                                    required: tv("nameRequired"),
+                                    maxLength: {
+                                        value: 255,
+                                        message: tv("nameMaxLength"),
+                                    },
+                                    validate: (value) =>
+                                        value.trim().length > 0 || tv("nameRequired"),
+                                })}
                             />
+                            <FieldError errors={[errors.name]} />
                         </Field>
 
                         <Field className="flex-1">
@@ -165,7 +209,10 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                             <Controller
                                 name="walletCategoryId"
                                 control={control}
-                                rules={{ required: true }}
+                                rules={{
+                                    validate: (value) =>
+                                        value !== null || tv("categoryRequired"),
+                                }}
                                 render={({ field }) => (
                                     <Combobox
                                         id="wallet-category"
@@ -196,6 +243,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                                     </Combobox>
                                 )}
                             />
+                            <FieldError errors={[errors.walletCategoryId]} />
                         </Field>
                     </Stack>
 
@@ -208,15 +256,50 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                         />
                     </Field>
 
+                    <Field>
+                        <FieldLabel htmlFor="wallet-photo">{t("modal.fields.photo.label")}</FieldLabel>
+                        <Controller
+                            name="photo"
+                            control={control}
+                            rules={{
+                                validate: (file) =>
+                                    validateOptionalImage(file, {
+                                        invalidType: tv("imageInvalidType"),
+                                        tooLarge: tv("imageTooLarge"),
+                                    }),
+                            }}
+                            render={({ field }) => (
+                                <Input
+                                    ref={fileInputRef}
+                                    id="wallet-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    aria-invalid={!!errors.photo}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] ?? null;
+                                        field.onChange(file);
+                                    }}
+                                />
+                            )}
+                        />
+                        <FieldError errors={[errors.photo]} />
+                    </Field>
+
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">{tc("actions.cancel")}</Button>
+                            <Button type="button" variant="outline" disabled={isSaving}>
+                                {tc("actions.cancel")}
+                            </Button>
                         </DialogClose>
-                        <Button
-                            disabled={!name || !walletCategoryId}
-                            type="submit"
-                        >
-                            {isEdit ? t("modal.submit.edit") : t("modal.submit.create")}
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className="size-4 animate-spin" />}
+                            {isSaving
+                                ? isEdit
+                                  ? tc("actions.saving")
+                                  : tc("actions.creating")
+                                : isEdit
+                                  ? t("modal.submit.edit")
+                                  : t("modal.submit.create")}
                         </Button>
                     </DialogFooter>
                     </FieldGroup>

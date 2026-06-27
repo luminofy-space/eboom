@@ -18,6 +18,8 @@ import {
   checkCanvasPermission,
 } from "../services/canvasAccessService";
 import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { listTransfersForWallet } from "../services/transferService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -40,7 +42,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -85,7 +87,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -132,7 +134,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -169,7 +171,7 @@ router.get("/:walletId/income-entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -212,7 +214,7 @@ router.get("/:walletId/expense-payments", async (req: Request, res: Response) =>
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -250,12 +252,38 @@ router.get("/:walletId/expense-payments", async (req: Request, res: Response) =>
   }
 });
 
-// GET all transactions (income entries + expense payments) for a wallet
+// GET all transfers involving a wallet
+router.get("/:walletId/transfers", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const walletId = parseRouteParam(req.params.walletId);
+  if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
+
+  try {
+    const { access } = await checkWalletPermission(walletId, user.id, "view");
+    if (!access?.allowed) {
+      return denyPermission(res, access ?? { allowed: false, status: 403, error: "Access denied to this canvas" });
+    }
+
+    const transfersList = await listTransfersForWallet(walletId);
+    res.json({
+      walletId,
+      transfers: transfersList,
+      total: transfersList.length,
+    });
+  } catch (err) {
+    console.error("Error fetching wallet transfers:", err);
+    res.status(500).json({ error: "Failed to fetch wallet transfers" });
+  }
+});
+
+// GET all transactions (income entries + expense payments + transfers) for a wallet
 router.get("/:walletId/transactions", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {
@@ -302,8 +330,30 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
       .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
       .where(eq(expensePayments.sourceWalletId, walletId));
 
-    // Combine and sort by date
-    const allTransactions = [...incomeData, ...expenseData].sort(
+    const transferData = (await listTransfersForWallet(walletId)).map((transfer) => ({
+      type: "transfer" as const,
+      id: transfer.id,
+      sourceWalletId: transfer.sourceWalletId,
+      sourceWalletName: transfer.sourceWalletName,
+      destinationWalletId: transfer.destinationWalletId,
+      destinationWalletName: transfer.destinationWalletName,
+      sourceAmount: transfer.sourceAmount,
+      destinationAmount: transfer.destinationAmount,
+      sourceCurrencyCode: transfer.sourceCurrencyCode,
+      sourceCurrencySymbol: transfer.sourceCurrencySymbol,
+      destinationCurrencyCode: transfer.destinationCurrencyCode,
+      destinationCurrencySymbol: transfer.destinationCurrencySymbol,
+      exchangeRate: transfer.exchangeRate,
+      transactionFee: transfer.transactionFee,
+      transferDate: transfer.transferDate,
+      notes: transfer.notes,
+      createdAt: transfer.createdAt,
+    }));
+
+    const incomeTransactions = incomeData.map((row) => ({ type: "income_entry" as const, ...row }));
+    const expenseTransactions = expenseData.map((row) => ({ type: "expense_payment" as const, ...row }));
+
+    const allTransactions = [...incomeTransactions, ...expenseTransactions, ...transferData].sort(
       (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
     );
 
@@ -313,6 +363,7 @@ router.get("/:walletId/transactions", async (req: Request, res: Response) => {
       total: allTransactions.length,
       incomeCount: incomeData.length,
       expenseCount: expenseData.length,
+      transferCount: transferData.length,
     });
   } catch (err) {
     console.error("Error fetching transactions:", err);
@@ -324,7 +375,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.id, 10);
+  const walletId = parseRouteParam(req.params.id);
   if (isNaN(walletId)) {
     return res.status(400).json({ error: "Invalid wallet ID" });
   }
@@ -370,7 +421,7 @@ router.get("/:walletId/sub-wallets", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const walletId = parseInt(req.params.walletId, 10);
+  const walletId = parseRouteParam(req.params.walletId);
   if (isNaN(walletId)) return res.status(400).json({ error: "Invalid wallet ID" });
 
   try {

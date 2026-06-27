@@ -37,6 +37,20 @@ export interface ExpenseFlow {
   currencySymbol: string;
 }
 
+export interface TransferFlow {
+  sourceWalletId: number;
+  destinationWalletId: number;
+  transferCount: number;
+  totalSourceAmount: string;
+  totalDestinationAmount: string;
+  sourceCurrencyId: number;
+  sourceCurrencyCode: string;
+  sourceCurrencySymbol: string;
+  destinationCurrencyId: number;
+  destinationCurrencyCode: string;
+  destinationCurrencySymbol: string;
+}
+
 export interface WhiteboardWallet extends WalletItem {
   subWallets?: Array<{
     id: number;
@@ -52,6 +66,7 @@ export interface WhiteboardData {
   nodePositions: WhiteboardNodePosition[];
   incomeFlows: IncomeFlow[];
   expenseFlows: ExpenseFlow[];
+  transferFlows: TransferFlow[];
   wallets: WhiteboardWallet[];
   incomes: IncomeItem[];
   expenses: ExpenseItem[];
@@ -69,7 +84,8 @@ export interface WhiteboardCreatedEntity {
 
 export type SelectedWhiteboardEdge =
   | { kind: "income"; flow: IncomeFlow }
-  | { kind: "expense"; flow: ExpenseFlow };
+  | { kind: "expense"; flow: ExpenseFlow }
+  | { kind: "transfer"; flow: TransferFlow };
 
 export interface WhiteboardContextMenuState {
   x: number;

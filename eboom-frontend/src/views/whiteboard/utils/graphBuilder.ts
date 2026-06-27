@@ -2,6 +2,7 @@ import type { Edge, Node } from "@xyflow/react";
 import type {
   ExpenseFlow,
   IncomeFlow,
+  TransferFlow,
   WhiteboardData,
   WhiteboardEntityType,
   WhiteboardNodePosition,
@@ -30,6 +31,12 @@ export function incomeFlowEdgeId(flow: Pick<IncomeFlow, "incomeId" | "walletId">
 
 export function expenseFlowEdgeId(flow: Pick<ExpenseFlow, "expenseId" | "walletId">): string {
   return `expense:${flow.expenseId}:wallet:${flow.walletId}`;
+}
+
+export function transferFlowEdgeId(
+  flow: Pick<TransferFlow, "sourceWalletId" | "destinationWalletId" | "sourceCurrencyId">
+): string {
+  return `transfer:${flow.sourceWalletId}:${flow.destinationWalletId}:${flow.sourceCurrencyId}`;
 }
 
 function positionMap(positions: WhiteboardNodePosition[]) {
@@ -108,6 +115,17 @@ export function buildWhiteboardGraph(data: WhiteboardData): { nodes: Node[]; edg
       markerEnd: whiteboardEdgeMarker("expense"),
       data: {
         kind: "expense" as const,
+        flow,
+      },
+    })),
+    ...(data.transferFlows ?? []).map((flow) => ({
+      id: transferFlowEdgeId(flow),
+      source: entityNodeId("wallet", flow.sourceWalletId),
+      target: entityNodeId("wallet", flow.destinationWalletId),
+      type: "flow",
+      markerEnd: whiteboardEdgeMarker("transfer"),
+      data: {
+        kind: "transfer" as const,
         flow,
       },
     })),

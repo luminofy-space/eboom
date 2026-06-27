@@ -27,13 +27,13 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
 interface WalletCategory {
   id: number;
@@ -64,11 +64,6 @@ interface IncomeEntriesTableProps {
 
 const hasWindow = typeof window !== "undefined";
 
-function formatDate(date: string | null | undefined, emDash: string): string {
-  if (!date) return emDash;
-  return dayjs(date).format("MMM D, YYYY");
-}
-
 function getEntryStatus(entry: IncomeEntry, t: TFunction<"incomes">): {
   label: string;
   status: TransactionStatus;
@@ -97,7 +92,8 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
 
   const { data: incomeRes, isLoading: isLoadingIncome } = useQueryApi<{
     income: {
@@ -141,6 +137,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     onSuccess: () => {
       setDeleteId(null);
       queryClient.invalidateQueries({ queryKey: ["income-entries", incomeId] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
     },
   });
 
@@ -215,7 +212,13 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingEntry(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
@@ -264,10 +267,10 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(entry.expectedDate, emDash)}
+                        {formatDate(entry.expectedDate, { fallback: emDash })}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(entry.receivedDate, emDash)}
+                        {formatDate(entry.receivedDate, { fallback: emDash })}
                       </TableCell>
                       <TableCell>
                         <TransactionStatusChip
@@ -296,6 +299,15 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditingEntry(entry);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <Pencil className="size-4" />
+                              {tc("actions.edit")}
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="destructive"
                               onClick={() => setDeleteId(entry.id)}
@@ -342,8 +354,12 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
 
       <NewIncomeEntryModal
         incomeId={incomeId}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        entryId={editingEntry?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         defaultWalletId={
           incomeRes?.income?.defaultWalletId ??
           incomeRes?.income?.defaultWallet?.id

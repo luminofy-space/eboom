@@ -18,6 +18,7 @@ import API_ROUTES from "@/src/api/urls";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/src/hooks/useToast";
 import { useTranslation } from "react-i18next";
+import { fileToDataUrl } from "@/src/utils/formUtils";
 
 interface ImageUploaderProps {
   open: boolean;
@@ -37,9 +38,6 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
     API_ROUTES.USERS_UPDATE_PROFILE_IMAGE,
     {
       method: "post",
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
       hasToken: true,
     }
   );
@@ -96,10 +94,9 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("photo_url", selectedFile);
+      const photoDataUrl = await fileToDataUrl(selectedFile);
 
-      await mutate(formData);
+      await mutate({ photo_url: photoDataUrl });
 
       toast({
         title: t("imageUploader.toast.success.title"),

@@ -1,31 +1,5 @@
-import nodemailer from 'nodemailer';
-
-const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
-const EMAIL_PORT = parseInt(process.env.EMAIL_PORT || '587');
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
-
-const transporter = nodemailer.createTransport({
-  host: EMAIL_HOST,
-  port: EMAIL_PORT,
-  secure: EMAIL_PORT === 465,
-  auth: EMAIL_USER && EMAIL_PASS ? {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS,
-  } : undefined,
-});
-
-if (EMAIL_USER && EMAIL_PASS) {
-  transporter.verify((error) => {
-    if (error) {
-      console.error('Email transporter verification failed:', error);
-    } else {
-      console.log('Email transporter is ready');
-    }
-  });
-}
+import nodemailer from "nodemailer";
+import type { OverdueNotification } from "../types/notifications";
 
 export interface EmailOptions {
   to: string;
@@ -34,12 +8,43 @@ export interface EmailOptions {
   text?: string;
 }
 
+const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
+const EMAIL_PORT = parseInt(process.env.EMAIL_PORT || "587", 10);
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS?.replace(/\s/g, "");
+const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
+const APP_URL = process.env.APP_URL || "http://localhost:3000";
+
+const transporter = nodemailer.createTransport({
+  host: EMAIL_HOST,
+  port: EMAIL_PORT,
+  secure: EMAIL_PORT === 465,
+  requireTLS: EMAIL_PORT === 587,
+  auth:
+    EMAIL_USER && EMAIL_PASS
+      ? {
+          user: EMAIL_USER,
+          pass: EMAIL_PASS,
+        }
+      : undefined,
+  connectionTimeout: 20_000,
+  greetingTimeout: 20_000,
+});
+
+if (EMAIL_USER && EMAIL_PASS) {
+  transporter.verify((error) => {
+    if (error) {
+      console.error("Email transporter verification failed:", error);
+    } else {
+      console.log("Email transporter is ready");
+    }
+  });
+}
+
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     if (!EMAIL_USER || !EMAIL_PASS) {
-      console.warn('Email credentials not configured. Email would be sent to:', options.to);
-      console.log('Email content:', options.html);
-      return;
+      throw new Error("Email credentials are not configured");
     }
 
     const mailOptions = {
@@ -53,8 +58,8 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     await transporter.sendMail(mailOptions);
     console.log(`Email sent successfully to ${options.to}`);
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send email');
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
   }
 };
 
@@ -130,6 +135,97 @@ export const sendPasswordResetEmail = async (email: string, token: string): Prom
     subject: 'Password Reset Request',
     html,
     text: `Reset your password by visiting: ${resetUrl}`,
+  });
+};
+
+function formatNotificationAmount(amount: string, symbol: string): string {
+  const num = parseFloat(amount);
+  if (Number.isNaN(num)) return `${symbol}${amount}`;
+  return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+}
+
+function formatNotificationDate(date: string): string {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function renderNotificationItems(items: OverdueNotification[]): string {
+  return items
+    .map((item) => {
+      const label =
+        item.type === "expense_payment" ? "Payment overdue" : "Income not received";
+      return `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <strong>${item.entityName}</strong><br />
+            <span style="color: #666; font-size: 14px;">
+              ${label} · ${formatNotificationAmount(item.amount, item.currencySymbol)}
+              · Due ${formatNotificationDate(item.dueDate)}
+              · ${item.daysOverdue} day${item.daysOverdue === 1 ? "" : "s"} overdue
+            </span><br />
+            <span style="color: #999; font-size: 13px;">${item.canvasName}</span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+export const sendOverdueNotificationsEmail = async (
+  email: string,
+  firstName: string | null | undefined,
+  notifications: OverdueNotification[]
+): Promise<void> => {
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const count = notifications.length;
+  const subject =
+    count === 1
+      ? "You have 1 overdue payment or income entry"
+      : `You have ${count} overdue payments or income entries`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button:hover { background-color: #0056b3; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Overdue reminders</h2>
+          <p>${greeting}</p>
+          <p>The following planned payments or income entries are past their due date:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderNotificationItems(notifications)}
+          </table>
+          <a href="${APP_URL}" class="button">Open Eboom</a>
+          <p style="color: #666; font-size: 14px;">
+            You can review these in the notifications panel inside the app.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textLines = notifications.map((item) => {
+    const label =
+      item.type === "expense_payment" ? "Payment overdue" : "Income not received";
+    return `- ${item.entityName}: ${label}, ${formatNotificationAmount(item.amount, item.currencySymbol)}, due ${formatNotificationDate(item.dueDate)} (${item.canvasName})`;
+  });
+
+  await sendEmail({
+    to: email,
+    subject,
+    html,
+    text: `${greeting}\n\n${textLines.join("\n")}\n\nOpen Eboom: ${APP_URL}`,
   });
 };
 

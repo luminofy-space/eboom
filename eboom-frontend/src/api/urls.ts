@@ -6,6 +6,8 @@ const API_ROUTES = {
   AUTH_LOGIN: "/api/auth/login/",
   AUTH_SIGNUP: "/api/auth/signup/",
   AUTH_VERIFY_EMAIL: "/api/auth/verify-email",
+  AUTH_FORGOT_PASSWORD: "/api/auth/forgot-password/",
+  AUTH_RESET_PASSWORD: "/api/auth/reset-password/",
   USERS_GET_ME: "/api/auth/user-info/",
   USERS_UPDATE_PROFILE_IMAGE: "/api/auth/change-photo/",
 
@@ -59,6 +61,10 @@ const API_ROUTES = {
 
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
 
+  CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
+
+  NOTIFICATIONS_OVERDUE: '/api/notifications/overdue',
+
   // Canvas whiteboard
   CANVAS_WHITEBOARD: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/`,
   CANVAS_WHITEBOARD_VIEWPORT: (canvasId: number) => `/api/canvases/${canvasId}/whiteboard/viewport`,
@@ -76,6 +82,7 @@ const API_ROUTES = {
   // Income Entries
   INCOME_ENTRIES_LIST: (incomeId: number) => `/api/income/${incomeId}/entries/`,
   INCOME_ENTRIES_CREATE: (incomeId: number) => `/api/income/${incomeId}/entries/`,
+  INCOME_ENTRIES_UPDATE: (id: number) => `/api/income/entries/${id}/`,
   INCOME_ENTRIES_DELETE: (id: number) => `/api/income/entries/${id}/`,
 
   // Income Categories
@@ -93,7 +100,15 @@ const API_ROUTES = {
   SUB_WALLETS_LIST: (walletId: number) => `/api/wallets/${walletId}/sub-wallets/`,
   WALLET_ENTRIES: (id: number) => `/api/wallets/${id}/income-entries/`,
   WALLET_PAYMENTS: (id: number) => `/api/wallets/${id}/expense-payments/`,
+  WALLET_TRANSFERS: (id: number) => `/api/wallets/${id}/transfers/`,
   WALLET_TRANSACTIONS: (id: number) => `/api/wallets/${id}/transactions/`,
+
+  // Transfers
+  TRANSFERS_CREATE: "/api/transfers/",
+  TRANSFERS_GET: (id: number) => `/api/transfers/${id}/`,
+  TRANSFERS_UPDATE: (id: number) => `/api/transfers/${id}/`,
+  TRANSFERS_DELETE: (id: number) => `/api/transfers/${id}/`,
+  CANVAS_TRANSFERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/transfers`,
 
   // ============================================================================
   // EXPENSES
@@ -105,6 +120,7 @@ const API_ROUTES = {
   // Expense Payments
   EXPENSE_PAYMENTS_LIST: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
   EXPENSE_PAYMENTS_CREATE: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_UPDATE: (id: number) => `/api/expenses/payments/${id}/`,
   EXPENSE_PAYMENTS_DELETE: (id: number) => `/api/expenses/payments/${id}/`,
 
   WALLET_CATEGORIES: '/api/wallet/categories',

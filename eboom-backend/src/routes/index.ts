@@ -15,6 +15,9 @@ import canvasMembersRouter from './canvas-members';
 import canvasInvitationsRouter from './canvas-invitations';
 import canvasRolesRouter from './canvas-roles';
 import whiteboardRouter from './whiteboard';
+import calendarRouter from './calendar';
+import notificationsRouter from './notifications';
+import transfersRouter from './transfers';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
@@ -41,8 +44,17 @@ router.use('/income', auth, income);
 router.use('/wallets', auth, wallets);
 router.use('/wallet/categories', auth, walletCategories)
 
+// Transfer routes
+router.use('/transfers', auth, transfersRouter);
+
 // Expense routes (individual expense operations)
 router.use('/expenses', auth, expenses);
 router.use('/expense/categories', auth, expenseCategories);
+
+// Calendar routes
+router.use('/calendar', auth, calendarRouter);
+
+// Notifications
+router.use('/notifications', auth, notificationsRouter);
 
 export default router;

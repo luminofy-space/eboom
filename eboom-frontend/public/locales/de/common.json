@@ -4,6 +4,7 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "creating": "Wird erstellt...",
+    "saving": "Wird gespeichert...",
     "delete": "Löschen",
     "deleting": "Wird gelöscht...",
     "edit": "Bearbeiten",
@@ -77,6 +78,26 @@
   },
   "comingSoon": {
     "imageAlt": "Demnächst verfügbar"
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "nameRequired": "Name ist erforderlich",
+    "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
+    "amountRequired": "Betrag ist erforderlich",
+    "amountPositive": "Betrag muss größer als null sein",
+    "categoryRequired": "Kategorie ist erforderlich",
+    "currencyRequired": "Währung ist erforderlich",
+    "expenseRequired": "Ausgabe ist erforderlich",
+    "incomeRequired": "Einnahme ist erforderlich",
+    "walletRequired": "Wallet ist erforderlich",
+    "paidBeforeDue": "Zahlungsdatum darf nicht vor dem Fälligkeitsdatum liegen",
+    "receivedBeforeExpected": "Eingangsdatum darf nicht vor dem erwarteten Datum liegen",
+    "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
+    "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
+    "recurrenceWeeklyDays": "Wählen Sie mindestens einen Tag für die wöchentliche Wiederholung",
+    "recurrenceInterval": "Intervall muss mindestens 1 sein",
+    "noCanvas": "Wählen Sie zuerst ein Canvas aus",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "recurrence": {
     "every": "Alle",

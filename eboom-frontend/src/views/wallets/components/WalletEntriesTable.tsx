@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
@@ -30,17 +30,12 @@ import type { WalletEntry } from "../utils/utils";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
 interface WalletEntriesTableProps {
   walletId: number;
   walletName?: string;
   currencySymbol?: string;
-}
-
-function formatDate(date: string | null | undefined, emDash: string): string {
-  if (!date) return emDash;
-  return dayjs(date).format("MMM D, YYYY");
 }
 
 function getEntryStatus(entry: WalletEntry, t: TFunction<"wallets">): {
@@ -73,7 +68,8 @@ export function WalletEntriesTable({
   const { t: tc } = useTranslation("common");
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<WalletEntry | null>(null);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
   const entries = useMemo(
@@ -137,7 +133,13 @@ export function WalletEntriesTable({
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingEntry(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
@@ -184,10 +186,10 @@ export function WalletEntriesTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(entry.expectedDate, emDash)}
+                      {formatDate(entry.expectedDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(entry.receivedDate, emDash)}
+                      {formatDate(entry.receivedDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell>
                       <TransactionStatusChip
@@ -216,6 +218,15 @@ export function WalletEntriesTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingEntry(entry);
+                              setModalOpen(true);
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                            {tc("actions.edit")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem variant="destructive" disabled>
                             <Trash2 className="size-4" />
                             {tc("actions.delete")}
@@ -247,8 +258,13 @@ export function WalletEntriesTable({
       </Container>
 
       <NewIncomeEntryModal
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        incomeId={editingEntry?.incomeId}
+        entryId={editingEntry?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         fixedDestinationWalletId={walletId}
         walletName={walletName}
         extraInvalidateKeys={[["wallet-entries", walletId], ["wallet", walletId]]}

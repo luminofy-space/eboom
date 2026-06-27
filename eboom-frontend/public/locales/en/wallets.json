@@ -28,12 +28,31 @@
       "description": {
         "label": "Description",
         "placeholder": "Optional notes about this wallet"
+      },
+      "photo": {
+        "label": "Photo"
       }
     },
     "submit": {
       "create": "Create Wallet",
       "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save wallet. Please try again."
     }
+  },
+  "validation": {
+    "required": "This field is required",
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be 255 characters or less",
+    "categoryRequired": "Category is required",
+    "noCanvas": "Select a canvas before continuing",
+    "saveFailed": "Failed to save. Please try again.",
+    "currencyRequired": "Currency is required",
+    "exchangeRateRequired": "Exchange rate is required for cross-currency transfers",
+    "transferDateRequired": "Transfer date is required",
+    "feeNonNegative": "Fee must be zero or greater",
+    "feeLessThanSource": "Fee must be less than the source amount"
   },
   "entriesTable": {
     "title": "Income Entries",
@@ -113,7 +132,69 @@
     },
     "series": {
       "incoming": "Incoming",
-      "outgoing": "Outgoing"
+      "outgoing": "Outgoing",
+      "transferIn": "Transfer In",
+      "transferOut": "Transfer Out"
+    }
+  },
+  "transfersTable": {
+    "title": "Transfers",
+    "subtitle": "Money moved between wallets",
+    "createTransfer": "Transfer",
+    "count": "{{count}} transfers",
+    "loadError": "Failed to load transfers. Please try again.",
+    "headers": {
+      "amount": "Amount",
+      "direction": "Direction",
+      "counterparty": "Counterparty",
+      "date": "Date",
+      "rate": "Rate",
+      "fee": "Fee",
+      "notes": "Notes"
+    },
+    "direction": {
+      "in": "In from {{wallet}}",
+      "out": "Out to {{wallet}}"
+    },
+    "empty": "No transfers yet. Move money between your wallets.",
+    "footer": {
+      "netIn": "Total in",
+      "netOut": "total out"
+    },
+    "delete": {
+      "title": "Delete transfer",
+      "description": "This will reverse the balance changes for both wallets."
+    }
+  },
+  "transferModal": {
+    "title": "Transfer Money",
+    "editTitle": "Edit Transfer",
+    "description": {
+      "default": "Move money between wallets in the same canvas.",
+      "fromWallet": "Transfer from {{walletName}} to another wallet.",
+      "toWallet": "Transfer to {{walletName}} from another wallet."
+    },
+    "fields": {
+      "sourceWallet": { "label": "Source wallet" },
+      "sourceCurrency": { "label": "Source currency", "placeholder": "Select currency" },
+      "destinationWallet": { "label": "Destination wallet" },
+      "destinationCurrency": { "label": "Destination currency", "placeholder": "Select currency" },
+      "sourceAmount": { "label": "Source amount" },
+      "destinationAmount": { "label": "Destination amount" },
+      "exchangeRate": { "label": "Exchange rate" },
+      "transactionFee": { "label": "Transaction fee (optional, deducted from amount received)" },
+      "transferDate": { "label": "Transfer date" },
+      "notes": { "label": "Notes" }
+    },
+    "empty": {
+      "noCurrencies": "No currencies available"
+    },
+    "submit": {
+      "create": "Transfer",
+      "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save transfer. Please try again."
     }
   }
 }

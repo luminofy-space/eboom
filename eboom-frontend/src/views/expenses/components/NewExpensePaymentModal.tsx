@@ -13,19 +13,22 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
+import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -49,41 +52,66 @@ const defaultValues: PaymentFormData = {
 
 const hasWindow = typeof window !== "undefined";
 
+function toDateInputValue(date: string | null | undefined): string {
+  if (!date) return "";
+  return date.slice(0, 10);
+}
+
 interface NewExpensePaymentModalProps {
   expenseId?: number;
+  paymentId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultWalletId?: number | null;
   fixedSourceWalletId?: number;
   expenseName?: string;
   walletName?: string;
+  defaultDueDate?: string;
+  defaultPaidDate?: string;
+  defaultAmount?: number;
+  defaultNotes?: string;
   extraInvalidateKeys?: unknown[][];
 }
 
 export function NewExpensePaymentModal({
   expenseId,
+  paymentId,
   open,
   onOpenChange,
   defaultWalletId,
   fixedSourceWalletId,
   expenseName,
   walletName,
+  defaultDueDate,
+  defaultPaidDate,
+  defaultAmount,
+  defaultNotes,
   extraInvalidateKeys = [],
 }: NewExpensePaymentModalProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const queryClient = useQueryClient();
   const { canvas } = useCanvas();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isEditMode = paymentId != null;
   const showExpensePicker = expenseId === undefined;
   const showWalletPicker = fixedSourceWalletId === undefined;
 
-  const { register, handleSubmit, control, reset, watch } = useForm<PaymentFormData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<PaymentFormData>({
     defaultValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
-  const amount = watch("amount");
-  const selectedExpenseId = watch("expenseId");
-  const sourceWalletId = watch("sourceWalletId");
+  const dueDate = watch("dueDate");
 
   const { data: expensesRes, isLoading: isLoadingExpenses } = useQueryApi<{
     expenses?: { id: number; name: string; category?: { name: string } | null }[];
@@ -100,6 +128,33 @@ export function NewExpensePaymentModal({
     hasToken: true,
     enabled: open && !!canvas && showWalletPicker,
   });
+
+  const resolvedExpenseIdForFetch = expenseId;
+  const { data: paymentsRes, isLoading: isLoadingPayment } = useQueryApi<{
+    payments?: {
+      id: number;
+      expenseId: number;
+      sourceWalletId: number;
+      amount: string;
+      dueDate: string | null;
+      paidDate: string | null;
+      notes: string | null;
+    }[];
+  }>(
+    resolvedExpenseIdForFetch
+      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(resolvedExpenseIdForFetch)
+      : "",
+    {
+      queryKey: ["expense-payments", resolvedExpenseIdForFetch],
+      hasToken: true,
+      enabled: open && isEditMode && !!resolvedExpenseIdForFetch,
+    }
+  );
+
+  const editingPayment = useMemo(
+    () => paymentsRes?.payments?.find((payment) => payment.id === paymentId),
+    [paymentsRes?.payments, paymentId]
+  );
 
   const expenses = expensesRes?.expenses ?? [];
   const expenseLabels = expenses.map((expense) => {
@@ -135,74 +190,112 @@ export function NewExpensePaymentModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: createPayment, isPending } = useMutation({
+  const { mutateAsync: savePayment, isPending } = useMutation({
     mutationFn: async (formData: PaymentFormData) => {
       const resolvedExpenseId = expenseId ?? formData.expenseId;
       const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
+      const payload = {
+        sourceWalletId: resolvedWalletId,
+        amount: Number(formData.amount),
+        dueDate: formData.dueDate || null,
+        paidDate: formData.paidDate || null,
+        notes: formData.notes.trim() || null,
+      };
+      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      if (!resolvedExpenseId || !resolvedWalletId) {
-        throw new Error(t("paymentModal.error.required"));
+      if (isEditMode && paymentId) {
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_UPDATE(paymentId)}`;
+        await axios.put(url, payload, { headers });
+        return;
       }
 
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-
-      await axios.post(
-        url,
-        {
-          sourceWalletId: resolvedWalletId,
-          amount: Number(formData.amount),
-          dueDate: formData.dueDate || null,
-          paidDate: formData.paidDate || null,
-          notes: formData.notes.trim() || null,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId!)}`;
+      await axios.post(url, payload, { headers });
     },
-    onSuccess: async () => {
-      const resolvedExpenseId = expenseId ?? selectedExpenseId;
+    onSuccess: async (_, formData) => {
+      const resolvedExpenseId = expenseId ?? formData.expenseId;
       if (resolvedExpenseId) {
         await queryClient.invalidateQueries({ queryKey: ["expense-payments", resolvedExpenseId] });
       }
       for (const key of extraInvalidateKeys) {
         await queryClient.invalidateQueries({ queryKey: key });
       }
+      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
     },
   });
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (isEditMode) {
+      if (!editingPayment) return;
       reset({
-        ...defaultValues,
-        expenseId: expenseId ?? null,
-        sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
-        paidDate: new Date().toISOString().slice(0, 10),
+        expenseId: expenseId ?? editingPayment.expenseId,
+        sourceWalletId: fixedSourceWalletId ?? editingPayment.sourceWalletId,
+        amount: Number(editingPayment.amount),
+        dueDate: toDateInputValue(editingPayment.dueDate),
+        paidDate:
+          toDateInputValue(editingPayment.paidDate) ||
+          new Date().toISOString().slice(0, 10),
+        notes: editingPayment.notes ?? "",
       });
+      setSubmitError(null);
+      return;
     }
-  }, [open, expenseId, defaultWalletId, fixedSourceWalletId, reset]);
+
+    reset({
+      ...defaultValues,
+      expenseId: expenseId ?? null,
+      sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
+      dueDate: defaultDueDate ?? "",
+      amount: defaultAmount ?? 0,
+      paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
+      notes: defaultNotes ?? "",
+    });
+    setSubmitError(null);
+  }, [
+    open,
+    isEditMode,
+    editingPayment,
+    expenseId,
+    paymentId,
+    defaultWalletId,
+    fixedSourceWalletId,
+    defaultDueDate,
+    defaultPaidDate,
+    defaultAmount,
+    defaultNotes,
+    reset,
+  ]);
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) {
       reset(defaultValues);
+      setSubmitError(null);
     }
     onOpenChange(nextOpen);
   };
 
   const onSubmit = async (formData: PaymentFormData) => {
+    setSubmitError(null);
+
+    if (!canvas) {
+      setSubmitError(tv("noCanvas"));
+      return;
+    }
+
     try {
-      await createPayment(formData);
+      await savePayment(formData);
       reset(defaultValues);
+      setSubmitError(null);
       onOpenChange(false);
     } catch (error) {
-      console.error("Error creating expense payment:", error);
+      setSubmitError(translateSubmitError(error, tv("paymentSaveFailed"), tv));
     }
   };
 
-  const effectiveExpenseId = expenseId ?? selectedExpenseId;
-  const effectiveWalletId = fixedSourceWalletId ?? sourceWalletId;
-  const isValid = amount > 0 && !!effectiveExpenseId && !!effectiveWalletId;
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingPayment);
 
   const description = expenseName
     ? t("paymentModal.description.forExpense", { expenseName })
@@ -213,12 +306,16 @@ export function NewExpensePaymentModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup className="gap-4">
           <DialogHeader>
-            <DialogTitle>{t("paymentModal.title")}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? t("paymentModal.editTitle") : t("paymentModal.title")}
+            </DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
+
+            <FormSubmitError message={submitError} />
 
             {showExpensePicker && (
               <Field>
@@ -226,7 +323,9 @@ export function NewExpensePaymentModal({
                 <Controller
                   name="expenseId"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    validate: (value) => value !== null || tv("expenseRequired"),
+                  }}
                   render={({ field }) => (
                     <Combobox
                       id="payment-expense"
@@ -251,6 +350,7 @@ export function NewExpensePaymentModal({
                     </Combobox>
                   )}
                 />
+                <FieldError errors={[errors.expenseId]} />
               </Field>
             )}
 
@@ -261,9 +361,20 @@ export function NewExpensePaymentModal({
                 type="number"
                 step="any"
                 min="0"
+                aria-invalid={!!errors.amount}
                 placeholder={tc("placeholders.amount")}
-                {...register("amount", { required: true, valueAsNumber: true, min: 0.01 })}
+                {...register("amount", {
+                  required: tv("amountRequired"),
+                  valueAsNumber: true,
+                  min: {
+                    value: 0.01,
+                    message: tv("amountPositive"),
+                  },
+                  validate: (value) =>
+                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                })}
               />
+              <FieldError errors={[errors.amount]} />
             </Field>
 
             {showWalletPicker ? (
@@ -272,7 +383,9 @@ export function NewExpensePaymentModal({
                 <Controller
                   name="sourceWalletId"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    validate: (value) => value !== null || tv("walletRequired"),
+                  }}
                   render={({ field }) => (
                     <Combobox
                       id="payment-wallet"
@@ -297,6 +410,7 @@ export function NewExpensePaymentModal({
                     </Combobox>
                   )}
                 />
+                <FieldError errors={[errors.sourceWalletId]} />
               </Field>
             ) : (
               <Field>
@@ -319,8 +433,13 @@ export function NewExpensePaymentModal({
                 <Input
                   id="payment-paid-date"
                   type="date"
-                  {...register("paidDate")}
+                  aria-invalid={!!errors.paidDate}
+                  {...register("paidDate", {
+                    validate: (value) =>
+                      validateDateNotBefore(value, dueDate, tv("paidBeforeDue")),
+                  })}
                 />
+                <FieldError errors={[errors.paidDate]} />
               </Field>
             </Stack>
 
@@ -336,13 +455,19 @@ export function NewExpensePaymentModal({
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
+              <Button type="button" variant="outline" disabled={isSaving}>
                 {tc("actions.cancel")}
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isPending || !isValid}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
-              {isPending ? tc("actions.creating") : t("paymentModal.submit")}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="size-4 animate-spin" />}
+              {isSaving
+                ? isEditMode
+                  ? tc("actions.saving")
+                  : tc("actions.creating")
+                : isEditMode
+                  ? tc("actions.saveChanges")
+                  : t("paymentModal.submit")}
             </Button>
           </DialogFooter>
           </FieldGroup>

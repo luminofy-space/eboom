@@ -23,10 +23,13 @@
   "sidePanel": {
     "incomeFlow": "جریان درآمد",
     "expenseFlow": "جریان هزینه",
+    "transferFlow": "جریان انتقال",
     "incomeSummary": "{{count}} ثبت · {{amount}} مجموع",
     "expenseSummary": "{{count}} پرداخت · {{amount}} مجموع",
+    "transferSummary": "{{count}} انتقال · {{amount}} مجموع",
     "addEntry": "افزودن ثبت درآمد",
     "addPayment": "افزودن پرداخت هزینه",
+    "addTransfer": "افزودن انتقال",
     "empty": "هنوز تراکنشی برای این اتصال وجود ندارد."
   },
   "empty": {

@@ -23,10 +23,13 @@
   "sidePanel": {
     "incomeFlow": "Einnahmefluss",
     "expenseFlow": "Ausgabenfluss",
+    "transferFlow": "Transferfluss",
     "incomeSummary": "{{count}} Buchungen · {{amount}} gesamt",
     "expenseSummary": "{{count}} Zahlungen · {{amount}} gesamt",
+    "transferSummary": "{{count}} Transfers · {{amount}} gesamt",
     "addEntry": "Einnahmebuchung hinzufügen",
     "addPayment": "Ausgabenzahlung hinzufügen",
+    "addTransfer": "Transfer hinzufügen",
     "empty": "Noch keine Bewegungen für diese Verbindung."
   },
   "empty": {

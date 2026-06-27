@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { db } from "../db/client";
 import { incomeCategories } from "../db/schema";
 import { eq, asc } from "drizzle-orm";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const categoryId = parseInt(req.params.id);
+  const categoryId = parseRouteParam(req.params.id);
   if (isNaN(categoryId))
     return res.status(400).json({ error: "Invalid category ID" });
 
@@ -80,7 +81,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const categoryId = parseInt(req.params.id);
+  const categoryId = parseRouteParam(req.params.id);
   if (isNaN(categoryId))
     return res.status(400).json({ error: "Invalid category ID" });
 

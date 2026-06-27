@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
@@ -30,17 +30,12 @@ import type { WalletPayment } from "../utils/utils";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
-import { formatAmount } from "@/src/i18n/formatters";
+import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
 interface WalletPaymentsTableProps {
   walletId: number;
   walletName?: string;
   currencySymbol?: string;
-}
-
-function formatDate(date: string | null | undefined, emDash: string): string {
-  if (!date) return emDash;
-  return dayjs(date).format("MMM D, YYYY");
 }
 
 function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
@@ -76,7 +71,8 @@ export function WalletPaymentsTable({
   const { t: tc } = useTranslation("common");
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<WalletPayment | null>(null);
   const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
   const payments = useMemo(
@@ -140,7 +136,13 @@ export function WalletPaymentsTable({
               </Typography>
             )}
             {canEdit && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingPayment(null);
+                setModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               {t("paymentsTable.createPayment")}
             </Button>
@@ -187,10 +189,10 @@ export function WalletPaymentsTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.dueDate, emDash)}
+                      {formatDate(payment.dueDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(payment.paidDate, emDash)}
+                      {formatDate(payment.paidDate, { fallback: emDash })}
                     </TableCell>
                     <TableCell>
                       <TransactionStatusChip
@@ -219,6 +221,15 @@ export function WalletPaymentsTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingPayment(payment);
+                              setModalOpen(true);
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                            {tc("actions.edit")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem variant="destructive" disabled>
                             <Trash2 className="size-4" />
                             {tc("actions.delete")}
@@ -250,8 +261,13 @@ export function WalletPaymentsTable({
       </Container>
 
       <NewExpensePaymentModal
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+        expenseId={editingPayment?.expenseId}
+        paymentId={editingPayment?.id}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingPayment(null);
+        }}
         fixedSourceWalletId={walletId}
         walletName={walletName}
         extraInvalidateKeys={[["wallet-payments", walletId], ["wallet", walletId]]}

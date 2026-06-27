@@ -16,6 +16,7 @@ if (!i18n.isInitialized) {
       supportedLngs: ["en", "de", "fa"],
       ns: [
         "common",
+        "validation",
         "auth",
         "navigation",
         "expenses",
@@ -24,9 +25,10 @@ if (!i18n.isInitialized) {
         "profile",
         "canvas",
         "canvas-members",
-        "whiteboard",
-        "dashboard",
-      ],
+    "whiteboard",
+    "dashboard",
+    "calendar",
+  ],
       defaultNS: "common",
       backend: {
         loadPath: "/locales/{{lng}}/{{ns}}.json",

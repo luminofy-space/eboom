@@ -10,13 +10,15 @@ export function isValidWhiteboardConnection(connection: Connection): boolean {
 
   return (
     (source.type === "income" && target.type === "wallet") ||
-    (source.type === "wallet" && target.type === "expense")
+    (source.type === "wallet" && target.type === "expense") ||
+    (source.type === "wallet" && target.type === "wallet" && source.id !== target.id)
   );
 }
 
 export function getConnectionIntent(connection: Connection):
   | { kind: "income-entry"; incomeId: number; walletId: number }
   | { kind: "expense-payment"; expenseId: number; walletId: number }
+  | { kind: "transfer"; sourceWalletId: number; destinationWalletId: number }
   | null {
   if (!isValidWhiteboardConnection(connection)) return null;
 
@@ -30,6 +32,10 @@ export function getConnectionIntent(connection: Connection):
 
   if (source.type === "wallet" && target.type === "expense") {
     return { kind: "expense-payment", expenseId: target.id, walletId: source.id };
+  }
+
+  if (source.type === "wallet" && target.type === "wallet") {
+    return { kind: "transfer", sourceWalletId: source.id, destinationWalletId: target.id };
   }
 
   return null;

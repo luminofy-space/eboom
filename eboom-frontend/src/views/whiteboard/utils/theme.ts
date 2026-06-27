@@ -4,14 +4,20 @@ export const WHITEBOARD_NODE_COLORS = {
   income: "#10b981",
   wallet: "#3b82f6",
   expense: "#ef4444",
+  transfer: "#f59e0b",
 } as const;
 
-export function whiteboardEdgeColor(kind: "income" | "expense", selected = false): string {
+export function whiteboardEdgeColor(
+  kind: "income" | "expense" | "transfer",
+  selected = false
+): string {
   if (selected) return "var(--primary)";
-  return kind === "income" ? WHITEBOARD_NODE_COLORS.income : WHITEBOARD_NODE_COLORS.expense;
+  if (kind === "income") return WHITEBOARD_NODE_COLORS.income;
+  if (kind === "transfer") return WHITEBOARD_NODE_COLORS.transfer;
+  return WHITEBOARD_NODE_COLORS.expense;
 }
 
-export function whiteboardEdgeMarker(kind: "income" | "expense", selected = false) {
+export function whiteboardEdgeMarker(kind: "income" | "expense" | "transfer", selected = false) {
   return {
     type: MarkerType.ArrowClosed,
     width: 18,

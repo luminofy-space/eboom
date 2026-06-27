@@ -11,6 +11,7 @@ import {
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
 import { checkCanvasPermission } from "../services/canvasAccessService";
 import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { parseRouteParam } from "./routeParams";
 
 const router = express.Router();
 
@@ -24,11 +25,99 @@ function parseOptionalDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+router.put("/entries/:id", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const entryId = parseRouteParam(req.params.id);
+  if (isNaN(entryId)) {
+    return res.status(400).json({ error: "Invalid income entry ID" });
+  }
+
+  const { destinationWalletId, amount, expectedDate, receivedDate, notes } = req.body;
+
+  const parsedWalletId = Number(destinationWalletId);
+  const parsedAmount = Number(amount);
+
+  if (!parsedWalletId || Number.isNaN(parsedWalletId)) {
+    return res.status(400).json({ error: "Destination wallet is required" });
+  }
+
+  if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+    return res.status(400).json({ error: "A valid amount greater than zero is required" });
+  }
+
+  try {
+    const [existing] = await db.select().from(incomeEntries).where(eq(incomeEntries.id, entryId));
+    if (!existing) return res.status(404).json({ error: "Income entry not found" });
+
+    const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
+    if (!income) return res.status(404).json({ error: "Income not found" });
+
+    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
+    if (!access.allowed) return denyPermission(res, access);
+
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
+    if (!wallet || wallet.canvasId !== income.canvasId) {
+      return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
+    }
+
+    const amountStr = String(parsedAmount);
+    const parsedExpectedDate = parseOptionalDate(expectedDate);
+    const parsedReceivedDate = parseOptionalDate(receivedDate);
+
+    const updated = await db.transaction(async (tx) => {
+      await debitWalletBalance(
+        {
+          walletId: existing.destinationWalletId,
+          currencyId: income.currencyId,
+          amount: String(existing.amount),
+          allowNegative: false,
+        },
+        tx
+      );
+
+      const [entry] = await tx
+        .update(incomeEntries)
+        .set({
+          destinationWalletId: parsedWalletId,
+          amount: amountStr,
+          expectedDate: parsedExpectedDate,
+          receivedDate: parsedReceivedDate,
+          notes: notes || null,
+          lastModifiedBy: user.id,
+          lastModifiedAt: new Date(),
+        })
+        .where(eq(incomeEntries.id, entryId))
+        .returning();
+
+      await creditWalletBalance(
+        {
+          walletId: parsedWalletId,
+          currencyId: income.currencyId,
+          amount: amountStr,
+        },
+        tx
+      );
+
+      return entry;
+    });
+
+    res.json({ entry: updated });
+  } catch (err) {
+    console.error("Error updating income entry:", err);
+    const message = err instanceof Error && err.message === "Insufficient wallet balance"
+      ? "Insufficient wallet balance"
+      : "Failed to update income entry";
+    res.status(500).json({ error: message });
+  }
+});
+
 router.delete("/entries/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const entryId = parseInt(req.params.id, 10);
+  const entryId = parseRouteParam(req.params.id);
   if (isNaN(entryId)) {
     return res.status(400).json({ error: "Invalid income entry ID" });
   }
@@ -62,7 +151,7 @@ router.get("/:incomeId/entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.incomeId, 10);
+  const incomeId = parseRouteParam(req.params.incomeId);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -97,7 +186,7 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.incomeId, 10);
+  const incomeId = parseRouteParam(req.params.incomeId);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -169,7 +258,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -206,7 +295,7 @@ router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
@@ -293,7 +382,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const incomeId = parseInt(req.params.id, 10);
+  const incomeId = parseRouteParam(req.params.id);
   if (isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }

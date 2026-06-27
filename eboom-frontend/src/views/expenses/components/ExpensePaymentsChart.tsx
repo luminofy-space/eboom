@@ -34,6 +34,7 @@ import {
   buildChartData,
   formatMoney,
 } from "../utils/expensePaymentsStats";
+import { formatDate } from "@/src/i18n/formatters";
 import { useTranslation } from "react-i18next";
 
 interface ExpensePaymentsChartProps {
@@ -49,6 +50,7 @@ export function ExpensePaymentsChart({
 }: ExpensePaymentsChartProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
   const fillPaidId = React.useId();
@@ -196,10 +198,7 @@ export function ExpensePaymentsChart({
                 tickMargin={8}
                 minTickGap={32}
                 tickFormatter={(value) =>
-                  new Date(value).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
+                  formatDate(value, { preset: "monthDay", fallback: emDash })
                 }
               />
               <ChartTooltip
@@ -207,11 +206,7 @@ export function ExpensePaymentsChart({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
+                      formatDate(value, { preset: "short", fallback: emDash })
                     }
                     formatter={(value, name) => (
                       <span className="tabular-nums">

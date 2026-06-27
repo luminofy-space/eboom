@@ -9,8 +9,10 @@ import {
   incomeEntries as incomeEntriesTable,
   incomes,
   subWallets,
+  transfers as transfersTable,
   wallets,
 } from "../db/schema";
+import { alias } from "drizzle-orm/pg-core";
 
 export interface CanvasSummaryWalletBalance {
   walletId: number;
@@ -54,7 +56,7 @@ export type RecentActivityStatus = "received" | "pending" | "paid" | "due";
 
 export interface CanvasSummaryRecentActivity {
   id: number;
-  type: "income_entry" | "expense_payment";
+  type: "income_entry" | "expense_payment" | "transfer";
   entityId: number;
   entityName: string;
   amount: string;
@@ -62,6 +64,9 @@ export interface CanvasSummaryRecentActivity {
   currencyCode: string;
   date: string | null;
   status: RecentActivityStatus;
+  secondaryAmount?: string;
+  secondaryCurrencySymbol?: string;
+  secondaryCurrencyCode?: string;
 }
 
 export interface CanvasSummaryCurrencyBreakdown {
@@ -142,6 +147,13 @@ function mergeCurrencyBreakdown(
     a.currencyCode.localeCompare(b.currencyCode)
   );
 }
+
+const dashSourceSubWallet = alias(subWallets, "dash_source_sub_wallet");
+const dashDestSubWallet = alias(subWallets, "dash_dest_sub_wallet");
+const dashSourceWallet = alias(wallets, "dash_source_wallet");
+const dashDestWallet = alias(wallets, "dash_dest_wallet");
+const dashSourceCurrency = alias(currencies, "dash_source_currency");
+const dashDestCurrency = alias(currencies, "dash_dest_currency");
 
 export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary> {
   const [
@@ -270,6 +282,29 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
     .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false)));
 
+  const transferRows = await db
+    .select({
+      id: transfersTable.id,
+      sourceWalletName: dashSourceWallet.name,
+      destinationWalletName: dashDestWallet.name,
+      sourceAmount: transfersTable.sourceAmount,
+      destinationAmount: transfersTable.destinationAmount,
+      sourceCurrencyCode: dashSourceCurrency.code,
+      sourceCurrencySymbol: dashSourceCurrency.symbol,
+      destinationCurrencyCode: dashDestCurrency.code,
+      destinationCurrencySymbol: dashDestCurrency.symbol,
+      transferDate: transfersTable.transferDate,
+      createdAt: transfersTable.createdAt,
+    })
+    .from(transfersTable)
+    .innerJoin(dashSourceSubWallet, eq(transfersTable.sourceWalletId, dashSourceSubWallet.id))
+    .innerJoin(dashSourceWallet, eq(dashSourceSubWallet.walletId, dashSourceWallet.id))
+    .innerJoin(dashSourceCurrency, eq(dashSourceSubWallet.currencyId, dashSourceCurrency.id))
+    .innerJoin(dashDestSubWallet, eq(transfersTable.destinationWalletId, dashDestSubWallet.id))
+    .innerJoin(dashDestWallet, eq(dashDestSubWallet.walletId, dashDestWallet.id))
+    .innerJoin(dashDestCurrency, eq(dashDestSubWallet.currencyId, dashDestCurrency.id))
+    .where(eq(dashSourceWallet.canvasId, canvasId));
+
   const incomeEntries: CanvasSummaryIncomeEntry[] = incomeEntryRows.map((row) => ({
     id: row.id,
     incomeId: row.incomeId,
@@ -324,24 +359,45 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     status: getPaymentStatus(payment.paidDate, payment.dueDate),
   }));
 
-  const recentActivity = [...entryActivities, ...paymentActivities]
+  const transferActivities: CanvasSummaryRecentActivity[] = transferRows.map((transfer) => ({
+    id: transfer.id,
+    type: "transfer" as const,
+    entityId: transfer.id,
+    entityName: `${transfer.sourceWalletName} → ${transfer.destinationWalletName}`,
+    amount: String(transfer.sourceAmount),
+    currencySymbol: transfer.sourceCurrencySymbol,
+    currencyCode: transfer.sourceCurrencyCode,
+    secondaryAmount: String(transfer.destinationAmount),
+    secondaryCurrencySymbol: transfer.destinationCurrencySymbol,
+    secondaryCurrencyCode: transfer.destinationCurrencyCode,
+    date: toIsoString(transfer.transferDate),
+    status: "paid" as RecentActivityStatus,
+  }));
+
+  const recentActivity = [...entryActivities, ...paymentActivities, ...transferActivities]
     .sort((a, b) => {
       const aEntry = incomeEntries.find((e) => e.id === a.id && a.type === "income_entry");
       const bEntry = incomeEntries.find((e) => e.id === b.id && b.type === "income_entry");
       const aPayment = expensePayments.find((p) => p.id === a.id && a.type === "expense_payment");
       const bPayment = expensePayments.find((p) => p.id === b.id && b.type === "expense_payment");
+      const aTransfer = transferRows.find((t) => t.id === a.id && a.type === "transfer");
+      const bTransfer = transferRows.find((t) => t.id === b.id && b.type === "transfer");
 
       const aSort = a.type === "income_entry" && aEntry
         ? getActivitySortDate(aEntry.receivedDate, aEntry.expectedDate, aEntry.createdAt)
-        : aPayment
+        : a.type === "expense_payment" && aPayment
           ? getActivitySortDate(aPayment.paidDate, aPayment.dueDate, aPayment.createdAt)
-          : 0;
+          : a.type === "transfer" && aTransfer
+            ? getActivitySortDate(toIsoString(aTransfer.transferDate), null, toIsoString(aTransfer.createdAt) ?? new Date().toISOString())
+            : 0;
 
       const bSort = b.type === "income_entry" && bEntry
         ? getActivitySortDate(bEntry.receivedDate, bEntry.expectedDate, bEntry.createdAt)
-        : bPayment
+        : b.type === "expense_payment" && bPayment
           ? getActivitySortDate(bPayment.paidDate, bPayment.dueDate, bPayment.createdAt)
-          : 0;
+          : b.type === "transfer" && bTransfer
+            ? getActivitySortDate(toIsoString(bTransfer.transferDate), null, toIsoString(bTransfer.createdAt) ?? new Date().toISOString())
+            : 0;
 
       return bSort - aSort;
     })

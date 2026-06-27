@@ -44,10 +44,32 @@
     "submit": {
       "create": "ایجاد درآمد",
       "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره درآمد ناموفق بود. لطفاً دوباره تلاش کنید."
     }
+  },
+  "validation": {
+    "required": "این فیلد الزامی است",
+    "nameRequired": "نام الزامی است",
+    "nameMaxLength": "نام باید حداکثر ۲۵۵ کاراکتر باشد",
+    "amountRequired": "مبلغ الزامی است",
+    "amountPositive": "مبلغ باید بیشتر از صفر باشد",
+    "categoryRequired": "دسته‌بندی الزامی است",
+    "currencyRequired": "ارز الزامی است",
+    "incomeRequired": "درآمد الزامی است",
+    "walletRequired": "کیف پول الزامی است",
+    "receivedBeforeExpected": "تاریخ دریافت نمی‌تواند قبل از تاریخ مورد انتظار باشد",
+    "imageTooLarge": "حجم تصویر باید حداکثر ۵ مگابایت باشد",
+    "imageInvalidType": "لطفاً یک فایل تصویر معتبر انتخاب کنید",
+    "recurrenceWeeklyDays": "حداقل یک روز برای تکرار هفتگی انتخاب کنید",
+    "recurrenceInterval": "فاصله تکرار باید حداقل ۱ باشد",
+    "noCanvas": "ابتدا یک بوم انتخاب کنید",
+    "saveFailed": "ذخیره‌سازی ناموفق بود. لطفاً دوباره تلاش کنید."
   },
   "entryModal": {
     "title": "ایجاد ورودی",
+    "editTitle": "ویرایش ورودی",
     "description": {
       "forIncome": "ثبت پرداخت دریافت‌شده برای {{incomeName}}.",
       "toWallet": "ثبت وجوه ورودی به {{walletName}}.",
@@ -80,7 +102,8 @@
     },
     "submit": "ایجاد ورودی",
     "error": {
-      "required": "درآمد و کیف پول مقصد الزامی هستند"
+      "required": "درآمد و کیف پول مقصد الزامی هستند",
+      "saveFailed": "ایجاد ورودی ناموفق بود. لطفاً دوباره تلاش کنید."
     }
   },
   "entriesTable": {

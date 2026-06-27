@@ -38,6 +38,31 @@
       "paid": "پرداخت‌شده"
     }
   },
+  "heatmap": {
+    "title": "نمای سالانه سود در برابر هزینه",
+    "description": "خالص روزانه برای {{year}}",
+    "noData": "هیچ تراکنش نهایی‌شده‌ای در {{year}} وجود ندارد",
+    "empty": "هنوز ارزی با تراکنش نهایی‌شده وجود ندارد.",
+    "controls": {
+      "selectYear": "انتخاب سال",
+      "selectCurrency": "انتخاب ارز",
+      "currency": "ارز"
+    },
+    "weekdays": {
+      "mon": "د",
+      "wed": "چ",
+      "fri": "ج"
+    },
+    "tooltip": {
+      "income": "درآمد",
+      "expense": "هزینه",
+      "net": "خالص"
+    },
+    "legend": {
+      "less": "کمتر",
+      "more": "بیشتر"
+    }
+  },
   "quickActions": {
     "whiteboard": "باز کردن تخته",
     "members": "مدیریت اعضا"

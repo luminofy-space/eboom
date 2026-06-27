@@ -11,6 +11,7 @@ import { DashboardCashFlowChart } from "./components/DashboardCashFlowChart";
 import { DashboardEmptyState } from "./components/DashboardEmptyState";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardRecentActivity } from "./components/DashboardRecentActivity";
+import { DashboardYearlyHeatmap } from "./components/DashboardYearlyHeatmap";
 import { useTranslation } from "react-i18next";
 
 export default function DashboardPage() {
@@ -43,6 +44,10 @@ export default function DashboardPage() {
 
       <Container>
         <DashboardCashFlowChart summary={summary} isLoading={isLoading} />
+      </Container>
+
+      <Container>
+        <DashboardYearlyHeatmap summary={summary} isLoading={isLoading} />
       </Container>
 
       <DashboardRecentActivity

@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../db/client";
 import {
   currencies,
@@ -9,6 +10,7 @@ import {
   incomeEntries,
   incomes,
   subWallets,
+  transfers,
   walletCategories,
   wallets,
   whiteboardNodePositions,
@@ -273,6 +275,46 @@ export async function getWhiteboardData(canvasId: number) {
       currencies.symbol
     );
 
+  const wbSourceSubWallet = alias(subWallets, "wb_source_sub_wallet");
+  const wbDestSubWallet = alias(subWallets, "wb_dest_sub_wallet");
+  const wbSourceWallet = alias(wallets, "wb_source_wallet");
+  const wbDestWallet = alias(wallets, "wb_dest_wallet");
+  const wbSourceCurrency = alias(currencies, "wb_source_currency");
+  const wbDestCurrency = alias(currencies, "wb_dest_currency");
+
+  const transferFlowRows = await db
+    .select({
+      sourceWalletId: wbSourceWallet.id,
+      destinationWalletId: wbDestWallet.id,
+      transferCount: sql<number>`count(${transfers.id})::int`,
+      totalSourceAmount: sql<string>`coalesce(sum(${transfers.sourceAmount}), 0)`,
+      totalDestinationAmount: sql<string>`coalesce(sum(${transfers.destinationAmount}), 0)`,
+      sourceCurrencyId: wbSourceSubWallet.currencyId,
+      sourceCurrencyCode: wbSourceCurrency.code,
+      sourceCurrencySymbol: wbSourceCurrency.symbol,
+      destinationCurrencyId: wbDestSubWallet.currencyId,
+      destinationCurrencyCode: wbDestCurrency.code,
+      destinationCurrencySymbol: wbDestCurrency.symbol,
+    })
+    .from(transfers)
+    .innerJoin(wbSourceSubWallet, eq(transfers.sourceWalletId, wbSourceSubWallet.id))
+    .innerJoin(wbSourceWallet, eq(wbSourceSubWallet.walletId, wbSourceWallet.id))
+    .innerJoin(wbSourceCurrency, eq(wbSourceSubWallet.currencyId, wbSourceCurrency.id))
+    .innerJoin(wbDestSubWallet, eq(transfers.destinationWalletId, wbDestSubWallet.id))
+    .innerJoin(wbDestWallet, eq(wbDestSubWallet.walletId, wbDestWallet.id))
+    .innerJoin(wbDestCurrency, eq(wbDestSubWallet.currencyId, wbDestCurrency.id))
+    .where(eq(wbSourceWallet.canvasId, canvasId))
+    .groupBy(
+      wbSourceWallet.id,
+      wbDestWallet.id,
+      wbSourceSubWallet.currencyId,
+      wbSourceCurrency.code,
+      wbSourceCurrency.symbol,
+      wbDestSubWallet.currencyId,
+      wbDestCurrency.code,
+      wbDestCurrency.symbol
+    );
+
   const walletRows = await db
     .select({
       wallet: wallets,
@@ -362,6 +404,19 @@ export async function getWhiteboardData(canvasId: number) {
       currencyId: row.currencyId,
       currencyCode: row.currencyCode,
       currencySymbol: row.currencySymbol,
+    })),
+    transferFlows: transferFlowRows.map((row) => ({
+      sourceWalletId: row.sourceWalletId,
+      destinationWalletId: row.destinationWalletId,
+      transferCount: row.transferCount,
+      totalSourceAmount: row.totalSourceAmount,
+      totalDestinationAmount: row.totalDestinationAmount,
+      sourceCurrencyId: row.sourceCurrencyId,
+      sourceCurrencyCode: row.sourceCurrencyCode,
+      sourceCurrencySymbol: row.sourceCurrencySymbol,
+      destinationCurrencyId: row.destinationCurrencyId,
+      destinationCurrencyCode: row.destinationCurrencyCode,
+      destinationCurrencySymbol: row.destinationCurrencySymbol,
     })),
     wallets: walletRows.map((row) => ({
       ...row.wallet,
