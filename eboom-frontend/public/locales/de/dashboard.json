@@ -105,6 +105,7 @@
   },
   "recentActivity": {
     "title": "Letzte Aktivitäten",
+    "viewAllTransactions": "Alle Transaktionen anzeigen",
     "empty": "Noch keine kürzlichen Transaktionen.",
     "columns": {
       "type": "Typ",

@@ -105,6 +105,7 @@
   },
   "recentActivity": {
     "title": "فعالیت‌های اخیر",
+    "viewAllTransactions": "مشاهده همه تراکنش‌ها",
     "empty": "هنوز تراکنش اخیری وجود ندارد.",
     "columns": {
       "type": "نوع",

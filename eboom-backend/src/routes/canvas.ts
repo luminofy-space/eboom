@@ -23,7 +23,7 @@ import {
   getCanvasMembership,
 } from "../services/canvasAccessService";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
-import { getCanvasSummary } from "../services/dashboardService";
+import { getCanvasSummary, getCanvasTransactions } from "../services/dashboardService";
 import { listCanvasTransfersHandler } from "./transfers";
 import { parseRouteParam } from "./routeParams";
 
@@ -262,6 +262,29 @@ router.delete("/:id", async (req: Request, res: Response) => {
 // ============================================================================
 
 router.get("/:canvasId/transfers", listCanvasTransfersHandler);
+
+router.get("/:canvasId/transactions", async (req: Request, res: Response) => {
+  const user = req.appUser;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const canvasId = parseRouteParam(req.params.canvasId);
+  if (isNaN(canvasId)) {
+    return res.status(400).json({ error: "Invalid canvas ID" });
+  }
+
+  try {
+    const access = await checkCanvasPermission(canvasId, user.id, "view");
+    if (!access.allowed) {
+      return denyCanvasPermission(res, access);
+    }
+
+    const transactions = await getCanvasTransactions(canvasId);
+    res.json(transactions);
+  } catch (err) {
+    console.error("Error fetching canvas transactions:", err);
+    res.status(500).json({ error: "Failed to fetch canvas transactions" });
+  }
+});
 
 router.get("/:canvasId/summary", async (req: Request, res: Response) => {
   const user = req.appUser;
