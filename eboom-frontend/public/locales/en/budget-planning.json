@@ -1,0 +1,136 @@
+{
+  "title": "Budget & Planning",
+  "subtitle": "Set spending limits, track progress, and plan what you want to buy.",
+  "sections": {
+    "budgets": "Budgets",
+    "budgetsDescription": "Spending limits for this period — see what's left at a glance.",
+    "goals": "Goals",
+    "goalsDescription": "Things you want to buy — see how your available balance compares."
+  },
+  "tabs": {
+    "overview": "Overview",
+    "categories": "Categories",
+    "forecast": "Forecast"
+  },
+  "period": {
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "monthlyRecommended": "Recommended"
+  },
+  "labels": {
+    "spent": "Spent",
+    "left": "Left to spend",
+    "limit": "Spending limit",
+    "totalLimit": "Total spending limit",
+    "categoryLimit": "Category limit",
+    "alertThreshold": "Warn me at",
+    "percentUsed": "{{percent}}% used",
+    "paidDateHint": "Only payments with a paid date count toward your limit.",
+    "scheduledNotCounted": "{{count}} scheduled payment(s) not counted yet",
+    "expected": "Expected",
+    "expectedIn": "Expected in",
+    "expectedOut": "Expected out",
+    "projectedBalance": "Projected balance",
+    "currentBalance": "Current balance",
+    "lastMonthHint": "Last period: ~{{amount}}",
+    "forecastDescription": "Upcoming income and expenses in the next 30 days — separate from your spending limit.",
+    "forecastHint": "Expected in/out counts scheduled transactions not yet received or paid. Budget spent only includes payments with a paid date."
+  },
+  "form": {
+    "createBudget": "Set spending limit",
+    "editBudget": "Edit spending limit",
+    "createGoal": "Add a goal",
+    "editGoal": "Edit goal",
+    "currency": "Currency",
+    "period": "Period",
+    "category": "Category",
+    "selectCategory": "Select category",
+    "currencyAndPeriod": "Currency & period",
+    "duplicateBudget": "A {{period}} budget already exists for this currency.",
+    "overAllocatedWarning": "Category limits add up to more than your total limit."
+  },
+  "empty": {
+    "budgetTitle": "No budget yet",
+    "budgetDescription": "Set a total spending limit for this week, month, or year.",
+    "createBudget": "Set spending limit",
+    "goalsTitle": "No goals yet",
+    "goalsDescription": "Add something you want to buy and track progress against your balance.",
+    "addGoal": "Add a goal"
+  },
+  "actions": {
+    "editLimits": "Edit limits",
+    "viewBudget": "View budget",
+    "deleteBudget": "Delete budget",
+    "deleteGoal": "Remove goal",
+    "save": "Save",
+    "cancel": "Cancel",
+    "addCategoryLimit": "Add category limit",
+    "fillFromHistory": "Fill total from last period"
+  },
+  "goals": {
+    "modalTitle": "New goal",
+    "editTitle": "Edit goal",
+    "name": "What do you want to buy?",
+    "targetAmount": "Target price",
+    "targetDate": "Target date (optional)",
+    "currency": "Currency",
+    "statusLabel": "Status",
+    "availableAcrossWallets": "Available across your wallets",
+    "shadowDisclaimer": "This doesn't reserve money — it shows how your total balance compares to this goal.",
+    "progress": "{{current}} of {{target}}",
+    "daysLeft": "{{count}} days left",
+    "tabs": {
+      "active": "Active",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
+    "status": {
+      "active": "Active",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
+    "actions": {
+      "markAchieved": "Mark as achieved",
+      "drop": "Drop goal",
+      "reactivate": "Reactivate"
+    },
+    "empty": {
+      "activeTitle": "No active goals",
+      "activeDescription": "Add something you want to buy and track progress against your balance.",
+      "achievedTitle": "No achieved goals",
+      "achievedDescription": "Goals you mark as achieved will appear here.",
+      "droppedTitle": "No dropped goals",
+      "droppedDescription": "Goals you drop will appear here."
+    }
+  },
+  "dashboard": {
+    "title": "Budget",
+    "prompt": "Set a spending limit to track progress",
+    "allOnTrack": "All budgets on track",
+    "primaryHeadline": "{{period}} · {{currency}} · {{percent}}% used",
+    "kpi": {
+      "budgetOverLimit_one": "{{count}} budget over limit",
+      "budgetOverLimit_other": "{{count}} budgets over limit",
+      "budgetOverThreshold_one": "{{count}} budget warning",
+      "budgetOverThreshold_other": "{{count}} budget warnings",
+      "budgetOnTrack_one": "{{count}} budget on track",
+      "budgetOnTrack_other": "{{count}} budgets on track",
+      "categoryOverLimit_one": "{{count}} category over limit",
+      "categoryOverLimit_other": "{{count}} categories over limit",
+      "categoryOverThreshold_one": "{{count}} category warning",
+      "categoryOverThreshold_other": "{{count}} category warnings",
+      "categoryOnTrack_one": "{{count}} category on track",
+      "categoryOnTrack_other": "{{count}} categories on track"
+    }
+  },
+  "loadError": "Could not load budget data.",
+  "saveError": "Could not save. Please try again.",
+  "retry": "Try again",
+  "deleteConfirm": {
+    "budgetTitle": "Delete this budget?",
+    "budgetDescription": "Your spending limits will be removed. Past payments are not affected.",
+    "goalTitle": "Remove this goal?",
+    "goalDescription": "Your wallet balances are not affected."
+  }
+}

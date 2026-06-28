@@ -16,6 +16,7 @@
     "previousPage": "Vorherige Seite",
     "nextPage": "Nächste Seite",
     "empty": "Noch keine Vermögenswerte. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
+    "viewAll": "Alle Vermögenswerte anzeigen",
     "tooltip": {
       "wallets": "Wallets",
       "incomes": "Einnahmen",
@@ -29,10 +30,35 @@
       "holdingsValue": "Geschätzter Wert"
     }
   },
+  "budget": {
+    "title": "Budget",
+    "empty": "Legen Sie ein Ausgabenlimit fest, um den Fortschritt zu verfolgen.",
+    "viewAll": "Alle Budgets anzeigen",
+    "noBudget": "Kein Budget",
+    "cards": {
+      "percentUsed": "{{percent}}% genutzt"
+    },
+    "categories": {
+      "overLimit": "über Limit",
+      "warnings": "Warnungen",
+      "onTrack": "im Plan"
+    }
+  },
+  "goals": {
+    "title": "Ziele & Termine",
+    "viewAll": "Alle Ziele anzeigen",
+    "empty": "Fügen Sie Sparziele hinzu, um Ihre Vorhaben zu verfolgen.",
+    "targetForGoals_one": "Ziel {{amount}} für {{count}} Ziel",
+    "targetForGoals_other": "Ziel {{amount}} für {{count}} Ziele",
+    "coversGoals": "Guthaben in Wallets deckt {{percent}}%"
+  },
+  "charts": {
+    "title": "Diagramme & Trends"
+  },
   "holdings": {
     "title": "Immobilien & Vermögenswerte",
     "empty": "Noch keine Vermögenswerte. Fügen Sie Fahrzeuge, Immobilien oder Grundstücke hinzu.",
-    "viewAll": "Alle anzeigen",
+    "viewAll": "Alle Vermögenswerte anzeigen",
     "assetCount_one": "{{count}} Vermögenswert",
     "assetCount_other": "{{count}} Vermögenswerte",
     "totalValue": "Geschätzter Gesamtwert"

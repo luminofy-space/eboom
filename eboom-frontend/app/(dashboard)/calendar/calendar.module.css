@@ -111,6 +111,22 @@
   background: #fbbf24;
 }
 
+.goalEvent {
+  background: color-mix(in srgb, #7c3aed 10%, transparent);
+  border: 1px solid color-mix(in srgb, #7c3aed 22%, transparent);
+  color: #6d28d9;
+}
+
+:global(.dark) .goalEvent {
+  background: color-mix(in srgb, #a78bfa 14%, transparent);
+  border-color: color-mix(in srgb, #a78bfa 28%, transparent);
+  color: #c4b5fd;
+}
+
+.goalDot {
+  background: #8b5cf6;
+}
+
 .tooltipTitleBlock {
   min-width: 0;
 }

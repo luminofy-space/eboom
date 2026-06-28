@@ -3,6 +3,8 @@
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { NewTransferModal } from "@/src/views/wallets/components/NewTransferModal";
+import { GoalFormModal } from "@/src/views/budget-planning/components/GoalFormModal";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import type { CalendarEvent } from "@/src/hooks/useCalendarData";
 
 interface EventModalProps {
@@ -12,9 +14,22 @@ interface EventModalProps {
 }
 
 export function EventModal({ event, open, onOpenChange }: EventModalProps) {
+  const { canvas } = useCanvas();
   const dateKey = event.date.slice(0, 10);
   const amount = Number(event.amount) || undefined;
   const isExistingRecord = !event.isPredicted && event.entryId != null;
+
+  if (event.type === "goal" && canvas) {
+    return (
+      <GoalFormModal
+        open={open}
+        onOpenChange={onOpenChange}
+        canvasId={canvas}
+        goalId={event.entityId}
+        extraInvalidateKeys={[["calendar"]]}
+      />
+    );
+  }
 
   if (event.type === "income") {
     return (

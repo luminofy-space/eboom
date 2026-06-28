@@ -29,6 +29,7 @@ if (!i18n.isInitialized) {
     "whiteboard",
     "dashboard",
     "calendar",
+    "budget-planning",
   ],
       defaultNS: "common",
       backend: {

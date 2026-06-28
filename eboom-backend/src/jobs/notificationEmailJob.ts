@@ -1,4 +1,7 @@
-import { deliverOverdueNotificationEmailsForAllUsers } from "../services/notificationService";
+import {
+  deliverBudgetAlertNotificationsForUser,
+  deliverOverdueNotificationEmailsForAllUsers,
+} from "../services/notificationService";
 
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 const STARTUP_DELAY_MS = 30 * 1000;
@@ -20,8 +23,33 @@ async function runJob(): Promise<void> {
 
   try {
     await deliverOverdueNotificationEmailsForAllUsers();
+    await deliverBudgetAlertsForAllUsers();
   } catch (err) {
-    console.error("Overdue notification email job failed:", err);
+    console.error("Notification job failed:", err);
+  }
+}
+
+async function deliverBudgetAlertsForAllUsers(): Promise<void> {
+  const { db } = await import("../db/client");
+  const { canvasMembers, canvases } = await import("../db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  const members = await db
+    .selectDistinct({ userId: canvasMembers.userId })
+    .from(canvasMembers)
+    .innerJoin(canvases, eq(canvasMembers.canvasId, canvases.id))
+    .where(eq(canvases.isArchived, false));
+
+  let count = 0;
+  for (const { userId } of members) {
+    try {
+      count += await deliverBudgetAlertNotificationsForUser(userId);
+    } catch (err) {
+      console.error(`Failed budget alerts for user ${userId}:`, err);
+    }
+  }
+  if (count > 0) {
+    console.log(`Created ${count} budget alert notification(s)`);
   }
 }
 

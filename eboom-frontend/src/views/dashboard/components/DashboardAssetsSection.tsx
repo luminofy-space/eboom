@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,9 @@ export function DashboardAssetsSection({
           >
             <Typography variant="title">{t("assets.title")}</Typography>
             <Stack direction="row" align="center" gap={2}>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/wallets">{t("assets.viewAll")}</Link>
+              </Button>
               {!showAll && statsByCurrency.length > PAGE_SIZE && (
                 <>
                   <Button

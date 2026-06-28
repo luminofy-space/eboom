@@ -1,11 +1,15 @@
 {
-  "dashboard": "Dashboard",
+  "overview": "Übersicht",
+  "dashboard": "Übersicht",
   "search": {
     "placeholder": "Suchen..."
   },
   "groups": {
+    "overview": "Übersicht",
+    "finances": "Finanzen",
+    "planning": "Planung",
     "management": "Verwaltung",
-    "explore": "Entdecken"
+    "explore": "Demnächst"
   },
   "routes": {
     "incomes": "Einnahmen",
