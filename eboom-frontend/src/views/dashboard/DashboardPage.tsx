@@ -49,11 +49,11 @@ export default function DashboardPage() {
       <DashboardBudgetSection canvasId={canvas} />
 
       <Container>
-        <DashboardCashFlowChart summary={summary} isLoading={isLoading} />
-      </Container>
-
-      <Container>
-        <DashboardYearlyHeatmap summary={summary} isLoading={isLoading} />
+        <Stack gap={4}>
+          <Typography variant="title">{t("charts.title")}</Typography>
+          <DashboardCashFlowChart summary={summary} isLoading={isLoading} />
+          <DashboardYearlyHeatmap summary={summary} isLoading={isLoading} />
+        </Stack>
       </Container>
 
       <DashboardRecentActivity

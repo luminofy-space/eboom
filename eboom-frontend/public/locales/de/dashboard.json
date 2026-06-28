@@ -29,6 +29,23 @@
       "holdingsValue": "Geschätzter Wert"
     }
   },
+  "budget": {
+    "title": "Budget",
+    "empty": "Legen Sie ein Ausgabenlimit fest, um den Fortschritt zu verfolgen.",
+    "viewAll": "Alle anzeigen",
+    "noBudget": "Kein Budget",
+    "cards": {
+      "percentUsed": "{{percent}}% genutzt"
+    },
+    "categories": {
+      "overLimit": "über Limit",
+      "warnings": "Warnungen",
+      "onTrack": "im Plan"
+    }
+  },
+  "charts": {
+    "title": "Diagramme & Trends"
+  },
   "holdings": {
     "title": "Immobilien & Vermögenswerte",
     "empty": "Noch keine Vermögenswerte. Fügen Sie Fahrzeuge, Immobilien oder Grundstücke hinzu.",

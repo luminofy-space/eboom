@@ -89,7 +89,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     if (!access.allowed) return denyPermission(res, access);
 
     const summary = await getBudgetSummaryForCanvas(canvasId);
-    res.json({ summary });
+    res.json(summary);
   } catch (err) {
     console.error("Error fetching budget summary:", err);
     res.status(500).json({ error: "Failed to fetch budget summary" });

@@ -20,7 +20,9 @@ import type {
   BudgetProgress,
   BudgetSuggestionCategory,
   BudgetSuggestions,
-  BudgetSummaryItem,
+  BudgetCurrencyDashboardCard,
+  BudgetDashboardSummary,
+  BudgetPeriodDashboardSummary,
   CashFlowForecast,
   ForecastDayPoint,
   PeriodBounds,
@@ -390,42 +392,67 @@ export async function getBudgetProgress(
   };
 }
 
+function emptyBudgetPeriods(): Record<BudgetPeriodType, BudgetPeriodDashboardSummary | null> {
+  return {
+    weekly: null,
+    monthly: null,
+    yearly: null,
+  };
+}
+
+function countCategoryStatus(lines: BudgetLineProgress[]): Pick<
+  BudgetPeriodDashboardSummary,
+  "categoryOverLimit" | "categoryOverThreshold" | "categoryOnTrack"
+> {
+  let categoryOverLimit = 0;
+  let categoryOverThreshold = 0;
+  let categoryOnTrack = 0;
+
+  for (const line of lines) {
+    if (line.isOverLimit) categoryOverLimit++;
+    else if (line.isOverThreshold) categoryOverThreshold++;
+    else categoryOnTrack++;
+  }
+
+  return { categoryOverLimit, categoryOverThreshold, categoryOnTrack };
+}
+
 export async function getBudgetSummaryForCanvas(
   canvasId: number,
   referenceDate: Date = new Date()
-): Promise<BudgetSummaryItem[]> {
+): Promise<BudgetDashboardSummary> {
   const canvasBudgets = await db.select().from(budgets).where(eq(budgets.canvasId, canvasId));
-  const summaries: BudgetSummaryItem[] = [];
+  const byCurrency = new Map<number, BudgetCurrencyDashboardCard>();
 
   for (const budget of canvasBudgets) {
     const progress = await getBudgetProgress(budget.id, referenceDate);
     if (!progress) continue;
 
-    const topCategories = [...progress.lines]
-      .sort((a, b) => b.percent - a.percent)
-      .slice(0, 3)
-      .map((line) => ({
-        categoryName: line.categoryName,
-        percent: line.percent,
-        isOverThreshold: line.isOverThreshold,
-      }));
+    let card = byCurrency.get(progress.currencyId);
+    if (!card) {
+      card = {
+        currencyId: progress.currencyId,
+        currencyCode: progress.currencyCode,
+        currencySymbol: progress.currencySymbol,
+        periods: emptyBudgetPeriods(),
+      };
+      byCurrency.set(progress.currencyId, card);
+    }
 
-    summaries.push({
-      budgetId: progress.budgetId,
-      currencyCode: progress.currencyCode,
-      currencySymbol: progress.currencySymbol,
-      periodType: progress.periodType,
-      totalLimit: progress.totalLimit,
-      totalSpent: progress.totalSpent,
-      totalRemaining: progress.totalRemaining,
+    const categoryStatus = countCategoryStatus(progress.lines);
+    card.periods[progress.periodType as BudgetPeriodType] = {
       totalPercent: progress.totalPercent,
-      alertThresholdPercent: progress.alertThresholdPercent,
+      isOverLimit: progress.isOverLimit,
       isOverThreshold: progress.isOverThreshold,
-      topCategories,
-    });
+      ...categoryStatus,
+    };
   }
 
-  return summaries;
+  return {
+    currencies: Array.from(byCurrency.values()).sort((a, b) =>
+      a.currencyCode.localeCompare(b.currencyCode)
+    ),
+  };
 }
 
 export async function getCanvasLiquidBalance(

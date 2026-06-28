@@ -83,7 +83,22 @@
   "dashboard": {
     "title": "Budget",
     "prompt": "Set a spending limit to track progress",
-    "almostAtLimit": "Almost at your limit"
+    "allOnTrack": "All budgets on track",
+    "primaryHeadline": "{{period}} · {{currency}} · {{percent}}% used",
+    "kpi": {
+      "budgetOverLimit_one": "{{count}} budget over limit",
+      "budgetOverLimit_other": "{{count}} budgets over limit",
+      "budgetOverThreshold_one": "{{count}} budget warning",
+      "budgetOverThreshold_other": "{{count}} budget warnings",
+      "budgetOnTrack_one": "{{count}} budget on track",
+      "budgetOnTrack_other": "{{count}} budgets on track",
+      "categoryOverLimit_one": "{{count}} category over limit",
+      "categoryOverLimit_other": "{{count}} categories over limit",
+      "categoryOverThreshold_one": "{{count}} category warning",
+      "categoryOverThreshold_other": "{{count}} category warnings",
+      "categoryOnTrack_one": "{{count}} category on track",
+      "categoryOnTrack_other": "{{count}} categories on track"
+    }
   },
   "loadError": "Could not load budget data.",
   "saveError": "Could not save. Please try again.",

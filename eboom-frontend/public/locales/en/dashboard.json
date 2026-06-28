@@ -29,6 +29,23 @@
       "holdingsValue": "Holdings value"
     }
   },
+  "budget": {
+    "title": "Budget",
+    "empty": "Set a spending limit to track progress.",
+    "viewAll": "View all",
+    "noBudget": "No budget",
+    "cards": {
+      "percentUsed": "{{percent}}% used"
+    },
+    "categories": {
+      "overLimit": "over limit",
+      "warnings": "warnings",
+      "onTrack": "on track"
+    }
+  },
+  "charts": {
+    "title": "Charts & trends"
+  },
   "holdings": {
     "title": "Property & Holdings",
     "empty": "No holdings yet. Add vehicles, property, or land to track their estimated value.",

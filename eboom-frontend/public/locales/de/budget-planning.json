@@ -83,7 +83,22 @@
   "dashboard": {
     "title": "Budget",
     "prompt": "Ausgabenlimit festlegen",
-    "almostAtLimit": "Limit fast erreicht"
+    "allOnTrack": "Alle Budgets im Plan",
+    "primaryHeadline": "{{period}} · {{currency}} · {{percent}}% genutzt",
+    "kpi": {
+      "budgetOverLimit_one": "{{count}} Budget über Limit",
+      "budgetOverLimit_other": "{{count}} Budgets über Limit",
+      "budgetOverThreshold_one": "{{count}} Budget-Warnung",
+      "budgetOverThreshold_other": "{{count}} Budget-Warnungen",
+      "budgetOnTrack_one": "{{count}} Budget im Plan",
+      "budgetOnTrack_other": "{{count}} Budgets im Plan",
+      "categoryOverLimit_one": "{{count}} Kategorie über Limit",
+      "categoryOverLimit_other": "{{count}} Kategorien über Limit",
+      "categoryOverThreshold_one": "{{count}} Kategorie-Warnung",
+      "categoryOverThreshold_other": "{{count}} Kategorie-Warnungen",
+      "categoryOnTrack_one": "{{count}} Kategorie im Plan",
+      "categoryOnTrack_other": "{{count}} Kategorien im Plan"
+    }
   },
   "loadError": "Budgetdaten konnten nicht geladen werden.",
   "saveError": "Speichern fehlgeschlagen. Bitte erneut versuchen.",

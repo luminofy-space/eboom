@@ -83,7 +83,22 @@
   "dashboard": {
     "title": "بودجه",
     "prompt": "سقف هزینه تعیین کنید",
-    "almostAtLimit": "نزدیک به سقف"
+    "allOnTrack": "همه بودجه‌ها در مسیر",
+    "primaryHeadline": "{{period}} · {{currency}} · {{percent}}٪ مصرف شده",
+    "kpi": {
+      "budgetOverLimit_one": "{{count}} بودجه بالای سقف",
+      "budgetOverLimit_other": "{{count}} بودجه بالای سقف",
+      "budgetOverThreshold_one": "{{count}} هشدار بودجه",
+      "budgetOverThreshold_other": "{{count}} هشدار بودجه",
+      "budgetOnTrack_one": "{{count}} بودجه در مسیر",
+      "budgetOnTrack_other": "{{count}} بودجه در مسیر",
+      "categoryOverLimit_one": "{{count}} دسته بالای سقف",
+      "categoryOverLimit_other": "{{count}} دسته بالای سقف",
+      "categoryOverThreshold_one": "{{count}} هشدار دسته",
+      "categoryOverThreshold_other": "{{count}} هشدار دسته",
+      "categoryOnTrack_one": "{{count}} دسته در مسیر",
+      "categoryOnTrack_other": "{{count}} دسته در مسیر"
+    }
   },
   "loadError": "بارگذاری داده بودجه ناموفق بود.",
   "saveError": "ذخیره ناموفق بود. دوباره تلاش کنید.",

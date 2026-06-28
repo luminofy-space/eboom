@@ -34,22 +34,24 @@ export interface BudgetProgress {
   unscheduledPaymentCount: number;
 }
 
-export interface BudgetSummaryItem {
-  budgetId: number;
+export interface BudgetPeriodDashboardSummary {
+  totalPercent: number;
+  isOverLimit: boolean;
+  isOverThreshold: boolean;
+  categoryOverLimit: number;
+  categoryOverThreshold: number;
+  categoryOnTrack: number;
+}
+
+export interface BudgetCurrencyDashboardCard {
+  currencyId: number;
   currencyCode: string;
   currencySymbol: string;
-  periodType: BudgetPeriodType;
-  totalLimit: string;
-  totalSpent: string;
-  totalRemaining: string;
-  totalPercent: number;
-  alertThresholdPercent: number;
-  isOverThreshold: boolean;
-  topCategories: Array<{
-    categoryName: string;
-    percent: number;
-    isOverThreshold: boolean;
-  }>;
+  periods: Record<BudgetPeriodType, BudgetPeriodDashboardSummary | null>;
+}
+
+export interface BudgetDashboardSummary {
+  currencies: BudgetCurrencyDashboardCard[];
 }
 
 export interface BudgetSuggestionCategory {

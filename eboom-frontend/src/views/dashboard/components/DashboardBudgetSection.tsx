@@ -5,25 +5,162 @@ import { useTranslation } from "react-i18next";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { Grid } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
+import { Typography, typographyVariants } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/src/i18n/formatters";
-import { BudgetProgressBar } from "@/src/views/budget-planning/components/BudgetProgressBar";
-import type { BudgetSummaryItem } from "@/src/views/budget-planning/types";
+import { cn } from "@/lib/utils";
+import type {
+  BudgetCurrencyDashboardCard,
+  BudgetDashboardSummary,
+  BudgetPeriodDashboardSummary,
+  BudgetPeriodType,
+} from "@/src/views/budget-planning/types";
+import { StatusChip } from "./StatusChip";
 
 interface DashboardBudgetSectionProps {
   canvasId?: number | null;
 }
 
+const PERIOD_ORDER: BudgetPeriodType[] = ["weekly", "monthly", "yearly"];
+
+type PercentTone = "danger" | "warning" | "success" | "muted";
+
+function percentTone(data: BudgetPeriodDashboardSummary | null): PercentTone {
+  if (!data) return "muted";
+  if (data.isOverLimit) return "danger";
+  if (data.isOverThreshold) return "warning";
+  return "success";
+}
+
+const TONE_CLASS: Record<PercentTone, string | undefined> = {
+  danger: "text-red-600 dark:text-red-400",
+  warning: "text-amber-600 dark:text-amber-400",
+  success: "text-emerald-600 dark:text-emerald-400",
+  muted: "text-muted-foreground",
+};
+
+interface CategoryStatProps {
+  count: number;
+  label: string;
+  tone: "danger" | "warning" | "success";
+}
+
+function CategoryStat({ count, label, tone }: CategoryStatProps) {
+  return (
+    <Badge variant="outline" className={cn(
+      "tabular-nums",
+      tone === "danger" && "text-red-600 dark:text-red-400",
+      tone === "warning" && "text-amber-600 dark:text-amber-400",
+      tone === "success" && "text-emerald-600 dark:text-emerald-400"
+    )}>
+      {count} {label}
+    </Badge>
+  );
+}
+
+interface BudgetPeriodColumnProps {
+  period: BudgetPeriodType;
+  data: BudgetPeriodDashboardSummary | null;
+}
+
+function BudgetPeriodColumn({ period, data }: BudgetPeriodColumnProps) {
+  const { t } = useTranslation("dashboard");
+  const { t: tb } = useTranslation("budget-planning");
+  const tone = percentTone(data);
+
+  return (
+    <Stack
+      gap={2}
+      className="min-w-0 rounded-lg border border-border/60 bg-muted/20 p-3 sm:border-0 sm:bg-transparent sm:p-0"
+    >
+      <Typography variant="muted-sm" className="font-medium">
+        {tb(`period.${period}`)}
+      </Typography>
+
+      {data ? (
+        <>
+          <Typography className={cn(typographyVariants({ variant: "stat" }), "text-lg", TONE_CLASS[tone])}>
+            {t("budget.cards.percentUsed", { percent: Math.round(data.totalPercent) })}
+          </Typography>
+          <Stack gap={1}>
+            <CategoryStat
+              count={data.categoryOverLimit}
+              label={t("budget.categories.overLimit")}
+              tone="danger"
+            />
+            <CategoryStat
+              count={data.categoryOverThreshold}
+              label={t("budget.categories.warnings")}
+              tone="warning"
+            />
+            <CategoryStat
+              count={data.categoryOnTrack}
+              label={t("budget.categories.onTrack")}
+              tone="success"
+            />
+          </Stack>
+        </>
+      ) : (
+        <Typography variant="muted-sm">{t("budget.noBudget")}</Typography>
+      )}
+    </Stack>
+  );
+}
+
+interface BudgetCurrencyCardProps {
+  currency: BudgetCurrencyDashboardCard;
+}
+
+function BudgetCurrencyCard({ currency }: BudgetCurrencyCardProps) {
+  return (
+    <Link
+      href="/budget-planning"
+      className="block w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Stack gap={4}>
+        <Badge variant="outline" className="w-fit">
+          {currency.currencyCode}
+        </Badge>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {PERIOD_ORDER.map((period) => (
+            <BudgetPeriodColumn
+              key={period}
+              period={period}
+              data={currency.periods[period]}
+            />
+          ))}
+        </div>
+      </Stack>
+    </Link>
+  );
+}
+
+function BudgetSectionHeader({ showViewAll }: { showViewAll: boolean }) {
+  const { t } = useTranslation("dashboard");
+
+  return (
+    <Stack direction="row" align="center" justify="between" gap={4}>
+      <Typography variant="title">{t("budget.title")}</Typography>
+      {showViewAll && (
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/budget-planning">{t("budget.viewAll")}</Link>
+        </Button>
+      )}
+    </Stack>
+  );
+}
+
 export function DashboardBudgetSection({ canvasId }: DashboardBudgetSectionProps) {
-  const { t } = useTranslation("budget-planning");
+  const { t } = useTranslation("dashboard");
+  const { t: tb } = useTranslation("budget-planning");
   const { canEdit } = useCanvasPermissions();
 
-  const { data, isLoading } = useQueryApi<{ summary?: BudgetSummaryItem[] }>(
+  const { data, isLoading } = useQueryApi<BudgetDashboardSummary>(
     canvasId ? API_ROUTES.CANVAS_BUDGETS_SUMMARY(canvasId) : "",
     {
       queryKey: ["budget-summary", canvasId],
@@ -32,99 +169,59 @@ export function DashboardBudgetSection({ canvasId }: DashboardBudgetSectionProps
     }
   );
 
-  const summaries = (data?.summary ?? []).filter((s) => s.periodType === "monthly");
-  const primary = summaries[0];
-
   if (!canvasId) return null;
 
   if (isLoading) {
     return (
       <Container>
-        <Skeleton className="h-40 w-full rounded-xl" />
+        <Stack gap={4}>
+          <Skeleton className="h-6 w-24" />
+          <Grid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" gap={4}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))}
+          </Grid>
+        </Stack>
       </Container>
     );
   }
 
-  if (!primary) {
+  const currencies = data?.currencies ?? [];
+
+  if (currencies.length === 0) {
     return (
       <Container>
-        <Card>
-          <CardContent className="flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
-            <Typography variant="muted-sm">{t("dashboard.prompt")}</Typography>
+        <Stack gap={4}>
+          <BudgetSectionHeader showViewAll={false} />
+          <Stack
+            direction="row"
+            align="center"
+            justify="between"
+            gap={4}
+            className="flex-wrap rounded-xl border bg-card px-4 py-4 shadow-sm"
+          >
+            <Typography variant="muted-sm">{t("budget.empty")}</Typography>
             {canEdit && (
               <Button asChild size="sm" variant="outline">
-                <Link href="/budget-planning">{t("empty.createBudget")}</Link>
+                <Link href="/budget-planning">{tb("empty.createBudget")}</Link>
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </Stack>
+        </Stack>
       </Container>
     );
   }
 
   return (
     <Container>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base font-medium">{t("dashboard.title")}</CardTitle>
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/budget-planning">{t("actions.viewBudget")}</Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <Typography variant="muted-sm">
-              {primary.currencyCode} · {t("period.monthly")}
-            </Typography>
-            {primary.isOverThreshold && (
-              <Typography variant="muted-sm" className="text-amber-600 dark:text-amber-400">
-                {t("dashboard.almostAtLimit")}
-              </Typography>
-            )}
-          </div>
-
-          <BudgetProgressBar
-            percent={primary.totalPercent}
-            threshold={primary.alertThresholdPercent}
-          />
-
-          <div className="grid gap-2 sm:grid-cols-3 text-sm">
-            <div>
-              <Typography variant="muted-sm">{t("labels.spent")}</Typography>
-              <Typography className="tabular-nums">
-                {formatCurrency(primary.totalSpent, primary.currencySymbol, { preset: "compact" })}
-              </Typography>
-            </div>
-            <div>
-              <Typography variant="muted-sm">{t("labels.left")}</Typography>
-              <Typography className="tabular-nums">
-                {formatCurrency(primary.totalRemaining, primary.currencySymbol, {
-                  preset: "compact",
-                })}
-              </Typography>
-            </div>
-            <div>
-              <Typography variant="muted-sm">{t("labels.limit")}</Typography>
-              <Typography className="tabular-nums">
-                {formatCurrency(primary.totalLimit, primary.currencySymbol, { preset: "compact" })}
-              </Typography>
-            </div>
-          </div>
-
-          {primary.topCategories.length > 0 && (
-            <Stack gap={2}>
-              {primary.topCategories.map((cat) => (
-                <BudgetProgressBar
-                  key={cat.categoryName}
-                  label={cat.categoryName}
-                  percent={cat.percent}
-                  threshold={primary.alertThresholdPercent}
-                />
-              ))}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
+      <Stack gap={4}>
+        <BudgetSectionHeader showViewAll />
+        <Grid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" gap={4}>
+          {currencies.map((currency) => (
+            <BudgetCurrencyCard key={currency.currencyId} currency={currency} />
+          ))}
+        </Grid>
+      </Stack>
     </Container>
   );
 }
