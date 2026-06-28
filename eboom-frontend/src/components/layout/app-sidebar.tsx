@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  ArrowLeftRight,
   BanknoteArrowDown,
   BanknoteArrowUp,
   Wallet,
@@ -45,6 +46,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/",
           icon: LayoutDashboard,
         },
+        {
+          title: t("routes.transactions"),
+          url: "/transactions",
+          icon: ArrowLeftRight,
+        },
+        {
+          title: t("routes.calendar"),
+          url: "/calendar",
+          icon: CalendarDays,
+        },
+        {
+          title: t("routes.whiteboard"),
+          url: "/whiteboard",
+          icon: Presentation,
+        },
       ],
     },
     {
@@ -76,28 +92,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       label: t("groups.planning"),
       items: [
         {
-          title: t("routes.calendar"),
-          url: "/calendar",
-          icon: CalendarDays,
-        },
-        {
           title: t("routes.budgetPlanning"),
           url: "/budget-planning",
           icon: PiggyBank,
         },
-        {
-          title: t("routes.whiteboard"),
-          url: "/whiteboard",
-          icon: Presentation,
-        },
         ...(canManageMembers
           ? [
-              {
-                title: t("routes.manageMembers"),
-                url: "/members",
-                icon: Users,
-              },
-            ]
+            {
+              title: t("routes.manageMembers"),
+              url: "/members",
+              icon: Users,
+            },
+          ]
           : []),
       ],
     },

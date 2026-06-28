@@ -1,0 +1,43 @@
+{
+  "page": {
+    "title": "Transaktionen",
+    "subtitle": "Alle Einnahmeeinträge, Ausgabenzahlungen und Überweisungen in diesem Canvas",
+    "loadError": "Transaktionen konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+  },
+  "columns": {
+    "wallet": "Wallet"
+  },
+  "entries": {
+    "title": "Einnahmeeinträge",
+    "subtitle": "Eingehende Transaktionen über alle Wallets",
+    "empty": "Noch keine Einnahmeeinträge. Erstellen Sie einen Eintrag, um eingehende Gelder zu erfassen.",
+    "loadError": "Einnahmeeinträge konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "createEntry": "Eintrag erstellen",
+    "count": "{{count}} {{unit}}",
+    "fallbackIncomeName": "Einnahme #{{incomeId}}",
+    "footer": {
+      "totalReceived": "Gesamt erhalten"
+    }
+  },
+  "payments": {
+    "title": "Ausgabenzahlungen",
+    "subtitle": "Ausgehende Transaktionen über alle Wallets",
+    "empty": "Noch keine Ausgabenzahlungen. Erstellen Sie eine Zahlung, um ausgehende Gelder zu erfassen.",
+    "loadError": "Ausgabenzahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "createPayment": "Zahlung erstellen",
+    "count": "{{count}} {{unit}}",
+    "fallbackExpenseName": "Ausgabe #{{expenseId}}",
+    "footer": {
+      "totalPaid": "Gesamt bezahlt"
+    }
+  },
+  "transfers": {
+    "title": "Überweisungen",
+    "subtitle": "Geld zwischen Wallets verschoben",
+    "empty": "Noch keine Überweisungen. Erstellen Sie eine Überweisung, um Gelder zwischen Wallets zu verschieben.",
+    "loadError": "Überweisungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "createTransfer": "Überweisung erstellen",
+    "count": "{{count}} Überweisungen",
+    "direction": "{{source}} → {{destination}}"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "page": {
+    "title": "Transactions",
+    "subtitle": "All income entries, expense payments, and transfers in this canvas",
+    "loadError": "Failed to load transactions. Please try again."
+  },
+  "columns": {
+    "wallet": "Wallet"
+  },
+  "entries": {
+    "title": "Income Entries",
+    "subtitle": "Incoming transactions across all wallets",
+    "empty": "No income entries yet. Create an entry to record incoming funds.",
+    "loadError": "Failed to load income entries. Please try again.",
+    "createEntry": "Create Entry",
+    "count": "{{count}} {{unit}}",
+    "fallbackIncomeName": "Income #{{incomeId}}",
+    "footer": {
+      "totalReceived": "Total received"
+    }
+  },
+  "payments": {
+    "title": "Expense Payments",
+    "subtitle": "Outgoing transactions across all wallets",
+    "empty": "No expense payments yet. Create a payment to record outgoing funds.",
+    "loadError": "Failed to load expense payments. Please try again.",
+    "createPayment": "Create Payment",
+    "count": "{{count}} {{unit}}",
+    "fallbackExpenseName": "Expense #{{expenseId}}",
+    "footer": {
+      "totalPaid": "Total paid"
+    }
+  },
+  "transfers": {
+    "title": "Transfers",
+    "subtitle": "Money moved between wallets",
+    "empty": "No transfers yet. Create a transfer to move funds between wallets.",
+    "loadError": "Failed to load transfers. Please try again.",
+    "createTransfer": "Create Transfer",
+    "count": "{{count}} transfers",
+    "direction": "{{source}} → {{destination}}"
+  }
+}

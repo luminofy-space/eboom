@@ -64,6 +64,7 @@ const API_ROUTES = {
   CANVASES_ASSETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
 
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
+  CANVAS_TRANSACTIONS: (canvasId: number) => `/api/canvases/${canvasId}/transactions`,
 
   CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
 

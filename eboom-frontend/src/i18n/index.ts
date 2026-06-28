@@ -28,6 +28,7 @@ if (!i18n.isInitialized) {
         "canvas-members",
     "whiteboard",
     "dashboard",
+    "transactions",
     "calendar",
     "budget-planning",
   ],

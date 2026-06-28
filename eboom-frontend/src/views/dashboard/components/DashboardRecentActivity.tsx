@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
@@ -44,7 +46,10 @@ export function DashboardRecentActivity({
     return (
       <Container>
         <Stack gap={4}>
-          <Skeleton className="h-6 w-40" />
+          <Stack direction="row" align="center" justify="between" gap={4}>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-8 w-36" />
+          </Stack>
           <Skeleton className="h-64 w-full" />
         </Stack>
       </Container>
@@ -54,7 +59,12 @@ export function DashboardRecentActivity({
   return (
     <Container>
       <Stack gap={4}>
-        <Typography variant="title">{t("recentActivity.title")}</Typography>
+        <Stack direction="row" align="center" justify="between" gap={4}>
+          <Typography variant="title">{t("recentActivity.title")}</Typography>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/transactions">{t("recentActivity.viewAllTransactions")}</Link>
+          </Button>
+        </Stack>
 
         {activities.length === 0 ? (
           <Typography variant="muted-sm">{t("recentActivity.empty")}</Typography>
