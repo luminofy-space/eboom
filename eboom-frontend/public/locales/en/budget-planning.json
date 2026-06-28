@@ -75,10 +75,34 @@
     "targetAmount": "Target price",
     "targetDate": "Target date (optional)",
     "currency": "Currency",
+    "statusLabel": "Status",
     "availableAcrossWallets": "Available across your wallets",
     "shadowDisclaimer": "This doesn't reserve money — it shows how your total balance compares to this goal.",
     "progress": "{{current}} of {{target}}",
-    "daysLeft": "{{count}} days left"
+    "daysLeft": "{{count}} days left",
+    "tabs": {
+      "active": "Active",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
+    "status": {
+      "active": "Active",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
+    "actions": {
+      "markAchieved": "Mark as achieved",
+      "drop": "Drop goal",
+      "reactivate": "Reactivate"
+    },
+    "empty": {
+      "activeTitle": "No active goals",
+      "activeDescription": "Add something you want to buy and track progress against your balance.",
+      "achievedTitle": "No achieved goals",
+      "achievedDescription": "Goals you mark as achieved will appear here.",
+      "droppedTitle": "No dropped goals",
+      "droppedDescription": "Goals you drop will appear here."
+    }
   },
   "dashboard": {
     "title": "Budget",

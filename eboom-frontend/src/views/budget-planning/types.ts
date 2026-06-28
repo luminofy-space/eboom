@@ -73,10 +73,13 @@ export interface BudgetSuggestions {
   categories: BudgetSuggestionCategory[];
 }
 
+export type SavingsGoalStatus = "active" | "achieved" | "dropped";
+
 export interface SavingsGoalProgress {
   goalId: number;
   canvasId: number;
   name: string;
+  status: SavingsGoalStatus;
   currencyCode: string;
   currencySymbol: string;
   targetAmount: string;
@@ -98,6 +101,7 @@ export interface SavingsGoalListItem {
     name: string;
     targetAmount: string;
     targetDate: string | null;
+    status: SavingsGoalStatus;
   };
   progress?: SavingsGoalProgress;
 }

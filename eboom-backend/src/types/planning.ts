@@ -85,10 +85,13 @@ export interface BudgetDashboardSummary {
   currencies: BudgetCurrencyDashboardCard[];
 }
 
+export type SavingsGoalStatus = "active" | "achieved" | "dropped";
+
 export interface SavingsGoalProgress {
   goalId: number;
   canvasId: number;
   name: string;
+  status: SavingsGoalStatus;
   currencyCode: string;
   currencySymbol: string;
   targetAmount: string;

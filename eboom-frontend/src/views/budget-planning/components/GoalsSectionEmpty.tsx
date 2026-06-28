@@ -7,11 +7,13 @@ import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 
 interface GoalsSectionEmptyProps {
-  onCreate: () => void;
+  onCreate?: () => void;
   canEdit: boolean;
+  message?: string;
+  title?: string;
 }
 
-export function GoalsSectionEmpty({ onCreate, canEdit }: GoalsSectionEmptyProps) {
+export function GoalsSectionEmpty({ onCreate, canEdit, message, title }: GoalsSectionEmptyProps) {
   const { t } = useTranslation("budget-planning");
 
   return (
@@ -21,10 +23,10 @@ export function GoalsSectionEmpty({ onCreate, canEdit }: GoalsSectionEmptyProps)
           <Target className="size-6 text-muted-foreground" />
         </div>
         <Stack gap={1} align="center">
-          <Typography variant="heading">{t("empty.goalsTitle")}</Typography>
-          <Typography variant="muted-sm">{t("empty.goalsDescription")}</Typography>
+          <Typography variant="heading">{title ?? t("empty.goalsTitle")}</Typography>
+          <Typography variant="muted-sm">{message ?? t("empty.goalsDescription")}</Typography>
         </Stack>
-        {canEdit && <Button onClick={onCreate}>{t("empty.addGoal")}</Button>}
+        {canEdit && onCreate && <Button onClick={onCreate}>{t("empty.addGoal")}</Button>}
       </Stack>
     </div>
   );

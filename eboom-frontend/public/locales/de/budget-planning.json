@@ -75,10 +75,34 @@
     "targetAmount": "Zielpreis",
     "targetDate": "Zieldatum (optional)",
     "currency": "Währung",
+    "statusLabel": "Status",
     "availableAcrossWallets": "Verfügbar in allen Wallets",
     "shadowDisclaimer": "Reserviert kein Geld — zeigt den Vergleich mit Ihrem Gesamtguthaben.",
     "progress": "{{current}} von {{target}}",
-    "daysLeft": "Noch {{count}} Tage"
+    "daysLeft": "Noch {{count}} Tage",
+    "tabs": {
+      "active": "Aktiv",
+      "achieved": "Erreicht",
+      "dropped": "Aufgegeben"
+    },
+    "status": {
+      "active": "Aktiv",
+      "achieved": "Erreicht",
+      "dropped": "Aufgegeben"
+    },
+    "actions": {
+      "markAchieved": "Als erreicht markieren",
+      "drop": "Ziel aufgeben",
+      "reactivate": "Reaktivieren"
+    },
+    "empty": {
+      "activeTitle": "Keine aktiven Ziele",
+      "activeDescription": "Erfassen Sie geplante Anschaffungen und verfolgen Sie den Fortschritt.",
+      "achievedTitle": "Keine erreichten Ziele",
+      "achievedDescription": "Als erreicht markierte Ziele erscheinen hier.",
+      "droppedTitle": "Keine aufgegebenen Ziele",
+      "droppedDescription": "Aufgegebene Ziele erscheinen hier."
+    }
   },
   "dashboard": {
     "title": "Budget",

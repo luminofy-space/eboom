@@ -51,6 +51,12 @@ export const budgetPeriodTypeEnum = pgEnum("budget_period_type", [
   "yearly",
 ]);
 
+export const savingsGoalStatusEnum = pgEnum("savings_goal_status", [
+  "active",
+  "achieved",
+  "dropped",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -513,6 +519,7 @@ export const savingsGoals = pgTable(
     targetDate: date("target_date"),
     linkedWalletId: integer("linked_wallet_id").references(() => wallets.id),
     alertThresholdPercent: integer("alert_threshold_percent").notNull().default(80),
+    status: savingsGoalStatusEnum("status").notNull().default("active"),
     isArchived: boolean("is_archived").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").notNull().references(() => users.id),

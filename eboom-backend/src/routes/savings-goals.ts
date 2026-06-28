@@ -4,6 +4,7 @@ import { db } from "../db/client";
 import { savingsGoals } from "../db/schema";
 import { checkCanvasPermission } from "../services/canvasAccessService";
 import { getSavingsGoalProgress } from "../services/planningService";
+import type { SavingsGoalStatus } from "../types/planning";
 import { parseRouteParam } from "./routeParams";
 
 const router = express.Router({ mergeParams: true });
@@ -14,6 +15,15 @@ function denyPermission(res: Response, access: { allowed: false; status: 403; er
 
 function parseCanvasId(req: Request): number {
   return parseRouteParam(req.params.canvasId);
+}
+
+function parseSavingsGoalStatus(value: unknown): SavingsGoalStatus | null {
+  if (value === "active" || value === "achieved" || value === "dropped") return value;
+  return null;
+}
+
+function isArchivedForStatus(status: SavingsGoalStatus): boolean {
+  return status !== "active";
 }
 
 router.get("/", async (req: Request, res: Response) => {
@@ -30,7 +40,7 @@ router.get("/", async (req: Request, res: Response) => {
     const goals = await db
       .select()
       .from(savingsGoals)
-      .where(and(eq(savingsGoals.canvasId, canvasId), eq(savingsGoals.isArchived, false)));
+      .where(eq(savingsGoals.canvasId, canvasId));
 
     const enriched = await Promise.all(
       goals.map(async (goal) => ({
@@ -76,6 +86,8 @@ router.post("/", async (req: Request, res: Response) => {
         targetAmount: String(targetAmount),
         targetDate: typeof targetDate === "string" ? targetDate : null,
         linkedWalletId: null,
+        status: "active",
+        isArchived: false,
         alertThresholdPercent:
           alertThresholdPercent != null ? parseRouteParam(String(alertThresholdPercent)) : 80,
         createdBy: user.id,
@@ -129,7 +141,7 @@ router.patch("/:goalId", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
-  const { name, targetAmount, targetDate, alertThresholdPercent, currencyId, isArchived } = req.body;
+  const { name, targetAmount, targetDate, alertThresholdPercent, currencyId, status } = req.body;
 
   try {
     const access = await checkCanvasPermission(canvasId, user.id, "edit");
@@ -148,6 +160,11 @@ router.patch("/:goalId", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid currency ID" });
     }
 
+    const parsedStatus = status != null ? parseSavingsGoalStatus(status) : existing.status;
+    if (!parsedStatus) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
     const [updated] = await db
       .update(savingsGoals)
       .set({
@@ -164,7 +181,8 @@ router.patch("/:goalId", async (req: Request, res: Response) => {
           alertThresholdPercent != null
             ? parseRouteParam(String(alertThresholdPercent))
             : existing.alertThresholdPercent,
-        isArchived: isArchived ?? existing.isArchived,
+        status: parsedStatus,
+        isArchived: isArchivedForStatus(parsedStatus),
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
@@ -201,7 +219,12 @@ router.delete("/:goalId", async (req: Request, res: Response) => {
 
     await db
       .update(savingsGoals)
-      .set({ isArchived: true, lastModifiedBy: user.id, lastModifiedAt: new Date() })
+      .set({
+        status: "dropped",
+        isArchived: true,
+        lastModifiedBy: user.id,
+        lastModifiedAt: new Date(),
+      })
       .where(eq(savingsGoals.id, goalId));
 
     res.json({ success: true });

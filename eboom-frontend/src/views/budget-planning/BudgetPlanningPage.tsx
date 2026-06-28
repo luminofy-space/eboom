@@ -37,7 +37,7 @@ import { GoalCard } from "./components/GoalCard";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalsSectionEmpty } from "./components/GoalsSectionEmpty";
 import { SystemCurrencySelect } from "./components/SystemCurrencySelect";
-import type { BudgetListItem, BudgetPeriodType, SavingsGoalListItem, SavingsGoalProgress } from "./types";
+import type { BudgetListItem, BudgetPeriodType, SavingsGoalListItem, SavingsGoalProgress, SavingsGoalStatus } from "./types";
 
 function addDaysIso(days: number): string {
   const d = new Date();
@@ -60,7 +60,7 @@ export default function BudgetPlanningPage() {
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<SavingsGoalListItem | null>(null);
   const [deleteBudgetId, setDeleteBudgetId] = useState<number | null>(null);
-  const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
+  const [goalStatusTab, setGoalStatusTab] = useState<SavingsGoalStatus>("active");
 
   const { data, isLoading, isError, refetch } = useQueryApi<{ budgets?: BudgetListItem[] }>(
     canvas ? API_ROUTES.CANVAS_BUDGETS_LIST(canvas) : "",
@@ -76,6 +76,15 @@ export default function BudgetPlanningPage() {
 
   const budgets = data?.budgets ?? [];
   const goals = goalsRes?.goals ?? [];
+  const goalsByStatus = useMemo(
+    () => ({
+      active: goals.filter((item) => (item.goal.status ?? "active") === "active"),
+      achieved: goals.filter((item) => (item.goal.status ?? "active") === "achieved"),
+      dropped: goals.filter((item) => (item.goal.status ?? "active") === "dropped"),
+    }),
+    [goals]
+  );
+  const visibleGoals = goalsByStatus[goalStatusTab];
 
   const selectedCurrencyIdNum = selectedCurrencyId
     ? parseInt(selectedCurrencyId, 10)
@@ -127,17 +136,18 @@ export default function BudgetPlanningPage() {
     },
   });
 
-  const deleteGoalMutation = useMutation({
-    mutationFn: async (goalId: number) => {
+  const updateGoalStatusMutation = useMutation({
+    mutationFn: async ({ goalId, status }: { goalId: number; status: SavingsGoalStatus }) => {
       if (!canvas) return;
-      await axios.delete(
-        `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_DELETE(canvas, goalId)}`,
+      await axios.patch(
+        `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvas, goalId)}`,
+        { status },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["savings-goals", canvas] });
-      setDeleteGoalId(null);
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
     },
   });
 
@@ -417,11 +427,13 @@ export default function BudgetPlanningPage() {
             <div>
               <Stack gap={1} className="sm:flex-row sm:items-center">
                 <Typography variant="heading">{t("sections.goals")}</Typography>
-                {goals.length > 0 && <Badge variant="secondary">{goals.length}</Badge>}
+                {goalsByStatus.active.length > 0 && (
+                  <Badge variant="secondary">{goalsByStatus.active.length}</Badge>
+                )}
               </Stack>
               <Typography variant="muted-sm">{t("sections.goalsDescription")}</Typography>
             </div>
-            {canEdit && goals.length > 0 && (
+            {canEdit && goalsByStatus.active.length > 0 && (
               <Button variant="outline" size="sm" onClick={openCreateGoal}>
                 {t("empty.addGoal")}
               </Button>
@@ -433,19 +445,64 @@ export default function BudgetPlanningPage() {
           ) : goals.length === 0 ? (
             <GoalsSectionEmpty onCreate={openCreateGoal} canEdit={canEdit} />
           ) : (
-            <Grid variant="cards" gap={4}>
-              {goals.map((item) =>
-                item.progress ? (
-                  <GoalCard
-                    key={item.goal.id}
-                    progress={item.progress}
-                    canEdit={canEdit}
-                    onEdit={() => openEditGoal(item)}
-                    onDelete={() => setDeleteGoalId(item.goal.id)}
-                  />
-                ) : null
+            <Stack gap={4}>
+              <Tabs
+                value={goalStatusTab}
+                onValueChange={(value) => setGoalStatusTab(value as SavingsGoalStatus)}
+              >
+                <TabsList>
+                  <TabsTrigger value="active">
+                    {t("goals.tabs.active")}
+                    {goalsByStatus.active.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {goalsByStatus.active.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="achieved">
+                    {t("goals.tabs.achieved")}
+                    {goalsByStatus.achieved.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {goalsByStatus.achieved.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="dropped">
+                    {t("goals.tabs.dropped")}
+                    {goalsByStatus.dropped.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {goalsByStatus.dropped.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {visibleGoals.length === 0 ? (
+                <GoalsSectionEmpty
+                  canEdit={canEdit && goalStatusTab === "active"}
+                  onCreate={goalStatusTab === "active" ? openCreateGoal : undefined}
+                  title={t(`goals.empty.${goalStatusTab}Title`)}
+                  message={t(`goals.empty.${goalStatusTab}Description`)}
+                />
+              ) : (
+                <Grid variant="cards" gap={4}>
+                  {visibleGoals.map((item) =>
+                    item.progress ? (
+                      <GoalCard
+                        key={item.goal.id}
+                        progress={item.progress}
+                        canEdit={canEdit}
+                        onEdit={() => openEditGoal(item)}
+                        onStatusChange={(status) =>
+                          updateGoalStatusMutation.mutate({ goalId: item.goal.id, status })
+                        }
+                      />
+                    ) : null
+                  )}
+                </Grid>
               )}
-            </Grid>
+            </Stack>
           )}
         </Stack>
       </Stack>
@@ -476,15 +533,6 @@ export default function BudgetPlanningPage() {
         isDeleting={deleteMutation.isPending}
         title={t("deleteConfirm.budgetTitle")}
         description={t("deleteConfirm.budgetDescription")}
-      />
-
-      <ConfirmDeleteDialog
-        open={deleteGoalId != null}
-        onOpenChange={(open) => !open && setDeleteGoalId(null)}
-        onConfirm={() => deleteGoalId != null && deleteGoalMutation.mutate(deleteGoalId)}
-        isDeleting={deleteGoalMutation.isPending}
-        title={t("deleteConfirm.goalTitle")}
-        description={t("deleteConfirm.goalDescription")}
       />
     </Container>
   );

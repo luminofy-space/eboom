@@ -9,6 +9,7 @@ import { useDashboardSummary } from "./hooks/useDashboardSummary";
 import { DashboardAssetsSection } from "./components/DashboardAssetsSection";
 import { DashboardHoldingsSection } from "./components/DashboardHoldingsSection";
 import { DashboardBudgetSection } from "./components/DashboardBudgetSection";
+import { DashboardGoalsSection } from "./components/DashboardGoalsSection";
 import { DashboardCashFlowChart } from "./components/DashboardCashFlowChart";
 import { DashboardEmptyState } from "./components/DashboardEmptyState";
 import { DashboardHeader } from "./components/DashboardHeader";
@@ -42,12 +43,6 @@ export default function DashboardPage() {
     <Stack gap={6} className="pb-8">
       <DashboardHeader canvas={activeCanvas} />
 
-      <DashboardAssetsSection summary={summary} isLoading={isLoading} />
-
-      <DashboardHoldingsSection summary={summary} isLoading={isLoading} />
-
-      <DashboardBudgetSection canvasId={canvas} />
-
       <Container>
         <Stack gap={4}>
           <Typography variant="title">{t("charts.title")}</Typography>
@@ -55,6 +50,14 @@ export default function DashboardPage() {
           <DashboardYearlyHeatmap summary={summary} isLoading={isLoading} />
         </Stack>
       </Container>
+
+      <DashboardAssetsSection summary={summary} isLoading={isLoading} />
+
+      <DashboardHoldingsSection summary={summary} isLoading={isLoading} />
+
+      <DashboardBudgetSection canvasId={canvas} />
+
+      <DashboardGoalsSection canvasId={canvas} />
 
       <DashboardRecentActivity
         activities={summary?.recentActivity}

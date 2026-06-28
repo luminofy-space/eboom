@@ -478,7 +478,7 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
   const [goal] = await db
     .select()
     .from(savingsGoals)
-    .where(and(eq(savingsGoals.id, goalId), eq(savingsGoals.isArchived, false)));
+    .where(eq(savingsGoals.id, goalId));
   if (!goal) return null;
 
   const [currency] = await db.select().from(currencies).where(eq(currencies.id, goal.currencyId));
@@ -500,6 +500,7 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
     goalId: goal.id,
     canvasId: goal.canvasId,
     name: goal.name,
+    status: goal.status as SavingsGoalProgress["status"],
     currencyCode: currency.code,
     currencySymbol: currency.symbol,
     targetAmount: formatAmount(targetAmount),
@@ -657,7 +658,7 @@ export async function getBudgetAlertsForUser(userId: number): Promise<BudgetAler
     const goals = await db
       .select()
       .from(savingsGoals)
-      .where(and(eq(savingsGoals.canvasId, canvasId), eq(savingsGoals.isArchived, false)));
+      .where(and(eq(savingsGoals.canvasId, canvasId), eq(savingsGoals.status, "active")));
 
     for (const goal of goals) {
       const progress = await getSavingsGoalProgress(goal.id);

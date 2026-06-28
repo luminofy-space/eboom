@@ -75,10 +75,34 @@
     "targetAmount": "قیمت هدف",
     "targetDate": "تاریخ هدف (اختیاری)",
     "currency": "ارز",
+    "statusLabel": "وضعیت",
     "availableAcrossWallets": "موجود در همه کیف پول‌ها",
     "shadowDisclaimer": "پولی رزرو نمی‌کند — فقط مقایسه با موجودی کل را نشان می‌دهد.",
     "progress": "{{current}} از {{target}}",
-    "daysLeft": "{{count}} روز مانده"
+    "daysLeft": "{{count}} روز مانده",
+    "tabs": {
+      "active": "فعال",
+      "achieved": "محقق‌شده",
+      "dropped": "رها شده"
+    },
+    "status": {
+      "active": "فعال",
+      "achieved": "محقق‌شده",
+      "dropped": "رها شده"
+    },
+    "actions": {
+      "markAchieved": "علامت‌گذاری به‌عنوان محقق‌شده",
+      "drop": "رها کردن هدف",
+      "reactivate": "فعال‌سازی مجدد"
+    },
+    "empty": {
+      "activeTitle": "هدف فعالی نیست",
+      "activeDescription": "چیزی که می‌خواهید بخرید اضافه کنید و پیشرفت را ببینید.",
+      "achievedTitle": "هدف محقق‌شده‌ای نیست",
+      "achievedDescription": "اهدافی که محقق‌شده علامت بخورند اینجا نمایش داده می‌شوند.",
+      "droppedTitle": "هدف رها شده‌ای نیست",
+      "droppedDescription": "اهدافی که رها کنید اینجا نمایش داده می‌شوند."
+    }
   },
   "dashboard": {
     "title": "بودجه",
