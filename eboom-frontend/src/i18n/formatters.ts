@@ -95,7 +95,7 @@ export function formatDate(
 export function formatMoney(
   amount: number | string,
   symbol?: string,
-  options?: Intl.NumberFormatOptions
+  options?: FormatCurrencyOptions
 ): string {
   return formatCurrency(amount, symbol, { preset: "money", ...options });
 }
