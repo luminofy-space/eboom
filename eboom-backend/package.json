@@ -8,6 +8,8 @@
         "start": "node dist/app.js",
         "dev": "nodemon",
         "type-check": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "db:generate": "drizzle-kit push",
         "db:migrate": "tsx src/db/migrate.ts",
         "db:seed": "tsx src/db/seed/seed.ts",
@@ -33,6 +35,7 @@
         "jsonwebtoken": "^9.0.2",
         "morgan": "^1.10.0",
         "nodemailer": "^7.0.10",
+        "openai": "^4.104.0",
         "pg": "^8.11.0",
         "postgres": "^3.4.8",
         "uuid": "^9.0.0",
@@ -49,6 +52,7 @@
         "nodemon": "^2.0.22",
         "ts-node": "^10.9.2",
         "tsx": "^4.21.0",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^3.2.4"
     }
 }

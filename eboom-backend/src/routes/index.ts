@@ -22,6 +22,9 @@ import notificationsRouter from './notifications';
 import transfersRouter from './transfers';
 import budgetsRouter from './budgets';
 import savingsGoalsRouter from './savings-goals';
+import aiInsightProfilesRouter from './ai-insight-profiles';
+import aiInsightsRouter from './ai-insights';
+import aiChatRouter from './ai-chat';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
@@ -31,6 +34,9 @@ router.use('/canvases/:canvasId/members', auth, canvasMembersRouter);
 router.use('/canvases/:canvasId/whiteboard', auth, whiteboardRouter);
 router.use('/canvases/:canvasId/budgets', auth, budgetsRouter);
 router.use('/canvases/:canvasId/savings-goals', auth, savingsGoalsRouter);
+router.use('/canvases/:canvasId/ai-insight-profile', auth, aiInsightProfilesRouter);
+router.use('/canvases/:canvasId/ai-insights', auth, aiInsightsRouter);
+router.use('/canvases/:canvasId/ai-chat', auth, aiChatRouter);
 router.use('/canvases', auth, canvas);
 
 // Canvas invitations
