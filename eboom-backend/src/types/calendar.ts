@@ -1,6 +1,6 @@
 export interface CalendarEvent {
   id: number;
-  type: "income" | "expense" | "transfer";
+  type: "income" | "expense" | "transfer" | "goal";
   entityId: number;
   entryId?: number;
   date: string;
@@ -11,6 +11,8 @@ export interface CalendarEvent {
   info?: string;
   secondaryAmount?: string;
   secondaryCurrency?: string;
+  goalPercent?: number;
+  daysRemaining?: number | null;
 }
 
 export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "yearly";

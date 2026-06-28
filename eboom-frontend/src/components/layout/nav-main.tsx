@@ -9,22 +9,23 @@ import {
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
-import { useTranslation } from "react-i18next";
 import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string;
-    url?: string;
-    icon?: LucideIcon;
-    badge?: number;
-    onClick?: () => void;
-  }[];
-}) {
+export type NavItem = {
+  title: string;
+  url?: string;
+  icon?: LucideIcon;
+  badge?: number;
+  onClick?: () => void;
+};
+
+export type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+export function NavGroups({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
-  const { t } = useTranslation("navigation");
   const { navigate } = useNavigationProgress();
 
   const isActive = (url: string) => {
@@ -34,32 +35,41 @@ export function NavMain({
   };
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{t("groups.management")}</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuButton
-            key={item.title}
-            isActive={item.url ? isActive(item.url) : false}
-            tooltip={item.title}
-            onClick={() => {
-              if (item.onClick) {
-                item.onClick();
-                return;
-              }
-              if (item.url) {
-                navigate(item.url);
-              }
-            }}
-          >
-            {item.icon && <item.icon />}
-            <span>{item.title}</span>
-            {item.badge != null && item.badge > 0 ? (
-              <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
-            ) : null}
-          </SidebarMenuButton>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
+    <>
+      {groups.map((group) => (
+        <SidebarGroup key={group.label}>
+          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarMenu>
+            {group.items.map((item) => (
+              <SidebarMenuButton
+                key={item.title}
+                isActive={item.url ? isActive(item.url) : false}
+                tooltip={item.title}
+                onClick={() => {
+                  if (item.onClick) {
+                    item.onClick();
+                    return;
+                  }
+                  if (item.url) {
+                    navigate(item.url);
+                  }
+                }}
+              >
+                {item.icon && <item.icon />}
+                <span>{item.title}</span>
+                {item.badge != null && item.badge > 0 ? (
+                  <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+                ) : null}
+              </SidebarMenuButton>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      ))}
+    </>
   );
+}
+
+/** @deprecated Use NavGroups instead */
+export function NavMain({ items }: { items: NavItem[] }) {
+  return <NavGroups groups={[{ label: "", items }]} />;
 }

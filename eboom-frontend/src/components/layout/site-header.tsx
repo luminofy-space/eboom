@@ -39,6 +39,7 @@ const ROUTE_KEYS: Record<string, { labelKey: string; listUrl: string }> = {
   expense: { labelKey: "routes.expenses", listUrl: "/expenses" },
   whiteboard: { labelKey: "routes.whiteboard", listUrl: "/whiteboard" },
   "budget-planning": { labelKey: "routes.budgetPlanning", listUrl: "/budget-planning" },
+  transactions: { labelKey: "routes.transactions", listUrl: "/transactions" },
   "wish-list": { labelKey: "routes.wishList", listUrl: "/wish-list" },
   "ai-insights": { labelKey: "routes.aiInsights", listUrl: "/ai-insights" },
 };
@@ -92,7 +93,7 @@ export function SiteHeader() {
   const crumbs = buildBreadcrumbs(
     pathname,
     activeCanvas?.name ?? null,
-    t("dashboard"),
+    t("overview"),
     t
   );
 

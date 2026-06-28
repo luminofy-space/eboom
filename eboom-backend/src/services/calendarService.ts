@@ -7,6 +7,7 @@ import {
   expenses,
   incomeEntries,
   incomes,
+  savingsGoals,
   subWallets,
   transfers,
   wallets,
@@ -505,6 +506,49 @@ export async function getCalendarEvents(
       status: "completed",
       isPredicted: false,
       info: `${transfer.sourceWalletName} → ${transfer.destinationWalletName}`,
+    });
+  }
+
+  const goalRows = await db
+    .select({
+      id: savingsGoals.id,
+      name: savingsGoals.name,
+      targetAmount: savingsGoals.targetAmount,
+      targetDate: savingsGoals.targetDate,
+      currencyCode: currencies.code,
+    })
+    .from(savingsGoals)
+    .innerJoin(currencies, eq(savingsGoals.currencyId, currencies.id))
+    .where(
+      and(
+        eq(savingsGoals.canvasId, canvasId),
+        eq(savingsGoals.status, "active"),
+        isNotNull(savingsGoals.targetDate),
+        gte(savingsGoals.targetDate, toDateKey(rangeStart)),
+        lte(savingsGoals.targetDate, toDateKey(rangeEnd))
+      )
+    );
+
+  for (const goal of goalRows) {
+    if (!goal.targetDate) continue;
+
+    const { getSavingsGoalProgress } = await import("./planningService");
+    const progress = await getSavingsGoalProgress(goal.id);
+    const targetDate = startOfDay(new Date(goal.targetDate));
+    const today = startOfDay(now);
+
+    events.push({
+      id: goal.id + 3_000_000_000,
+      type: "goal",
+      entityId: goal.id,
+      date: targetDate.toISOString(),
+      amount: String(goal.targetAmount),
+      currency: goal.currencyCode,
+      status: targetDate < today ? "overdue" : "pending",
+      isPredicted: false,
+      info: goal.name,
+      goalPercent: progress?.percent ?? 0,
+      daysRemaining: progress?.daysRemaining ?? null,
     });
   }
 

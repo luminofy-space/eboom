@@ -64,6 +64,7 @@ const API_ROUTES = {
   CANVASES_ASSETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
 
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
+  CANVAS_TRANSACTIONS: (canvasId: number) => `/api/canvases/${canvasId}/transactions`,
 
   CALENDAR_EVENTS: (canvasId: number) => `/api/calendar/${canvasId}`,
 
@@ -139,6 +140,32 @@ const API_ROUTES = {
   ASSETS_UPDATE: (id: number) => `/api/assets/${id}/`,
   ASSETS_DELETE: (id: number) => `/api/assets/${id}/`,
   ASSET_CATEGORIES: '/api/asset/categories',
+
+  // ============================================================================
+  // BUDGET & PLANNING
+  // ============================================================================
+  CANVAS_BUDGETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/budgets`,
+  CANVAS_BUDGETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/budgets`,
+  CANVAS_BUDGETS_GET: (canvasId: number, budgetId: number) =>
+    `/api/canvases/${canvasId}/budgets/${budgetId}`,
+  CANVAS_BUDGETS_UPDATE: (canvasId: number, budgetId: number) =>
+    `/api/canvases/${canvasId}/budgets/${budgetId}`,
+  CANVAS_BUDGETS_DELETE: (canvasId: number, budgetId: number) =>
+    `/api/canvases/${canvasId}/budgets/${budgetId}`,
+  CANVAS_BUDGETS_PROGRESS: (canvasId: number, budgetId: number) =>
+    `/api/canvases/${canvasId}/budgets/${budgetId}/progress`,
+  CANVAS_BUDGETS_SUGGESTIONS: (canvasId: number) =>
+    `/api/canvases/${canvasId}/budgets/suggestions`,
+  CANVAS_BUDGETS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/budgets/summary`,
+  CANVAS_BUDGETS_CURRENCY_USAGE: (canvasId: number) =>
+    `/api/canvases/${canvasId}/budgets/currency-usage`,
+  CANVAS_BUDGETS_FORECAST: (canvasId: number) => `/api/canvases/${canvasId}/budgets/forecast`,
+  CANVAS_SAVINGS_GOALS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/savings-goals`,
+  CANVAS_SAVINGS_GOALS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/savings-goals`,
+  CANVAS_SAVINGS_GOALS_UPDATE: (canvasId: number, goalId: number) =>
+    `/api/canvases/${canvasId}/savings-goals/${goalId}`,
+  CANVAS_SAVINGS_GOALS_DELETE: (canvasId: number, goalId: number) =>
+    `/api/canvases/${canvasId}/savings-goals/${goalId}`,
 } as const;
 
 export default API_ROUTES;

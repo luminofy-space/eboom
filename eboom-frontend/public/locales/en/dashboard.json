@@ -16,6 +16,7 @@
     "previousPage": "Previous page",
     "nextPage": "Next page",
     "empty": "No assets yet. Add wallets, incomes, or expenses to get started.",
+    "viewAll": "View all Assets",
     "tooltip": {
       "wallets": "Wallets",
       "incomes": "Incomes",
@@ -29,10 +30,35 @@
       "holdingsValue": "Holdings value"
     }
   },
+  "budget": {
+    "title": "Budget",
+    "empty": "Set a spending limit to track progress.",
+    "viewAll": "View all Budgets",
+    "noBudget": "No budget",
+    "cards": {
+      "percentUsed": "{{percent}}% used"
+    },
+    "categories": {
+      "overLimit": "over limit",
+      "warnings": "warnings",
+      "onTrack": "on track"
+    }
+  },
+  "goals": {
+    "title": "Goals & Targets",
+    "viewAll": "View all Goals",
+    "empty": "Add savings goals to track what you're working toward.",
+    "targetForGoals_one": "Target {{amount}} for {{count}} goal",
+    "targetForGoals_other": "Target {{amount}} for {{count}} goals",
+    "coversGoals": "Balance across wallets covers {{percent}}%"
+  },
+  "charts": {
+    "title": "Charts & trends"
+  },
   "holdings": {
     "title": "Property & Holdings",
     "empty": "No holdings yet. Add vehicles, property, or land to track their estimated value.",
-    "viewAll": "View all",
+    "viewAll": "View all Holdings",
     "assetCount_one": "{{count}} asset",
     "assetCount_other": "{{count}} assets",
     "totalValue": "Total estimated value"
@@ -79,6 +105,7 @@
   },
   "recentActivity": {
     "title": "Recent activity",
+    "viewAllTransactions": "View all Transactions",
     "empty": "No recent transactions yet.",
     "columns": {
       "type": "Type",

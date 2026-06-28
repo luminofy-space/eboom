@@ -39,7 +39,7 @@ Money flows through a ledger: income credits wallets, expenses debit wallets.
 | i18n (EN, DE, FA + RTL) | — | ✅ | **Live** |
 | Transfers | Schema only | ❌ | **Not built** |
 | Wishlists / to-buy items | Schema only | Placeholder | **Not built** |
-| Budget & planning | ❌ | Placeholder | **Not built** |
+| Budget & planning | ✅ | ✅ | **Live** |
 | AI insights | ❌ | Placeholder | **Not built** |
 | Debts, loans, entities, assets | Schema/roadmap | ❌ | **Not built** |
 
@@ -183,7 +183,7 @@ The core tenancy model. Each canvas is an isolated financial workspace.
 
 ### 12. Database Schema (24 tables)
 
-**Active domains:** users, user_settings, canvases, canvas_members, canvas_invitations, roles, currencies, wallets, sub_wallets, wallet_categories, incomes, income_entries, income_categories, expenses, expense_payments, expense_categories, recurrence_patterns, attachments, notifications, whiteboard_viewports, whiteboard_node_positions
+**Active domains:** users, user_settings, canvases, canvas_members, canvas_invitations, roles, currencies, wallets, sub_wallets, wallet_categories, incomes, income_entries, income_categories, expenses, expense_payments, expense_categories, budgets, budget_lines, savings_goals, recurrence_patterns, attachments, notifications, whiteboard_viewports, whiteboard_node_positions
 
 **Dormant (no API/UI):** `transfers`, `wishlists`, `to_buy_items`
 
@@ -191,13 +191,10 @@ The core tenancy model. Each canvas is an isolated financial workspace.
 
 | Route | Label |
 |-------|-------|
-| `/budget-planning` | Budget & Planning |
 | `/wish-list` | Wish List |
 | `/ai-insights` | AI Insights |
 
 These render `ComingSoonPlaceholder` only — no backend yet.
-
-## Suggested New Features
 
 Grouped by impact and how well they fit what we already have.
 

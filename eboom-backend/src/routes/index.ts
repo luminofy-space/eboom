@@ -20,6 +20,8 @@ import whiteboardRouter from './whiteboard';
 import calendarRouter from './calendar';
 import notificationsRouter from './notifications';
 import transfersRouter from './transfers';
+import budgetsRouter from './budgets';
+import savingsGoalsRouter from './savings-goals';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
@@ -27,6 +29,8 @@ router.use('/auth', authRoutes);
 // Canvas routes (includes canvas-scoped lists: expenses, incomes, wallets)
 router.use('/canvases/:canvasId/members', auth, canvasMembersRouter);
 router.use('/canvases/:canvasId/whiteboard', auth, whiteboardRouter);
+router.use('/canvases/:canvasId/budgets', auth, budgetsRouter);
+router.use('/canvases/:canvasId/savings-goals', auth, savingsGoalsRouter);
 router.use('/canvases', auth, canvas);
 
 // Canvas invitations
