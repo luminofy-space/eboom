@@ -18,6 +18,8 @@ interface ConfirmDeleteDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isDeleting?: boolean;
+  title?: string;
+  description?: string;
 }
 
 export function ConfirmDeleteDialog({
@@ -25,6 +27,8 @@ export function ConfirmDeleteDialog({
   onOpenChange,
   onConfirm,
   isDeleting = false,
+  title,
+  description,
 }: ConfirmDeleteDialogProps) {
   const { t } = useTranslation("common");
 
@@ -32,9 +36,9 @@ export function ConfirmDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("confirmDelete.title")}</AlertDialogTitle>
+          <AlertDialogTitle>{title ?? t("confirmDelete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("confirmDelete.description")}
+            {description ?? t("confirmDelete.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

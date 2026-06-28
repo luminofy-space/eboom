@@ -45,6 +45,12 @@ export const whiteboardEntityTypeEnum = pgEnum("whiteboard_entity_type", [
   "expense",
 ]);
 
+export const budgetPeriodTypeEnum = pgEnum("budget_period_type", [
+  "weekly",
+  "monthly",
+  "yearly",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -438,4 +444,86 @@ export const whiteboardNodePositions = pgTable(
   (table) => ({
     uniqueCanvasEntity: unique().on(table.canvasId, table.entityType, table.entityId),
   })
+);
+
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    currencyId: integer("currency_id").notNull().references(() => currencies.id),
+    periodType: budgetPeriodTypeEnum("period_type").notNull(),
+    periodStart: date("period_start").notNull(),
+    totalLimit: numeric("total_limit", { precision: 20, scale: 8 }).notNull(),
+    alertThresholdPercent: integer("alert_threshold_percent").notNull().default(80),
+    alertsEnabled: boolean("alerts_enabled").notNull().default(true),
+    name: varchar("name", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+    lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  },
+  (table) => [
+    unique("budgets_canvas_currency_period_unique").on(
+      table.canvasId,
+      table.currencyId,
+      table.periodType
+    ),
+    check("budget_total_limit_check", sql`${table.totalLimit} >= 0`),
+    check(
+      "budget_alert_threshold_check",
+      sql`${table.alertThresholdPercent} >= 1 AND ${table.alertThresholdPercent} <= 100`
+    ),
+  ]
+);
+
+export const budgetLines = pgTable(
+  "budget_lines",
+  {
+    id: serial("id").primaryKey(),
+    budgetId: integer("budget_id")
+      .notNull()
+      .references(() => budgets.id, { onDelete: "cascade" }),
+    expenseCategoryId: integer("expense_category_id")
+      .notNull()
+      .references(() => expenseCategories.id),
+    amountLimit: numeric("amount_limit", { precision: 20, scale: 8 }).notNull(),
+    alertThresholdPercent: integer("alert_threshold_percent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    unique("budget_lines_budget_category_unique").on(table.budgetId, table.expenseCategoryId),
+    check("budget_line_amount_check", sql`${table.amountLimit} >= 0`),
+    check(
+      "budget_line_alert_threshold_check",
+      sql`${table.alertThresholdPercent} IS NULL OR (${table.alertThresholdPercent} >= 1 AND ${table.alertThresholdPercent} <= 100)`
+    ),
+  ]
+);
+
+export const savingsGoals = pgTable(
+  "savings_goals",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+    currencyId: integer("currency_id").notNull().references(() => currencies.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    targetAmount: numeric("target_amount", { precision: 20, scale: 8 }).notNull(),
+    targetDate: date("target_date"),
+    linkedWalletId: integer("linked_wallet_id").references(() => wallets.id),
+    alertThresholdPercent: integer("alert_threshold_percent").notNull().default(80),
+    isArchived: boolean("is_archived").default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+    lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  },
+  (table) => [
+    check("savings_goal_target_check", sql`${table.targetAmount} > 0`),
+    check(
+      "savings_goal_alert_threshold_check",
+      sql`${table.alertThresholdPercent} >= 1 AND ${table.alertThresholdPercent} <= 100`
+    ),
+  ]
 );

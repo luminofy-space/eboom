@@ -15,7 +15,7 @@
         "db:seed:hybrid": "tsx src/db/seed/seed-hybrid.ts",
         "db:seed:specific": "tsx src/db/seed/seed-specific.ts",
         "db:studio": "drizzle-kit studio",
-        "db:push": "drizzle-kit push:pg",
+        "db:push": "drizzle-kit push",
         "db:drop": "drizzle-kit drop",
         "db:reset": "tsx src/db/reset.ts"
     },

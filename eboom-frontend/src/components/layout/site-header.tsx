@@ -92,7 +92,7 @@ export function SiteHeader() {
   const crumbs = buildBreadcrumbs(
     pathname,
     activeCanvas?.name ?? null,
-    t("dashboard"),
+    t("overview"),
     t
   );
 

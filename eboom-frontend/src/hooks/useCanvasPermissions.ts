@@ -18,9 +18,9 @@ export type CanvasWithMembership = Canvas & {
   permissions?: CanvasPermissions;
 };
 
-const defaultPermissions: CanvasPermissions = {
-  view: true,
-  edit: true,
+const noPermissions: CanvasPermissions = {
+  view: false,
+  edit: false,
   manageMembers: false,
   manageCanvas: false,
 };
@@ -33,19 +33,21 @@ export function useCanvasPermissions() {
     [canvases, canvasId]
   );
 
-  const permissions = activeCanvas?.permissions ?? defaultPermissions;
+  const isReady = activeCanvas?.permissions != null;
+  const permissions = activeCanvas?.permissions ?? noPermissions;
   const isOwner = activeCanvas?.isOwner ?? false;
   const roleName = activeCanvas?.roleName ?? null;
 
   return {
     activeCanvas,
     permissions,
+    isReady,
     isOwner,
     roleName,
-    canView: permissions.view,
-    canEdit: permissions.edit,
-    canManageMembers: isOwner || permissions.manageMembers,
-    canManageCanvas: isOwner || permissions.manageCanvas,
-    isVisitor: !isOwner && permissions.view && !permissions.edit,
+    canView: isReady && permissions.view,
+    canEdit: isReady && permissions.edit,
+    canManageMembers: isReady && (isOwner || permissions.manageMembers),
+    canManageCanvas: isReady && (isOwner || permissions.manageCanvas),
+    isVisitor: isReady && !isOwner && permissions.view && !permissions.edit,
   };
 }

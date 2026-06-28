@@ -1,11 +1,15 @@
 {
-  "dashboard": "داشبورد",
+  "overview": "نمای کلی",
+  "dashboard": "نمای کلی",
   "search": {
     "placeholder": "جستجو..."
   },
   "groups": {
+    "overview": "نمای کلی",
+    "finances": "امور مالی",
+    "planning": "برنامه‌ریزی",
     "management": "مدیریت",
-    "explore": "کاوش"
+    "explore": "به‌زودی"
   },
   "routes": {
     "incomes": "درآمدها",

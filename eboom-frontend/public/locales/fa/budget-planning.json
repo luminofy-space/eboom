@@ -1,0 +1,97 @@
+{
+  "title": "بودجه و برنامه‌ریزی",
+  "subtitle": "سقف هزینه تعیین کنید، پیشرفت را ببینید و اهداف خرید را برنامه‌ریزی کنید.",
+  "sections": {
+    "budgets": "بودجه‌ها",
+    "budgetsDescription": "سقف هزینه برای این دوره.",
+    "goals": "اهداف",
+    "goalsDescription": "چیزهایی که می‌خواهید بخرید — مقایسه با موجودی در دسترس."
+  },
+  "tabs": {
+    "overview": "خلاصه",
+    "categories": "دسته‌ها",
+    "forecast": "پیش‌بینی"
+  },
+  "period": {
+    "weekly": "هفتگی",
+    "monthly": "ماهانه",
+    "yearly": "سالانه",
+    "monthlyRecommended": "پیشنهادی"
+  },
+  "labels": {
+    "spent": "خرج شده",
+    "left": "باقی‌مانده",
+    "limit": "سقف هزینه",
+    "totalLimit": "سقف کل",
+    "categoryLimit": "سقف دسته",
+    "alertThreshold": "هشدار در",
+    "percentUsed": "{{percent}}٪ مصرف شده",
+    "paidDateHint": "فقط پرداخت‌هایی با تاریخ پرداخت شمارش می‌شوند.",
+    "scheduledNotCounted": "{{count}} پرداخت برنامه‌ریزی‌شده هنوز شمارش نشده",
+    "expected": "انتظار می‌رود",
+    "expectedIn": "ورودی مورد انتظار",
+    "expectedOut": "خروجی مورد انتظار",
+    "projectedBalance": "موجودی پیش‌بینی‌شده",
+    "currentBalance": "موجودی فعلی",
+    "lastMonthHint": "دوره قبل: ~{{amount}}",
+    "forecastDescription": "درآمد و هزینه‌های پیش‌بینی‌شده در ۳۰ روز آینده — جدا از سقف هزینه.",
+    "forecastHint": "ورود/خروج مورد انتظار فقط تراکنش‌های برنامه‌ریزی‌شده و هنوز پرداخت/دریافت‌نشده را می‌شمارد. هزینه بودجه فقط پرداخت‌های دارای تاریخ پرداخت."
+  },
+  "form": {
+    "createBudget": "تعیین سقف هزینه",
+    "editBudget": "ویرایش سقف",
+    "createGoal": "افزودن هدف",
+    "editGoal": "ویرایش هدف",
+    "currency": "ارز",
+    "period": "دوره",
+    "category": "دسته",
+    "selectCategory": "انتخاب دسته",
+    "currencyAndPeriod": "ارز و دوره",
+    "duplicateBudget": "بودجه {{period}} برای این ارز از قبل وجود دارد.",
+    "overAllocatedWarning": "مجموع سقف دسته‌ها از سقف کل بیشتر است."
+  },
+  "empty": {
+    "budgetTitle": "هنوز بودجه‌ای نیست",
+    "budgetDescription": "یک سقف کل برای هفته، ماه یا سال تعیین کنید.",
+    "createBudget": "تعیین سقف هزینه",
+    "goalsTitle": "هنوز هدفی نیست",
+    "goalsDescription": "چیزی که می‌خواهید بخرید اضافه کنید و پیشرفت را ببینید.",
+    "addGoal": "افزودن هدف"
+  },
+  "actions": {
+    "editLimits": "ویرایش سقف‌ها",
+    "viewBudget": "مشاهده بودجه",
+    "deleteBudget": "حذف بودجه",
+    "deleteGoal": "حذف هدف",
+    "save": "ذخیره",
+    "cancel": "لغو",
+    "addCategoryLimit": "افزودن سقف دسته",
+    "fillFromHistory": "پر کردن سقف کل از دوره قبل"
+  },
+  "goals": {
+    "modalTitle": "هدف جدید",
+    "editTitle": "ویرایش هدف",
+    "name": "چه چیزی می‌خواهید بخرید؟",
+    "targetAmount": "قیمت هدف",
+    "targetDate": "تاریخ هدف (اختیاری)",
+    "currency": "ارز",
+    "availableAcrossWallets": "موجود در همه کیف پول‌ها",
+    "shadowDisclaimer": "پولی رزرو نمی‌کند — فقط مقایسه با موجودی کل را نشان می‌دهد.",
+    "progress": "{{current}} از {{target}}",
+    "daysLeft": "{{count}} روز مانده"
+  },
+  "dashboard": {
+    "title": "بودجه",
+    "prompt": "سقف هزینه تعیین کنید",
+    "almostAtLimit": "نزدیک به سقف"
+  },
+  "loadError": "بارگذاری داده بودجه ناموفق بود.",
+  "saveError": "ذخیره ناموفق بود. دوباره تلاش کنید.",
+  "retry": "تلاش مجدد",
+  "deleteConfirm": {
+    "budgetTitle": "این بودجه حذف شود؟",
+    "budgetDescription": "سقف‌های شما حذف می‌شوند. پرداخت‌های گذشته تغییر نمی‌کنند.",
+    "goalTitle": "این هدف حذف شود؟",
+    "goalDescription": "موجودی کیف پول‌ها تغییر نمی‌کند."
+  }
+}

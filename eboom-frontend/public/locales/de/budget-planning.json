@@ -1,0 +1,97 @@
+{
+  "title": "Budget & Planung",
+  "subtitle": "Ausgabenlimits setzen, Fortschritt verfolgen und Wünsche planen.",
+  "sections": {
+    "budgets": "Budgets",
+    "budgetsDescription": "Ausgabenlimits für diese Periode.",
+    "goals": "Ziele",
+    "goalsDescription": "Geplante Anschaffungen — Vergleich mit verfügbarem Guthaben."
+  },
+  "tabs": {
+    "overview": "Übersicht",
+    "categories": "Kategorien",
+    "forecast": "Prognose"
+  },
+  "period": {
+    "weekly": "Wöchentlich",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "monthlyRecommended": "Empfohlen"
+  },
+  "labels": {
+    "spent": "Ausgegeben",
+    "left": "Noch verfügbar",
+    "limit": "Ausgabenlimit",
+    "totalLimit": "Gesamtlimit",
+    "categoryLimit": "Kategorie-Limit",
+    "alertThreshold": "Warnung bei",
+    "percentUsed": "{{percent}}% genutzt",
+    "paidDateHint": "Nur Zahlungen mit Zahlungsdatum zählen.",
+    "scheduledNotCounted": "{{count}} geplante Zahlung(en) noch nicht gezählt",
+    "expected": "Erwartet",
+    "expectedIn": "Erwartete Einnahmen",
+    "expectedOut": "Erwartete Ausgaben",
+    "projectedBalance": "Prognostizierter Saldo",
+    "currentBalance": "Aktueller Saldo",
+    "lastMonthHint": "Letzte Periode: ~{{amount}}",
+    "forecastDescription": "Geplante Einnahmen und Ausgaben in den nächsten 30 Tagen — getrennt vom Ausgabenlimit.",
+    "forecastHint": "Erwartete Ein-/Ausgänge zählen geplante, noch nicht verbuchte Transaktionen. Budget-Ausgaben nur mit Zahlungsdatum."
+  },
+  "form": {
+    "createBudget": "Ausgabenlimit setzen",
+    "editBudget": "Limit bearbeiten",
+    "createGoal": "Ziel hinzufügen",
+    "editGoal": "Ziel bearbeiten",
+    "currency": "Währung",
+    "period": "Zeitraum",
+    "category": "Kategorie",
+    "selectCategory": "Kategorie wählen",
+    "currencyAndPeriod": "Währung & Periode",
+    "duplicateBudget": "Ein {{period}}-Budget existiert bereits für diese Währung.",
+    "overAllocatedWarning": "Kategorie-Limits übersteigen das Gesamtlimit."
+  },
+  "empty": {
+    "budgetTitle": "Noch kein Budget",
+    "budgetDescription": "Setzen Sie ein Gesamtlimit für Woche, Monat oder Jahr.",
+    "createBudget": "Limit setzen",
+    "goalsTitle": "Noch keine Ziele",
+    "goalsDescription": "Erfassen Sie geplante Anschaffungen und verfolgen Sie den Fortschritt.",
+    "addGoal": "Ziel hinzufügen"
+  },
+  "actions": {
+    "editLimits": "Limits bearbeiten",
+    "viewBudget": "Budget ansehen",
+    "deleteBudget": "Budget löschen",
+    "deleteGoal": "Ziel entfernen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "addCategoryLimit": "Kategorie-Limit hinzufügen",
+    "fillFromHistory": "Gesamtlimit aus letzter Periode"
+  },
+  "goals": {
+    "modalTitle": "Neues Ziel",
+    "editTitle": "Ziel bearbeiten",
+    "name": "Was möchten Sie kaufen?",
+    "targetAmount": "Zielpreis",
+    "targetDate": "Zieldatum (optional)",
+    "currency": "Währung",
+    "availableAcrossWallets": "Verfügbar in allen Wallets",
+    "shadowDisclaimer": "Reserviert kein Geld — zeigt den Vergleich mit Ihrem Gesamtguthaben.",
+    "progress": "{{current}} von {{target}}",
+    "daysLeft": "Noch {{count}} Tage"
+  },
+  "dashboard": {
+    "title": "Budget",
+    "prompt": "Ausgabenlimit festlegen",
+    "almostAtLimit": "Limit fast erreicht"
+  },
+  "loadError": "Budgetdaten konnten nicht geladen werden.",
+  "saveError": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+  "retry": "Erneut versuchen",
+  "deleteConfirm": {
+    "budgetTitle": "Budget löschen?",
+    "budgetDescription": "Limits werden entfernt. Vergangene Zahlungen bleiben unberührt.",
+    "goalTitle": "Ziel entfernen?",
+    "goalDescription": "Wallet-Guthaben wird nicht verändert."
+  }
+}
