@@ -16,6 +16,7 @@
     "previousPage": "صفحه قبل",
     "nextPage": "صفحه بعد",
     "empty": "هنوز دارایی وجود ندارد. کیف پول، درآمد یا هزینه اضافه کنید.",
+    "viewAll": "مشاهده همه دارایی‌ها",
     "tooltip": {
       "wallets": "کیف پول‌ها",
       "incomes": "درآمدها",
@@ -29,10 +30,35 @@
       "holdingsValue": "ارزش برآوردی"
     }
   },
+  "budget": {
+    "title": "بودجه",
+    "empty": "سقف هزینه تعیین کنید تا پیشرفت را دنبال کنید.",
+    "viewAll": "مشاهده همه بودجه‌ها",
+    "noBudget": "بدون بودجه",
+    "cards": {
+      "percentUsed": "{{percent}}٪ مصرف شده"
+    },
+    "categories": {
+      "overLimit": "بالای سقف",
+      "warnings": "هشدار",
+      "onTrack": "در مسیر"
+    }
+  },
+  "goals": {
+    "title": "اهداف و برنامه‌ها",
+    "viewAll": "مشاهده همه اهداف",
+    "empty": "هدف پس‌انداز اضافه کنید تا پیشرفت خود را دنبال کنید.",
+    "targetForGoals_one": "هدف {{amount}} برای {{count}} هدف",
+    "targetForGoals_other": "هدف {{amount}} برای {{count}} هدف",
+    "coversGoals": "موجودی کیف پول‌ها {{percent}}٪ را پوشش می‌دهد"
+  },
+  "charts": {
+    "title": "نمودارها و روندها"
+  },
   "holdings": {
     "title": "املاک و دارایی‌ها",
     "empty": "هنوز دارایی ثبت نشده. خودرو، ملک یا زمین اضافه کنید.",
-    "viewAll": "مشاهده همه",
+    "viewAll": "مشاهده همه دارایی‌های ثابت",
     "assetCount_one": "{{count}} دارایی",
     "assetCount_other": "{{count}} دارایی",
     "totalValue": "ارزش برآوردی کل"
@@ -79,6 +105,7 @@
   },
   "recentActivity": {
     "title": "فعالیت‌های اخیر",
+    "viewAllTransactions": "مشاهده همه تراکنش‌ها",
     "empty": "هنوز تراکنش اخیری وجود ندارد.",
     "columns": {
       "type": "نوع",

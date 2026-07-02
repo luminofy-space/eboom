@@ -15,6 +15,7 @@ import {
   wallets,
 } from "../db/schema";
 import { alias } from "drizzle-orm/pg-core";
+import type { EnrichedTransfer } from "./transferService";
 
 export interface CanvasSummaryWalletBalance {
   walletId: number;
@@ -184,6 +185,211 @@ const dashDestWallet = alias(wallets, "dash_dest_wallet");
 const dashSourceCurrency = alias(currencies, "dash_source_currency");
 const dashDestCurrency = alias(currencies, "dash_dest_currency");
 
+const txDestWallet = alias(wallets, "tx_dest_wallet");
+const txSourceWallet = alias(wallets, "tx_source_wallet");
+
+export interface CanvasTransactionsIncomeEntry extends CanvasSummaryIncomeEntry {
+  destinationWalletName: string;
+}
+
+export interface CanvasTransactionsExpensePayment extends CanvasSummaryExpensePayment {
+  sourceWalletName: string;
+}
+
+export interface CanvasTransactions {
+  incomeEntries: CanvasTransactionsIncomeEntry[];
+  expensePayments: CanvasTransactionsExpensePayment[];
+  transfers: EnrichedTransfer[];
+  total: { entries: number; payments: number; transfers: number };
+}
+
+export async function fetchCanvasIncomeEntries(
+  canvasId: number
+): Promise<CanvasSummaryIncomeEntry[]> {
+  const incomeEntryRows = await db
+    .select({
+      id: incomeEntriesTable.id,
+      incomeId: incomeEntriesTable.incomeId,
+      incomeName: incomes.name,
+      categoryName: incomeCategories.name,
+      destinationWalletId: incomeEntriesTable.destinationWalletId,
+      amount: incomeEntriesTable.amount,
+      expectedDate: incomeEntriesTable.expectedDate,
+      receivedDate: incomeEntriesTable.receivedDate,
+      notes: incomeEntriesTable.notes,
+      createdAt: incomeEntriesTable.createdAt,
+      currencyCode: currencies.code,
+      currencySymbol: currencies.symbol,
+    })
+    .from(incomeEntriesTable)
+    .innerJoin(incomes, eq(incomeEntriesTable.incomeId, incomes.id))
+    .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+    .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+    .where(and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false)));
+
+  return incomeEntryRows.map((row) => ({
+    id: row.id,
+    incomeId: row.incomeId,
+    incomeName: row.incomeName,
+    categoryName: row.categoryName,
+    destinationWalletId: row.destinationWalletId,
+    amount: String(row.amount),
+    expectedDate: toIsoString(row.expectedDate),
+    receivedDate: toIsoString(row.receivedDate),
+    notes: row.notes,
+    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+    currencyCode: row.currencyCode,
+    currencySymbol: row.currencySymbol,
+  }));
+}
+
+export async function fetchCanvasExpensePayments(
+  canvasId: number
+): Promise<CanvasSummaryExpensePayment[]> {
+  const expensePaymentRows = await db
+    .select({
+      id: expensePaymentsTable.id,
+      expenseId: expensePaymentsTable.expenseId,
+      expenseName: expenses.name,
+      categoryName: expenseCategories.name,
+      sourceWalletId: expensePaymentsTable.sourceWalletId,
+      amount: expensePaymentsTable.amount,
+      dueDate: expensePaymentsTable.dueDate,
+      paidDate: expensePaymentsTable.paidDate,
+      notes: expensePaymentsTable.notes,
+      createdAt: expensePaymentsTable.createdAt,
+      currencyCode: currencies.code,
+      currencySymbol: currencies.symbol,
+    })
+    .from(expensePaymentsTable)
+    .innerJoin(expenses, eq(expensePaymentsTable.expenseId, expenses.id))
+    .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+    .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+    .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false)));
+
+  return expensePaymentRows.map((row) => ({
+    id: row.id,
+    expenseId: row.expenseId,
+    expenseName: row.expenseName,
+    categoryName: row.categoryName,
+    sourceWalletId: row.sourceWalletId,
+    amount: String(row.amount),
+    dueDate: toIsoString(row.dueDate),
+    paidDate: toIsoString(row.paidDate),
+    notes: row.notes,
+    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+    currencyCode: row.currencyCode,
+    currencySymbol: row.currencySymbol,
+  }));
+}
+
+async function fetchCanvasIncomeEntriesWithWalletNames(
+  canvasId: number
+): Promise<CanvasTransactionsIncomeEntry[]> {
+  const incomeEntryRows = await db
+    .select({
+      id: incomeEntriesTable.id,
+      incomeId: incomeEntriesTable.incomeId,
+      incomeName: incomes.name,
+      categoryName: incomeCategories.name,
+      destinationWalletId: incomeEntriesTable.destinationWalletId,
+      destinationWalletName: txDestWallet.name,
+      amount: incomeEntriesTable.amount,
+      expectedDate: incomeEntriesTable.expectedDate,
+      receivedDate: incomeEntriesTable.receivedDate,
+      notes: incomeEntriesTable.notes,
+      createdAt: incomeEntriesTable.createdAt,
+      currencyCode: currencies.code,
+      currencySymbol: currencies.symbol,
+    })
+    .from(incomeEntriesTable)
+    .innerJoin(incomes, eq(incomeEntriesTable.incomeId, incomes.id))
+    .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+    .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+    .innerJoin(txDestWallet, eq(incomeEntriesTable.destinationWalletId, txDestWallet.id))
+    .where(and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false)));
+
+  return incomeEntryRows.map((row) => ({
+    id: row.id,
+    incomeId: row.incomeId,
+    incomeName: row.incomeName,
+    categoryName: row.categoryName,
+    destinationWalletId: row.destinationWalletId,
+    destinationWalletName: row.destinationWalletName,
+    amount: String(row.amount),
+    expectedDate: toIsoString(row.expectedDate),
+    receivedDate: toIsoString(row.receivedDate),
+    notes: row.notes,
+    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+    currencyCode: row.currencyCode,
+    currencySymbol: row.currencySymbol,
+  }));
+}
+
+async function fetchCanvasExpensePaymentsWithWalletNames(
+  canvasId: number
+): Promise<CanvasTransactionsExpensePayment[]> {
+  const expensePaymentRows = await db
+    .select({
+      id: expensePaymentsTable.id,
+      expenseId: expensePaymentsTable.expenseId,
+      expenseName: expenses.name,
+      categoryName: expenseCategories.name,
+      sourceWalletId: expensePaymentsTable.sourceWalletId,
+      sourceWalletName: txSourceWallet.name,
+      amount: expensePaymentsTable.amount,
+      dueDate: expensePaymentsTable.dueDate,
+      paidDate: expensePaymentsTable.paidDate,
+      notes: expensePaymentsTable.notes,
+      createdAt: expensePaymentsTable.createdAt,
+      currencyCode: currencies.code,
+      currencySymbol: currencies.symbol,
+    })
+    .from(expensePaymentsTable)
+    .innerJoin(expenses, eq(expensePaymentsTable.expenseId, expenses.id))
+    .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+    .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+    .innerJoin(txSourceWallet, eq(expensePaymentsTable.sourceWalletId, txSourceWallet.id))
+    .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false)));
+
+  return expensePaymentRows.map((row) => ({
+    id: row.id,
+    expenseId: row.expenseId,
+    expenseName: row.expenseName,
+    categoryName: row.categoryName,
+    sourceWalletId: row.sourceWalletId,
+    sourceWalletName: row.sourceWalletName,
+    amount: String(row.amount),
+    dueDate: toIsoString(row.dueDate),
+    paidDate: toIsoString(row.paidDate),
+    notes: row.notes,
+    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+    currencyCode: row.currencyCode,
+    currencySymbol: row.currencySymbol,
+  }));
+}
+
+export async function getCanvasTransactions(canvasId: number): Promise<CanvasTransactions> {
+  const { listTransfersForCanvas } = await import("./transferService");
+
+  const [incomeEntries, expensePayments, transfers] = await Promise.all([
+    fetchCanvasIncomeEntriesWithWalletNames(canvasId),
+    fetchCanvasExpensePaymentsWithWalletNames(canvasId),
+    listTransfersForCanvas(canvasId),
+  ]);
+
+  return {
+    incomeEntries,
+    expensePayments,
+    transfers,
+    total: {
+      entries: incomeEntries.length,
+      payments: expensePayments.length,
+      transfers: transfers.length,
+    },
+  };
+}
+
 export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary> {
   const [
     walletCountRow,
@@ -290,47 +496,10 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     .innerJoin(currencies, eq(subWallets.currencyId, currencies.id))
     .where(and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false)));
 
-  const incomeEntryRows = await db
-    .select({
-      id: incomeEntriesTable.id,
-      incomeId: incomeEntriesTable.incomeId,
-      incomeName: incomes.name,
-      categoryName: incomeCategories.name,
-      destinationWalletId: incomeEntriesTable.destinationWalletId,
-      amount: incomeEntriesTable.amount,
-      expectedDate: incomeEntriesTable.expectedDate,
-      receivedDate: incomeEntriesTable.receivedDate,
-      notes: incomeEntriesTable.notes,
-      createdAt: incomeEntriesTable.createdAt,
-      currencyCode: currencies.code,
-      currencySymbol: currencies.symbol,
-    })
-    .from(incomeEntriesTable)
-    .innerJoin(incomes, eq(incomeEntriesTable.incomeId, incomes.id))
-    .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
-    .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
-    .where(and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false)));
-
-  const expensePaymentRows = await db
-    .select({
-      id: expensePaymentsTable.id,
-      expenseId: expensePaymentsTable.expenseId,
-      expenseName: expenses.name,
-      categoryName: expenseCategories.name,
-      sourceWalletId: expensePaymentsTable.sourceWalletId,
-      amount: expensePaymentsTable.amount,
-      dueDate: expensePaymentsTable.dueDate,
-      paidDate: expensePaymentsTable.paidDate,
-      notes: expensePaymentsTable.notes,
-      createdAt: expensePaymentsTable.createdAt,
-      currencyCode: currencies.code,
-      currencySymbol: currencies.symbol,
-    })
-    .from(expensePaymentsTable)
-    .innerJoin(expenses, eq(expensePaymentsTable.expenseId, expenses.id))
-    .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
-    .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
-    .where(and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false)));
+  const [incomeEntries, expensePayments] = await Promise.all([
+    fetchCanvasIncomeEntries(canvasId),
+    fetchCanvasExpensePayments(canvasId),
+  ]);
 
   const transferRows = await db
     .select({
@@ -384,36 +553,6 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     .innerJoin(currencies, eq(assets.currencyId, currencies.id))
     .where(and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false)))
     .groupBy(currencies.code, currencies.symbol);
-
-  const incomeEntries: CanvasSummaryIncomeEntry[] = incomeEntryRows.map((row) => ({
-    id: row.id,
-    incomeId: row.incomeId,
-    incomeName: row.incomeName,
-    categoryName: row.categoryName,
-    destinationWalletId: row.destinationWalletId,
-    amount: String(row.amount),
-    expectedDate: toIsoString(row.expectedDate),
-    receivedDate: toIsoString(row.receivedDate),
-    notes: row.notes,
-    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
-    currencyCode: row.currencyCode,
-    currencySymbol: row.currencySymbol,
-  }));
-
-  const expensePayments: CanvasSummaryExpensePayment[] = expensePaymentRows.map((row) => ({
-    id: row.id,
-    expenseId: row.expenseId,
-    expenseName: row.expenseName,
-    categoryName: row.categoryName,
-    sourceWalletId: row.sourceWalletId,
-    amount: String(row.amount),
-    dueDate: toIsoString(row.dueDate),
-    paidDate: toIsoString(row.paidDate),
-    notes: row.notes,
-    createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
-    currencyCode: row.currencyCode,
-    currencySymbol: row.currencySymbol,
-  }));
 
   const entryActivities: CanvasSummaryRecentActivity[] = incomeEntries.map((entry) => ({
     id: entry.id,

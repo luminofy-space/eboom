@@ -10,7 +10,7 @@ import type {
   EventContentArg,
 } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -80,11 +80,25 @@ function eventClassNames(event: CalendarEvent): string[] {
       ? styles.incomeEvent
       : event.type === "expense"
         ? styles.expenseEvent
-        : styles.transferEvent,
+        : event.type === "goal"
+          ? styles.goalEvent
+          : styles.transferEvent,
   ];
   if (event.status === "overdue") classes.push(styles.overdue);
   if (event.isPredicted) classes.push(styles.predicted);
   return classes;
+}
+
+function eventTitle(event: CalendarEvent): string {
+  if (event.type === "goal") return event.info ?? "Goal";
+  return `${event.info ?? event.type} ${formatNumber(Number(event.amount) || 0, { preset: "compact" })} ${event.currency}`;
+}
+
+function tooltipDotClass(type: CalendarEvent["type"]): string {
+  if (type === "income") return styles.incomeDot;
+  if (type === "expense") return styles.expenseDot;
+  if (type === "goal") return styles.goalDot;
+  return styles.transferDot;
 }
 
 type CalendarViewType = "dayGridMonth" | "dayGridWeek" | "dayGridDay";
@@ -119,7 +133,7 @@ export default function CalendarView() {
     () =>
       events.map((event) => ({
         id: String(event.id),
-        title: `${event.info ?? event.type} ${formatNumber(Number(event.amount) || 0, { preset: "compact" })} ${event.currency}`,
+        title: eventTitle(event),
         start: event.date,
         allDay: true,
         display: "block",
@@ -215,6 +229,14 @@ export default function CalendarView() {
   const renderEventContent = useCallback(
     (arg: EventContentArg) => {
       const event = arg.event.extendedProps.event as CalendarEvent;
+      if (event.type === "goal") {
+        return (
+          <div className={`${styles.eventBadge} ${eventClassNames(event).join(" ")}`}>
+            <Target className="size-3 shrink-0" aria-hidden />
+            <span className="truncate">{event.info}</span>
+          </div>
+        );
+      }
       return (
         <div className={`${styles.eventBadge} ${eventClassNames(event).join(" ")}`}>
           {event.status === "overdue" && (
@@ -359,13 +381,7 @@ export default function CalendarView() {
           >
             <div className={styles.tooltipHeader}>
               <span
-                className={`${styles.tooltipTypeDot} ${
-                  hoveredEvent.event.type === "income"
-                    ? styles.incomeDot
-                    : hoveredEvent.event.type === "expense"
-                      ? styles.expenseDot
-                      : styles.transferDot
-                }`}
+                className={`${styles.tooltipTypeDot} ${tooltipDotClass(hoveredEvent.event.type)}`}
               />
               <div className={styles.tooltipTitleBlock}>
                 <div className={styles.tooltipTitle}>
@@ -379,45 +395,91 @@ export default function CalendarView() {
             </div>
 
             <div className={styles.tooltipDetails}>
-              <div>
-                <span>{t("amount")}</span>
-                <strong>
-                  {formatNumber(Number(hoveredEvent.event.amount) || 0, {
-                    preset: "compact",
-                  })}{" "}
-                  {hoveredEvent.event.currency}
-                </strong>
-              </div>
-              {hoveredEvent.event.type === "transfer" &&
-                hoveredEvent.event.secondaryAmount &&
-                hoveredEvent.event.secondaryCurrency && (
+              {hoveredEvent.event.type === "goal" ? (
+                <>
                   <div>
-                    <span>{t("sourceAmount")}</span>
+                    <span>{t("goalTargetAmount")}</span>
                     <strong>
-                      {formatNumber(Number(hoveredEvent.event.secondaryAmount) || 0, {
+                      {formatNumber(Number(hoveredEvent.event.amount) || 0, {
                         preset: "compact",
                       })}{" "}
-                      {hoveredEvent.event.secondaryCurrency}
+                      {hoveredEvent.event.currency}
                     </strong>
                   </div>
-                )}
-              <div>
-                <span>{t("date")}</span>
-                <strong>{formatDate(hoveredEvent.event.date, { preset: "short", fallback: emDash })}</strong>
-              </div>
-              <div>
-                <span>{t("statusLabel")}</span>
-                <strong>{t(`statuses.${hoveredEvent.event.status}`)}</strong>
-              </div>
-              <div>
-                <span>{t("recordId")}</span>
-                <strong>#{hoveredEvent.event.entityId}</strong>
-              </div>
-              {hoveredEvent.event.entryId && (
-                <div>
-                  <span>{t("entryId")}</span>
-                  <strong>#{hoveredEvent.event.entryId}</strong>
-                </div>
+                  <div>
+                    <span>{t("goalProgress")}</span>
+                    <strong>{Math.round(hoveredEvent.event.goalPercent ?? 0)}%</strong>
+                  </div>
+                  <div>
+                    <span>{t("goalTargetDate")}</span>
+                    <strong>
+                      {formatDate(hoveredEvent.event.date, {
+                        preset: "short",
+                        fallback: emDash,
+                      })}
+                    </strong>
+                  </div>
+                  {hoveredEvent.event.daysRemaining != null && (
+                    <div>
+                      <span>{t("goalDaysLeft")}</span>
+                      <strong>
+                        {hoveredEvent.event.daysRemaining >= 0
+                          ? t("goalDaysLeftValue", {
+                              count: hoveredEvent.event.daysRemaining,
+                            })
+                          : t("statusOverdue")}
+                      </strong>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span>{t("amount")}</span>
+                    <strong>
+                      {formatNumber(Number(hoveredEvent.event.amount) || 0, {
+                        preset: "compact",
+                      })}{" "}
+                      {hoveredEvent.event.currency}
+                    </strong>
+                  </div>
+                  {hoveredEvent.event.type === "transfer" &&
+                    hoveredEvent.event.secondaryAmount &&
+                    hoveredEvent.event.secondaryCurrency && (
+                      <div>
+                        <span>{t("sourceAmount")}</span>
+                        <strong>
+                          {formatNumber(Number(hoveredEvent.event.secondaryAmount) || 0, {
+                            preset: "compact",
+                          })}{" "}
+                          {hoveredEvent.event.secondaryCurrency}
+                        </strong>
+                      </div>
+                    )}
+                  <div>
+                    <span>{t("date")}</span>
+                    <strong>
+                      {formatDate(hoveredEvent.event.date, {
+                        preset: "short",
+                        fallback: emDash,
+                      })}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>{t("statusLabel")}</span>
+                    <strong>{t(`statuses.${hoveredEvent.event.status}`)}</strong>
+                  </div>
+                  <div>
+                    <span>{t("recordId")}</span>
+                    <strong>#{hoveredEvent.event.entityId}</strong>
+                  </div>
+                  {hoveredEvent.event.entryId && (
+                    <div>
+                      <span>{t("entryId")}</span>
+                      <strong>#{hoveredEvent.event.entryId}</strong>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  ArrowLeftRight,
   BanknoteArrowDown,
   BanknoteArrowUp,
   Wallet,
@@ -15,7 +16,7 @@ import {
   Landmark,
 } from "lucide-react";
 
-import { NavMain } from "./nav-main";
+import { NavGroups } from "./nav-main";
 import { NavUpcoming } from "./nav-upcoming";
 import { NavUser } from "./nav-user";
 import {
@@ -36,61 +37,80 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation("navigation");
   const { canManageMembers } = useCanvasPermissions();
 
-  const navMain = [
+  const navGroups = [
     {
-      title: t("dashboard"),
-      url: "/",
-      icon: LayoutDashboard,
+      label: t("groups.overview"),
+      items: [
+        {
+          title: t("overview"),
+          url: "/",
+          icon: LayoutDashboard,
+        },
+        {
+          title: t("routes.transactions"),
+          url: "/transactions",
+          icon: ArrowLeftRight,
+        },
+        {
+          title: t("routes.calendar"),
+          url: "/calendar",
+          icon: CalendarDays,
+        },
+        {
+          title: t("routes.whiteboard"),
+          url: "/whiteboard",
+          icon: Presentation,
+        },
+      ],
     },
     {
-      title: t("routes.incomes"),
-      url: "/incomes",
-      icon: BanknoteArrowUp,
+      label: t("groups.finances"),
+      items: [
+        {
+          title: t("routes.incomes"),
+          url: "/incomes",
+          icon: BanknoteArrowUp,
+        },
+        {
+          title: t("routes.wallets"),
+          url: "/wallets",
+          icon: Wallet,
+        },
+        {
+          title: t("routes.expenses"),
+          url: "/expenses",
+          icon: BanknoteArrowDown,
+        },
+        {
+          title: t("routes.assets"),
+          url: "/assets",
+          icon: Landmark,
+        },
+      ],
     },
     {
-      title: t("routes.wallets"),
-      url: "/wallets",
-      icon: Wallet,
+      label: t("groups.planning"),
+      items: [
+        {
+          title: t("routes.budgetPlanning"),
+          url: "/budget-planning",
+          icon: PiggyBank,
+        },
+        ...(canManageMembers
+          ? [
+            {
+              title: t("routes.manageMembers"),
+              url: "/members",
+              icon: Users,
+            },
+          ]
+          : []),
+      ],
     },
-    {
-      title: t("routes.expenses"),
-      url: "/expenses",
-      icon: BanknoteArrowDown,
-    },
-    {
-      title: t("routes.assets"),
-      url: "/assets",
-      icon: Landmark,
-    },
-    {
-      title: t("routes.calendar"),
-      url: "/calendar",
-      icon: CalendarDays,
-    },
-    {
-      title: t("routes.whiteboard"),
-      url: "/whiteboard",
-      icon: Presentation,
-    },
-    ...(canManageMembers
-      ? [
-          {
-            title: t("routes.manageMembers"),
-            url: "/members",
-            icon: Users,
-          },
-        ]
-      : []),
   ];
 
   const data = {
     navUpcoming: [
-      {
-        title: t("routes.budgetPlanning"),
-        url: "/budget-planning",
-        icon: PiggyBank,
-        badge: t("badges.soon"),
-      },
       {
         title: t("routes.wishList"),
         url: "/wish-list",
@@ -112,7 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CanvasSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavGroups groups={navGroups} />
         <SidebarSeparator />
         <NavUpcoming items={data.navUpcoming} />
       </SidebarContent>

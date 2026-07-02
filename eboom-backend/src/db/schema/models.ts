@@ -25,6 +25,9 @@ import {
   recurrencePatterns,
   whiteboardViewports,
   whiteboardNodePositions,
+  budgets,
+  budgetLines,
+  savingsGoals,
 } from "./schema";
 
 // SELECT types
@@ -58,6 +61,10 @@ export type WhiteboardViewport = typeof whiteboardViewports.$inferSelect;
 export type WhiteboardNodePosition = typeof whiteboardNodePositions.$inferSelect;
 export type WhiteboardEntityType =
   (typeof whiteboardNodePositions.$inferSelect)["entityType"];
+export type Budget = typeof budgets.$inferSelect;
+export type BudgetLine = typeof budgetLines.$inferSelect;
+export type SavingsGoal = typeof savingsGoals.$inferSelect;
+export type BudgetPeriodType = (typeof budgets.$inferSelect)["periodType"];
 
 // INSERT types
 export type NewUser = typeof users.$inferInsert;
@@ -86,3 +93,6 @@ export type NewNotification = typeof notifications.$inferInsert;
 export type NewRecurrencePattern = typeof recurrencePatterns.$inferInsert;
 export type NewWhiteboardViewport = typeof whiteboardViewports.$inferInsert;
 export type NewWhiteboardNodePosition = typeof whiteboardNodePositions.$inferInsert;
+export type NewBudget = typeof budgets.$inferInsert;
+export type NewBudgetLine = typeof budgetLines.$inferInsert;
+export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
