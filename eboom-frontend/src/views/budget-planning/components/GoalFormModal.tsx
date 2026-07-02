@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -226,8 +227,7 @@ export function GoalFormModal({
               </Field>
               <Field>
                 <FieldLabel>{t("goals.targetAmount")}</FieldLabel>
-                <Input
-                  type="number"
+                <NumberInput
                   min={0}
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}

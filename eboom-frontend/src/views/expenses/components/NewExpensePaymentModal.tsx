@@ -18,6 +18,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
@@ -34,7 +35,7 @@ import { useTranslation } from "react-i18next";
 
 interface PaymentFormData {
   expenseId: number | null;
-  amount: number;
+  amount?: number;
   sourceWalletId: number | null;
   dueDate: string;
   paidDate: string;
@@ -43,7 +44,7 @@ interface PaymentFormData {
 
 const defaultValues: PaymentFormData = {
   expenseId: null,
-  amount: 0,
+  amount: undefined,
   sourceWalletId: null,
   dueDate: "",
   paidDate: "",
@@ -249,7 +250,7 @@ export function NewExpensePaymentModal({
       expenseId: expenseId ?? null,
       sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
       dueDate: defaultDueDate ?? "",
-      amount: defaultAmount ?? 0,
+      amount: defaultAmount,
       paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
       notes: defaultNotes ?? "",
     });
@@ -356,9 +357,8 @@ export function NewExpensePaymentModal({
 
             <Field>
               <FieldLabel htmlFor="payment-amount">{t("paymentModal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="payment-amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
@@ -371,7 +371,8 @@ export function NewExpensePaymentModal({
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (value != null && !Number.isNaN(value) && value > 0) ||
+                    tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

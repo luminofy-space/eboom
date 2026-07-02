@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -292,8 +293,7 @@ export function BudgetFormModal({
                 </Button>
               )}
             </div>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
               value={totalLimit}
               onChange={(e) => setTotalLimit(e.target.value)}
@@ -350,8 +350,7 @@ export function BudgetFormModal({
                         ))}
                     </SelectContent>
                   </Select>
-                  <Input
-                    type="number"
+                  <NumberInput
                     min={0}
                     placeholder="0"
                     value={line.amount}

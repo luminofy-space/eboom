@@ -166,6 +166,22 @@ const API_ROUTES = {
     `/api/canvases/${canvasId}/savings-goals/${goalId}`,
   CANVAS_SAVINGS_GOALS_DELETE: (canvasId: number, goalId: number) =>
     `/api/canvases/${canvasId}/savings-goals/${goalId}`,
+
+  // ============================================================================
+  // AI INSIGHTS
+  // ============================================================================
+  CANVAS_AI_INSIGHT_PROFILE: (canvasId: number) =>
+    `/api/canvases/${canvasId}/ai-insight-profile`,
+  CANVAS_AI_INSIGHTS: (canvasId: number) => `/api/canvases/${canvasId}/ai-insights`,
+  CANVAS_AI_INSIGHTS_GENERATE: (canvasId: number) =>
+    `/api/canvases/${canvasId}/ai-insights/generate`,
+
+  // ============================================================================
+  // AI CHAT
+  // ============================================================================
+  CANVAS_AI_CHAT: (canvasId: number) => `/api/canvases/${canvasId}/ai-chat`,
+  CANVAS_AI_CHAT_MESSAGES: (canvasId: number) =>
+    `/api/canvases/${canvasId}/ai-chat/messages`,
 } as const;
 
 export default API_ROUTES;

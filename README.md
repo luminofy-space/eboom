@@ -421,6 +421,8 @@ Copy from [`.env.sample`](eboom-backend/.env.sample).
 | `SKIP_EMAIL_VERIFICATION` | **Dev only** — set to `1` to skip email verification on signup/login |
 | `NOTIFICATION_EMAIL_ENABLED` | Set to `0` to disable overdue email job |
 | `NOTIFICATION_EMAIL_INTERVAL_MS` | Job interval (default 1h) |
+| `OPENAI_API_KEY` | OpenAI API key for AI Insights generation |
+| `OPENAI_MODEL` | OpenAI model (default `gpt-4o-mini`) |
 
 ### Frontend (`eboom-frontend/.env`)
 

@@ -18,6 +18,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
@@ -34,7 +35,7 @@ import { useTranslation } from "react-i18next";
 
 interface EntryFormData {
   incomeId: number | null;
-  amount: number;
+  amount?: number;
   destinationWalletId: number | null;
   expectedDate: string;
   receivedDate: string;
@@ -43,7 +44,7 @@ interface EntryFormData {
 
 const defaultValues: EntryFormData = {
   incomeId: null,
-  amount: 0,
+  amount: undefined,
   destinationWalletId: null,
   expectedDate: "",
   receivedDate: "",
@@ -247,7 +248,7 @@ export function NewIncomeEntryModal({
       incomeId: incomeId ?? null,
       destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
       expectedDate: defaultExpectedDate ?? "",
-      amount: defaultAmount ?? 0,
+      amount: defaultAmount,
       receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
       notes: defaultNotes ?? "",
     });
@@ -354,9 +355,8 @@ export function NewIncomeEntryModal({
 
             <Field>
               <FieldLabel htmlFor="entry-amount">{t("entryModal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="entry-amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
@@ -369,7 +369,8 @@ export function NewIncomeEntryModal({
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (value != null && !Number.isNaN(value) && value > 0) ||
+                    tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

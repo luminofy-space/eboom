@@ -10,7 +10,7 @@ import type {
   EventContentArg,
 } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Target } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -34,6 +34,7 @@ import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpen
 import { useTranslation } from "react-i18next";
 import { formatDate, formatNumber } from "@/src/i18n/formatters";
 import styles from "@/app/(dashboard)/calendar/calendar.module.css";
+import { CalendarSkeleton } from "@/src/views/calendar/components/CalendarSkeleton";
 
 type CalendarEventHoverArg = {
   event: {
@@ -265,12 +266,6 @@ export default function CalendarView() {
   return (
     <Stack className="pb-2">
       <Container className={styles.calendarWrapper}>
-        {isLoading && (
-          <Stack direction="row" align="center" gap={2} className="mb-2">
-            <Loader2 className="size-4 animate-spin" />
-            <Typography variant="muted-sm">{t("loading")}</Typography>
-          </Stack>
-        )}
 
         {error && (
           <Typography variant="muted-sm" className="mb-2 text-destructive">
@@ -348,26 +343,30 @@ export default function CalendarView() {
             </div>
           </Stack>
 
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, interactionPlugin]}
-            initialView={calendarView}
-            timeZone="UTC"
-            events={calendarEvents}
-            datesSet={handleDatesSet}
-            dateClick={handleDateClick}
-            eventClick={handleEventClick}
-            eventMouseEnter={handleEventMouseEnter}
-            eventMouseLeave={handleEventMouseLeave}
-            eventContent={renderEventContent}
-            dayMaxEvents={dayMaxEvents}
-            moreLinkText={(num) => t("moreEvents", { count: num })}
-            moreLinkClick="popover"
-            headerToolbar={false}
-            height="auto"
-            eventDisplay="block"
-            allDayText={t("allDay")}
-          />
+          {isLoading ? <CalendarSkeleton /> : null}
+
+          <div className={cn(isLoading && "sr-only")} aria-hidden={isLoading}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView={calendarView}
+              timeZone="UTC"
+              events={calendarEvents}
+              datesSet={handleDatesSet}
+              dateClick={handleDateClick}
+              eventClick={handleEventClick}
+              eventMouseEnter={handleEventMouseEnter}
+              eventMouseLeave={handleEventMouseLeave}
+              eventContent={renderEventContent}
+              dayMaxEvents={dayMaxEvents}
+              moreLinkText={(num) => t("moreEvents", { count: num })}
+              moreLinkClick="popover"
+              headerToolbar={false}
+              height="auto"
+              eventDisplay="block"
+              allDayText={t("allDay")}
+            />
+          </div>
         </div>
 
         {hoveredEvent && (

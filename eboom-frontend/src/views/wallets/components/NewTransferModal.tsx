@@ -25,6 +25,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
@@ -45,10 +46,10 @@ interface TransferFormData {
   sourceCurrencyId: number | null;
   destinationWalletId: number | null;
   destinationCurrencyId: number | null;
-  sourceAmount: number;
-  destinationAmount: number;
+  sourceAmount?: number;
+  destinationAmount?: number;
   exchangeRate: number;
-  transactionFee: number;
+  transactionFee?: number;
   transferDate: string;
   notes: string;
 }
@@ -58,10 +59,10 @@ const defaultValues: TransferFormData = {
   sourceCurrencyId: null,
   destinationWalletId: null,
   destinationCurrencyId: null,
-  sourceAmount: 0,
-  destinationAmount: 0,
+  sourceAmount: undefined,
+  destinationAmount: undefined,
   exchangeRate: 1,
-  transactionFee: 0,
+  transactionFee: undefined,
   transferDate: "",
   notes: "",
 };
@@ -244,8 +245,19 @@ export function NewTransferModal({
 
   useEffect(() => {
     const fee = Number(transactionFee) || 0;
-    const source = Number(sourceAmount) || 0;
-    const netSource = Math.max(0, source - fee);
+    const sourceParsed = Number(sourceAmount);
+    const hasSource =
+      sourceAmount != null && !Number.isNaN(sourceParsed) && sourceParsed > 0;
+
+    if (!hasSource) {
+      if (!isCrossCurrency) {
+        setValue("destinationAmount", undefined);
+        setValue("exchangeRate", 1);
+      }
+      return;
+    }
+
+    const netSource = Math.max(0, sourceParsed - fee);
 
     if (!isCrossCurrency) {
       setValue("destinationAmount", netSource);
@@ -545,11 +557,11 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-source-amount">
                   {t("transferModal.fields.sourceAmount.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-source-amount"
-                  type="number"
                   step="any"
                   min="0"
+                  placeholder={tc("placeholders.amount")}
                   {...register("sourceAmount", {
                     required: tv("amountRequired"),
                     valueAsNumber: true,
@@ -563,12 +575,12 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-dest-amount">
                   {t("transferModal.fields.destinationAmount.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-dest-amount"
-                  type="number"
                   step="any"
                   min="0"
                   readOnly={!isCrossCurrency}
+                  placeholder={tc("placeholders.amount")}
                   {...register("destinationAmount", {
                     required: tv("amountRequired"),
                     valueAsNumber: true,
@@ -584,11 +596,11 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-exchange-rate">
                   {t("transferModal.fields.exchangeRate.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-exchange-rate"
-                  type="number"
                   step="any"
                   min="0"
+                  hideZeroWhenBlurred={false}
                   {...register("exchangeRate", {
                     required: t("validation.exchangeRateRequired"),
                     valueAsNumber: true,
@@ -603,11 +615,11 @@ export function NewTransferModal({
               <FieldLabel htmlFor="transfer-fee">
                 {t("transferModal.fields.transactionFee.label")}
               </FieldLabel>
-              <Input
+              <NumberInput
                 id="transfer-fee"
-                type="number"
                 step="any"
                 min="0"
+                placeholder="0"
                 {...register("transactionFee", {
                   valueAsNumber: true,
                   min: { value: 0, message: t("validation.feeNonNegative") },
