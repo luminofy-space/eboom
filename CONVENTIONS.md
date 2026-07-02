@@ -2,7 +2,7 @@
 
 This document describes patterns already used in the eBoom codebase. Follow these conventions when adding or changing code so new work matches existing style.
 
-For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.md). For system and money-flow internals, read [ARCHITECTURE.md](ARCHITECTURE.md) and [TRANSACTIONS.md](TRANSACTIONS.md).
+For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.md). For product reference and money-flow internals, read [DOC.md](DOC.md).
 
 ## Repository Layout
 

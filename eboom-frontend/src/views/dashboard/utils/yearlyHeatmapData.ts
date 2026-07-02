@@ -134,8 +134,8 @@ export function buildYearlyHeatmapData(
   const days: YearlyHeatmapDay[] = Array.from(map.entries())
     .map(([date, item]) => {
       const net = item.income - item.expense;
-      const direction =
-        net > 0 ? "profit" : net < 0 ? "loss" : ("neutral" as const);
+      const direction: YearlyHeatmapDay["direction"] =
+        net > 0 ? "profit" : net < 0 ? "loss" : "neutral";
       const intensity =
         direction === "profit"
           ? getIntensity(net, maxProfit)
