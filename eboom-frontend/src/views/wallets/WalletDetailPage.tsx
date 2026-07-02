@@ -36,8 +36,8 @@ export default function WalletDetailPage({ id }: Props) {
           {wallet && (
             <div>
               <Typography variant="display">{wallet.name}</Typography>
-              {wallet.description && (
-                <Typography variant="muted">{wallet.description}</Typography>
+              {wallet.description != null && String(wallet.description).length > 0 && (
+                <Typography variant="muted">{String(wallet.description)}</Typography>
               )}
             </div>
           )}
