@@ -23,6 +23,7 @@ app.use('/api', apiRouter);
 
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'pfm-backend' }));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 
 const PORT = process.env.PORT || 4000;

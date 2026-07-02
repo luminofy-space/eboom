@@ -162,14 +162,15 @@ export default function WhiteboardPage() {
     }
   }, [data, selectedEdge]);
 
+  const viewport = data?.viewport;
   const defaultViewport = useMemo<Viewport | undefined>(() => {
-    if (!data?.viewport) return undefined;
+    if (!viewport) return undefined;
     return {
-      x: data.viewport.x,
-      y: data.viewport.y,
-      zoom: data.viewport.zoom,
+      x: viewport.x,
+      y: viewport.y,
+      zoom: viewport.zoom,
     };
-  }, [data?.viewport]);
+  }, [viewport]);
 
   const storeSpawnAtCenter = useCallback(() => {
     const instance = flowRef.current;
