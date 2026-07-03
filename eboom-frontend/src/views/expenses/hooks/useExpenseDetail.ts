@@ -5,23 +5,37 @@ import useQueryApi from "@/src/api/useQuery";
 import { useMemo } from "react";
 import type { ExpensePayment } from "../components/ExpensePaymentsTable";
 
-export function useExpenseDetail(expenseId: number) {
+export interface ExpenseDetail {
+  id: number;
+  name: string;
+  currencyId: number;
+  expenseCategoryId?: number | null;
+  defaultWalletId: number | null;
+  description?: unknown;
+  isRecurring?: boolean;
+  recurrencePattern?: unknown;
+  defaultWallet?: { id: number; name: string } | null;
+  currency?: { id: number; symbol: string; code?: string; name?: string } | null;
+  category?: { id: number; name: string } | null;
+}
+
+interface UseExpenseDetailOptions {
+  enabled?: boolean;
+}
+
+export function useExpenseDetail(
+  expenseId: number,
+  options?: UseExpenseDetailOptions
+) {
+  const enabled = (options?.enabled ?? true) && !!expenseId;
+
   const {
     data: expenseRes,
     isLoading: isLoadingExpense,
     isError: isExpenseError,
-  } = useQueryApi<{
-    expense: {
-      id: number;
-      name: string;
-      currencyId: number;
-      defaultWalletId: number | null;
-      defaultWallet?: { id: number; name: string } | null;
-      currency?: { id: number; symbol: string } | null;
-    };
-  }>(API_ROUTES.EXPENSES_GET(expenseId), {
+  } = useQueryApi<{ expense: ExpenseDetail }>(API_ROUTES.EXPENSES_GET(expenseId), {
     queryKey: ["expense", expenseId],
-    enabled: !!expenseId,
+    enabled,
   });
 
   const {
@@ -32,7 +46,7 @@ export function useExpenseDetail(expenseId: number) {
     API_ROUTES.EXPENSE_PAYMENTS_LIST(expenseId),
     {
       queryKey: ["expense-payments", expenseId],
-      enabled: !!expenseId,
+      enabled,
     }
   )
 

@@ -6,7 +6,16 @@ import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { Wallet } from "@backend/db/schema";
 
-export function useWalletDetail(walletId: number) {
+interface UseWalletDetailOptions {
+  enabled?: boolean;
+}
+
+export function useWalletDetail(
+  walletId: number,
+  options?: UseWalletDetailOptions
+) {
+  const enabled = (options?.enabled ?? true) && !!walletId;
+
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
       wallet: Wallet & {
@@ -18,7 +27,7 @@ export function useWalletDetail(walletId: number) {
       };
     }>(API_ROUTES.WALLETS_GET(walletId), {
       queryKey: ["wallet", walletId],
-      enabled: !!walletId,
+      enabled,
     });
 
   const {
@@ -29,7 +38,7 @@ export function useWalletDetail(walletId: number) {
     API_ROUTES.WALLET_ENTRIES(walletId),
     {
       queryKey: ["wallet-entries", walletId],
-      enabled: !!walletId,
+      enabled,
     }
   );
 
@@ -41,7 +50,7 @@ export function useWalletDetail(walletId: number) {
     API_ROUTES.WALLET_PAYMENTS(walletId),
     {
       queryKey: ["wallet-payments", walletId],
-      enabled: !!walletId,
+      enabled,
     }
   );
 
@@ -53,7 +62,7 @@ export function useWalletDetail(walletId: number) {
     API_ROUTES.WALLET_TRANSFERS(walletId),
     {
       queryKey: ["wallet-transfers", walletId],
-      enabled: !!walletId,
+      enabled,
     }
   );
 

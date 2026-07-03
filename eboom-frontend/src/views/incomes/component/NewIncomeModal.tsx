@@ -26,6 +26,7 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
@@ -91,6 +92,10 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
 
   const isRecurring = watch("isRecurring");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { income: fetchedIncome } = useIncomeDetail(editingItem?.id ?? 0, {
+    enabled: open && isEdit && !!editingItem?.id,
+  });
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
     currencies?: { id: number; name: string; code: string }[];
@@ -180,17 +185,18 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   const isSaving = isCreating || isUpdating || isSubmitting;
 
   useEffect(() => {
-    if (open && isEdit && editingItem) {
+    const source = fetchedIncome ?? editingItem;
+    if (open && isEdit && source) {
       reset({
-        name: editingItem.name ?? "",
-        currencyId: editingItem.currencyId ?? editingItem.currency?.id ?? null,
-        amount: editingItem.amount ?? 0,
-        incomeCategoryId: editingItem.incomeCategoryId ?? null,
-        defaultWalletId: editingItem.defaultWalletId ?? editingItem.defaultWallet?.id ?? null,
-        isRecurring: editingItem.isRecurring ?? false,
+        name: source.name ?? "",
+        currencyId: source.currencyId ?? source.currency?.id ?? null,
+        amount: source.amount ?? 0,
+        incomeCategoryId: source.incomeCategoryId ?? null,
+        defaultWalletId: source.defaultWalletId ?? source.defaultWallet?.id ?? null,
+        isRecurring: source.isRecurring ?? false,
         recurrencePattern:
-          (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
-        description: typeof editingItem.description === "string" ? editingItem.description : "",
+          (source.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
+        description: typeof source.description === "string" ? source.description : "",
         photo: null,
       });
     } else if (open && !isEdit) {
@@ -199,7 +205,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     if (open) {
       setSubmitError(null);
     }
-  }, [open, isEdit, editingItem, reset]);
+  }, [open, isEdit, fetchedIncome, editingItem, reset]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {

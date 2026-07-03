@@ -1,33 +1,22 @@
 "use client";
 
 import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import {
+  DataTableSection,
+  TableEntityCell,
+  TableNotesCell,
+  tableNotesCellClassName,
+  type DataTableColumn,
+} from "@/src/components/data-table";
+import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Container } from "@/components/ui/container";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
-import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
@@ -95,36 +84,13 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
 
-  const { data: incomeRes, isLoading: isLoadingIncome } = useQueryApi<{
-    income: {
-      id: number;
-      name: string;
-      currencyId: number;
-      defaultWalletId: number | null;
-      defaultWallet?: { id: number; name: string } | null;
-    };
-  }>(API_ROUTES.INCOMES_GET(incomeId), {
-    queryKey: ["income", incomeId],
-    enabled: !!incomeId,
-  });
-
-  const { data: currenciesRes } = useQueryApi<{
-    currencies?: { id: number; code: string; symbol: string }[];
-  }>(API_ROUTES.CURRENCIES_METADATA, {
-    queryKey: ["currencies"],
-  });
-
   const {
-    data: entriesRes,
-    isLoading: isLoadingEntries,
+    income,
+    entries: rawEntries,
+    currencySymbol,
+    isLoading,
     isError,
-  } = useQueryApi<{ entries: IncomeEntry[] }>(
-    API_ROUTES.INCOME_ENTRIES_LIST(incomeId),
-    {
-      queryKey: ["income-entries", incomeId],
-      enabled: !!incomeId,
-    }
-  );
+  } = useIncomeDetail(incomeId);
 
   const { mutate: deleteEntry, isPending: isDeleting } = useMutation({
     mutationFn: async (id: number) => {
@@ -141,16 +107,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     },
   });
 
-  const currencySymbol = useMemo(() => {
-    const currencyId = incomeRes?.income?.currencyId;
-    if (!currencyId) return undefined;
-    return currenciesRes?.currencies?.find((c) => c.id === currencyId)?.symbol;
-  }, [incomeRes?.income?.currencyId, currenciesRes?.currencies]);
-
-  const entries = useMemo(
-    () => sortEntries(entriesRes?.entries ?? []),
-    [entriesRes?.entries]
-  );
+  const entries = useMemo(() => sortEntries(rawEntries), [rawEntries]);
 
   const totalReceived = useMemo(
     () =>
@@ -160,58 +117,71 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     [entries]
   );
 
-  const isLoading = isLoadingIncome || isLoadingEntries;
-
-  if (isLoading) {
-    return (
-      <Container>
-        <Stack gap={4}>
-          <Skeleton className="h-7 w-48" />
-          <div className="overflow-hidden rounded-lg border">
-            <div className="space-y-3 p-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          </div>
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container>
-        <Typography variant="muted-sm">
-          {t("entriesTable.loadError")}
-        </Typography>
-      </Container>
-    );
-  }
+  const columns: DataTableColumn<IncomeEntry>[] = useMemo(
+    () => [
+      {
+        id: "amount",
+        header: t("entriesTable.headers.amount"),
+        headerClassName: "w-[140px]",
+        cellClassName: "font-medium tabular-nums",
+        cell: (entry) => formatAmount(entry.amount, currencySymbol, emDash),
+      },
+      {
+        id: "wallet",
+        header: t("entriesTable.headers.wallet"),
+        cell: (entry) => (
+          <TableEntityCell
+            name={entry.destinationWallet?.name ?? emDash}
+            caption={entry.destinationWallet?.category?.name}
+          />
+        ),
+      },
+      {
+        id: "expected",
+        header: t("entriesTable.headers.expected"),
+        cellClassName: "text-muted-foreground",
+        cell: (entry) => formatDate(entry.expectedDate, { fallback: emDash }),
+      },
+      {
+        id: "received",
+        header: t("entriesTable.headers.received"),
+        cellClassName: "text-muted-foreground",
+        cell: (entry) => formatDate(entry.receivedDate, { fallback: emDash }),
+      },
+      {
+        id: "status",
+        header: t("entriesTable.headers.status"),
+        cell: (entry) => {
+          const status = getEntryStatus(entry, t);
+          return <TransactionStatusChip status={status.status} label={status.label} />;
+        },
+      },
+      {
+        id: "notes",
+        header: t("entriesTable.headers.notes"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: tableNotesCellClassName,
+        cell: (entry) => <TableNotesCell notes={entry.notes} emptyLabel={emDash} />,
+      },
+    ],
+    [t, currencySymbol, emDash]
+  );
 
   return (
     <>
-      <Container>
-        <Stack gap={4}>
-        <Stack direction="row" align="center" justify="between" gap={4}>
-          <div>
-            <Typography variant="heading">{t("entriesTable.title")}</Typography>
-            {incomeRes?.income?.name && (
-              <Typography variant="muted-sm">
-                {t("entriesTable.subtitle", { incomeName: incomeRes.income.name })}
-              </Typography>
-            )}
-          </div>
-          <Stack direction="row" align="center" gap={3}>
-            {entries.length > 0 && (
-              <Typography variant="count" className="hidden sm:block">
-                {t("entriesTable.count", {
-                  count: entries.length,
-                  unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
-                })}
-              </Typography>
-            )}
-            {canEdit && (
+      <DataTableSection
+        title={t("entriesTable.title")}
+        subtitle={income?.name ? t("entriesTable.subtitle", { incomeName: income.name }) : undefined}
+        count={
+          entries.length > 0
+            ? t("entriesTable.count", {
+                count: entries.length,
+                unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
+              })
+            : undefined
+        }
+        headerAction={
+          canEdit ? (
             <Button
               size="sm"
               onClick={() => {
@@ -222,124 +192,34 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
-            )}
-          </Stack>
-        </Stack>
-
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-[140px]">{t("entriesTable.headers.amount")}</TableHead>
-                <TableHead>{t("entriesTable.headers.wallet")}</TableHead>
-                <TableHead>{t("entriesTable.headers.expected")}</TableHead>
-                <TableHead>{t("entriesTable.headers.received")}</TableHead>
-                <TableHead>{t("entriesTable.headers.status")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("entriesTable.headers.notes")}</TableHead>
-                {canEdit && <TableHead className="w-10" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entries.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
-                    <p className="text-muted-foreground">
-                      {t("entriesTable.empty")}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                entries.map((entry) => {
-                  const status = getEntryStatus(entry, t);
-                  return (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium tabular-nums">
-                        {formatAmount(entry.amount, currencySymbol, emDash)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{entry.destinationWallet?.name ?? emDash}</span>
-                          {entry.destinationWallet?.category?.name && (
-                            <Typography variant="caption">
-                              {entry.destinationWallet.category.name}
-                            </Typography>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(entry.expectedDate, { fallback: emDash })}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(entry.receivedDate, { fallback: emDash })}
-                      </TableCell>
-                      <TableCell>
-                        <TransactionStatusChip
-                          status={status.status}
-                          label={status.label}
-                        />
-                      </TableCell>
-                      <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                        {entry.notes ? (
-                          <span title={entry.notes}>{entry.notes}</span>
-                        ) : (
-                          <span className="text-muted-foreground">{emDash}</span>
-                        )}
-                      </TableCell>
-                      {canEdit && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground size-8"
-                            >
-                              <MoreVertical className="size-4" />
-                              <span className="sr-only">{tc("actions.openMenu")}</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingEntry(entry);
-                                setModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="size-4" />
-                              {tc("actions.edit")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => setDeleteId(entry.id)}
-                            >
-                              <Trash2 className="size-4" />
-                              {tc("actions.delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-            {entries.length > 0 && (
-              <TableFooter>
-                <TableRow>
-                  <TableCell className="font-semibold tabular-nums">
-                    {formatAmount(totalReceived, currencySymbol, emDash)}
-                  </TableCell>
-                  <TableCell colSpan={6} className="text-muted-foreground">
-                    {t("entriesTable.footer.totalReceived")}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            )}
-          </Table>
-        </div>
-        </Stack>
-      </Container>
+          ) : undefined
+        }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("entriesTable.loadError")}
+        columns={columns}
+        data={entries}
+        getRowKey={(entry) => entry.id}
+        emptyMessage={t("entriesTable.empty")}
+        showActions={canEdit}
+        actions={{
+          onEdit: (entry) => {
+            setEditingEntry(entry);
+            setModalOpen(true);
+          },
+          onDelete: (entry) => setDeleteId(entry.id),
+        }}
+        footer={
+          <TableRow>
+            <TableCell className="font-semibold tabular-nums">
+              {formatAmount(totalReceived, currencySymbol, emDash)}
+            </TableCell>
+            <TableCell colSpan={6} className="text-muted-foreground">
+              {t("entriesTable.footer.totalReceived")}
+            </TableCell>
+          </TableRow>
+        }
+      />
 
       <ConfirmDeleteDialog
         open={deleteId !== null}
@@ -360,11 +240,8 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
           setModalOpen(open);
           if (!open) setEditingEntry(null);
         }}
-        defaultWalletId={
-          incomeRes?.income?.defaultWalletId ??
-          incomeRes?.income?.defaultWallet?.id
-        }
-        incomeName={incomeRes?.income?.name}
+        defaultWalletId={income?.defaultWalletId ?? income?.defaultWallet?.id}
+        incomeName={income?.name}
       />
     </>
   );

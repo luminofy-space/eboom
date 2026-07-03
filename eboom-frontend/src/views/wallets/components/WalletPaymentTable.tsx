@@ -1,28 +1,17 @@
 "use client";
 
+import {
+  DataTableSection,
+  TableEntityCell,
+  TableNotesCell,
+  tableNotesCellClassName,
+  type DataTableColumn,
+} from "@/src/components/data-table";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Container } from "@/components/ui/container";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
@@ -75,10 +64,7 @@ export function WalletPaymentsTable({
   const [editingPayment, setEditingPayment] = useState<WalletPayment | null>(null);
   const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const payments = useMemo(
-    () => sortPayments(paymentsRes ?? []),
-    [paymentsRes]
-  );
+  const payments = useMemo(() => sortPayments(paymentsRes ?? []), [paymentsRes]);
 
   const totalPaid = useMemo(
     () =>
@@ -88,54 +74,75 @@ export function WalletPaymentsTable({
     [payments]
   );
 
-  if (isLoading) {
-    return (
-      <Container>
-        <Stack gap={4}>
-          <Skeleton className="h-7 w-48" />
-          <div className="overflow-hidden rounded-lg border">
-            <div className="space-y-3 p-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          </div>
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container>
-        <Typography variant="muted-sm">
-          {t("paymentsTable.loadError")}
-        </Typography>
-      </Container>
-    );
-  }
+  const columns: DataTableColumn<WalletPayment>[] = useMemo(
+    () => [
+      {
+        id: "amount",
+        header: t("paymentsTable.headers.amount"),
+        headerClassName: "w-[140px]",
+        cellClassName: "font-medium tabular-nums",
+        cell: (payment) => formatAmount(payment.amount, currencySymbol, emDash),
+      },
+      {
+        id: "expense",
+        header: t("paymentsTable.headers.expense"),
+        cell: (payment) => (
+          <TableEntityCell
+            name={
+              payment.expenseName ??
+              t("paymentsTable.fallbackExpenseName", { expenseId: payment.expenseId })
+            }
+            caption={payment.categoryName}
+          />
+        ),
+      },
+      {
+        id: "due",
+        header: t("paymentsTable.headers.due"),
+        cellClassName: "text-muted-foreground",
+        cell: (payment) => formatDate(payment.dueDate, { fallback: emDash }),
+      },
+      {
+        id: "paid",
+        header: t("paymentsTable.headers.paid"),
+        cellClassName: "text-muted-foreground",
+        cell: (payment) => formatDate(payment.paidDate, { fallback: emDash }),
+      },
+      {
+        id: "status",
+        header: t("paymentsTable.headers.status"),
+        cell: (payment) => {
+          const status = getPaymentStatus(payment, t);
+          return <TransactionStatusChip status={status.status} label={status.label} />;
+        },
+      },
+      {
+        id: "notes",
+        header: t("paymentsTable.headers.notes"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: tableNotesCellClassName,
+        cell: (payment) => <TableNotesCell notes={payment.notes} emptyLabel={emDash} />,
+      },
+    ],
+    [t, currencySymbol, emDash]
+  );
 
   return (
     <>
-      <Container className="pb-6">
-        <Stack gap={4}>
-        <Stack direction="row" align="center" justify="between" gap={4}>
-          <div>
-            <Typography variant="heading">{t("paymentsTable.title")}</Typography>
-            <Typography variant="muted-sm">
-              {t("paymentsTable.subtitle")}
-            </Typography>
-          </div>
-          <Stack direction="row" align="center" gap={3}>
-            {payments.length > 0 && (
-              <Typography variant="count" className="hidden sm:block">
-                {t("paymentsTable.count", {
-                  count: payments.length,
-                  unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
-                })}
-              </Typography>
-            )}
-            {canEdit && (
+      <DataTableSection
+        title={t("paymentsTable.title")}
+        subtitle={t("paymentsTable.subtitle")}
+        containerClassName="pb-6"
+        count={
+          payments.length > 0
+            ? t("paymentsTable.count", {
+                count: payments.length,
+                unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+              })
+            : undefined
+        }
+        headerAction={
+          canEdit ? (
             <Button
               size="sm"
               onClick={() => {
@@ -146,119 +153,35 @@ export function WalletPaymentsTable({
               <Plus className="size-4" />
               {t("paymentsTable.createPayment")}
             </Button>
-            )}
-          </Stack>
-        </Stack>
-
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[140px]">{t("paymentsTable.headers.amount")}</TableHead>
-              <TableHead>{t("paymentsTable.headers.expense")}</TableHead>
-              <TableHead>{t("paymentsTable.headers.due")}</TableHead>
-              <TableHead>{t("paymentsTable.headers.paid")}</TableHead>
-              <TableHead>{t("paymentsTable.headers.status")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("paymentsTable.headers.notes")}</TableHead>
-              {canEdit && <TableHead className="w-10" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
-                  <p className="text-muted-foreground">
-                    {t("paymentsTable.empty")}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              payments.map((payment) => {
-                const status = getPaymentStatus(payment, t);
-                return (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium tabular-nums">
-                      {formatAmount(payment.amount, currencySymbol, emDash)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{payment.expenseName ?? t("paymentsTable.fallbackExpenseName", { expenseId: payment.expenseId })}</span>
-                        {payment.categoryName && (
-                          <Typography variant="caption">{payment.categoryName}</Typography>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(payment.dueDate, { fallback: emDash })}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(payment.paidDate, { fallback: emDash })}
-                    </TableCell>
-                    <TableCell>
-                      <TransactionStatusChip
-                        status={status.status}
-                        label={status.label}
-                      />
-                    </TableCell>
-                    <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                      {payment.notes ? (
-                        <span title={payment.notes}>{payment.notes}</span>
-                      ) : (
-                        <span className="text-muted-foreground">{emDash}</span>
-                      )}
-                    </TableCell>
-                    {canEdit && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground size-8"
-                          >
-                            <MoreVertical className="size-4" />
-                            <span className="sr-only">{tc("actions.openMenu")}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditingPayment(payment);
-                              setModalOpen(true);
-                            }}
-                          >
-                            <Pencil className="size-4" />
-                            {tc("actions.edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem variant="destructive" disabled>
-                            <Trash2 className="size-4" />
-                            {tc("actions.delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-          {payments.length > 0 && (
-            <TableFooter>
-              <TableRow>
-                <TableCell className="font-semibold tabular-nums">
-                  {formatAmount(totalPaid, currencySymbol, emDash)}
-                </TableCell>
-                <TableCell colSpan={6} className="text-muted-foreground">
-                  {t("paymentsTable.footer.totalPaid")}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
-      </div>
-        </Stack>
-      </Container>
+          ) : undefined
+        }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("paymentsTable.loadError")}
+        columns={columns}
+        data={payments}
+        getRowKey={(payment) => payment.id}
+        emptyMessage={t("paymentsTable.empty")}
+        showActions={canEdit}
+        actions={{
+          onEdit: (payment) => {
+            setEditingPayment(payment);
+            setModalOpen(true);
+          },
+          onDelete: () => undefined,
+          deleteDisabled: true,
+        }}
+        footer={
+          <TableRow>
+            <TableCell className="font-semibold tabular-nums">
+              {formatAmount(totalPaid, currencySymbol, emDash)}
+            </TableCell>
+            <TableCell colSpan={6} className="text-muted-foreground">
+              {t("paymentsTable.footer.totalPaid")}
+            </TableCell>
+          </TableRow>
+        }
+      />
 
       <NewExpensePaymentModal
         expenseId={editingPayment?.expenseId}
