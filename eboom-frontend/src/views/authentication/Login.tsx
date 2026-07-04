@@ -2,14 +2,15 @@
 
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { AuthLink } from "@/src/views/authentication/AuthLink";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AuthCard } from "@/src/views/authentication/AuthCard";
 import {
   Field,
   FieldDescription,
@@ -58,7 +59,7 @@ export function LoginForm({
 
   return (
     <Stack gap={6} className={className} {...props}>
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("login.title")}</CardTitle>
           <CardDescription>{t("login.description")}</CardDescription>
@@ -94,12 +95,12 @@ export function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">{t("login.password.label")}</FieldLabel>
-                  <a
+                  <AuthLink
                     href="/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="ml-auto inline-block text-sm"
                   >
                     {t("login.password.forgot")}
-                  </a>
+                  </AuthLink>
                 </div>
                 <Input
                   id="password"
@@ -124,13 +125,13 @@ export function LoginForm({
                 </Button>
                 <FieldDescription className="text-center">
                   {t("login.signupPrompt")}{" "}
-                  <a href="/signup">{t("login.signupLink")}</a>
+                  <AuthLink href="/signup">{t("login.signupLink")}</AuthLink>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
-      </Card>
+      </AuthCard>
     </Stack>
   );
 }

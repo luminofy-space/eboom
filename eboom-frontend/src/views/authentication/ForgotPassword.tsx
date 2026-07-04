@@ -4,12 +4,13 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AuthCard } from "@/src/views/authentication/AuthCard";
+import { AuthLink } from "@/src/views/authentication/AuthLink";
 import {
   Field,
   FieldDescription,
@@ -73,7 +74,7 @@ export function ForgotPasswordForm({
   if (submitted) {
     return (
       <Stack gap={6} className={className} {...props}>
-        <Card>
+        <AuthCard>
           <CardHeader>
             <CardTitle>{t("forgotPassword.success.title")}</CardTitle>
             <CardDescription>
@@ -85,14 +86,14 @@ export function ForgotPasswordForm({
               {t("forgotPassword.success.backToLogin")}
             </Button>
           </CardContent>
-        </Card>
+        </AuthCard>
       </Stack>
     );
   }
 
   return (
     <Stack gap={6} className={className} {...props}>
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("forgotPassword.title")}</CardTitle>
           <CardDescription>{t("forgotPassword.description")}</CardDescription>
@@ -135,13 +136,13 @@ export function ForgotPasswordForm({
                 </Button>
                 <FieldDescription className="text-center">
                   {t("forgotPassword.loginPrompt")}{" "}
-                  <a href="/login">{t("forgotPassword.loginLink")}</a>
+                  <AuthLink href="/login">{t("forgotPassword.loginLink")}</AuthLink>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
-      </Card>
+      </AuthCard>
     </Stack>
   );
 }

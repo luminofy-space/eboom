@@ -2,12 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AuthCard } from "@/src/views/authentication/AuthCard";
 import { Button } from "@/components/ui/button";
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
@@ -48,7 +48,7 @@ export function VerifyEmail() {
 
   if (!token) {
     return (
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("verifyEmail.missingToken.title")}</CardTitle>
           <CardDescription>{t("verifyEmail.missingToken.description")}</CardDescription>
@@ -58,24 +58,24 @@ export function VerifyEmail() {
             {t("verifyEmail.missingToken.backToSignup")}
           </Button>
         </CardContent>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (isLoading) {
     return (
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("verifyEmail.loading.title")}</CardTitle>
           <CardDescription>{t("verifyEmail.loading.description")}</CardDescription>
         </CardHeader>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (isError) {
     return (
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("verifyEmail.error.title")}</CardTitle>
           <CardDescription>
@@ -87,12 +87,12 @@ export function VerifyEmail() {
             {t("verifyEmail.error.backToSignup")}
           </Button>
         </CardContent>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card>
+    <AuthCard>
       <CardHeader>
         <CardTitle>{t("verifyEmail.success.title")}</CardTitle>
         <CardDescription>
@@ -104,6 +104,6 @@ export function VerifyEmail() {
           {t("verifyEmail.success.goToLogin")}
         </Button>
       </CardContent>
-    </Card>
+    </AuthCard>
   );
 }
