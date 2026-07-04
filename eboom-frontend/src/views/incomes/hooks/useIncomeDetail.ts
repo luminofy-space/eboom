@@ -7,14 +7,29 @@ import { useMemo } from "react";
 import type { IncomeEntry } from "../component/IncomeEntriesTable";
 import { Income } from "@backend/db/schema";
 
-export function useIncomeDetail(incomeId: number) {
+export type IncomeDetail = Income & {
+  defaultWallet?: { id: number; name: string } | null;
+  category?: { id: number; name: string } | null;
+  currency?: { id: number; code: string; name: string; symbol: string } | null;
+};
+
+interface UseIncomeDetailOptions {
+  enabled?: boolean;
+}
+
+export function useIncomeDetail(
+  incomeId: number,
+  options?: UseIncomeDetailOptions
+) {
   const { canvas } = useCanvas();
+  const enabled = (options?.enabled ?? true) && !!canvas && !!incomeId;
+
   const { data: incomeRes, isLoading: isLoadingIncome, isError: isIncomeError } =
     useQueryApi<{
-      income: Income;
+      income: IncomeDetail;
     }>(canvas ? API_ROUTES.INCOMES_GET(canvas, incomeId) : "", {
       queryKey: ["income", canvas, incomeId],
-      enabled: !!canvas && !!incomeId,
+      enabled,
     });
 
   const {
@@ -25,7 +40,7 @@ export function useIncomeDetail(incomeId: number) {
     canvas ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, incomeId) : "",
     {
       queryKey: ["income-entries", canvas, incomeId],
-      enabled: !!canvas && !!incomeId,
+      enabled,
     }
   );
 

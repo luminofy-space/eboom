@@ -25,6 +25,7 @@ import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -130,32 +131,22 @@ export function NewIncomeEntryModal({
     enabled: open && !!canvas && showWalletPicker,
   });
 
-  const resolvedIncomeIdForFetch = incomeId;
-  const { data: entriesRes, isLoading: isLoadingEntry } = useQueryApi<{
-    entries?: {
-      id: number;
-      incomeId: number;
-      destinationWalletId: number;
-      amount: string;
-      expectedDate: string | null;
-      receivedDate: string | null;
-      notes: string | null;
-    }[];
-  }>(
-    resolvedIncomeIdForFetch && canvas
-      ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, resolvedIncomeIdForFetch)
-      : "",
-    {
-      queryKey: ["income-entries", canvas, resolvedIncomeIdForFetch],
-      hasToken: true,
-      enabled: open && isEditMode && !!canvas && !!resolvedIncomeIdForFetch,
-    }
-  );
+  const resolvedIncomeId = incomeId ?? 0;
+  const {
+    income,
+    entries,
+    isLoading: isLoadingDetail,
+  } = useIncomeDetail(resolvedIncomeId, {
+    enabled: !!incomeId && open && isEditMode,
+  });
 
   const editingEntry = useMemo(
-    () => entriesRes?.entries?.find((entry) => entry.id === entryId),
-    [entriesRes?.entries, entryId]
+    () => entries.find((entry) => entry.id === entryId),
+    [entries, entryId]
   );
+
+  const resolvedDefaultWalletId =
+    defaultWalletId ?? income?.defaultWalletId ?? income?.defaultWallet?.id;
 
   const incomes = incomesRes?.incomes ?? [];
   const incomeLabels = incomes.map((income) => {
@@ -244,7 +235,7 @@ export function NewIncomeEntryModal({
     reset({
       ...defaultValues,
       incomeId: incomeId ?? null,
-      destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
+      destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? resolvedDefaultWalletId ?? null,
       expectedDate: defaultExpectedDate ?? "",
       amount: defaultAmount,
       receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
@@ -258,6 +249,7 @@ export function NewIncomeEntryModal({
     incomeId,
     entryId,
     defaultWalletId,
+    resolvedDefaultWalletId,
     fixedDestinationWalletId,
     defaultExpectedDate,
     defaultReceivedDate,
@@ -292,10 +284,12 @@ export function NewIncomeEntryModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingEntry);
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingDetail);
 
-  const description = incomeName
-    ? t("entryModal.description.forIncome", { incomeName })
+  const resolvedIncomeName = incomeName ?? income?.name;
+
+  const description = resolvedIncomeName
+    ? t("entryModal.description.forIncome", { incomeName: resolvedIncomeName })
     : walletName
       ? t("entryModal.description.toWallet", { walletName })
       : t("entryModal.description.default");

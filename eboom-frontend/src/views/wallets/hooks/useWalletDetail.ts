@@ -7,8 +7,17 @@ import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { Wallet } from "@backend/db/schema";
 
-export function useWalletDetail(walletId: number) {
+interface UseWalletDetailOptions {
+  enabled?: boolean;
+}
+
+export function useWalletDetail(
+  walletId: number,
+  options?: UseWalletDetailOptions
+) {
   const { canvas } = useCanvas();
+  const enabled = (options?.enabled ?? true) && !!canvas && !!walletId;
+
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
       wallet: Wallet & {
@@ -20,7 +29,7 @@ export function useWalletDetail(walletId: number) {
       };
     }>(canvas ? API_ROUTES.WALLETS_GET(canvas, walletId) : "", {
       queryKey: ["wallet", canvas, walletId],
-      enabled: !!canvas && !!walletId,
+      enabled,
     });
 
   const {
@@ -31,7 +40,7 @@ export function useWalletDetail(walletId: number) {
     canvas ? API_ROUTES.WALLET_ENTRIES(canvas, walletId) : "",
     {
       queryKey: ["wallet-entries", canvas, walletId],
-      enabled: !!canvas && !!walletId,
+      enabled,
     }
   );
 
@@ -43,7 +52,7 @@ export function useWalletDetail(walletId: number) {
     canvas ? API_ROUTES.WALLET_PAYMENTS(canvas, walletId) : "",
     {
       queryKey: ["wallet-payments", canvas, walletId],
-      enabled: !!canvas && !!walletId,
+      enabled,
     }
   );
 
@@ -55,7 +64,7 @@ export function useWalletDetail(walletId: number) {
     canvas ? API_ROUTES.WALLET_TRANSFERS(canvas, walletId) : "",
     {
       queryKey: ["wallet-transfers", canvas, walletId],
-      enabled: !!canvas && !!walletId,
+      enabled,
     }
   );
 

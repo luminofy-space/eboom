@@ -40,6 +40,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { WalletTransfer } from "../utils/utils";
+import { useWalletDetail } from "../hooks/useWalletDetail";
 
 interface TransferFormData {
   sourceWalletId: number | null;
@@ -96,6 +97,7 @@ interface SubWalletOption {
 
 interface NewTransferModalProps {
   transferId?: number;
+  walletId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fixedSourceWalletId?: number;
@@ -107,6 +109,7 @@ interface NewTransferModalProps {
 
 export function NewTransferModal({
   transferId,
+  walletId,
   open,
   onOpenChange,
   fixedSourceWalletId,
@@ -166,14 +169,25 @@ export function NewTransferModal({
     enabled: !!canvas && !!destinationWalletId && open,
   });
 
+  const { transfers, isLoading: isLoadingWalletDetail } = useWalletDetail(walletId ?? 0, {
+    enabled: open && isEditMode && !!walletId,
+  });
+
   const { data: transferRes, isLoading: isLoadingTransfer } = useQueryApi<{
     transfer?: WalletTransfer;
   }>(canvas && transferId ? API_ROUTES.TRANSFERS_GET(canvas, transferId) : "", {
     queryKey: ["transfer", canvas, transferId],
-    enabled: isEditMode && open && !!canvas && !!transferId,
+    enabled: isEditMode && open && !!canvas && !!transferId && !walletId,
   });
 
-  const editingTransfer = transferRes?.transfer ?? null;
+  const editingTransfer = useMemo(() => {
+    if (walletId) {
+      return transfers.find((transfer) => transfer.id === transferId) ?? null;
+    }
+    return transferRes?.transfer ?? null;
+  }, [walletId, transfers, transferId, transferRes?.transfer]);
+
+  const isLoadingEditTransfer = walletId ? isLoadingWalletDetail : isLoadingTransfer;
 
   const wallets = walletsRes?.wallets ?? [];
   const allCurrencies = currenciesRes?.currencies ?? [];
@@ -367,7 +381,7 @@ export function NewTransferModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingTransfer);
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingEditTransfer);
 
   const showSourceWalletPicker = !fixedSourceWalletId;
   const showDestWalletPicker = !fixedDestinationWalletId;

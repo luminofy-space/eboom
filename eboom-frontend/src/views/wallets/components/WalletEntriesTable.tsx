@@ -1,28 +1,17 @@
 "use client";
 
+import {
+  DataTableSection,
+  TableEntityCell,
+  TableNotesCell,
+  tableNotesCellClassName,
+  type DataTableColumn,
+} from "@/src/components/data-table";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Container } from "@/components/ui/container";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import dayjs from "dayjs";
-import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
@@ -72,10 +61,7 @@ export function WalletEntriesTable({
   const [editingEntry, setEditingEntry] = useState<WalletEntry | null>(null);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const entries = useMemo(
-    () => sortEntries(entriesRes ?? []),
-    [entriesRes]
-  );
+  const entries = useMemo(() => sortEntries(entriesRes ?? []), [entriesRes]);
 
   const totalReceived = useMemo(
     () =>
@@ -85,54 +71,71 @@ export function WalletEntriesTable({
     [entries]
   );
 
-  if (isLoading) {
-    return (
-      <Container>
-        <Stack gap={4}>
-          <Skeleton className="h-7 w-48" />
-          <div className="overflow-hidden rounded-lg border">
-            <div className="space-y-3 p-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          </div>
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container>
-        <Typography variant="muted-sm">
-          {t("entriesTable.loadError")}
-        </Typography>
-      </Container>
-    );
-  }
+  const columns: DataTableColumn<WalletEntry>[] = useMemo(
+    () => [
+      {
+        id: "amount",
+        header: t("entriesTable.headers.amount"),
+        headerClassName: "w-[140px]",
+        cellClassName: "font-medium tabular-nums",
+        cell: (entry) => formatAmount(entry.amount, currencySymbol, emDash),
+      },
+      {
+        id: "income",
+        header: t("entriesTable.headers.income"),
+        cell: (entry) => (
+          <TableEntityCell
+            name={entry.incomeName ?? t("entriesTable.fallbackIncomeName", { incomeId: entry.incomeId })}
+            caption={entry.categoryName}
+          />
+        ),
+      },
+      {
+        id: "expected",
+        header: t("entriesTable.headers.expected"),
+        cellClassName: "text-muted-foreground",
+        cell: (entry) => formatDate(entry.expectedDate, { fallback: emDash }),
+      },
+      {
+        id: "received",
+        header: t("entriesTable.headers.received"),
+        cellClassName: "text-muted-foreground",
+        cell: (entry) => formatDate(entry.receivedDate, { fallback: emDash }),
+      },
+      {
+        id: "status",
+        header: t("entriesTable.headers.status"),
+        cell: (entry) => {
+          const status = getEntryStatus(entry, t);
+          return <TransactionStatusChip status={status.status} label={status.label} />;
+        },
+      },
+      {
+        id: "notes",
+        header: t("entriesTable.headers.notes"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: tableNotesCellClassName,
+        cell: (entry) => <TableNotesCell notes={entry.notes} emptyLabel={emDash} />,
+      },
+    ],
+    [t, currencySymbol, emDash]
+  );
 
   return (
     <>
-      <Container>
-        <Stack gap={4}>
-        <Stack direction="row" align="center" justify="between" gap={4}>
-          <div>
-            <Typography variant="heading">{t("entriesTable.title")}</Typography>
-            <Typography variant="muted-sm">
-              {t("entriesTable.subtitle")}
-            </Typography>
-          </div>
-          <Stack direction="row" align="center" gap={3}>
-            {entries.length > 0 && (
-              <Typography variant="count" className="hidden sm:block">
-                {t("entriesTable.count", {
-                  count: entries.length,
-                  unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
-                })}
-              </Typography>
-            )}
-            {canEdit && (
+      <DataTableSection
+        title={t("entriesTable.title")}
+        subtitle={t("entriesTable.subtitle")}
+        count={
+          entries.length > 0
+            ? t("entriesTable.count", {
+                count: entries.length,
+                unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
+              })
+            : undefined
+        }
+        headerAction={
+          canEdit ? (
             <Button
               size="sm"
               onClick={() => {
@@ -143,119 +146,35 @@ export function WalletEntriesTable({
               <Plus className="size-4" />
               {t("entriesTable.createEntry")}
             </Button>
-            )}
-          </Stack>
-        </Stack>
-
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[140px]">{t("entriesTable.headers.amount")}</TableHead>
-              <TableHead>{t("entriesTable.headers.income")}</TableHead>
-              <TableHead>{t("entriesTable.headers.expected")}</TableHead>
-              <TableHead>{t("entriesTable.headers.received")}</TableHead>
-              <TableHead>{t("entriesTable.headers.status")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("entriesTable.headers.notes")}</TableHead>
-              {canEdit && <TableHead className="w-10" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
-                  <p className="text-muted-foreground">
-                    {t("entriesTable.empty")}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              entries.map((entry) => {
-                const status = getEntryStatus(entry, t);
-                return (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-medium tabular-nums">
-                      {formatAmount(entry.amount, currencySymbol, emDash)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{entry.incomeName ?? t("entriesTable.fallbackIncomeName", { incomeId: entry.incomeId })}</span>
-                        {entry.categoryName && (
-                          <Typography variant="caption">{entry.categoryName}</Typography>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(entry.expectedDate, { fallback: emDash })}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(entry.receivedDate, { fallback: emDash })}
-                    </TableCell>
-                    <TableCell>
-                      <TransactionStatusChip
-                        status={status.status}
-                        label={status.label}
-                      />
-                    </TableCell>
-                    <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                      {entry.notes ? (
-                        <span title={entry.notes}>{entry.notes}</span>
-                      ) : (
-                        <span className="text-muted-foreground">{emDash}</span>
-                      )}
-                    </TableCell>
-                    {canEdit && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground size-8"
-                          >
-                            <MoreVertical className="size-4" />
-                            <span className="sr-only">{tc("actions.openMenu")}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditingEntry(entry);
-                              setModalOpen(true);
-                            }}
-                          >
-                            <Pencil className="size-4" />
-                            {tc("actions.edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem variant="destructive" disabled>
-                            <Trash2 className="size-4" />
-                            {tc("actions.delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-          {entries.length > 0 && (
-            <TableFooter>
-              <TableRow>
-                <TableCell className="font-semibold tabular-nums">
-                  {formatAmount(totalReceived, currencySymbol, emDash)}
-                </TableCell>
-                <TableCell colSpan={6} className="text-muted-foreground">
-                  {t("entriesTable.footer.totalReceived")}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
-      </div>
-        </Stack>
-      </Container>
+          ) : undefined
+        }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("entriesTable.loadError")}
+        columns={columns}
+        data={entries}
+        getRowKey={(entry) => entry.id}
+        emptyMessage={t("entriesTable.empty")}
+        showActions={canEdit}
+        actions={{
+          onEdit: (entry) => {
+            setEditingEntry(entry);
+            setModalOpen(true);
+          },
+          onDelete: () => undefined,
+          deleteDisabled: true,
+        }}
+        footer={
+          <TableRow>
+            <TableCell className="font-semibold tabular-nums">
+              {formatAmount(totalReceived, currencySymbol, emDash)}
+            </TableCell>
+            <TableCell colSpan={6} className="text-muted-foreground">
+              {t("entriesTable.footer.totalReceived")}
+            </TableCell>
+          </TableRow>
+        }
+      />
 
       <NewIncomeEntryModal
         incomeId={editingEntry?.incomeId}

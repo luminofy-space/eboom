@@ -6,25 +6,42 @@ import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { ExpensePayment } from "../components/ExpensePaymentsTable";
 
-export function useExpenseDetail(expenseId: number) {
+export interface ExpenseDetail {
+  id: number;
+  name: string;
+  currencyId: number;
+  expenseCategoryId?: number | null;
+  defaultWalletId: number | null;
+  description?: unknown;
+  isRecurring?: boolean;
+  recurrencePattern?: unknown;
+  defaultWallet?: { id: number; name: string } | null;
+  currency?: { id: number; symbol: string; code?: string; name?: string } | null;
+  category?: { id: number; name: string } | null;
+}
+
+interface UseExpenseDetailOptions {
+  enabled?: boolean;
+}
+
+export function useExpenseDetail(
+  expenseId: number,
+  options?: UseExpenseDetailOptions
+) {
   const { canvas } = useCanvas();
+  const enabled = (options?.enabled ?? true) && !!canvas && !!expenseId;
+
   const {
     data: expenseRes,
     isLoading: isLoadingExpense,
     isError: isExpenseError,
-  } = useQueryApi<{
-    expense: {
-      id: number;
-      name: string;
-      currencyId: number;
-      defaultWalletId: number | null;
-      defaultWallet?: { id: number; name: string } | null;
-      currency?: { id: number; symbol: string } | null;
-    };
-  }>(canvas ? API_ROUTES.EXPENSES_GET(canvas, expenseId) : "", {
-    queryKey: ["expense", canvas, expenseId],
-    enabled: !!canvas && !!expenseId,
-  });
+  } = useQueryApi<{ expense: ExpenseDetail }>(
+    canvas ? API_ROUTES.EXPENSES_GET(canvas, expenseId) : "",
+    {
+      queryKey: ["expense", canvas, expenseId],
+      enabled,
+    }
+  );
 
   const {
     data: paymentsRes,
@@ -34,9 +51,9 @@ export function useExpenseDetail(expenseId: number) {
     canvas ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, expenseId) : "",
     {
       queryKey: ["expense-payments", canvas, expenseId],
-      enabled: !!canvas && !!expenseId,
+      enabled,
     }
-  )
+  );
 
   const { data: currenciesRes } = useQueryApi<{
     currencies?: { id: number; code: string; symbol: string }[];

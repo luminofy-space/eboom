@@ -2,24 +2,15 @@
 
 import Link from "next/link";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import {
+  DataTableSection,
+  TableEntityCell,
+  TableNotesCell,
+  tableNotesCellClassName,
+  type DataTableColumn,
+} from "@/src/components/data-table";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
@@ -29,7 +20,7 @@ import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { ArrowLeftRight, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -82,159 +73,121 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
     }
   );
 
+  const columns: DataTableColumn<WalletTransfer>[] = useMemo(
+    () => [
+      {
+        id: "amount",
+        header: tw("transfersTable.headers.amount"),
+        headerClassName: "w-[140px]",
+        cellClassName: "font-medium tabular-nums",
+        cell: (transfer) =>
+          formatAmount(transfer.sourceAmount, transfer.sourceCurrencySymbol, emDash),
+      },
+      {
+        id: "direction",
+        header: tw("transfersTable.headers.direction"),
+        cell: (transfer) => (
+          <Stack direction="row" align="center" gap={2}>
+            <ArrowLeftRight className="text-muted-foreground size-4" />
+            <span>
+              {t("transfers.direction", {
+                source: transfer.sourceWalletName,
+                destination: transfer.destinationWalletName,
+              })}
+            </span>
+          </Stack>
+        ),
+      },
+      {
+        id: "counterparty",
+        header: tw("transfersTable.headers.counterparty"),
+        cell: (transfer) => (
+          <TableEntityCell
+            name={
+              <Link
+                href={`/wallet/${transfer.destinationWalletId}`}
+                className="text-primary hover:underline"
+              >
+                {transfer.destinationWalletName}
+              </Link>
+            }
+            caption={
+              transfer.sourceCurrencyId !== transfer.destinationCurrencyId
+                ? `${transfer.sourceCurrencyCode} → ${transfer.destinationCurrencyCode}`
+                : undefined
+            }
+          />
+        ),
+      },
+      {
+        id: "date",
+        header: tw("transfersTable.headers.date"),
+        cellClassName: "text-muted-foreground",
+        cell: (transfer) => formatDate(transfer.transferDate, { fallback: emDash }),
+      },
+      {
+        id: "rate",
+        header: tw("transfersTable.headers.rate"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: "hidden text-muted-foreground md:table-cell",
+        cell: (transfer) => transfer.exchangeRate ?? emDash,
+      },
+      {
+        id: "fee",
+        header: tw("transfersTable.headers.fee"),
+        headerClassName: "hidden lg:table-cell",
+        cellClassName: "hidden text-muted-foreground lg:table-cell",
+        cell: (transfer) =>
+          formatAmount(transfer.transactionFee, transfer.sourceCurrencySymbol, emDash),
+      },
+      {
+        id: "notes",
+        header: tw("transfersTable.headers.notes"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: tableNotesCellClassName,
+        cell: (transfer) => <TableNotesCell notes={transfer.notes} emptyLabel={emDash} />,
+      },
+    ],
+    [t, tw, emDash]
+  );
+
   return (
     <>
-      <Container>
-        <Stack gap={4}>
-          <Stack direction="row" align="center" justify="between" gap={4}>
-            <div>
-              <Typography variant="heading">{t("transfers.title")}</Typography>
-              <Typography variant="muted-sm">{t("transfers.subtitle")}</Typography>
-            </div>
-            <Stack direction="row" align="center" gap={3}>
-              {transfers.length > 0 && (
-                <Typography variant="count" className="hidden sm:block">
-                  {t("transfers.count", { count: transfers.length })}
-                </Typography>
-              )}
-              {canEdit && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingTransfer(null);
-                    setModalOpen(true);
-                  }}
-                >
-                  <Plus className="size-4" />
-                  {t("transfers.createTransfer")}
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-
-          <div className="overflow-hidden rounded-lg border">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="w-[140px]">{tw("transfersTable.headers.amount")}</TableHead>
-                  <TableHead>{tw("transfersTable.headers.direction")}</TableHead>
-                  <TableHead>{tw("transfersTable.headers.counterparty")}</TableHead>
-                  <TableHead>{tw("transfersTable.headers.date")}</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    {tw("transfersTable.headers.rate")}
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">
-                    {tw("transfersTable.headers.fee")}
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    {tw("transfersTable.headers.notes")}
-                  </TableHead>
-                  {canEdit && <TableHead className="w-10" />}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transfers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={canEdit ? 8 : 7} className="h-24 text-center">
-                      <p className="text-muted-foreground">{t("transfers.empty")}</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  transfers.map((transfer) => (
-                    <TableRow key={transfer.id}>
-                      <TableCell className="font-medium tabular-nums">
-                        {formatAmount(transfer.sourceAmount, transfer.sourceCurrencySymbol, emDash)}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" align="center" gap={2}>
-                          <ArrowLeftRight className="text-muted-foreground size-4" />
-                          <span>
-                            {t("transfers.direction", {
-                              source: transfer.sourceWalletName,
-                              destination: transfer.destinationWalletName,
-                            })}
-                          </span>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>
-                            <Link
-                              href={`/wallet/${transfer.destinationWalletId}`}
-                              className="text-primary hover:underline"
-                            >
-                              {transfer.destinationWalletName}
-                            </Link>
-                          </span>
-                          {transfer.sourceCurrencyId !== transfer.destinationCurrencyId && (
-                            <Typography variant="caption">
-                              {transfer.sourceCurrencyCode} → {transfer.destinationCurrencyCode}
-                            </Typography>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(transfer.transferDate, { fallback: emDash })}
-                      </TableCell>
-                      <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {transfer.exchangeRate ?? emDash}
-                      </TableCell>
-                      <TableCell className="hidden text-muted-foreground lg:table-cell">
-                        {formatAmount(
-                          transfer.transactionFee,
-                          transfer.sourceCurrencySymbol,
-                          emDash
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                        {transfer.notes ? (
-                          <span title={transfer.notes}>{transfer.notes}</span>
-                        ) : (
-                          <span className="text-muted-foreground">{emDash}</span>
-                        )}
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground size-8"
-                              >
-                                <MoreVertical className="size-4" />
-                                <span className="sr-only">{tc("actions.openMenu")}</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setEditingTransfer(transfer);
-                                  setModalOpen(true);
-                                }}
-                              >
-                                <Pencil className="size-4" />
-                                {tc("actions.edit")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteTarget(transfer)}
-                              >
-                                <Trash2 className="size-4" />
-                                {tc("actions.delete")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </Stack>
-      </Container>
+      <DataTableSection
+        title={t("transfers.title")}
+        subtitle={t("transfers.subtitle")}
+        count={
+          transfers.length > 0
+            ? t("transfers.count", { count: transfers.length })
+            : undefined
+        }
+        headerAction={
+          canEdit ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingTransfer(null);
+                setModalOpen(true);
+              }}
+            >
+              <Plus className="size-4" />
+              {t("transfers.createTransfer")}
+            </Button>
+          ) : undefined
+        }
+        columns={columns}
+        data={transfers}
+        getRowKey={(transfer) => transfer.id}
+        emptyMessage={t("transfers.empty")}
+        showActions={canEdit}
+        actions={{
+          onEdit: (transfer) => {
+            setEditingTransfer(transfer);
+            setModalOpen(true);
+          },
+          onDelete: (transfer) => setDeleteTarget(transfer),
+        }}
+      />
 
       <NewTransferModal
         transferId={editingTransfer?.id}

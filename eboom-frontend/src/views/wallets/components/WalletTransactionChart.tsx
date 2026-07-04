@@ -17,13 +17,6 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ToggleGroup,
@@ -147,26 +140,6 @@ export function WalletTransactionChart({
             <ToggleGroupItem value="30d">{tc("chart.last30Days")}</ToggleGroupItem>
             <ToggleGroupItem value="7d">{tc("chart.last7Days")}</ToggleGroupItem>
           </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label={tc("chart.selectTimeRange")}
-            >
-              <SelectValue placeholder={tc("chart.last3Months")} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                {tc("chart.last3Months")}
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                {tc("chart.last30Days")}
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                {tc("chart.last7Days")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
