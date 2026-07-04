@@ -147,3 +147,12 @@ body {
     transform: translateX(400%);
   }
 }
+
+html.landing-no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.landing-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

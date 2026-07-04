@@ -54,7 +54,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
       password: data.password,
     })
       .then((res) => {
-        router.push(res?.user?.emailVerified ? "/" : "/confirm-email");
+        router.push(res?.user?.emailVerified ? "/dashboard" : "/confirm-email");
       })
       .catch((error) => {
         console.error("error", error);

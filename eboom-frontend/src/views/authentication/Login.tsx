@@ -48,7 +48,7 @@ export function LoginForm({
     await login(data)
       .then((res) => {
         if (res) {
-          router.push("/");
+          router.push("/dashboard");
         }
       })
       .catch((error) => {

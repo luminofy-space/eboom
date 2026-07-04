@@ -1,0 +1,75 @@
+{
+  "header": {
+    "brand": "eBoom",
+    "login": "Log in",
+    "signup": "Sign up",
+    "github": "View on GitHub"
+  },
+  "hero": {
+    "title": "Personal finance, one canvas at a time",
+    "subtitle": "Track income, wallets, expenses, and transfers across multiple currencies. Built for individuals, families, and small businesses.",
+    "signup": "Get started free",
+    "login": "Log in"
+  },
+  "workflow": {
+    "title": "How it works",
+    "subtitle": "Every dollar has a path. eBoom models real money movement through a simple ledger.",
+    "steps": {
+      "canvas": {
+        "title": "Create a canvas",
+        "description": "Spin up a scoped workspace for freelancing, family budgeting, or a small business — each with its own base currency."
+      },
+      "flows": {
+        "title": "Track money flows",
+        "description": "Income credits wallets. Expenses debit them. Transfers move funds between accounts — same or cross-currency."
+      },
+      "visualize": {
+        "title": "See the big picture",
+        "description": "Dashboard charts, a calendar timeline, and an interactive whiteboard graph show where your money goes."
+      }
+    },
+    "nodes": {
+      "income": "Income",
+      "wallet": "Wallet",
+      "expense": "Expense"
+    }
+  },
+  "features": {
+    "title": "Everything you need to stay in control",
+    "subtitle": "Live modules that work together inside each canvas.",
+    "canvas": {
+      "title": "Canvas workspaces",
+      "description": "Multiple financial projects, one login. Switch contexts without mixing data."
+    },
+    "incomeExpense": {
+      "title": "Incomes & expenses",
+      "description": "Recurring or one-off, multi-currency, with categories and status tracking."
+    },
+    "wallets": {
+      "title": "Wallets & transfers",
+      "description": "Sub-wallets per currency, unified balances, and cross-currency moves with rates and fees."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Cash-flow charts, yearly heatmap, and recent activity at a glance."
+    },
+    "calendarWhiteboard": {
+      "title": "Calendar & whiteboard",
+      "description": "Timeline of due dates plus a visual money-flow graph you can edit inline."
+    },
+    "collaborate": {
+      "title": "Collaborate & plan",
+      "description": "Invite members with roles, set budgets, and plan ahead together."
+    }
+  },
+  "tech": {
+    "title": "Built with modern tools",
+    "subtitle": "A full-stack TypeScript platform — fast UI, reliable API, PostgreSQL at the core."
+  },
+  "footer": {
+    "tagline": "Personal finance management for people who want clarity, not complexity.",
+    "github": "GitHub",
+    "signup": "Create your account",
+    "collaborators": "Collaborators"
+  }
+}
