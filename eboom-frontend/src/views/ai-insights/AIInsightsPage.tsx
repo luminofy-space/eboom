@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BrainCircuit, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Container } from "@/components/ui/container";
@@ -19,7 +20,17 @@ import type { WizardFormData } from "./types";
 type ViewMode = "landing" | "wizard";
 type MainTab = "insights" | "chat";
 
+const TAB_PARAM = "tab";
+const DEFAULT_TAB: MainTab = "insights";
+
+function parseMainTab(value: string | null): MainTab {
+  return value === "chat" ? "chat" : DEFAULT_TAB;
+}
+
 export default function AIInsightsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { t } = useTranslation("ai-insights");
   const { canEdit } = useCanvasPermissions();
   const {
@@ -35,9 +46,30 @@ export default function AIInsightsPage() {
   } = useAIInsights();
   const { saveProfile, isSaving, refetch: refetchProfile } = useAIInsightProfile();
   const [view, setView] = useState<ViewMode>("landing");
-  const [mainTab, setMainTab] = useState<MainTab>("insights");
   const [wizardStartStep, setWizardStartStep] = useState<number | undefined>();
   const [generateError, setGenerateError] = useState<string | null>(null);
+
+  const mainTab = useMemo(
+    () => parseMainTab(searchParams.get(TAB_PARAM)),
+    [searchParams]
+  );
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const tab = parseMainTab(value);
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (tab === DEFAULT_TAB) {
+        params.delete(TAB_PARAM);
+      } else {
+        params.set(TAB_PARAM, tab);
+      }
+
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   const profile = insightsProfile;
 
@@ -112,8 +144,12 @@ export default function AIInsightsPage() {
         </Typography>
       )}
       {view === "landing" ? (
-        <Tabs value={mainTab} onValueChange={(value) => setMainTab(value as MainTab)}>
-          <TabsList>
+        <Tabs
+          value={mainTab}
+          onValueChange={handleTabChange}
+          className={mainTab === "chat" ? "flex min-h-0 flex-col" : undefined}
+        >
+          <TabsList className="shrink-0">
             <TabsTrigger value="insights">
               <BrainCircuit className="size-4" />
               {t("tabs.insights")}
@@ -135,7 +171,7 @@ export default function AIInsightsPage() {
             />
           </TabsContent>
           <TabsContent value="chat" className="mt-6">
-            <AIChatPanel canEdit={canEdit} />
+            <AIChatPanel canEdit={canEdit} isActive={mainTab === "chat"} />
           </TabsContent>
         </Tabs>
       ) : (

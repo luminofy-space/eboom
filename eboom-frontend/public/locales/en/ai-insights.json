@@ -274,6 +274,7 @@
     "send": "Send",
     "hint": "Press Enter to send, Shift+Enter for a new line.",
     "empty": "Start a conversation. The assistant uses your canvas data and profile when answering.",
+    "thinking": "Thinking…",
     "clearHistory": "Clear chat",
     "clearConfirmTitle": "Clear chat history?",
     "clearConfirmDescription": "All messages for this canvas will be permanently deleted.",
