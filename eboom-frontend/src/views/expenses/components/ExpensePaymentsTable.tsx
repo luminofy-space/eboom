@@ -24,13 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "./NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
@@ -88,6 +89,7 @@ function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
 export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
+  const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
@@ -104,9 +106,9 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
       defaultWallet?: { id: number; name: string } | null;
       currency?: { id: number; symbol: string } | null;
     };
-  }>(API_ROUTES.EXPENSES_GET(expenseId), {
-    queryKey: ["expense", expenseId],
-    enabled: !!expenseId,
+  }>(canvas ? API_ROUTES.EXPENSES_GET(canvas, expenseId) : "", {
+    queryKey: ["expense", canvas, expenseId],
+    enabled: !!canvas && !!expenseId,
   });
 
   const { data: currenciesRes } = useQueryApi<{
@@ -120,27 +122,25 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
     isLoading: isLoadingPayments,
     isError,
   } = useQueryApi<{ payments: ExpensePayment[] }>(
-    API_ROUTES.EXPENSE_PAYMENTS_LIST(expenseId),
+    canvas ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, expenseId) : "",
     {
-      queryKey: ["expense-payments", expenseId],
-      enabled: !!expenseId,
+      queryKey: ["expense-payments", canvas, expenseId],
+      enabled: !!canvas && !!expenseId,
     }
   );
 
-  const { mutate: deletePayment, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries({ queryKey: ["expense-payments", expenseId] });
-      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+  const { mutate: deletePayment, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.EXPENSE_PAYMENTS_DELETE(canvas!, id),
+    {
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: () => {
+        setDeleteId(null);
+        queryClient.invalidateQueries({ queryKey: ["expense-payments", canvas, expenseId] });
+        queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   const currencySymbol = useMemo(() => {
     const fromExpense = expenseRes?.expense?.currency?.symbol;

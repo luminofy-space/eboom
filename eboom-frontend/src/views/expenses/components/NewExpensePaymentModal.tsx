@@ -26,8 +26,8 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -142,13 +142,13 @@ export function NewExpensePaymentModal({
       notes: string | null;
     }[];
   }>(
-    resolvedExpenseIdForFetch
-      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(resolvedExpenseIdForFetch)
+    resolvedExpenseIdForFetch && canvas
+      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, resolvedExpenseIdForFetch)
       : "",
     {
-      queryKey: ["expense-payments", resolvedExpenseIdForFetch],
+      queryKey: ["expense-payments", canvas, resolvedExpenseIdForFetch],
       hasToken: true,
-      enabled: open && isEditMode && !!resolvedExpenseIdForFetch,
+      enabled: open && isEditMode && !!canvas && !!resolvedExpenseIdForFetch,
     }
   );
 
@@ -191,40 +191,36 @@ export function NewExpensePaymentModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: savePayment, isPending } = useMutation({
-    mutationFn: async (formData: PaymentFormData) => {
+  const { mutateAsync: savePayment, isPending } = useMutationApi(
+    (formData: PaymentFormData) => {
       const resolvedExpenseId = expenseId ?? formData.expenseId;
-      const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
-      const payload = {
-        sourceWalletId: resolvedWalletId,
+      if (isEditMode && paymentId) {
+        return API_ROUTES.EXPENSE_PAYMENTS_UPDATE(canvas!, paymentId);
+      }
+      return API_ROUTES.EXPENSE_PAYMENTS_CREATE(canvas!, resolvedExpenseId!);
+    },
+    {
+      method: () => (isEditMode && paymentId ? "put" : "post"),
+      mapPayload: (formData: PaymentFormData) => ({
+        sourceWalletId: fixedSourceWalletId ?? formData.sourceWalletId,
         amount: Number(formData.amount),
         dueDate: formData.dueDate || null,
         paidDate: formData.paidDate || null,
         notes: formData.notes.trim() || null,
-      };
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && paymentId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_UPDATE(paymentId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId!)}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async (_, formData) => {
-      const resolvedExpenseId = expenseId ?? formData.expenseId;
-      if (resolvedExpenseId) {
-        await queryClient.invalidateQueries({ queryKey: ["expense-payments", resolvedExpenseId] });
-      }
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async (_data, formData) => {
+        const resolvedExpenseId = expenseId ?? (formData as PaymentFormData).expenseId;
+        if (resolvedExpenseId) {
+          await queryClient.invalidateQueries({ queryKey: ["expense-payments", canvas, resolvedExpenseId] });
+        }
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;

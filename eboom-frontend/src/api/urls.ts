@@ -21,9 +21,9 @@ const API_ROUTES = {
   // ============================================================================
   CANVASES_LIST: '/api/canvases/',
   CANVASES_CREATE: '/api/canvases/',
-  CANVASES_GET: (id: number) => `/api/canvases/${id}/`,
-  CANVASES_UPDATE: (id: number) => `/api/canvases/${id}/`,
-  CANVASES_DELETE: (id: number) => `/api/canvases/${id}/`,
+  CANVASES_GET: (canvasId: number) => `/api/canvases/${canvasId}/`,
+  CANVASES_UPDATE: (canvasId: number) => `/api/canvases/${canvasId}/`,
+  CANVASES_DELETE: (canvasId: number) => `/api/canvases/${canvasId}/`,
 
   // Canvas members
   CANVAS_MEMBERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/members/`,
@@ -47,21 +47,81 @@ const API_ROUTES = {
   CANVAS_INVITATIONS_CANCEL: (id: number) => `/api/canvas-invitations/${id}/`,
   CANVAS_ROLES: '/api/roles/canvas/',
 
-  // Canvas-scoped Expenses
+  // Canvas-scoped expenses
   CANVASES_EXPENSES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
   CANVASES_EXPENSES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/expenses/`,
+  EXPENSES_GET: (canvasId: number, expenseId: number) =>
+    `/api/canvases/${canvasId}/expenses/${expenseId}/`,
+  EXPENSES_UPDATE: (canvasId: number, expenseId: number) =>
+    `/api/canvases/${canvasId}/expenses/${expenseId}/`,
+  EXPENSES_DELETE: (canvasId: number, expenseId: number) =>
+    `/api/canvases/${canvasId}/expenses/${expenseId}/`,
+  EXPENSE_PAYMENTS_LIST: (canvasId: number, expenseId: number) =>
+    `/api/canvases/${canvasId}/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_CREATE: (canvasId: number, expenseId: number) =>
+    `/api/canvases/${canvasId}/expenses/${expenseId}/payments/`,
+  EXPENSE_PAYMENTS_UPDATE: (canvasId: number, paymentId: number) =>
+    `/api/canvases/${canvasId}/expenses/payments/${paymentId}/`,
+  EXPENSE_PAYMENTS_DELETE: (canvasId: number, paymentId: number) =>
+    `/api/canvases/${canvasId}/expenses/payments/${paymentId}/`,
 
-  // Canvas-scoped Incomes
+  // Canvas-scoped incomes
   CANVASES_INCOMES_LIST: (canvasId: number) => `/api/canvases/${canvasId}/incomes/`,
   CANVASES_INCOMES_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/incomes/`,
+  INCOMES_GET: (canvasId: number, incomeId: number) =>
+    `/api/canvases/${canvasId}/incomes/${incomeId}/`,
+  INCOMES_UPDATE: (canvasId: number, incomeId: number) =>
+    `/api/canvases/${canvasId}/incomes/${incomeId}/`,
+  INCOMES_DELETE: (canvasId: number, incomeId: number) =>
+    `/api/canvases/${canvasId}/incomes/${incomeId}/`,
+  INCOME_ENTRIES_LIST: (canvasId: number, incomeId: number) =>
+    `/api/canvases/${canvasId}/incomes/${incomeId}/entries/`,
+  INCOME_ENTRIES_CREATE: (canvasId: number, incomeId: number) =>
+    `/api/canvases/${canvasId}/incomes/${incomeId}/entries/`,
+  INCOME_ENTRIES_UPDATE: (canvasId: number, entryId: number) =>
+    `/api/canvases/${canvasId}/incomes/entries/${entryId}/`,
+  INCOME_ENTRIES_DELETE: (canvasId: number, entryId: number) =>
+    `/api/canvases/${canvasId}/incomes/entries/${entryId}/`,
 
-  // Canvas-scoped Wallets
+  // Canvas-scoped wallets
   CANVASES_WALLETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
   CANVASES_WALLETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/wallets/`,
+  WALLETS_GET: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/`,
+  WALLETS_UPDATE: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/`,
+  WALLETS_DELETE: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/`,
+  SUB_WALLETS_LIST: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/sub-wallets/`,
+  WALLET_ENTRIES: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/income-entries/`,
+  WALLET_PAYMENTS: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/expense-payments/`,
+  WALLET_TRANSFERS: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/transfers/`,
+  WALLET_TRANSACTIONS: (canvasId: number, walletId: number) =>
+    `/api/canvases/${canvasId}/wallets/${walletId}/transactions/`,
 
-  // Canvas-scoped Assets
+  // Canvas-scoped assets
   CANVASES_ASSETS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
   CANVASES_ASSETS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/assets/`,
+  ASSETS_GET: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/`,
+  ASSETS_UPDATE: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/`,
+  ASSETS_DELETE: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/`,
+
+  // Canvas-scoped transfers
+  CANVAS_TRANSFERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/transfers/`,
+  TRANSFERS_CREATE: (canvasId: number) => `/api/canvases/${canvasId}/transfers/`,
+  TRANSFERS_GET: (canvasId: number, transferId: number) =>
+    `/api/canvases/${canvasId}/transfers/${transferId}/`,
+  TRANSFERS_UPDATE: (canvasId: number, transferId: number) =>
+    `/api/canvases/${canvasId}/transfers/${transferId}/`,
+  TRANSFERS_DELETE: (canvasId: number, transferId: number) =>
+    `/api/canvases/${canvasId}/transfers/${transferId}/`,
 
   CANVAS_SUMMARY: (canvasId: number) => `/api/canvases/${canvasId}/summary`,
   CANVAS_TRANSACTIONS: (canvasId: number) => `/api/canvases/${canvasId}/transactions`,
@@ -77,68 +137,14 @@ const API_ROUTES = {
   CANVAS_WHITEBOARD_NODE: (canvasId: number, entityType: string, entityId: number) =>
     `/api/canvases/${canvasId}/whiteboard/nodes/${entityType}/${entityId}`,
 
-  // ============================================================================
-  // INCOMES
-  // ============================================================================
-  INCOMES_GET: (id: number) => `/api/income/${id}/`,
-  INCOMES_UPDATE: (id: number) => `/api/income/${id}/`,
-  INCOMES_DELETE: (id: number) => `/api/income/${id}/`,
-
-  // Income Entries
-  INCOME_ENTRIES_LIST: (incomeId: number) => `/api/income/${incomeId}/entries/`,
-  INCOME_ENTRIES_CREATE: (incomeId: number) => `/api/income/${incomeId}/entries/`,
-  INCOME_ENTRIES_UPDATE: (id: number) => `/api/income/entries/${id}/`,
-  INCOME_ENTRIES_DELETE: (id: number) => `/api/income/entries/${id}/`,
-
-  // Income Categories
+  // Income categories
   INCOME_CATEGORIES: '/api/income/categories',
   INCOME_CATEGORIES_CREATE: '/api/income/categories',
   INCOME_CATEGORIES_UPDATE: (id: number) => `/api/income/categories/${id}`,
   INCOME_CATEGORIES_DELETE: (id: number) => `/api/income/categories/${id}`,
 
-  // ============================================================================
-  // WALLETS
-  // ============================================================================
-  WALLETS_GET: (id: number) => `/api/wallets/${id}/`,
-  WALLETS_UPDATE: (id: number) => `/api/wallets/${id}/`,
-  WALLETS_DELETE: (id: number) => `/api/wallets/${id}/`,
-  SUB_WALLETS_LIST: (walletId: number) => `/api/wallets/${walletId}/sub-wallets/`,
-  WALLET_ENTRIES: (id: number) => `/api/wallets/${id}/income-entries/`,
-  WALLET_PAYMENTS: (id: number) => `/api/wallets/${id}/expense-payments/`,
-  WALLET_TRANSFERS: (id: number) => `/api/wallets/${id}/transfers/`,
-  WALLET_TRANSACTIONS: (id: number) => `/api/wallets/${id}/transactions/`,
-
-  // Transfers
-  TRANSFERS_CREATE: "/api/transfers/",
-  TRANSFERS_GET: (id: number) => `/api/transfers/${id}/`,
-  TRANSFERS_UPDATE: (id: number) => `/api/transfers/${id}/`,
-  TRANSFERS_DELETE: (id: number) => `/api/transfers/${id}/`,
-  CANVAS_TRANSFERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/transfers`,
-
-  // ============================================================================
-  // EXPENSES
-  // ============================================================================
-  EXPENSES_GET: (id: number) => `/api/expenses/${id}/`,
-  EXPENSES_UPDATE: (id: number) => `/api/expenses/${id}/`,
-  EXPENSES_DELETE: (id: number) => `/api/expenses/${id}/`,
-
-  // Expense Payments
-  EXPENSE_PAYMENTS_LIST: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
-  EXPENSE_PAYMENTS_CREATE: (expenseId: number) => `/api/expenses/${expenseId}/payments/`,
-  EXPENSE_PAYMENTS_UPDATE: (id: number) => `/api/expenses/payments/${id}/`,
-  EXPENSE_PAYMENTS_DELETE: (id: number) => `/api/expenses/payments/${id}/`,
-
   WALLET_CATEGORIES: '/api/wallet/categories',
-
-  // Expense Categories
   EXPENSE_CATEGORIES: '/api/expense/categories',
-
-  // ============================================================================
-  // ASSETS
-  // ============================================================================
-  ASSETS_GET: (id: number) => `/api/assets/${id}/`,
-  ASSETS_UPDATE: (id: number) => `/api/assets/${id}/`,
-  ASSETS_DELETE: (id: number) => `/api/assets/${id}/`,
   ASSET_CATEGORIES: '/api/asset/categories',
 
   // ============================================================================

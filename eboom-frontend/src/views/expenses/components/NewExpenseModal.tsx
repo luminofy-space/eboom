@@ -169,7 +169,7 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
   );
 
   const { mutateAsync: updateExpense, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.EXPENSES_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.EXPENSES_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,

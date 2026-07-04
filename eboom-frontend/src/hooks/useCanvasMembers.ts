@@ -3,16 +3,7 @@
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { env } from "@/utils/env";
-
-const hasWindow = typeof window !== "undefined";
-
-function getAuthHeaders() {
-  const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { useQueryClient } from "@tanstack/react-query";
 
 export type CanvasMember = {
   id: number;
@@ -67,7 +58,6 @@ export function useCanvasMembers(
   options?: { includeSuggestions?: boolean }
 ) {
   const queryClient = useQueryClient();
-  const baseUrl = env("NEXT_PUBLIC_BASE_URL");
 
   const { data, isLoading, refetch } = useQueryApi<{ members: CanvasMember[] }>(
     canvasId ? API_ROUTES.CANVAS_MEMBERS_LIST(canvasId) : "",
@@ -118,49 +108,43 @@ export function useCanvasMembers(
     queryClient.invalidateQueries({ queryKey: ["canvas-invitations"] });
   };
 
-  const { mutateAsync: updateMemberRole, isPending: isUpdatingRole } = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: number; role: string }) => {
-      if (!canvasId) return;
-      await axios.patch(
-        `${baseUrl}${API_ROUTES.CANVAS_MEMBERS_UPDATE(canvasId, memberId)}`,
-        { role },
-        { headers: getAuthHeaders() }
-      );
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: updateMemberRole, isPending: isUpdatingRole } = useMutationApi(
+    ({ memberId }: { memberId: number; role: string }) =>
+      API_ROUTES.CANVAS_MEMBERS_UPDATE(canvasId!, memberId),
+    {
+      method: "patch",
+      mapPayload: ({ role }: { memberId: number; role: string }) => ({ role }),
+      onSuccess: invalidate,
+      invalidateQueries: false,
+    }
+  );
 
-  const { mutateAsync: removeMember, isPending: isRemoving } = useMutation({
-    mutationFn: async (memberId: number) => {
-      if (!canvasId) return;
-      await axios.delete(
-        `${baseUrl}${API_ROUTES.CANVAS_MEMBERS_REMOVE(canvasId, memberId)}`,
-        { headers: getAuthHeaders() }
-      );
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: removeMember, isPending: isRemoving } = useMutationApi(
+    (memberId: number) => API_ROUTES.CANVAS_MEMBERS_REMOVE(canvasId!, memberId),
+    {
+      method: "delete",
+      onSuccess: invalidate,
+      invalidateQueries: false,
+    }
+  );
 
-  const { mutateAsync: cancelInvitation, isPending: isCancellingInvitation } = useMutation({
-    mutationFn: async (invitationId: number) => {
-      await axios.delete(`${baseUrl}${API_ROUTES.CANVAS_INVITATIONS_CANCEL(invitationId)}`, {
-        headers: getAuthHeaders(),
-      });
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: cancelInvitation, isPending: isCancellingInvitation } = useMutationApi(
+    (invitationId: number) => API_ROUTES.CANVAS_INVITATIONS_CANCEL(invitationId),
+    {
+      method: "delete",
+      onSuccess: invalidate,
+      invalidateQueries: false,
+    }
+  );
 
-  const { mutateAsync: leaveCanvas, isPending: isLeaving } = useMutation({
-    mutationFn: async () => {
-      if (!canvasId) return;
-      await axios.post(
-        `${baseUrl}${API_ROUTES.CANVAS_MEMBERS_LEAVE(canvasId)}`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: leaveCanvas, isPending: isLeaving } = useMutationApi<void>(
+    () => API_ROUTES.CANVAS_MEMBERS_LEAVE(canvasId!),
+    {
+      method: "post",
+      onSuccess: invalidate,
+      invalidateQueries: false,
+    }
+  );
 
   return {
     members: data?.members ?? [],

@@ -2,17 +2,19 @@
 
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { IncomeEntry } from "../component/IncomeEntriesTable";
 import { Income } from "@backend/db/schema";
 
 export function useIncomeDetail(incomeId: number) {
+  const { canvas } = useCanvas();
   const { data: incomeRes, isLoading: isLoadingIncome, isError: isIncomeError } =
     useQueryApi<{
       income: Income;
-    }>(API_ROUTES.INCOMES_GET(incomeId), {
-      queryKey: ["income", incomeId],
-      enabled: !!incomeId,
+    }>(canvas ? API_ROUTES.INCOMES_GET(canvas, incomeId) : "", {
+      queryKey: ["income", canvas, incomeId],
+      enabled: !!canvas && !!incomeId,
     });
 
   const {
@@ -20,10 +22,10 @@ export function useIncomeDetail(incomeId: number) {
     isLoading: isLoadingEntries,
     isError: isEntriesError,
   } = useQueryApi<{ entries: IncomeEntry[] }>(
-    API_ROUTES.INCOME_ENTRIES_LIST(incomeId),
+    canvas ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, incomeId) : "",
     {
-      queryKey: ["income-entries", incomeId],
-      enabled: !!incomeId,
+      queryKey: ["income-entries", canvas, incomeId],
+      enabled: !!canvas && !!incomeId,
     }
   );
 

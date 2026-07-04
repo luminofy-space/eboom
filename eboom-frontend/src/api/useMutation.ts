@@ -5,7 +5,7 @@ import { AuthContext } from "@/src/components/AuthProvider";
 import { useApiRespond } from "./useApiRespond";
 import { snakeToCamel } from "./utils";
 import { IHasId } from "../types/hasId";
-import { env } from "@/utils/env";
+import { resolveApiUrl } from "./resolveApiUrl";
 
 type AuthOptions = {
   accessToken?: string | null;
@@ -13,21 +13,30 @@ type AuthOptions = {
   refresh?: () => Promise<string | null>;
 };
 
-export const useMutationApi = <T extends object = IHasId>(
-  url: string,
+export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
+  url: string | ((payload: TVariables) => string),
   options?: {
     urlParams?: Array<string>;
     staticParams?: string;
-    method?: "post" | "patch" | "put" | "delete" | "get";
+    method?:
+      | "post"
+      | "patch"
+      | "put"
+      | "delete"
+      | "get"
+      | ((payload: TVariables) => "post" | "patch" | "put" | "delete" | "get");
     headers?: Record<string, string>;
     body?: string | FormData;
+    mapPayload?: (payload: TVariables) => unknown;
     rerouteOnNotFound?: boolean;
     hasToken?: boolean;
     returnWholeData?: boolean;
     initialValue?: T;
     timeout?: number;
     retry?: number;
-    needBaseUrl?: boolean;
+    invalidateQueries?: boolean;
+    onSuccess?: (data: unknown, variables: TVariables) => void;
+    onError?: (err: unknown) => void;
     auth?: AuthOptions;
   },
   axiosProp?: AxiosRequestConfig
@@ -39,12 +48,15 @@ export const useMutationApi = <T extends object = IHasId>(
   const optionHeaders = options?.headers;
   const hasToken = options?.hasToken ?? true;
   const optionBody = options?.body;
-  const method = options?.method ?? "post";
+  const methodOption = options?.method ?? "post";
+  const mapPayload = options?.mapPayload;
+  const invalidateQueries = options?.invalidateQueries ?? true;
+  const onSuccessCallback = options?.onSuccess;
+  const onErrorCallback = options?.onError;
   const urlParams = options?.urlParams;
   const staticParams = options?.staticParams;
   const timeout = options?.timeout ?? 15000;
   const retry = options?.retry ?? 0;
-  const needBaseUrl = options?.needBaseUrl ?? true;
 
   const authAccessToken = hasToken
     ? options?.auth?.accessToken ?? authContext?.accessToken ?? null
@@ -59,8 +71,9 @@ export const useMutationApi = <T extends object = IHasId>(
   const [fieldError, setFieldError] = useState<Record<string, string>>();
   const [generalError, setGeneralError] = useState<Record<string, string>>();
 
-  const buildUrl = () => {
-    let finalUrl = needBaseUrl ? `${env("NEXT_PUBLIC_BASE_URL")}${url}` : url;
+  const buildUrl = (payload: TVariables) => {
+    const path = typeof url === "function" ? url(payload) : url;
+    let finalUrl = resolveApiUrl(path);
 
     if (urlParams?.length) finalUrl += "/" + urlParams.join("/");
     if (staticParams) finalUrl += `/${staticParams}`;
@@ -68,18 +81,27 @@ export const useMutationApi = <T extends object = IHasId>(
     return finalUrl;
   };
 
-  const callApi = async (payload?: unknown) => {
-    const finalUrl = buildUrl();
+  const callApi = async (payload: TVariables) => {
+    const finalUrl = buildUrl(payload);
+    const method = typeof methodOption === "function" ? methodOption(payload) : methodOption;
     const headers: Record<string, string> = { ...optionHeaders };
 
     if (hasToken && authAccessToken) {
       headers["Authorization"] = `Bearer ${authAccessToken}`;
     }
 
+    const data =
+      optionBody ??
+      (mapPayload
+        ? mapPayload(payload)
+        : method === "delete" || method === "get"
+          ? undefined
+          : (payload ?? {}));
+
     const config: AxiosRequestConfig = {
       url: finalUrl,
       method,
-      data: optionBody || payload,
+      data,
       timeout,
       headers,
       ...axiosProp,
@@ -116,6 +138,7 @@ export const useMutationApi = <T extends object = IHasId>(
       if (data?.message) setGeneralError({ message: data.message as string });
 
       handleError(axiosErr);
+      onErrorCallback?.(axiosErr);
       throw axiosErr;
     }
   };
@@ -123,8 +146,11 @@ export const useMutationApi = <T extends object = IHasId>(
   const mutation = useMutation({
     mutationFn: callApi,
     retry,
-    onSuccess: () => {
-      queryClient.invalidateQueries();
+    onSuccess: (data, variables) => {
+      if (invalidateQueries) {
+        queryClient.invalidateQueries();
+      }
+      onSuccessCallback?.(data, variables);
     },
   });
 

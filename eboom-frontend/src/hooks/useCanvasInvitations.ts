@@ -1,17 +1,9 @@
 "use client";
 
 import API_ROUTES from "@/src/api/urls";
+import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { env } from "@/utils/env";
-
-const hasWindow = typeof window !== "undefined";
-
-function getAuthHeaders() {
-  const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { useQueryClient } from "@tanstack/react-query";
 
 export type InvitationUser = {
   id: number;
@@ -42,7 +34,6 @@ export type CanvasInvitation = {
 
 export function useCanvasInvitations() {
   const queryClient = useQueryClient();
-  const baseUrl = env("NEXT_PUBLIC_BASE_URL");
 
   const { data: sentData, isLoading: isLoadingSent } = useQueryApi<{ invitations: CanvasInvitation[] }>(
     API_ROUTES.CANVAS_INVITATIONS_SENT,
@@ -61,36 +52,20 @@ export function useCanvasInvitations() {
     queryClient.invalidateQueries({ queryKey: ["canvases"] });
   };
 
-  const { mutateAsync: acceptInvitation, isPending: isAccepting } = useMutation({
-    mutationFn: async (id: number) => {
-      await axios.post(
-        `${baseUrl}${API_ROUTES.CANVAS_INVITATIONS_ACCEPT(id)}`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: acceptInvitation, isPending: isAccepting } = useMutationApi(
+    (id: number) => API_ROUTES.CANVAS_INVITATIONS_ACCEPT(id),
+    { method: "post", onSuccess: invalidate, invalidateQueries: false }
+  );
 
-  const { mutateAsync: declineInvitation, isPending: isDeclining } = useMutation({
-    mutationFn: async (id: number) => {
-      await axios.post(
-        `${baseUrl}${API_ROUTES.CANVAS_INVITATIONS_DECLINE(id)}`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: declineInvitation, isPending: isDeclining } = useMutationApi(
+    (id: number) => API_ROUTES.CANVAS_INVITATIONS_DECLINE(id),
+    { method: "post", onSuccess: invalidate, invalidateQueries: false }
+  );
 
-  const { mutateAsync: cancelInvitation, isPending: isCancelling } = useMutation({
-    mutationFn: async (id: number) => {
-      await axios.delete(`${baseUrl}${API_ROUTES.CANVAS_INVITATIONS_CANCEL(id)}`, {
-        headers: getAuthHeaders(),
-      });
-    },
-    onSuccess: invalidate,
-  });
+  const { mutateAsync: cancelInvitation, isPending: isCancelling } = useMutationApi(
+    (id: number) => API_ROUTES.CANVAS_INVITATIONS_CANCEL(id),
+    { method: "delete", onSuccess: invalidate, invalidateQueries: false }
+  );
 
   const sent = sentData?.invitations ?? [];
   const received = (receivedData?.invitations ?? []).filter(

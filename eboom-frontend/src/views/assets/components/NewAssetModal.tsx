@@ -121,7 +121,7 @@ export function NewAssetModal() {
   );
 
   const { mutateAsync: updateAsset, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.ASSETS_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.ASSETS_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,

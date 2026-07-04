@@ -2,10 +2,12 @@
 
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { ExpensePayment } from "../components/ExpensePaymentsTable";
 
 export function useExpenseDetail(expenseId: number) {
+  const { canvas } = useCanvas();
   const {
     data: expenseRes,
     isLoading: isLoadingExpense,
@@ -19,9 +21,9 @@ export function useExpenseDetail(expenseId: number) {
       defaultWallet?: { id: number; name: string } | null;
       currency?: { id: number; symbol: string } | null;
     };
-  }>(API_ROUTES.EXPENSES_GET(expenseId), {
-    queryKey: ["expense", expenseId],
-    enabled: !!expenseId,
+  }>(canvas ? API_ROUTES.EXPENSES_GET(canvas, expenseId) : "", {
+    queryKey: ["expense", canvas, expenseId],
+    enabled: !!canvas && !!expenseId,
   });
 
   const {
@@ -29,10 +31,10 @@ export function useExpenseDetail(expenseId: number) {
     isLoading: isLoadingPayments,
     isError: isPaymentsError,
   } = useQueryApi<{ payments: ExpensePayment[] }>(
-    API_ROUTES.EXPENSE_PAYMENTS_LIST(expenseId),
+    canvas ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, expenseId) : "",
     {
-      queryKey: ["expense-payments", expenseId],
-      enabled: !!expenseId,
+      queryKey: ["expense-payments", canvas, expenseId],
+      enabled: !!canvas && !!expenseId,
     }
   )
 

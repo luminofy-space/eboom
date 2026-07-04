@@ -2,20 +2,12 @@ import express, { Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { savingsGoals } from "../db/schema";
-import { checkCanvasPermission } from "../services/canvasAccessService";
 import { getSavingsGoalProgress } from "../services/planningService";
 import type { SavingsGoalStatus } from "../types/planning";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
-
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
-}
-
-function parseCanvasId(req: Request): number {
-  return parseRouteParam(req.params.canvasId);
-}
 
 function parseSavingsGoalStatus(value: unknown): SavingsGoalStatus | null {
   if (value === "active" || value === "achieved" || value === "dropped") return value;
@@ -26,17 +18,10 @@ function isArchivedForStatus(status: SavingsGoalStatus): boolean {
   return status !== "active";
 }
 
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const goals = await db
       .select()
       .from(savingsGoals)
@@ -56,12 +41,9 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   const { name, currencyId, targetAmount, targetDate, alertThresholdPercent } = req.body;
 
@@ -74,9 +56,6 @@ router.post("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [created] = await db
       .insert(savingsGoals)
       .values({
@@ -103,20 +82,14 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:goalId/progress", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.get("/:goalId/progress", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
   const goalId = parseRouteParam(req.params.goalId);
-  if (Number.isNaN(canvasId) || Number.isNaN(goalId)) {
+  if (Number.isNaN(goalId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [goal] = await db
       .select()
       .from(savingsGoals)
@@ -131,22 +104,17 @@ router.get("/:goalId/progress", async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/:goalId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.patch("/:goalId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
   const goalId = parseRouteParam(req.params.goalId);
-  if (Number.isNaN(canvasId) || Number.isNaN(goalId)) {
+  if (Number.isNaN(goalId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   const { name, targetAmount, targetDate, alertThresholdPercent, currencyId, status } = req.body;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [existing] = await db
       .select()
       .from(savingsGoals)
@@ -197,20 +165,15 @@ router.patch("/:goalId", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:goalId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.delete("/:goalId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
   const goalId = parseRouteParam(req.params.goalId);
-  if (Number.isNaN(canvasId) || Number.isNaN(goalId)) {
+  if (Number.isNaN(goalId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [existing] = await db
       .select()
       .from(savingsGoals)

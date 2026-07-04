@@ -10,11 +10,10 @@ import {
   users,
 } from "../db/schema";
 import {
-  getCanvasMembership,
   normalizeRoleName,
-  requireCanvasPermission,
   resolveRoleIdByName,
 } from "../services/canvasAccessService";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
 
@@ -23,26 +22,10 @@ const SUGGESTION_LIMIT = 30;
 
 const inviteeUsers = alias(users, "invitee_users");
 
-function getCanvasId(req: Request): number | null {
-  const canvasId = parseInt(String(req.params.canvasId), 10);
-  return Number.isNaN(canvasId) ? null : canvasId;
-}
-
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "view");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const members = await db
       .select({
         member: canvasMembers,
@@ -75,21 +58,10 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/invitations/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/invitations/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "view");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const rows = await db
       .select({
         invitation: canvasInvitations,
@@ -137,21 +109,11 @@ router.get("/invitations/", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/suggestions/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/suggestions/", requireCanvasAccess("manage_members"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "manage_members");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const otherCanvasRows = await db
       .select({ canvasId: canvasMembers.canvasId })
       .from(canvasMembers)
@@ -229,12 +191,8 @@ router.get("/suggestions/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/lookup/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/lookup/", requireCanvasAccess("manage_members"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const { emails } = req.body as { emails?: string[] };
   if (!Array.isArray(emails) || emails.length === 0) {
@@ -242,13 +200,6 @@ router.post("/lookup/", async (req: Request, res: Response) => {
   }
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "manage_members");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const normalizedEmails = emails.map((e) => String(e).trim().toLowerCase());
     const foundUsers = await db
       .select()
@@ -283,12 +234,9 @@ router.post("/lookup/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/invitations/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/invitations/", requireCanvasAccess("manage_members"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   const { invitations } = req.body as {
     invitations?: { email: string; role: string }[];
@@ -299,13 +247,6 @@ router.post("/invitations/", async (req: Request, res: Response) => {
   }
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "manage_members");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const [canvas] = await db.select().from(canvases).where(eq(canvases.id, canvasId));
     if (!canvas || canvas.isArchived) {
       return res.status(404).json({ error: "Canvas not found" });
@@ -428,12 +369,8 @@ router.post("/invitations/", async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/:memberId/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.patch("/:memberId/", requireCanvasAccess("manage_members"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const memberId = parseInt(String(req.params.memberId), 10);
   if (Number.isNaN(memberId)) return res.status(400).json({ error: "Invalid member ID" });
@@ -442,13 +379,6 @@ router.patch("/:memberId/", async (req: Request, res: Response) => {
   if (!role) return res.status(400).json({ error: "role is required" });
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "manage_members");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const [target] = await db
       .select()
       .from(canvasMembers)
@@ -477,24 +407,13 @@ router.patch("/:memberId/", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:memberId/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.delete("/:memberId/", requireCanvasAccess("manage_members"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const memberId = parseInt(String(req.params.memberId), 10);
   if (Number.isNaN(memberId)) return res.status(400).json({ error: "Invalid member ID" });
 
   try {
-    const membership = await requireCanvasPermission(canvasId, user.id, "manage_members");
-    if (!membership) {
-      const existing = await getCanvasMembership(canvasId, user.id);
-      if (!existing) return res.status(403).json({ error: "Access denied to this canvas" });
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
-    }
-
     const [target] = await db
       .select()
       .from(canvasMembers)
@@ -515,19 +434,12 @@ router.delete("/:memberId/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/leave/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = getCanvasId(req);
-  if (!canvasId) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/leave/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const membership = req.canvasMembership!;
 
   try {
-    const membership = await getCanvasMembership(canvasId, user.id);
-    if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
-    }
-
     if (membership.isOwner) {
       return res.status(403).json({
         error: "Canvas owner cannot leave. Transfer ownership or delete the canvas first.",

@@ -24,13 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
@@ -88,6 +89,7 @@ function sortEntries(entries: IncomeEntry[]): IncomeEntry[] {
 export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const { t } = useTranslation("incomes");
   const { t: tc } = useTranslation("common");
+  const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
@@ -103,9 +105,9 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
       defaultWalletId: number | null;
       defaultWallet?: { id: number; name: string } | null;
     };
-  }>(API_ROUTES.INCOMES_GET(incomeId), {
-    queryKey: ["income", incomeId],
-    enabled: !!incomeId,
+  }>(canvas ? API_ROUTES.INCOMES_GET(canvas, incomeId) : "", {
+    queryKey: ["income", canvas, incomeId],
+    enabled: !!canvas && !!incomeId,
   });
 
   const { data: currenciesRes } = useQueryApi<{
@@ -119,27 +121,25 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     isLoading: isLoadingEntries,
     isError,
   } = useQueryApi<{ entries: IncomeEntry[] }>(
-    API_ROUTES.INCOME_ENTRIES_LIST(incomeId),
+    canvas ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, incomeId) : "",
     {
-      queryKey: ["income-entries", incomeId],
-      enabled: !!incomeId,
+      queryKey: ["income-entries", canvas, incomeId],
+      enabled: !!canvas && !!incomeId,
     }
   );
 
-  const { mutate: deleteEntry, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries({ queryKey: ["income-entries", incomeId] });
-      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+  const { mutate: deleteEntry, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.INCOME_ENTRIES_DELETE(canvas!, id),
+    {
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: () => {
+        setDeleteId(null);
+        queryClient.invalidateQueries({ queryKey: ["income-entries", canvas, incomeId] });
+        queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   const currencySymbol = useMemo(() => {
     const currencyId = incomeRes?.income?.currencyId;

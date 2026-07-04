@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAuthContext } from "@/src/components/AuthProvider";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { formatCurrency } from "@/src/i18n/formatters";
 import { getApiErrorMessage } from "@/src/utils/formUtils";
-import { env } from "@/utils/env";
 import { BudgetPeriodTabs } from "./BudgetPeriodTabs";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
 import type {
@@ -205,47 +204,39 @@ export function BudgetFormModal({
     }
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!canEdit) throw new Error("Insufficient permissions");
-      if (!canvas || parsedCurrencyId == null) throw new Error("Missing canvas");
-
-      const payload = {
-        currencyId: parsedCurrencyId,
-        periodType,
-        totalLimit,
-        alertThresholdPercent: alertThreshold,
-        lines: lines
-          .filter((l) => l.categoryId != null && parseFloat(l.amount) > 0)
-          .map((l) => ({
-            expenseCategoryId: l.categoryId,
-            amountLimit: l.amount,
-          })),
-      };
-
-      if (isEdit && editBudget) {
-        await axios.patch(
-          `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_BUDGETS_UPDATE(canvas, editBudget.budget.id)}`,
-          payload,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      } else {
-        await axios.post(
-          `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_BUDGETS_CREATE(canvas)}`,
-          payload,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgets", canvas] });
-      queryClient.invalidateQueries({ queryKey: ["budget-summary", canvas] });
-      onOpenChange(false);
-    },
-    onError: (err: unknown) => {
-      setSubmitError(getApiErrorMessage(err, t("saveError")));
-    },
-  });
+  const saveMutation = useMutationApi<void>(
+    () =>
+      isEdit && editBudget
+        ? API_ROUTES.CANVAS_BUDGETS_UPDATE(canvas!, editBudget.budget.id)
+        : API_ROUTES.CANVAS_BUDGETS_CREATE(canvas!),
+    {
+      method: () => (isEdit && editBudget ? "patch" : "post"),
+      mapPayload: () => {
+        if (!canvas || parsedCurrencyId == null) throw new Error("Missing canvas");
+        return {
+          currencyId: parsedCurrencyId,
+          periodType,
+          totalLimit,
+          alertThresholdPercent: alertThreshold,
+          lines: lines
+            .filter((l) => l.categoryId != null && parseFloat(l.amount) > 0)
+            .map((l) => ({
+              expenseCategoryId: l.categoryId,
+              amountLimit: l.amount,
+            })),
+        };
+      },
+      invalidateQueries: false,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["budgets", canvas] });
+        queryClient.invalidateQueries({ queryKey: ["budget-summary", canvas] });
+        onOpenChange(false);
+      },
+      onError: (err: unknown) => {
+        setSubmitError(getApiErrorMessage(err, t("saveError")));
+      },
+    }
+  );
 
   if (!canEdit) return null;
 

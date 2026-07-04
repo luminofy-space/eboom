@@ -1,38 +1,23 @@
 import express, { Request, Response } from "express";
-import { checkCanvasPermission } from "../services/canvasAccessService";
 import {
   getAiInsightProfileByCanvas,
   upsertAiInsightProfile,
 } from "../services/aiInsightProfileService";
 import type { AiInsightProfilePayload } from "../types/aiInsight";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
-
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
-}
-
-function parseCanvasId(req: Request): number {
-  return parseRouteParam(req.params.canvasId);
-}
 
 function parseStatus(value: unknown): "draft" | "completed" | null {
   if (value === "draft" || value === "completed") return value;
   return null;
 }
 
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const profile = await getAiInsightProfileByCanvas(canvasId);
     res.json({ profile: profile ?? null });
   } catch (err) {
@@ -41,12 +26,9 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.put("/", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   const body = req.body as AiInsightProfilePayload;
 
@@ -62,9 +44,6 @@ router.put("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const profile = await upsertAiInsightProfile(canvasId, user.id, body);
     res.json({ profile });
   } catch (err) {

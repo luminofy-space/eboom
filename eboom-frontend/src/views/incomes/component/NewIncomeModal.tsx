@@ -171,7 +171,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   );
 
   const { mutateAsync: updateIncome, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.INCOMES_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,

@@ -92,27 +92,51 @@ Example: import types from `@backend/db/schema`.
 
 All routes mount under `/api` in [`src/app.ts`](eboom-backend/src/app.ts).
 
-**Canvas-scoped resources** (list/create within a canvas):
+**Canvas-scoped resources** (all entity operations include `:canvasId`):
 
 ```
 /api/canvases/:canvasId/expenses
-/api/canvases/:canvasId/income-resources
+/api/canvases/:canvasId/incomes
 /api/canvases/:canvasId/wallets
+/api/canvases/:canvasId/assets
+/api/canvases/:canvasId/transfers
 ```
 
-**Entity CRUD** (get/update/delete by ID):
+**Entity CRUD** (get/update/delete by ID within a canvas):
 
 ```
-/api/expenses/:id
-/api/wallets/:id
-/api/income/resources/:id
+/api/canvases/:canvasId/expenses/:expenseId
+/api/canvases/:canvasId/wallets/:walletId
+/api/canvases/:canvasId/incomes/:incomeId
 ```
 
 Register new routers in [`src/routes/index.ts`](eboom-backend/src/routes/index.ts).
 
 ### Canvas access
 
-Every protected handler that reads or writes canvas-scoped data must verify membership using the existing `checkCanvasAccess()` pattern in route handlers.
+Every protected handler that reads or writes canvas-scoped data must use the `requireCanvasAccess` middleware from [`middleware/canvasAccess.ts`](eboom-backend/src/middleware/canvasAccess.ts). Auth middleware must run first. All canvas-scoped routers are mounted under `/api/canvases/:canvasId/...`.
+
+```typescript
+import { requireCanvasAccess } from "../middleware/canvasAccess";
+
+router.get("/summary", requireCanvasAccess("view"), async (req, res) => {
+  const canvasId = req.canvasId!;
+  const membership = req.canvasMembership!;
+  // ...
+});
+
+// Entity routes: verify the record belongs to req.canvasId
+router.put("/:expenseId", requireCanvasAccess("edit"), async (req, res) => {
+  const canvasId = req.canvasId!;
+  const [existing] = await db.select().from(expenses).where(eq(expenses.id, expenseId));
+  if (!existing || existing.canvasId !== canvasId) {
+    return res.status(404).json({ error: "Expense not found" });
+  }
+  // ...
+});
+```
+
+On success, the middleware sets `req.canvasId` and `req.canvasMembership`. Permission levels: `view`, `edit`, `manage_members`, `manage_canvas`.
 
 ### Error handling
 

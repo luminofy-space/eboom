@@ -2,11 +2,13 @@
 
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { Wallet } from "@backend/db/schema";
 
 export function useWalletDetail(walletId: number) {
+  const { canvas } = useCanvas();
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
       wallet: Wallet & {
@@ -16,9 +18,9 @@ export function useWalletDetail(walletId: number) {
           currency?: { id: number; code: string; symbol: string } | null;
         }>;
       };
-    }>(API_ROUTES.WALLETS_GET(walletId), {
-      queryKey: ["wallet", walletId],
-      enabled: !!walletId,
+    }>(canvas ? API_ROUTES.WALLETS_GET(canvas, walletId) : "", {
+      queryKey: ["wallet", canvas, walletId],
+      enabled: !!canvas && !!walletId,
     });
 
   const {
@@ -26,10 +28,10 @@ export function useWalletDetail(walletId: number) {
     isLoading: isLoadingEntries,
     isError: isEntriesError,
   } = useQueryApi<{ incomeEntries: WalletEntry[] }>(
-    API_ROUTES.WALLET_ENTRIES(walletId),
+    canvas ? API_ROUTES.WALLET_ENTRIES(canvas, walletId) : "",
     {
-      queryKey: ["wallet-entries", walletId],
-      enabled: !!walletId,
+      queryKey: ["wallet-entries", canvas, walletId],
+      enabled: !!canvas && !!walletId,
     }
   );
 
@@ -38,10 +40,10 @@ export function useWalletDetail(walletId: number) {
     isLoading: isLoadingPayments,
     isError: isPaymentsError,
   } = useQueryApi<{ expensePayments: WalletPayment[] }>(
-    API_ROUTES.WALLET_PAYMENTS(walletId),
+    canvas ? API_ROUTES.WALLET_PAYMENTS(canvas, walletId) : "",
     {
-      queryKey: ["wallet-payments", walletId],
-      enabled: !!walletId,
+      queryKey: ["wallet-payments", canvas, walletId],
+      enabled: !!canvas && !!walletId,
     }
   );
 
@@ -50,10 +52,10 @@ export function useWalletDetail(walletId: number) {
     isLoading: isLoadingTransfers,
     isError: isTransfersError,
   } = useQueryApi<{ transfers: WalletTransfer[] }>(
-    API_ROUTES.WALLET_TRANSFERS(walletId),
+    canvas ? API_ROUTES.WALLET_TRANSFERS(canvas, walletId) : "",
     {
-      queryKey: ["wallet-transfers", walletId],
-      enabled: !!walletId,
+      queryKey: ["wallet-transfers", canvas, walletId],
+      enabled: !!canvas && !!walletId,
     }
   );
 

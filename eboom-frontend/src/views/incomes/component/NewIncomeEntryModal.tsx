@@ -26,8 +26,8 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -142,11 +142,13 @@ export function NewIncomeEntryModal({
       notes: string | null;
     }[];
   }>(
-    resolvedIncomeIdForFetch ? API_ROUTES.INCOME_ENTRIES_LIST(resolvedIncomeIdForFetch) : "",
+    resolvedIncomeIdForFetch && canvas
+      ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, resolvedIncomeIdForFetch)
+      : "",
     {
-      queryKey: ["income-entries", resolvedIncomeIdForFetch],
+      queryKey: ["income-entries", canvas, resolvedIncomeIdForFetch],
       hasToken: true,
-      enabled: open && isEditMode && !!resolvedIncomeIdForFetch,
+      enabled: open && isEditMode && !!canvas && !!resolvedIncomeIdForFetch,
     }
   );
 
@@ -189,40 +191,36 @@ export function NewIncomeEntryModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: saveEntry, isPending } = useMutation({
-    mutationFn: async (formData: EntryFormData) => {
+  const { mutateAsync: saveEntry, isPending } = useMutationApi(
+    (formData: EntryFormData) => {
       const resolvedIncomeId = incomeId ?? formData.incomeId;
-      const resolvedWalletId = fixedDestinationWalletId ?? formData.destinationWalletId;
-      const payload = {
-        destinationWalletId: resolvedWalletId,
+      if (isEditMode && entryId) {
+        return API_ROUTES.INCOME_ENTRIES_UPDATE(canvas!, entryId);
+      }
+      return API_ROUTES.INCOME_ENTRIES_CREATE(canvas!, resolvedIncomeId!);
+    },
+    {
+      method: () => (isEditMode && entryId ? "put" : "post"),
+      mapPayload: (formData: EntryFormData) => ({
+        destinationWalletId: fixedDestinationWalletId ?? formData.destinationWalletId,
         amount: Number(formData.amount),
         expectedDate: formData.expectedDate || null,
         receivedDate: formData.receivedDate || null,
         notes: formData.notes.trim() || null,
-      };
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && entryId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_UPDATE(entryId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_CREATE(resolvedIncomeId!)}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async (_, formData) => {
-      const resolvedIncomeId = incomeId ?? formData.incomeId;
-      if (resolvedIncomeId) {
-        await queryClient.invalidateQueries({ queryKey: ["income-entries", resolvedIncomeId] });
-      }
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async (_data, formData) => {
+        const resolvedIncomeId = incomeId ?? (formData as EntryFormData).incomeId;
+        if (resolvedIncomeId) {
+          await queryClient.invalidateQueries({ queryKey: ["income-entries", canvas, resolvedIncomeId] });
+        }
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;

@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import { checkCanvasPermission } from "../services/canvasAccessService";
 import { buildFinancialContext } from "../services/aiInsightContextService";
 import {
   generateAiFinancialInsights,
@@ -7,17 +6,9 @@ import {
 } from "../services/aiInsightGenerationService";
 import { getAiInsightProfileByCanvas } from "../services/aiInsightProfileService";
 import { isLlmConfigured } from "../services/llmClient";
-import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
-
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
-}
-
-function parseCanvasId(req: Request): number {
-  return parseRouteParam(req.params.canvasId);
-}
 
 async function buildInsightsResponse(canvasId: number) {
   const [profile, insight] = await Promise.all([
@@ -28,17 +19,10 @@ async function buildInsightsResponse(canvasId: number) {
   return { insight: insight ?? null, profile: profile ?? null, completeness };
 }
 
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const payload = await buildInsightsResponse(canvasId);
     res.json(payload);
   } catch (err) {
@@ -47,21 +31,15 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/generate", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/generate", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   if (!isLlmConfigured()) {
     return res.status(503).json({ error: "LLM API key not configured" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const profile = await getAiInsightProfileByCanvas(canvasId);
     await generateAiFinancialInsights(canvasId, user.id, profile);
     const payload = await buildInsightsResponse(canvasId);

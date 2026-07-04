@@ -137,21 +137,3 @@ export function formatMembershipForResponse(membership: CanvasMembership) {
   };
 }
 
-export type PermissionCheckResult =
-  | { allowed: true; membership: CanvasMembership }
-  | { allowed: false; status: 403; error: string };
-
-export async function checkCanvasPermission(
-  canvasId: number,
-  userId: number,
-  permission: CanvasPermission
-): Promise<PermissionCheckResult> {
-  const membership = await getCanvasMembership(canvasId, userId);
-  if (!membership) {
-    return { allowed: false, status: 403, error: "Access denied to this canvas" };
-  }
-  if (!membershipHasPermission(membership, permission)) {
-    return { allowed: false, status: 403, error: "Insufficient permissions for this action" };
-  }
-  return { allowed: true, membership };
-}

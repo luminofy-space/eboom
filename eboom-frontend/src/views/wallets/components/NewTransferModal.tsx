@@ -33,8 +33,8 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { translateSubmitError } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -154,23 +154,23 @@ export function NewTransferModal({
 
   const { data: sourceWalletRes } = useQueryApi<{
     wallet: { subWallets?: SubWalletOption[] };
-  }>(API_ROUTES.WALLETS_GET(sourceWalletId ?? 0), {
-    queryKey: ["wallet", sourceWalletId],
-    enabled: !!sourceWalletId && open,
+  }>(canvas && sourceWalletId ? API_ROUTES.WALLETS_GET(canvas, sourceWalletId) : "", {
+    queryKey: ["wallet", canvas, sourceWalletId],
+    enabled: !!canvas && !!sourceWalletId && open,
   });
 
   const { data: destWalletRes } = useQueryApi<{
     wallet: { subWallets?: SubWalletOption[] };
-  }>(API_ROUTES.WALLETS_GET(destinationWalletId ?? 0), {
-    queryKey: ["wallet", destinationWalletId],
-    enabled: !!destinationWalletId && open,
+  }>(canvas && destinationWalletId ? API_ROUTES.WALLETS_GET(canvas, destinationWalletId) : "", {
+    queryKey: ["wallet", canvas, destinationWalletId],
+    enabled: !!canvas && !!destinationWalletId && open,
   });
 
   const { data: transferRes, isLoading: isLoadingTransfer } = useQueryApi<{
     transfer?: WalletTransfer;
-  }>(API_ROUTES.TRANSFERS_GET(transferId ?? 0), {
-    queryKey: ["transfer", transferId],
-    enabled: isEditMode && open && !!transferId,
+  }>(canvas && transferId ? API_ROUTES.TRANSFERS_GET(canvas, transferId) : "", {
+    queryKey: ["transfer", canvas, transferId],
+    enabled: isEditMode && open && !!canvas && !!transferId,
   });
 
   const editingTransfer = transferRes?.transfer ?? null;
@@ -267,9 +267,16 @@ export function NewTransferModal({
     }
   }, [isCrossCurrency, sourceAmount, exchangeRate, transactionFee, setValue]);
 
-  const { mutateAsync: saveTransfer, isPending } = useMutation({
-    mutationFn: async (formData: TransferFormData) => {
-      const payload = {
+  const { mutateAsync: saveTransfer, isPending } = useMutationApi(
+    (formData: TransferFormData) => {
+      if (isEditMode && transferId && canvas) {
+        return API_ROUTES.TRANSFERS_UPDATE(canvas, transferId);
+      }
+      return API_ROUTES.TRANSFERS_CREATE(canvas!);
+    },
+    {
+      method: () => (isEditMode && transferId ? "put" : "post"),
+      mapPayload: (formData: TransferFormData) => ({
         canvasId: canvas,
         sourceWalletId: formData.sourceWalletId,
         sourceCurrencyId: formData.sourceCurrencyId,
@@ -284,29 +291,18 @@ export function NewTransferModal({
         transactionFee: formData.transactionFee || 0,
         transferDate: formData.transferDate,
         notes: formData.notes.trim() || null,
-      };
-
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && transferId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_UPDATE(transferId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_CREATE}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async () => {
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["wallet-transfers"] });
-      await queryClient.invalidateQueries({ queryKey: ["canvas-transfers"] });
-      await queryClient.invalidateQueries({ queryKey: ["wallet"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async () => {
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["wallet-transfers"] });
+        await queryClient.invalidateQueries({ queryKey: ["canvas-transfers"] });
+        await queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;
