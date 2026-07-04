@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageLoader } from "@/components/ui/page-loader";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
@@ -25,9 +25,10 @@ import { ChatMessageList } from "./ChatMessageList";
 
 interface AIChatPanelProps {
   canEdit: boolean;
+  isActive?: boolean;
 }
 
-export function AIChatPanel({ canEdit }: AIChatPanelProps) {
+export function AIChatPanel({ canEdit, isActive = true }: AIChatPanelProps) {
   const { t } = useTranslation("ai-insights");
   const {
     messages,
@@ -75,17 +76,14 @@ export function AIChatPanel({ canEdit }: AIChatPanelProps) {
   }
 
   return (
-    <Card className="flex min-h-[480px] flex-col">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+    <Card className="flex flex-col gap-0 overflow-hidden py-0">
+      {/* <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4 border-b px-6 py-4">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-primary/10 p-2">
             <MessageSquare className="size-5 text-primary" />
           </div>
           <div>
             <CardTitle className="text-lg">{t("chat.title")}</CardTitle>
-            <Typography variant="muted-sm" className="mt-1">
-              {t("chat.subtitle")}
-            </Typography>
           </div>
         </div>
         {canEdit && messages.length > 0 && (
@@ -110,22 +108,57 @@ export function AIChatPanel({ canEdit }: AIChatPanelProps) {
             </AlertDialogContent>
           </AlertDialog>
         )}
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-0 pt-0">
-        <Typography variant="caption">{t("disclaimer")}</Typography>
-        {sendError && (
-          <Typography variant="muted-sm" className="mt-3 text-destructive">
-            {sendError}
-          </Typography>
+      </CardHeader> */}
+
+      <CardContent className="flex flex-col overflow-hidden px-0 pb-0 pt-0">
+        <div className="shrink-0 px-6 pt-4">
+          <div className="flex items-center justify-between">
+            <Typography variant="caption">{t("disclaimer")}</Typography>
+            {canEdit && messages.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isClearing || isSending}>
+                <Trash2 className="size-4" />
+                {t("chat.clearHistory")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("chat.clearConfirmTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("chat.clearConfirmDescription")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("chat.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void clearHistory()}>
+                  {t("chat.clearHistory")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
-        <div className="mt-4 flex min-h-[320px] flex-1 flex-col">
-          <ChatMessageList messages={messages} isSending={isSending} />
+          </div>
+          
+          {sendError && (
+            <Typography variant="muted-sm" className="mt-2 text-destructive">
+              {sendError}
+            </Typography>
+          )}
+        </div>
+
+        <div className="mt-3">
+          <ChatMessageList
+            messages={messages}
+            isSending={isSending}
+            isActive={isActive}
+            onSuggestionClick={canEdit ? (suggestion) => void handleSend(suggestion) : undefined}
+          />
+        </div>
+
+        <div className="shrink-0 border-t bg-card px-6 py-4">
           {canEdit ? (
             <ChatComposer onSend={handleSend} isSending={isSending} />
           ) : (
-            <Typography variant="muted-sm" className="mt-4 border-t pt-4">
-              {t("chat.readOnly")}
-            </Typography>
+            <Typography variant="muted-sm">{t("chat.readOnly")}</Typography>
           )}
         </div>
       </CardContent>

@@ -1,66 +1,109 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, useEffect, useRef } from "react";
 import { Bot } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
+import { Spinner } from "@/components/ui/spinner";
 import type { AiChatMessage } from "../../types";
 import { ChatMessageBubble } from "./ChatMessageBubble";
+
+const SUGGESTION_KEYS = ["budget", "goals", "cashflow"] as const;
 
 interface ChatMessageListProps {
   messages: AiChatMessage[];
   isSending: boolean;
+  isActive?: boolean;
+  onSuggestionClick?: (suggestion: string) => void;
 }
 
-export function ChatMessageList({ messages, isSending }: ChatMessageListProps) {
+function scrollToBottom(container: HTMLDivElement | null) {
+  if (!container) return;
+  container.scrollTop = container.scrollHeight;
+}
+
+function scrollToBottomAfterLayout(container: HTMLDivElement | null) {
+  scrollToBottom(container);
+  requestAnimationFrame(() => {
+    scrollToBottom(container);
+    requestAnimationFrame(() => scrollToBottom(container));
+  });
+}
+
+export function ChatMessageList({
+  messages,
+  isSending,
+  isActive = true,
+  onSuggestionClick,
+}: ChatMessageListProps) {
   const { t } = useTranslation("ai-insights");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const wasActiveRef = useRef(isActive);
+
+  const scrollToLatest = useCallback(() => {
+    scrollToBottomAfterLayout(scrollRef.current);
+  }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isSending]);
+    if (!isActive) {
+      wasActiveRef.current = false;
+      return;
+    }
 
-  if (messages.length === 0 && !isSending) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 text-center">
-        <Typography variant="muted">{t("chat.empty")}</Typography>
-        <Stack gap={2} className="mt-6 w-full max-w-md">
-          {(["budget", "goals", "cashflow"] as const).map((key) => (
-            <Typography key={key} variant="muted-sm" className="text-start">
-              • {t(`chat.suggestions.${key}`)}
-            </Typography>
-          ))}
-        </Stack>
-      </div>
-    );
-  }
+    const tabJustOpened = !wasActiveRef.current;
+    wasActiveRef.current = true;
+
+    if (tabJustOpened || messages.length > 0 || isSending) {
+      scrollToLatest();
+    }
+  }, [isActive, messages, isSending, scrollToLatest]);
+
+  const isEmpty = messages.length === 0 && !isSending;
 
   return (
-    <Stack gap={4} className="flex-1 overflow-y-auto px-1 py-2">
-      {messages.map((message) => (
-        <ChatMessageBubble key={message.id} message={message} />
-      ))}
-      {isSending && (
-        <div className="flex gap-3">
-          <Avatar size="sm" className="mt-1">
-            <AvatarFallback className="bg-muted">
-              <Bot className="size-3.5 text-muted-foreground" />
-            </AvatarFallback>
-          </Avatar>
-          <Card className="max-w-[85%] bg-muted/40 py-0 shadow-none">
-            <CardContent className="flex gap-2 px-3 py-3">
-              <Skeleton className="h-3 w-3 rounded-full" />
-              <Skeleton className="h-3 w-3 rounded-full" />
-              <Skeleton className="h-3 w-3 rounded-full" />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      <div ref={bottomRef} />
-    </Stack>
+    <div
+      ref={scrollRef}
+      className="max-h-[min(29rem,calc(100dvh-5rem))] overflow-y-auto overscroll-contain"
+    >
+      <div className="flex min-h-full flex-col gap-4 p-4">
+        {isEmpty ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
+            <Bot className="size-8 text-muted-foreground" />
+            <p className="font-medium text-sm">{t("chat.empty")}</p>
+            {onSuggestionClick && (
+              <Suggestions className="mt-2 justify-center">
+                {SUGGESTION_KEYS.map((key) => (
+                  <Suggestion
+                    key={key}
+                    suggestion={t(`chat.suggestions.${key}`)}
+                    onClick={onSuggestionClick}
+                  />
+                ))}
+              </Suggestions>
+            )}
+          </div>
+        ) : (
+          <>
+            {messages.map((message) => (
+              <ChatMessageBubble key={message.id} message={message} />
+            ))}
+            {isSending && (
+              <div className="flex w-full gap-3">
+                <Avatar size="sm" className="mt-0.5 shrink-0">
+                  <AvatarFallback className="bg-muted">
+                    <Bot className="size-3.5 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex max-w-[80%] items-center gap-2 rounded-2xl rounded-tl-sm border bg-muted/60 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+                  <Spinner className="size-4" />
+                  <span>{t("chat.thinking")}</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }

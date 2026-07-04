@@ -274,6 +274,7 @@
     "send": "Senden",
     "hint": "Enter zum Senden, Umschalt+Enter für neue Zeile.",
     "empty": "Starten Sie ein Gespräch. Der Assistent nutzt Ihre Leinwand-Daten und Ihr Profil.",
+    "thinking": "Denkt nach…",
     "clearHistory": "Chat löschen",
     "clearConfirmTitle": "Chat-Verlauf löschen?",
     "clearConfirmDescription": "Alle Nachrichten für diese Leinwand werden dauerhaft gelöscht.",

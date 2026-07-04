@@ -6,7 +6,16 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { AiChatMessagesResponse, AiChatSendResponse } from "../types";
+import type { AiChatMessage, AiChatMessagesResponse, AiChatSendResponse } from "../types";
+
+function createOptimisticUserMessage(content: string): AiChatMessage {
+  return {
+    id: -Date.now(),
+    role: "user",
+    content: content.trim(),
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export function useAIChat() {
   const { canvas } = useCanvas();
@@ -36,9 +45,31 @@ export function useAIChat() {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!canvas) throw new Error("No canvas selected");
-      const result = await sendMessageMutation({ content });
-      await queryClient.invalidateQueries({ queryKey });
-      return result;
+
+      const trimmed = content.trim();
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<AiChatMessagesResponse>(queryKey);
+      const optimisticMessage = createOptimisticUserMessage(trimmed);
+
+      queryClient.setQueryData<AiChatMessagesResponse>(queryKey, {
+        messages: [...(previous?.messages ?? []), optimisticMessage],
+      });
+
+      try {
+        const result = await sendMessageMutation({ content: trimmed });
+        queryClient.setQueryData<AiChatMessagesResponse>(queryKey, {
+          messages: [
+            ...(previous?.messages ?? []),
+            result.userMessage,
+            result.assistantMessage,
+          ],
+        });
+        return result;
+      } catch (error) {
+        queryClient.setQueryData(queryKey, previous);
+        throw error;
+      }
     },
     [canvas, sendMessageMutation, queryClient, queryKey]
   );
