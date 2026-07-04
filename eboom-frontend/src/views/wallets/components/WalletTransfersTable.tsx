@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import { TableCell, TableRow } from "@/components/ui/table";
 import API_ROUTES from "@/src/api/urls";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { ArrowLeftRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -38,6 +39,7 @@ function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
 export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
+  const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
@@ -66,21 +68,19 @@ export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTa
     [transfers, walletId]
   );
 
-  const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutation({
-    mutationFn: async (transferId: number) => {
-      const token =
-        typeof window !== "undefined" ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_DELETE(transferId)}`;
-      await axios.delete(url, { headers });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["wallet-transfers", walletId] });
-      await queryClient.invalidateQueries({ queryKey: ["wallet", walletId] });
-      await queryClient.invalidateQueries({ queryKey: ["wallet-entries", walletId] });
-      await queryClient.invalidateQueries({ queryKey: ["wallet-payments", walletId] });
-    },
-  });
+  const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutationApi(
+    (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
+    {
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["wallet-transfers", canvas, walletId] });
+        await queryClient.invalidateQueries({ queryKey: ["wallet", canvas, walletId] });
+        await queryClient.invalidateQueries({ queryKey: ["wallet-entries", canvas, walletId] });
+        await queryClient.invalidateQueries({ queryKey: ["wallet-payments", canvas, walletId] });
+      },
+    }
+  );
 
   const getDirectionLabel = (transfer: WalletTransfer) => {
     if (transfer.sourceWalletId === walletId) {
@@ -228,8 +228,8 @@ export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTa
         fixedSourceWalletId={editingTransfer ? undefined : walletId}
         sourceWalletName={editingTransfer ? undefined : walletName}
         extraInvalidateKeys={[
-          ["wallet-transfers", walletId],
-          ["wallet", walletId],
+          ["wallet-transfers", canvas, walletId],
+          ["wallet", canvas, walletId],
         ]}
       />
 

@@ -2,6 +2,7 @@
 
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
 import { Wallet } from "@backend/db/schema";
@@ -14,7 +15,8 @@ export function useWalletDetail(
   walletId: number,
   options?: UseWalletDetailOptions
 ) {
-  const enabled = (options?.enabled ?? true) && !!walletId;
+  const { canvas } = useCanvas();
+  const enabled = (options?.enabled ?? true) && !!canvas && !!walletId;
 
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
@@ -25,8 +27,8 @@ export function useWalletDetail(
           currency?: { id: number; code: string; symbol: string } | null;
         }>;
       };
-    }>(API_ROUTES.WALLETS_GET(walletId), {
-      queryKey: ["wallet", walletId],
+    }>(canvas ? API_ROUTES.WALLETS_GET(canvas, walletId) : "", {
+      queryKey: ["wallet", canvas, walletId],
       enabled,
     });
 
@@ -35,9 +37,9 @@ export function useWalletDetail(
     isLoading: isLoadingEntries,
     isError: isEntriesError,
   } = useQueryApi<{ incomeEntries: WalletEntry[] }>(
-    API_ROUTES.WALLET_ENTRIES(walletId),
+    canvas ? API_ROUTES.WALLET_ENTRIES(canvas, walletId) : "",
     {
-      queryKey: ["wallet-entries", walletId],
+      queryKey: ["wallet-entries", canvas, walletId],
       enabled,
     }
   );
@@ -47,9 +49,9 @@ export function useWalletDetail(
     isLoading: isLoadingPayments,
     isError: isPaymentsError,
   } = useQueryApi<{ expensePayments: WalletPayment[] }>(
-    API_ROUTES.WALLET_PAYMENTS(walletId),
+    canvas ? API_ROUTES.WALLET_PAYMENTS(canvas, walletId) : "",
     {
-      queryKey: ["wallet-payments", walletId],
+      queryKey: ["wallet-payments", canvas, walletId],
       enabled,
     }
   );
@@ -59,9 +61,9 @@ export function useWalletDetail(
     isLoading: isLoadingTransfers,
     isError: isTransfersError,
   } = useQueryApi<{ transfers: WalletTransfer[] }>(
-    API_ROUTES.WALLET_TRANSFERS(walletId),
+    canvas ? API_ROUTES.WALLET_TRANSFERS(canvas, walletId) : "",
     {
-      queryKey: ["wallet-transfers", walletId],
+      queryKey: ["wallet-transfers", canvas, walletId],
       enabled,
     }
   );

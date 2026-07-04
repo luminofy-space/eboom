@@ -260,14 +260,14 @@ export default function WhiteboardPage() {
   const deleteEntityMutation = useMutation({
     mutationFn: async (nodeId: string) => {
       const parsed = parseEntityNodeId(nodeId);
-      if (!parsed) return;
+      if (!parsed || !canvas) return;
 
       const url =
         parsed.type === "wallet"
-          ? API_ROUTES.WALLETS_DELETE(parsed.id)
+          ? API_ROUTES.WALLETS_DELETE(canvas, parsed.id)
           : parsed.type === "income"
-            ? API_ROUTES.INCOMES_DELETE(parsed.id)
-            : API_ROUTES.EXPENSES_DELETE(parsed.id);
+            ? API_ROUTES.INCOMES_DELETE(canvas, parsed.id)
+            : API_ROUTES.EXPENSES_DELETE(canvas, parsed.id);
 
       await whiteboardApiDelete(url);
     },

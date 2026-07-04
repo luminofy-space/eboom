@@ -17,8 +17,8 @@ import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import { NewTransferModal } from "@/src/views/wallets/components/NewTransferModal";
 import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { ArrowLeftRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -60,20 +60,18 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
     [canvas]
   );
 
-  const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutation({
-    mutationFn: async (transferId: number) => {
-      const token =
-        typeof window !== "undefined" ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_DELETE(transferId)}`;
-      await axios.delete(url, { headers });
-    },
-    onSuccess: async () => {
-      if (!canvas) return;
-      await queryClient.invalidateQueries({ queryKey: ["canvas-transactions", canvas] });
-      await queryClient.invalidateQueries({ queryKey: ["canvas-summary", canvas] });
-    },
-  });
+  const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutationApi(
+    (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
+    {
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: async () => {
+        if (!canvas) return;
+        await queryClient.invalidateQueries({ queryKey: ["canvas-transactions", canvas] });
+        await queryClient.invalidateQueries({ queryKey: ["canvas-summary", canvas] });
+      },
+    }
+  );
 
   const columns: DataTableColumn<WalletTransfer>[] = useMemo(
     () => [

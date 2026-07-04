@@ -1,0 +1,295 @@
+{
+  "title": "KI-Einblicke",
+  "subtitle": "Personalisierte Finanzberatung für diese Leinwand.",
+  "tabs": {
+    "insights": "Einblicke",
+    "chat": "Chat"
+  },
+  "landing": {
+    "generalAdviceTitle": "Allgemeine Tipps",
+    "generalAdviceDescription": "Diese Tipps gelten für die meisten Haushalte. Schließen Sie den Profil-Assistenten ab für maßgeschneiderte Beratung.",
+    "warningTitle": "Profil vervollständigen für bessere Beratung",
+    "warningDescription": "Die Tipps unten sind allgemein. Personalisierte KI-Einblicke sind genauer, wenn Sie den 5-Schritte-Assistenten abschließen.",
+    "tips": {
+      "emergencyFund": "Halten Sie 3–6 Monate wesentlicher Ausgaben als Notfallfonds bereit.",
+      "debtFirst": "Zahlen Sie hochverzinsliche Schulden ab, bevor Sie mehr investieren.",
+      "diversify": "Verteilen Sie Investitionen auf Anlageklassen, um unternehmensspezifisches Risiko zu reduzieren.",
+      "reviewBudget": "Überprüfen Sie Ihr Budget monatlich und passen Sie Limits bei Einkommens- oder Zieländerungen an."
+    },
+    "status": {
+      "notStarted": "Nicht begonnen",
+      "inProgress": "In Bearbeitung — Schritt {{step}} von 5",
+      "completed": "Profil abgeschlossen"
+    },
+    "startWizard": "Profil-Assistent starten",
+    "continueWizard": "Assistent fortsetzen",
+    "reviewWizard": "Profil überprüfen & bearbeiten",
+    "knowledgeLevel": "Finanzwissen: {{level}}"
+  },
+  "wizard": {
+    "title": "Finanzprofil-Assistent",
+    "subtitle": "Helfen Sie uns, Ihre Ziele und Situation zu verstehen. Sie können speichern und später fortfahren.",
+    "saveAndExit": "Speichern & beenden",
+    "back": "Zurück",
+    "next": "Weiter",
+    "finish": "Profil abschließen",
+    "saving": "Speichern…",
+    "stepOf": "Schritt {{current}} von {{total}}"
+  },
+  "steps": {
+    "riskProfile": "Risikoprofil",
+    "investmentGoals": "Anlageziele",
+    "esgPreferences": "ESG-Präferenzen",
+    "financialKnowledge": "Finanzwissen",
+    "financialPicture": "Finanzübersicht"
+  },
+  "riskProfile": {
+    "title": "Wie viel Risiko sind Sie bereit einzugehen?",
+    "description": "Ihre Antworten helfen uns, Vorschläge an Ihr Komfortniveau anzupassen.",
+    "riskTolerance": "Risikotoleranz",
+    "riskToleranceLabels": {
+      "1": "Sehr konservativ",
+      "2": "Konservativ",
+      "3": "Moderat",
+      "4": "Aggressiv",
+      "5": "Sehr aggressiv"
+    },
+    "investmentTimeHorizon": "Anlagehorizont",
+    "timeHorizon": {
+      "under_3": "Weniger als 3 Jahre",
+      "3_7": "3–7 Jahre",
+      "7_15": "7–15 Jahre",
+      "15_plus": "15+ Jahre"
+    },
+    "acceptShortTermLoss": "Ich akzeptiere kurzfristige Verluste für langfristige Gewinne",
+    "likert": {
+      "1": "Stimme überhaupt nicht zu",
+      "2": "Stimme nicht zu",
+      "3": "Neutral",
+      "4": "Stimme zu",
+      "5": "Stimme voll zu"
+    },
+    "portfolioDropReaction": "Wenn Ihr Portfolio um 20% fällt, würden Sie…",
+    "dropReaction": {
+      "sell": "Verkaufen, um Verluste zu begrenzen",
+      "hold": "Halten und abwarten",
+      "buy_more": "Mehr zu niedrigeren Preisen kaufen"
+    }
+  },
+  "investmentGoals": {
+    "title": "Wofür investieren Sie?",
+    "description": "Nennen Sie Ihre primären und sekundären Finanzziele.",
+    "primaryGoal": "Primäres Ziel",
+    "secondaryGoals": "Sekundäre Ziele (optional)",
+    "targetAmount": "Zielbetrag (optional)",
+    "targetCurrency": "Zielwährung (optional)",
+    "targetTimeframe": "Zielzeitraum",
+    "goalPriorityNote": "Zusätzliche Notizen (optional)",
+    "goals": {
+      "emergency_fund": "Notfallfonds",
+      "debt_payoff": "Schuldenabbau",
+      "home": "Immobilienkauf",
+      "retirement": "Ruhestand",
+      "wealth_growth": "Vermögensaufbau",
+      "education": "Bildung",
+      "other": "Sonstiges"
+    },
+    "timeframe": {
+      "under_1": "Weniger als 1 Jahr",
+      "1_3": "1–3 Jahre",
+      "3_10": "3–10 Jahre",
+      "10_plus": "10+ Jahre"
+    }
+  },
+  "esgPreferences": {
+    "title": "ESG-Präferenzen",
+    "description": "Optionale Filter für wertorientiertes Investieren.",
+    "esgImportance": "Wie wichtig ist ESG für Sie?",
+    "importance": {
+      "not_important": "Nicht wichtig",
+      "somewhat": "Etwas wichtig",
+      "very_important": "Sehr wichtig",
+      "deal_breaker": "Essentiell — Ausschlusskriterium"
+    },
+    "avoidSectors": "Zu vermeidende Sektoren (optional)",
+    "sectors": {
+      "fossil_fuels": "Fossile Brennstoffe",
+      "weapons": "Waffen",
+      "tobacco": "Tabak",
+      "gambling": "Glücksspiel",
+      "alcohol": "Alkohol",
+      "none": "Keine — keine Ausschlüsse"
+    },
+    "acceptLowerReturnsForEsg": "Würden Sie niedrigere Renditen für ESG-Investitionen akzeptieren?",
+    "returnsChoice": {
+      "yes": "Ja",
+      "no": "Nein",
+      "slightly_lower": "Nur geringfügig niedriger"
+    },
+    "preferSustainableInvestments": "Nachhaltige Investitionen bevorzugen, wenn verfügbar?",
+    "preferChoice": {
+      "yes": "Ja",
+      "no": "Nein",
+      "unsure": "Unsicher"
+    }
+  },
+  "financialKnowledge": {
+    "title": "Kurzer Finanzwissen-Check",
+    "description": "Fünf kurze Fragen — hilft uns, die Beratung anzupassen.",
+    "scorePreview": "Ihre Punktzahl: {{score}} / 5",
+    "level": {
+      "beginner": "Anfänger",
+      "intermediate": "Fortgeschritten",
+      "advanced": "Experte"
+    },
+    "questions": {
+      "q1": {
+        "prompt": "Was reduziert Diversifikation primär?",
+        "options": {
+          "unspecific": "Unspezifisches Risiko",
+          "company_specific": "Unternehmensspezifisches Risiko"
+        }
+      },
+      "q2": {
+        "prompt": "Bei 3% Inflation und 1% Sparzins sinkt Ihre Kaufkraft…",
+        "options": {
+          "increases": "Steigt",
+          "decreases": "Sinkt",
+          "unchanged": "Bleibt gleich"
+        }
+      },
+      "q3": {
+        "prompt": "Zinseszins bedeutet…",
+        "options": {
+          "fixed_rate": "Ein fester Satz pro Jahr",
+          "earnings_on_earnings": "Erträge auf frühere Erträge",
+          "simple_interest": "Das Gleiche wie einfache Zinsen"
+        }
+      },
+      "q4": {
+        "prompt": "Wenn Anleihenpreise steigen, fallen die Renditen generally…",
+        "options": {
+          "rise": "Steigen",
+          "lower_yields": "Fallen",
+          "unchanged": "Bleiben gleich"
+        }
+      },
+      "q5": {
+        "prompt": "Eine übliche Notfallfonds-Regel ist…",
+        "options": {
+          "1_month": "1 Monat Ausgaben",
+          "3_6_months": "3–6 Monate Ausgaben",
+          "12_months": "12 Monate Ausgaben"
+        }
+      }
+    }
+  },
+  "financialPicture": {
+    "title": "Ihre Gesamtfinanzübersicht",
+    "description": "Teilen Sie Verbindlichkeiten und Cashflow-Erwartungen für diese Leinwand.",
+    "hasMajorLongTermLiabilities": "Haben Sie große langfristige Verbindlichkeiten? (Hypothek, Studienkredite)",
+    "majorLongTermLiabilitiesAmount": "Geschätzter Gesamtbetrag",
+    "hasShortTermLiabilities": "Haben Sie kurzfristige Verbindlichkeiten innerhalb von 12 Monaten?",
+    "shortTermLiabilitiesAmount": "Geschätzter Gesamtbetrag",
+    "expectedMonthlyCashflow": "Erwarteter monatlicher Cashflow",
+    "cashflow": {
+      "deficit": "Defizit (mehr Ausgaben als Einkommen)",
+      "break_even": "Ausgeglichen",
+      "small_surplus": "Kleiner Überschuss",
+      "large_surplus": "Großer Überschuss"
+    },
+    "emergencyFundCoverage": "Notfallfonds-Abdeckung",
+    "coverage": {
+      "none": "Keine",
+      "under_1": "Weniger als 1 Monat",
+      "1_3": "1–3 Monate",
+      "3_6": "3–6 Monate",
+      "6_plus": "6+ Monate"
+    },
+    "dependentsCount": "Anzahl Unterhaltsberechtigter",
+    "additionalNotes": "Zusätzliche Notizen (optional)",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "validation": {
+    "timeHorizonRequired": "Bitte wählen Sie einen Anlagehorizont.",
+    "dropReactionRequired": "Bitte wählen Sie Ihre Reaktion auf einen Portfolio-Rückgang.",
+    "primaryGoalRequired": "Bitte wählen Sie ein primäres Ziel.",
+    "timeframeRequired": "Bitte wählen Sie einen Zielzeitraum.",
+    "esgImportanceRequired": "Bitte wählen Sie, wie wichtig ESG ist.",
+    "esgReturnsRequired": "Bitte beantworten Sie die ESG-Renditefrage.",
+    "quizIncomplete": "Bitte beantworten Sie alle fünf Fragen.",
+    "cashflowRequired": "Bitte wählen Sie Ihren erwarteten monatlichen Cashflow.",
+    "emergencyFundRequired": "Bitte wählen Sie Ihre Notfallfonds-Abdeckung.",
+    "dependentsInvalid": "Unterhaltsberechtigte müssen null oder mehr sein."
+  },
+  "empty": {
+    "noCanvas": "Wählen Sie eine Leinwand, um KI-Einblicke anzuzeigen."
+  },
+  "insights": {
+    "title": "Personalisierte Einblicke",
+    "empty": "Klicken Sie oben auf Einblicke aktualisieren, um maßgeschneiderte Beratung zu erhalten.",
+    "lastUpdated": "Zuletzt aktualisiert {{date}}",
+    "refresh": "Einblicke aktualisieren",
+    "generating": "Wird generiert…",
+    "categories": {
+      "budget": "Budget",
+      "cashflow": "Cashflow",
+      "goals": "Ziele",
+      "risk": "Risiko",
+      "esg": "ESG",
+      "general": "Allgemein"
+    },
+    "priority": {
+      "high": "Hohe Priorität",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    }
+  },
+  "completeness": {
+    "title": "Datenvollständigkeit",
+    "score": "{{score}}% der empfohlenen Daten verfügbar",
+    "factors": {
+      "wizard": "Profil-Assistent",
+      "wallets": "Geldbörsen",
+      "incomes": "Einnahmen",
+      "expenses": "Ausgaben",
+      "assets": "Vermögenswerte",
+      "budget": "Budget",
+      "savingsGoal": "Sparziele"
+    }
+  },
+  "errors": {
+    "loadFailed": "KI-Einblicke konnten nicht geladen werden. Bitte erneut versuchen.",
+    "retry": "Erneut versuchen",
+    "noApiKey": "KI-Einblicke sind auf dem Server nicht konfiguriert. Administrator kontaktieren.",
+    "generationFailed": "Einblicke konnten nicht generiert werden. Bitte später erneut versuchen.",
+    "rateLimited": "Bitte eine Minute warten, bevor Sie erneut aktualisieren."
+  },
+  "disclaimer": "Einblicke dienen nur zur Information und sind keine Rechts-, Steuer- oder Anlageberatung.",
+  "chat": {
+    "title": "Finanz-Assistent",
+    "subtitle": "Stellen Sie Fragen zu Budget, Zielen und Finanzdaten dieser Leinwand.",
+    "placeholder": "Fragen Sie zu Ihren Finanzen…",
+    "send": "Senden",
+    "hint": "Enter zum Senden, Umschalt+Enter für neue Zeile.",
+    "empty": "Starten Sie ein Gespräch. Der Assistent nutzt Ihre Leinwand-Daten und Ihr Profil.",
+    "clearHistory": "Chat löschen",
+    "clearConfirmTitle": "Chat-Verlauf löschen?",
+    "clearConfirmDescription": "Alle Nachrichten für diese Leinwand werden dauerhaft gelöscht.",
+    "cancel": "Abbrechen",
+    "readOnly": "Zum Senden benötigen Sie Bearbeitungsrechte für diese Leinwand.",
+    "suggestions": {
+      "budget": "Wie liege ich diesen Monat im Budget?",
+      "goals": "Was sollte ich basierend auf meinen Sparzielen priorisieren?",
+      "cashflow": "Fassen Sie meinen Cashflow für die nächsten Monate zusammen."
+    },
+    "errors": {
+      "loadFailed": "Chat-Verlauf konnte nicht geladen werden. Bitte erneut versuchen.",
+      "sendFailed": "Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.",
+      "noApiKey": "KI-Chat ist auf dem Server nicht konfiguriert. Administrator kontaktieren.",
+      "rateLimited": "Bitte einige Sekunden warten, bevor Sie erneut senden.",
+      "invalidMessage": "Ihre Nachricht ist leer oder zu lang."
+    }
+  }
+}

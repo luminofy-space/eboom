@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
-import { and, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../db/client";
 import {
+  currencies,
   incomeCategories,
   incomeEntries,
   incomes,
@@ -9,14 +10,18 @@ import {
   wallets,
 } from "../db/schema";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
-import { checkCanvasPermission } from "../services/canvasAccessService";
-import { unregisterWhiteboardNode } from "../services/whiteboardService";
+import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
+function parsePaginationParams(req: Request) {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const search = (req.query.search as string) || "";
+  const offset = (page - 1) * limit;
+  return { page, limit, search, offset };
 }
 
 function parseOptionalDate(value: unknown): Date | null {
@@ -25,12 +30,11 @@ function parseOptionalDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-router.put("/entries/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const entryId = parseRouteParam(req.params.id);
-  if (isNaN(entryId)) {
+router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const entryId = parseRouteParam(req.params.entryId);
+  if (Number.isNaN(entryId)) {
     return res.status(400).json({ error: "Invalid income entry ID" });
   }
 
@@ -52,13 +56,12 @@ router.put("/entries/:id", async (req: Request, res: Response) => {
     if (!existing) return res.status(404).json({ error: "Income entry not found" });
 
     const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
-    if (!income) return res.status(404).json({ error: "Income not found" });
-
-    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
+    if (!income || income.canvasId !== canvasId) {
+      return res.status(404).json({ error: "Income entry not found" });
+    }
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
-    if (!wallet || wallet.canvasId !== income.canvasId) {
+    if (!wallet || wallet.canvasId !== canvasId) {
       return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
     }
 
@@ -113,12 +116,10 @@ router.put("/entries/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/entries/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const entryId = parseRouteParam(req.params.id);
-  if (isNaN(entryId)) {
+router.delete("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const entryId = parseRouteParam(req.params.entryId);
+  if (Number.isNaN(entryId)) {
     return res.status(400).json({ error: "Invalid income entry ID" });
   }
 
@@ -127,10 +128,9 @@ router.delete("/entries/:id", async (req: Request, res: Response) => {
     if (!existing) return res.status(404).json({ error: "Income entry not found" });
 
     const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
-    if (!income) return res.status(404).json({ error: "Income not found" });
-
-    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
+    if (!income || income.canvasId !== canvasId) {
+      return res.status(404).json({ error: "Income entry not found" });
+    }
 
     await debitWalletBalance({
       walletId: existing.destinationWalletId,
@@ -147,21 +147,18 @@ router.delete("/entries/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:incomeId/entries", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
+router.get("/:incomeId/entries", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
   const incomeId = parseRouteParam(req.params.incomeId);
-  if (isNaN(incomeId)) {
+  if (Number.isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
 
   try {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
-    if (!income) return res.status(404).json({ error: "Income not found" });
-
-    const access = await checkCanvasPermission(income.canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
+    if (!income || income.canvasId !== canvasId) {
+      return res.status(404).json({ error: "Income not found" });
+    }
 
     const entries = await db
       .select({ entry: incomeEntries, wallet: wallets, walletCategory: walletCategories })
@@ -182,12 +179,11 @@ router.get("/:incomeId/entries", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/:incomeId/entries", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
+router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
   const incomeId = parseRouteParam(req.params.incomeId);
-  if (isNaN(incomeId)) {
+  if (Number.isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
 
@@ -206,13 +202,12 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
 
   try {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
-    if (!income) return res.status(404).json({ error: "Income not found" });
-
-    const access = await checkCanvasPermission(income.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
+    if (!income || income.canvasId !== canvasId) {
+      return res.status(404).json({ error: "Income not found" });
+    }
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
-    if (!wallet || wallet.canvasId !== income.canvasId) {
+    if (!wallet || wallet.canvasId !== canvasId) {
       return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
     }
 
@@ -254,12 +249,135 @@ router.post("/:incomeId/entries", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
-  const incomeId = parseRouteParam(req.params.id);
-  if (isNaN(incomeId)) {
+  try {
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(
+          eq(incomes.canvasId, canvasId),
+          eq(incomes.isArchived, false),
+          ilike(incomes.name, `%${search}%`)
+        )
+      : and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(incomes)
+      .where(whereCondition);
+
+    const incomeList = await db
+      .select({
+        income: incomes,
+        category: incomeCategories,
+        currency: currencies,
+        defaultWallet: wallets,
+      })
+      .from(incomes)
+      .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+      .leftJoin(currencies, eq(incomes.currencyId, currencies.id))
+      .leftJoin(wallets, eq(incomes.defaultWalletId, wallets.id))
+      .where(whereCondition)
+      .orderBy(desc(incomes.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const formattedIncomes = incomeList.map((r) => ({
+      ...r.income,
+      category: r.category,
+      currency: r.currency,
+      defaultWallet: r.defaultWallet,
+    }));
+
+    res.json({ incomes: formattedIncomes, items: formattedIncomes, total, page, limit });
+  } catch (err) {
+    console.error("Error fetching incomes:", err);
+    res.status(500).json({ error: "Failed to fetch incomes" });
+  }
+});
+
+router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+
+  const {
+    name,
+    incomeCategoryId,
+    currencyId,
+    defaultWalletId,
+    amount,
+    isRecurring,
+    recurrencePattern,
+    photoUrl,
+    description,
+    status,
+  } = req.body;
+
+  if (!name || !incomeCategoryId || !currencyId) {
+    return res.status(400).json({
+      error: "Name, category, and currency are required",
+    });
+  }
+
+  const parsedIncomeCategoryId = Number(incomeCategoryId);
+  const parsedCurrencyId = Number(currencyId);
+  const hasDefaultWallet =
+    defaultWalletId !== undefined && defaultWalletId !== null && defaultWalletId !== "";
+  const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
+
+  if (Number.isNaN(parsedIncomeCategoryId) || Number.isNaN(parsedCurrencyId)) {
+    return res.status(400).json({ error: "Invalid category or currency ID" });
+  }
+
+  if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
+    return res.status(400).json({ error: "Invalid wallet ID" });
+  }
+
+  try {
+    if (parsedDefaultWalletId !== undefined) {
+      const [wallet] = await db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.id, parsedDefaultWalletId));
+      if (!wallet || wallet.canvasId !== canvasId) {
+        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+      }
+    }
+
+    const [newIncome] = await db
+      .insert(incomes)
+      .values({
+        canvasId,
+        name,
+        incomeCategoryId: parsedIncomeCategoryId,
+        currencyId: parsedCurrencyId,
+        ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
+        amount: Number(amount) || 0,
+        isRecurring: isRecurring || false,
+        recurrencePattern: recurrencePattern || null,
+        photoUrl: photoUrl || null,
+        description: description || null,
+        status: status || "pending",
+        createdBy: user.id,
+        lastModifiedBy: user.id,
+      })
+      .returning();
+
+    await registerWhiteboardNode(canvasId, "income", newIncome.id);
+
+    res.status(201).json({ income: newIncome });
+  } catch (err) {
+    console.error("Error creating income:", err);
+    res.status(500).json({ error: "Failed to create income" });
+  }
+});
+
+router.get("/:incomeId", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const incomeId = parseRouteParam(req.params.incomeId);
+  if (Number.isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
 
@@ -271,12 +389,9 @@ router.get("/:id", async (req: Request, res: Response) => {
       .leftJoin(wallets, eq(incomes.defaultWalletId, wallets.id))
       .where(eq(incomes.id, incomeId));
 
-    if (!record) {
+    if (!record || record.income.canvasId !== canvasId) {
       return res.status(404).json({ error: "Income not found" });
     }
-
-    const access = await checkCanvasPermission(record.income.canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
 
     res.json({
       income: {
@@ -291,12 +406,11 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const incomeId = parseRouteParam(req.params.id);
-  if (isNaN(incomeId)) {
+router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const incomeId = parseRouteParam(req.params.incomeId);
+  if (Number.isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
 
@@ -316,13 +430,9 @@ router.put("/:id", async (req: Request, res: Response) => {
 
   try {
     const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
-
-    if (!existing) {
+    if (!existing || existing.canvasId !== canvasId) {
       return res.status(404).json({ error: "Income not found" });
     }
-
-    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
 
     const parsedCategoryId =
       incomeCategoryId !== undefined ? Number(incomeCategoryId) : undefined;
@@ -346,7 +456,7 @@ router.put("/:id", async (req: Request, res: Response) => {
         .select()
         .from(wallets)
         .where(eq(wallets.id, parsedDefaultWalletId));
-      if (!wallet || wallet.canvasId !== existing.canvasId) {
+      if (!wallet || wallet.canvasId !== canvasId) {
         return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
       }
     }
@@ -378,23 +488,19 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const incomeId = parseRouteParam(req.params.id);
-  if (isNaN(incomeId)) {
+router.delete("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const incomeId = parseRouteParam(req.params.incomeId);
+  if (Number.isNaN(incomeId)) {
     return res.status(400).json({ error: "Invalid income ID" });
   }
 
   try {
     const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
-    if (!existing) {
+    if (!existing || existing.canvasId !== canvasId) {
       return res.status(404).json({ error: "Income not found" });
     }
-
-    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
 
     await db
       .update(incomes)
@@ -405,7 +511,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       })
       .where(eq(incomes.id, incomeId));
 
-    await unregisterWhiteboardNode(existing.canvasId, "income", incomeId);
+    await unregisterWhiteboardNode(canvasId, "income", incomeId);
 
     res.json({ message: "Income archived successfully" });
   } catch (err) {

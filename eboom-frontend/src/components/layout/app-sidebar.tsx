@@ -96,6 +96,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/budget-planning",
           icon: PiggyBank,
         },
+        {
+          title: t("routes.aiInsights"),
+          url: "/ai-insights",
+          icon: BrainCircuit,
+        },
         ...(canManageMembers
           ? [
             {
@@ -115,12 +120,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: t("routes.wishList"),
         url: "/wish-list",
         icon: ShoppingBag,
-        badge: t("badges.soon"),
-      },
-      {
-        title: t("routes.aiInsights"),
-        url: "/ai-insights",
-        icon: BrainCircuit,
         badge: t("badges.soon"),
       },
     ],

@@ -3,13 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
-import { useAuthContext } from "@/src/components/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,6 @@ import { Typography } from "@/components/ui/typography";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { formatCurrency } from "@/src/i18n/formatters";
-import { env } from "@/utils/env";
 import { BudgetFormModal } from "./components/BudgetFormModal";
 import { BudgetPeriodTabs } from "./components/BudgetPeriodTabs";
 import { BudgetProgressBar } from "./components/BudgetProgressBar";
@@ -50,7 +48,6 @@ export default function BudgetPlanningPage() {
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
-  const { accessToken } = useAuthContext();
   const queryClient = useQueryClient();
 
   const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriodType>("monthly");
@@ -121,35 +118,32 @@ export default function BudgetPlanningPage() {
     enabled: !!canvas && !!forecastCurrencyId,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (budgetId: number) => {
-      if (!canvas) return;
-      await axios.delete(
-        `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_BUDGETS_DELETE(canvas, budgetId)}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgets", canvas] });
-      queryClient.invalidateQueries({ queryKey: ["budget-summary", canvas] });
-      setDeleteBudgetId(null);
-    },
-  });
+  const deleteMutation = useMutationApi(
+    (budgetId: number) => API_ROUTES.CANVAS_BUDGETS_DELETE(canvas!, budgetId),
+    {
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["budgets", canvas] });
+        queryClient.invalidateQueries({ queryKey: ["budget-summary", canvas] });
+        setDeleteBudgetId(null);
+      },
+    }
+  );
 
-  const updateGoalStatusMutation = useMutation({
-    mutationFn: async ({ goalId, status }: { goalId: number; status: SavingsGoalStatus }) => {
-      if (!canvas) return;
-      await axios.patch(
-        `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvas, goalId)}`,
-        { status },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["savings-goals", canvas] });
-      queryClient.invalidateQueries({ queryKey: ["calendar"] });
-    },
-  });
+  const updateGoalStatusMutation = useMutationApi(
+    ({ goalId }: { goalId: number; status: SavingsGoalStatus }) =>
+      API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvas!, goalId),
+    {
+      method: "patch",
+      mapPayload: ({ status }: { goalId: number; status: SavingsGoalStatus }) => ({ status }),
+      invalidateQueries: false,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["savings-goals", canvas] });
+        queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      },
+    }
+  );
 
   const handleBudgetModalOpenChange = (open: boolean) => {
     setBudgetModalOpen(open);

@@ -106,7 +106,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     );
 
     const { mutateAsync: updateWallet, isPending: isUpdating } = useMutationApi(
-        editingItem ? API_ROUTES.WALLETS_UPDATE(editingItem.id) : "",
+        editingItem && canvas ? API_ROUTES.WALLETS_UPDATE(canvas, editingItem.id) : "",
         {
             method: "put",
             hasToken: true,

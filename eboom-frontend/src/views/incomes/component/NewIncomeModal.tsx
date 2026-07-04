@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
@@ -42,7 +43,7 @@ import { useTranslation } from "react-i18next";
 interface IncomeFormData {
   name: string;
   currencyId: number | null;
-  amount: number;
+  amount?: number;
   incomeCategoryId: number | null;
   defaultWalletId: number | null;
   description: string;
@@ -54,7 +55,7 @@ interface IncomeFormData {
 const defaultValues: IncomeFormData = {
   name: "",
   currencyId: null,
-  amount: 0,
+  amount: undefined,
   incomeCategoryId: null,
   defaultWalletId: null,
   description: "",
@@ -175,7 +176,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   );
 
   const { mutateAsync: updateIncome, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.INCOMES_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
@@ -190,7 +191,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
       reset({
         name: source.name ?? "",
         currencyId: source.currencyId ?? source.currency?.id ?? null,
-        amount: source.amount ?? 0,
+        amount: source.amount ? Number(source.amount) : undefined,
         incomeCategoryId: source.incomeCategoryId ?? null,
         defaultWalletId: source.defaultWalletId ?? source.defaultWallet?.id ?? null,
         isRecurring: source.isRecurring ?? false,
@@ -332,12 +333,12 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
               <FieldLabel htmlFor="amount">{t("modal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
+                placeholder={tc("placeholders.amount")}
                 {...register("amount", {
                   required: tv("amountRequired"),
                   valueAsNumber: true,
@@ -346,7 +347,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (!Number.isNaN(value) && value && value > 0) || tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

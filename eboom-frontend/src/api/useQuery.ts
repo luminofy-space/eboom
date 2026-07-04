@@ -3,7 +3,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "./utils";
-import { env } from "@/utils/env";
+import { resolveApiUrl } from "./resolveApiUrl";
 
 type AuthOptions = {
   accessToken?: string | null;
@@ -25,7 +25,6 @@ const useQueryApi = <T>(
     enabled?: boolean;
     retry?: number;
     refetchOnWindowFocus?: boolean;
-    needBaseUrl?: boolean;
     auth?: AuthOptions;
   },
   axiosProp?: AxiosRequestConfig
@@ -42,7 +41,6 @@ const useQueryApi = <T>(
     enabled = true,
     retry = 1,
     refetchOnWindowFocus = false,
-    needBaseUrl = true,
     auth: optionsAuth,
   } = options || {};
 
@@ -59,7 +57,7 @@ const useQueryApi = <T>(
     : null;
 
   const buildUrl = () => {
-    let finalUrl = needBaseUrl ? `${env("NEXT_PUBLIC_BASE_URL")}${url}` : url;
+    let finalUrl = resolveApiUrl(url);
 
     if (urlParams?.length) finalUrl += "/" + urlParams.join("/");
 

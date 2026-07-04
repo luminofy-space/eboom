@@ -1,22 +1,122 @@
 import express, { Request, Response } from "express";
+import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../db/client";
 import { assets, assetCategories, currencies } from "../db/schema";
-import { eq } from "drizzle-orm";
-import { checkCanvasPermission } from "../services/canvasAccessService";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
+function parsePaginationParams(req: Request) {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const search = (req.query.search as string) || "";
+  const offset = (page - 1) * limit;
+  return { page, limit, search, offset };
 }
 
-router.get("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
-  const assetId = parseRouteParam(req.params.id);
-  if (isNaN(assetId)) {
+  try {
+    const { page, limit, search, offset } = parsePaginationParams(req);
+
+    const whereCondition = search
+      ? and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false), ilike(assets.name, `%${search}%`))
+      : and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false));
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(assets)
+      .where(whereCondition);
+
+    const assetsList = await db
+      .select({
+        asset: assets,
+        category: assetCategories,
+        currency: currencies,
+      })
+      .from(assets)
+      .leftJoin(assetCategories, eq(assets.assetCategoryId, assetCategories.id))
+      .leftJoin(currencies, eq(assets.currencyId, currencies.id))
+      .where(whereCondition)
+      .orderBy(desc(assets.lastModifiedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const formattedAssets = assetsList.map((a) => ({
+      ...a.asset,
+      category: a.category,
+      currency: a.currency,
+    }));
+
+    res.json({ assets: formattedAssets, items: formattedAssets, total, page, limit });
+  } catch (err) {
+    console.error("Error fetching assets:", err);
+    res.status(500).json({ error: "Failed to fetch assets" });
+  }
+});
+
+router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+
+  const { name, assetCategoryId, currencyId, estimatedValue, description, photoUrl } = req.body;
+
+  if (!name || !assetCategoryId || !currencyId || estimatedValue === undefined || estimatedValue === null) {
+    return res.status(400).json({
+      error: "Asset name, category, currency, and estimated value are required",
+    });
+  }
+
+  const parsedAssetCategoryId = Number(assetCategoryId);
+  const parsedCurrencyId = Number(currencyId);
+  const parsedEstimatedValue = Number(estimatedValue);
+
+  if (
+    Number.isNaN(parsedAssetCategoryId) ||
+    Number.isNaN(parsedCurrencyId) ||
+    Number.isNaN(parsedEstimatedValue) ||
+    parsedEstimatedValue < 0
+  ) {
+    return res.status(400).json({ error: "Invalid category, currency, or estimated value" });
+  }
+
+  try {
+    const [category] = await db
+      .select()
+      .from(assetCategories)
+      .where(eq(assetCategories.id, parsedAssetCategoryId));
+    if (!category) {
+      return res.status(400).json({ error: "Invalid asset category" });
+    }
+
+    const [newAsset] = await db
+      .insert(assets)
+      .values({
+        canvasId,
+        name,
+        assetCategoryId: parsedAssetCategoryId,
+        currencyId: parsedCurrencyId,
+        estimatedValue: String(parsedEstimatedValue),
+        photoUrl: photoUrl || null,
+        description: description || null,
+        createdBy: user.id,
+        lastModifiedBy: user.id,
+      })
+      .returning();
+
+    res.status(201).json({ asset: newAsset });
+  } catch (err) {
+    console.error("Error creating asset:", err);
+    res.status(500).json({ error: "Failed to create asset" });
+  }
+});
+
+router.get("/:assetId", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const assetId = parseRouteParam(req.params.assetId);
+  if (Number.isNaN(assetId)) {
     return res.status(400).json({ error: "Invalid asset ID" });
   }
 
@@ -32,12 +132,9 @@ router.get("/:id", async (req: Request, res: Response) => {
       .leftJoin(currencies, eq(assets.currencyId, currencies.id))
       .where(eq(assets.id, assetId));
 
-    if (!row) {
+    if (!row || row.asset.canvasId !== canvasId) {
       return res.status(404).json({ error: "Asset not found" });
     }
-
-    const access = await checkCanvasPermission(row.asset.canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
 
     res.json({
       asset: {
@@ -52,12 +149,11 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const assetId = parseRouteParam(req.params.id);
-  if (isNaN(assetId)) {
+router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const assetId = parseRouteParam(req.params.assetId);
+  if (Number.isNaN(assetId)) {
     return res.status(400).json({ error: "Invalid asset ID" });
   }
 
@@ -74,12 +170,9 @@ router.put("/:id", async (req: Request, res: Response) => {
   try {
     const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
 
-    if (!existing) {
+    if (!existing || existing.canvasId !== canvasId) {
       return res.status(404).json({ error: "Asset not found" });
     }
-
-    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
 
     const parsedAssetCategoryId =
       assetCategoryId !== undefined ? Number(assetCategoryId) : undefined;
@@ -131,24 +224,20 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const assetId = parseRouteParam(req.params.id);
-  if (isNaN(assetId)) {
+router.delete("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
+  const assetId = parseRouteParam(req.params.assetId);
+  if (Number.isNaN(assetId)) {
     return res.status(400).json({ error: "Invalid asset ID" });
   }
 
   try {
     const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
 
-    if (!existing) {
+    if (!existing || existing.canvasId !== canvasId) {
       return res.status(404).json({ error: "Asset not found" });
     }
-
-    const access = await checkCanvasPermission(existing.canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
 
     await db
       .update(assets)

@@ -12,8 +12,7 @@ import {
   type IncomeItem,
 } from "@/src/redux/incomeSlice";
 import { useDebouncedValue } from "@mantine/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import { useState } from "react";
 import { NewIncomeModal } from "./component/NewIncomeModal";
 import AddIncomeButton from "./component/AddIncomeButton";
@@ -28,14 +27,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { useTranslation } from "react-i18next";
 
-const hasWindow = typeof window !== "undefined";
 
 export default function IncomesListPage() {
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -55,19 +52,10 @@ export default function IncomesListPage() {
     }
   );
 
-  const { mutate: deleteIncome, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOMES_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries();
-    },
-  });
+  const { mutate: deleteIncome, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.INCOMES_DELETE(canvas!, id),
+    { method: "delete", onSuccess: () => setDeleteId(null) }
+  );
 
   const showLoading = isLoading || (isFetching && items.length === 0);
 

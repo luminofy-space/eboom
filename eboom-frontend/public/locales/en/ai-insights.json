@@ -1,0 +1,295 @@
+{
+  "title": "AI Insights",
+  "subtitle": "Personalized financial guidance for this canvas.",
+  "tabs": {
+    "insights": "Insights",
+    "chat": "Chat"
+  },
+  "landing": {
+    "generalAdviceTitle": "General tips",
+    "generalAdviceDescription": "These tips apply to most households. Complete the profile wizard below for advice tailored to this canvas.",
+    "warningTitle": "Complete your profile for better advice",
+    "warningDescription": "The tips below are general. Personalized AI insights will be much more accurate once you finish the 5-step profile wizard.",
+    "tips": {
+      "emergencyFund": "Aim to keep 3–6 months of essential expenses in an easily accessible emergency fund.",
+      "debtFirst": "Pay down high-interest debt before increasing discretionary investing.",
+      "diversify": "Spread investments across asset classes to reduce company-specific risk.",
+      "reviewBudget": "Review your budget monthly and adjust category limits when income or goals change."
+    },
+    "status": {
+      "notStarted": "Not started",
+      "inProgress": "In progress — step {{step}} of 5",
+      "completed": "Profile complete"
+    },
+    "startWizard": "Start profile wizard",
+    "continueWizard": "Continue wizard",
+    "reviewWizard": "Review & edit profile",
+    "knowledgeLevel": "Financial knowledge: {{level}}"
+  },
+  "wizard": {
+    "title": "Financial profile wizard",
+    "subtitle": "Help us understand your goals and situation. You can save and continue later.",
+    "saveAndExit": "Save & exit",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Complete profile",
+    "saving": "Saving…",
+    "stepOf": "Step {{current}} of {{total}}"
+  },
+  "steps": {
+    "riskProfile": "Risk profile",
+    "investmentGoals": "Investment goals",
+    "esgPreferences": "ESG preferences",
+    "financialKnowledge": "Financial knowledge",
+    "financialPicture": "Financial picture"
+  },
+  "riskProfile": {
+    "title": "How much risk are you willing to take?",
+    "description": "Your answers help us align suggestions with your comfort level.",
+    "riskTolerance": "Risk tolerance",
+    "riskToleranceLabels": {
+      "1": "Very conservative",
+      "2": "Conservative",
+      "3": "Moderate",
+      "4": "Aggressive",
+      "5": "Very aggressive"
+    },
+    "investmentTimeHorizon": "Investment time horizon",
+    "timeHorizon": {
+      "under_3": "Less than 3 years",
+      "3_7": "3–7 years",
+      "7_15": "7–15 years",
+      "15_plus": "15+ years"
+    },
+    "acceptShortTermLoss": "I accept short-term losses for potential long-term gains",
+    "likert": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree"
+    },
+    "portfolioDropReaction": "If your portfolio dropped 20%, you would…",
+    "dropReaction": {
+      "sell": "Sell to limit losses",
+      "hold": "Hold and wait",
+      "buy_more": "Buy more at lower prices"
+    }
+  },
+  "investmentGoals": {
+    "title": "What are you investing for?",
+    "description": "Tell us your primary and secondary financial goals.",
+    "primaryGoal": "Primary goal",
+    "secondaryGoals": "Secondary goals (optional)",
+    "targetAmount": "Target amount (optional)",
+    "targetCurrency": "Target currency (optional)",
+    "targetTimeframe": "Target timeframe",
+    "goalPriorityNote": "Additional notes (optional)",
+    "goals": {
+      "emergency_fund": "Emergency fund",
+      "debt_payoff": "Debt payoff",
+      "home": "Home purchase",
+      "retirement": "Retirement",
+      "wealth_growth": "Wealth growth",
+      "education": "Education",
+      "other": "Other"
+    },
+    "timeframe": {
+      "under_1": "Less than 1 year",
+      "1_3": "1–3 years",
+      "3_10": "3–10 years",
+      "10_plus": "10+ years"
+    }
+  },
+  "esgPreferences": {
+    "title": "Environmental, social & governance preferences",
+    "description": "Optional filters for values-aligned investing.",
+    "esgImportance": "How important is ESG to you?",
+    "importance": {
+      "not_important": "Not important",
+      "somewhat": "Somewhat important",
+      "very_important": "Very important",
+      "deal_breaker": "Essential — deal-breaker"
+    },
+    "avoidSectors": "Sectors to avoid (optional)",
+    "sectors": {
+      "fossil_fuels": "Fossil fuels",
+      "weapons": "Weapons",
+      "tobacco": "Tobacco",
+      "gambling": "Gambling",
+      "alcohol": "Alcohol",
+      "none": "None — no exclusions"
+    },
+    "acceptLowerReturnsForEsg": "Would you accept lower returns for ESG-aligned investments?",
+    "returnsChoice": {
+      "yes": "Yes",
+      "no": "No",
+      "slightly_lower": "Only slightly lower"
+    },
+    "preferSustainableInvestments": "Prefer sustainable investments when available?",
+    "preferChoice": {
+      "yes": "Yes",
+      "no": "No",
+      "unsure": "Unsure"
+    }
+  },
+  "financialKnowledge": {
+    "title": "Quick financial knowledge check",
+    "description": "Five short questions — no pressure, this helps calibrate advice complexity.",
+    "scorePreview": "Your score: {{score}} / 5",
+    "level": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "questions": {
+      "q1": {
+        "prompt": "What does diversification primarily reduce?",
+        "options": {
+          "unspecific": "Unspecific risk",
+          "company_specific": "Company-specific risk"
+        }
+      },
+      "q2": {
+        "prompt": "If inflation is 3% and your savings earn 1%, your real purchasing power…",
+        "options": {
+          "increases": "Increases",
+          "decreases": "Decreases",
+          "unchanged": "Stays the same"
+        }
+      },
+      "q3": {
+        "prompt": "Compound interest means…",
+        "options": {
+          "fixed_rate": "A fixed rate each year",
+          "earnings_on_earnings": "Earnings on prior earnings",
+          "simple_interest": "The same as simple interest"
+        }
+      },
+      "q4": {
+        "prompt": "When bond prices rise, yields generally…",
+        "options": {
+          "rise": "Rise",
+          "lower_yields": "Fall",
+          "unchanged": "Stay the same"
+        }
+      },
+      "q5": {
+        "prompt": "A common emergency fund rule of thumb is…",
+        "options": {
+          "1_month": "1 month of expenses",
+          "3_6_months": "3–6 months of expenses",
+          "12_months": "12 months of expenses"
+        }
+      }
+    }
+  },
+  "financialPicture": {
+    "title": "Your overall financial picture",
+    "description": "Share liabilities and cashflow expectations for this canvas.",
+    "hasMajorLongTermLiabilities": "Do you have major long-term liabilities? (mortgage, student loans)",
+    "majorLongTermLiabilitiesAmount": "Estimated total amount",
+    "hasShortTermLiabilities": "Do you have short-term liabilities due within 12 months?",
+    "shortTermLiabilitiesAmount": "Estimated total amount",
+    "expectedMonthlyCashflow": "Expected monthly cashflow",
+    "cashflow": {
+      "deficit": "Deficit (spending more than income)",
+      "break_even": "Break-even",
+      "small_surplus": "Small surplus",
+      "large_surplus": "Large surplus"
+    },
+    "emergencyFundCoverage": "Emergency fund coverage",
+    "coverage": {
+      "none": "None",
+      "under_1": "Less than 1 month",
+      "1_3": "1–3 months",
+      "3_6": "3–6 months",
+      "6_plus": "6+ months"
+    },
+    "dependentsCount": "Number of dependents",
+    "additionalNotes": "Additional notes (optional)",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "validation": {
+    "timeHorizonRequired": "Please select an investment time horizon.",
+    "dropReactionRequired": "Please select how you would react to a portfolio drop.",
+    "primaryGoalRequired": "Please select a primary goal.",
+    "timeframeRequired": "Please select a target timeframe.",
+    "esgImportanceRequired": "Please select how important ESG is to you.",
+    "esgReturnsRequired": "Please answer whether you'd accept lower returns for ESG.",
+    "quizIncomplete": "Please answer all five questions.",
+    "cashflowRequired": "Please select your expected monthly cashflow.",
+    "emergencyFundRequired": "Please select your emergency fund coverage.",
+    "dependentsInvalid": "Dependents must be zero or more."
+  },
+  "empty": {
+    "noCanvas": "Select a canvas to view AI insights."
+  },
+  "insights": {
+    "title": "Personalized insights",
+    "empty": "Click Refresh insights above to generate advice tailored to this canvas.",
+    "lastUpdated": "Last updated {{date}}",
+    "refresh": "Refresh insights",
+    "generating": "Generating…",
+    "categories": {
+      "budget": "Budget",
+      "cashflow": "Cash flow",
+      "goals": "Goals",
+      "risk": "Risk",
+      "esg": "ESG",
+      "general": "General"
+    },
+    "priority": {
+      "high": "High priority",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "completeness": {
+    "title": "Data completeness",
+    "score": "{{score}}% of recommended data available",
+    "factors": {
+      "wizard": "Profile wizard",
+      "wallets": "Wallets",
+      "incomes": "Incomes",
+      "expenses": "Expenses",
+      "assets": "Assets",
+      "budget": "Budget",
+      "savingsGoal": "Savings goals"
+    }
+  },
+  "errors": {
+    "loadFailed": "Could not load AI insights. Please try again.",
+    "retry": "Retry",
+    "noApiKey": "AI insights are not configured on the server. Contact your administrator.",
+    "generationFailed": "Could not generate insights. Please try again later.",
+    "rateLimited": "Please wait a minute before refreshing again."
+  },
+  "disclaimer": "Insights are for informational purposes only and are not legal, tax, or investment advice.",
+  "chat": {
+    "title": "Financial assistant",
+    "subtitle": "Ask questions about your budget, goals, and financial data for this canvas.",
+    "placeholder": "Ask about your finances…",
+    "send": "Send",
+    "hint": "Press Enter to send, Shift+Enter for a new line.",
+    "empty": "Start a conversation. The assistant uses your canvas data and profile when answering.",
+    "clearHistory": "Clear chat",
+    "clearConfirmTitle": "Clear chat history?",
+    "clearConfirmDescription": "All messages for this canvas will be permanently deleted.",
+    "cancel": "Cancel",
+    "readOnly": "You need edit access on this canvas to send messages.",
+    "suggestions": {
+      "budget": "How am I doing against my budget this month?",
+      "goals": "What should I prioritize based on my savings goals?",
+      "cashflow": "Summarize my cash flow outlook for the next few months."
+    },
+    "errors": {
+      "loadFailed": "Could not load chat history. Please try again.",
+      "sendFailed": "Could not send your message. Please try again.",
+      "noApiKey": "AI chat is not configured on the server. Contact your administrator.",
+      "rateLimited": "Please wait a few seconds before sending another message.",
+      "invalidMessage": "Your message is empty or too long."
+    }
+  }
+}

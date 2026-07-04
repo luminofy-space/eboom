@@ -31,14 +31,11 @@ import {
   openCanvasEditModal,
 } from "@/src/redux/canvasSlice";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useTranslation } from "react-i18next";
 import { useTextDirection } from "@/src/i18n/useTextDirection";
 import type { CanvasWithMembership } from "@/src/hooks/useCanvasPermissions";
-
-const hasWindow = typeof window !== "undefined";
 
 function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" | "md" }) {
   const { emoji, color } = parseCanvasIcon(photoUrl);
@@ -59,7 +56,6 @@ export function CanvasSwitcher() {
   const { isMobile } = useSidebar();
   const { dropdownSide } = useTextDirection();
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
   const { navigate } = useNavigationProgress();
 
   const { canvases, canvas, isQueryLoading, selectCanvas, refetch } = useCanvas();
@@ -133,19 +129,13 @@ export function CanvasSwitcher() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
 
-  const { mutate: deleteCanvas, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.CANVASES_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries();
-    },
-  });
+  const { mutate: deleteCanvas, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.CANVASES_DELETE(id),
+    {
+      method: "delete",
+      onSuccess: () => setDeleteId(null),
+    }
+  );
 
   const handleLeave = async () => {
     if (!canvas) return;

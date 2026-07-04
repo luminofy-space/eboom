@@ -12,8 +12,7 @@ import {
   type ExpenseItem,
 } from "@/src/redux/expenseSlice";
 import { useDebouncedValue } from "@mantine/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,15 +29,12 @@ import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { useTranslation } from "react-i18next";
 
-const hasWindow = typeof window !== "undefined";
-
 export default function ExpensesListPage() {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -58,19 +54,13 @@ export default function ExpensesListPage() {
     }
   );
 
-  const { mutate: deleteExpense, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSES_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries();
-    },
-  });
+  const { mutate: deleteExpense, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.EXPENSES_DELETE(canvas!, id),
+    {
+      method: "delete",
+      onSuccess: () => setDeleteId(null),
+    }
+  );
 
   const showLoading = isLoading || (isFetching && items.length === 0);
 

@@ -1,11 +1,7 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import { env } from "@/utils/env";
+import { resolveApiUrl } from "@/src/api/resolveApiUrl";
 
 const hasWindow = typeof window !== "undefined";
-
-export function whiteboardApiUrl(path: string): string {
-  return `${env("NEXT_PUBLIC_BASE_URL")}${path}`;
-}
 
 export function getWhiteboardAuthHeaders(): Record<string, string> {
   const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
@@ -13,11 +9,11 @@ export function getWhiteboardAuthHeaders(): Record<string, string> {
 }
 
 export async function whiteboardApiDelete(path: string): Promise<void> {
-  await axios.delete(whiteboardApiUrl(path), { headers: getWhiteboardAuthHeaders() });
+  await axios.delete(resolveApiUrl(path), { headers: getWhiteboardAuthHeaders() });
 }
 
 export async function whiteboardApiPut<T>(path: string, data: T, config?: AxiosRequestConfig): Promise<void> {
-  await axios.put(whiteboardApiUrl(path), data, {
+  await axios.put(resolveApiUrl(path), data, {
     headers: getWhiteboardAuthHeaders(),
     ...config,
   });

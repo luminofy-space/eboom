@@ -70,6 +70,37 @@ For PostgreSQL setup, seeding options, test mode, and troubleshooting, see [Setu
 
 For coding patterns when adding features, see [CONVENTIONS.md](CONVENTIONS.md).
 
+## Environment Variables
+
+### Backend (`eboom-backend/.env`)
+
+Copy from [`.env.sample`](eboom-backend/.env.sample).
+
+| Variable | Purpose |
+|----------|---------|
+| `PORT` | API port (default `4000`) |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Secret for signing access and refresh tokens |
+| `JWT_ACCESS_EXPIRES_IN` | Access token lifetime (default `1h`) |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token lifetime (default `7d`) |
+| `APP_URL` | Frontend URL (used in email links) |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP for verification and password reset |
+| `DEFAULT_GUEST_USER_ID` | User ID for public wishlist routes (when implemented) |
+| `TEST_USER_ID` | **Dev only** — bypasses auth when set |
+| `SKIP_EMAIL_VERIFICATION` | **Dev only** — set to `1` to skip email verification on signup/login |
+| `NOTIFICATION_EMAIL_ENABLED` | Set to `0` to disable overdue email job |
+| `NOTIFICATION_EMAIL_INTERVAL_MS` | Job interval (default 1h) |
+| `OPENAI_API_KEY` | OpenAI API key for AI Insights generation |
+| `OPENAI_MODEL` | OpenAI model (default `gpt-4o-mini`) |
+
+### Frontend (`eboom-frontend/.env`)
+
+Copy from [`.env.example`](eboom-frontend/.env.example).
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_BASE_URL` | Backend API base URL (e.g. `http://localhost:4000`) |
+| `NEXT_PUBLIC_TEST_MODE` | **Dev only** — set to `true` to bypass frontend auth (requires backend `TEST_USER_ID`) |
 ## Docker
 
 Run the full stack (PostgreSQL, backend, frontend) with one command:
