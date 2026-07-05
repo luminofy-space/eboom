@@ -85,7 +85,7 @@ export function CanvasSwitcher() {
         onClick={() => {
           if (canvas === c.id) return;
           selectCanvas(c.id);
-          navigate("/");
+          navigate("/dashboard");
         }}
         className="gap-2 p-2 group/canvas-item"
       >

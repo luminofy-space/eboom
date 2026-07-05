@@ -4,12 +4,13 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AuthCard } from "@/src/views/authentication/AuthCard";
+import { AuthLink } from "@/src/views/authentication/AuthLink";
 import {
   Field,
   FieldDescription,
@@ -29,7 +30,7 @@ interface SignupFormData {
   confirmPassword: string;
 }
 
-export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation("auth");
@@ -53,7 +54,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       password: data.password,
     })
       .then((res) => {
-        router.push(res?.user?.emailVerified ? "/" : "/confirm-email");
+        router.push(res?.user?.emailVerified ? "/dashboard" : "/confirm-email");
       })
       .catch((error) => {
         console.error("error", error);
@@ -62,7 +63,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   };
 
   return (
-    <Card {...props}>
+    <AuthCard {...props}>
       <CardHeader>
         <CardTitle>{t("signup.title")}</CardTitle>
         <CardDescription>{t("signup.description")}</CardDescription>
@@ -180,13 +181,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </Button>
                 <FieldDescription className="px-6 text-center">
                   {t("signup.loginPrompt")}{" "}
-                  <a href="/login">{t("signup.loginLink")}</a>
+                  <AuthLink href="/login">{t("signup.loginLink")}</AuthLink>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </FieldGroup>
         </form>
       </CardContent>
-    </Card>
+    </AuthCard>
   );
 }

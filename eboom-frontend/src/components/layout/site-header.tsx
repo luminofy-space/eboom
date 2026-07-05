@@ -58,12 +58,12 @@ function buildBreadcrumbs(
   const segments = pathname.split("/").filter(Boolean);
   const crumbs: BreadcrumbSegment[] = [];
 
-  if (segments.length === 0) {
+  if (pathname === "/dashboard" || segments.length === 0) {
     crumbs.push({ label: canvasName || dashboardLabel });
     return crumbs;
   }
 
-  crumbs.push({ label: canvasName || dashboardLabel, href: "/" });
+  crumbs.push({ label: canvasName || dashboardLabel, href: "/dashboard" });
 
   const section = segments[0];
   const route = ROUTE_KEYS[section];

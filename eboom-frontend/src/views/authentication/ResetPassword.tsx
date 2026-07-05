@@ -4,12 +4,13 @@ import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AuthCard } from "@/src/views/authentication/AuthCard";
+import { AuthLink } from "@/src/views/authentication/AuthLink";
 import {
   Field,
   FieldDescription,
@@ -81,7 +82,7 @@ export function ResetPasswordForm({
   if (!token) {
     return (
       <Stack gap={6} className={className} {...props}>
-        <Card>
+        <AuthCard>
           <CardHeader>
             <CardTitle>{t("resetPassword.missingToken.title")}</CardTitle>
             <CardDescription>
@@ -93,7 +94,7 @@ export function ResetPasswordForm({
               {t("resetPassword.missingToken.backToLogin")}
             </Button>
           </CardContent>
-        </Card>
+        </AuthCard>
       </Stack>
     );
   }
@@ -101,7 +102,7 @@ export function ResetPasswordForm({
   if (submitted) {
     return (
       <Stack gap={6} className={className} {...props}>
-        <Card>
+        <AuthCard>
           <CardHeader>
             <CardTitle>{t("resetPassword.success.title")}</CardTitle>
             <CardDescription>
@@ -113,14 +114,14 @@ export function ResetPasswordForm({
               {t("resetPassword.success.goToLogin")}
             </Button>
           </CardContent>
-        </Card>
+        </AuthCard>
       </Stack>
     );
   }
 
   return (
     <Stack gap={6} className={className} {...props}>
-      <Card>
+      <AuthCard>
         <CardHeader>
           <CardTitle>{t("resetPassword.title")}</CardTitle>
           <CardDescription>{t("resetPassword.description")}</CardDescription>
@@ -181,13 +182,13 @@ export function ResetPasswordForm({
                     : t("resetPassword.submit")}
                 </Button>
                 <FieldDescription className="text-center">
-                  <a href="/login">{t("resetPassword.backToLogin")}</a>
+                  <AuthLink href="/login">{t("resetPassword.backToLogin")}</AuthLink>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
-      </Card>
+      </AuthCard>
     </Stack>
   );
 }

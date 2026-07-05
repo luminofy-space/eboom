@@ -29,7 +29,7 @@ export function NavGroups({ groups }: { groups: NavGroup[] }) {
   const { navigate } = useNavigationProgress();
 
   const isActive = (url: string) => {
-    if (url === "/") return pathname === "/";
+    if (url === "/dashboard") return pathname === "/dashboard";
     const base = url.replace(/s$/, "");
     return pathname === url || pathname.startsWith(base);
   };

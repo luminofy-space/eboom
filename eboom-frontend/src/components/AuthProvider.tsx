@@ -46,6 +46,15 @@ export type AuthResponse = {
   user?: AuthUser;
 };
 
+type LoginPayload = { email: string; password: string };
+type SignupPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+};
+type RefreshPayload = { refreshToken: string };
+
 function getStoredToken(key: string): string | null {
   if (!hasWindow) return null;
 
@@ -105,20 +114,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [loading, setLoading] = useState(false);
 
-  const { mutateAsync: refreshMutation } = useMutationApi<AuthResponse>(
-    API_ROUTES.AUTH_REFRESH,
-    { method: "post", hasToken: false }
-  );
+  const { mutateAsync: refreshMutation } = useMutationApi<
+    RefreshPayload,
+    AuthResponse
+  >(API_ROUTES.AUTH_REFRESH, { method: "post", hasToken: false });
 
-  const { mutateAsync: loginMutation } = useMutationApi<AuthResponse>(
-    API_ROUTES.AUTH_LOGIN,
-    { method: "post", hasToken: false }
-  );
+  const { mutateAsync: loginMutation } = useMutationApi<
+    LoginPayload,
+    AuthResponse
+  >(API_ROUTES.AUTH_LOGIN, { method: "post", hasToken: false });
 
-  const { mutateAsync: signupMutation } = useMutationApi<AuthResponse>(
-    API_ROUTES.AUTH_SIGNUP,
-    { method: "post", hasToken: false }
-  );
+  const { mutateAsync: signupMutation } = useMutationApi<
+    SignupPayload,
+    AuthResponse
+  >(API_ROUTES.AUTH_SIGNUP, { method: "post", hasToken: false });
 
   const applyTokens = useCallback((access: string, refresh: string) => {
     setAccessToken(access);
@@ -218,6 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (loading) return;
 
     const publicRoutes = [
+      "/",
       "/login",
       "/signup",
       "/forgot-password",

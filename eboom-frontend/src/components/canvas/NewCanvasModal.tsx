@@ -155,7 +155,7 @@ export function NewCanvasModal() {
       try {
         await createCanvas(formData.name, formData.description, formData.canvasType, photoUrl, selectedCurrency.id);
         handleClose();
-        navigate("/");
+        navigate("/dashboard");
       } catch (error) {
         console.error("Error creating canvas:", error);
       }

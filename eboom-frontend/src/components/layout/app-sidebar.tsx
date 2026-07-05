@@ -43,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: t("overview"),
-          url: "/",
+          url: "/dashboard",
           icon: LayoutDashboard,
         },
         {
