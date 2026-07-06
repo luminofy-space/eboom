@@ -237,6 +237,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const user = userData?.user ?? null;
   const userLoading = isAuthenticated && !user && isLoading;
 
+  const guestOnlyRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+  ];
+  const isGuestOnlyRoute = guestOnlyRoutes.includes(pathname);
+
   useEffect(() => {
     const publicRoutes = [
       "/",
@@ -249,13 +257,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ];
     const isPublic = publicRoutes.includes(pathname);
 
+    if (isAuthenticated && isGuestOnlyRoute) {
+      router.replace("/dashboard");
+      return;
+    }
+
     if (!isAuthenticated && !isPublic) {
       if (hasWindow) {
         localStorage.setItem("redirectAfterLogin", pathname);
       }
       router.push("/login");
     }
-  }, [pathname, router, isAuthenticated]);
+  }, [pathname, router, isAuthenticated, isGuestOnlyRoute]);
 
   const contextValue: AuthContextType = {
     accessToken,
@@ -272,7 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={contextValue}>
-      {children}
+      {isAuthenticated && isGuestOnlyRoute ? null : children}
     </AuthContext.Provider>
   );
 }
