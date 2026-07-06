@@ -210,7 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
       })) as AuthResponse;
-      if (res?.accessToken && res?.refreshToken) {
+      if (res?.accessToken && res?.refreshToken && res.user?.emailVerified) {
         applyTokens(res.accessToken, res.refreshToken);
         seedUserCache(res.user);
       }
@@ -258,7 +258,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublic = publicRoutes.includes(pathname);
 
     if (isAuthenticated && isGuestOnlyRoute) {
-      router.replace("/dashboard");
+      if (user?.emailVerified === false) {
+        router.replace("/confirm-email");
+      } else if (user?.emailVerified || !userLoading) {
+        router.replace("/dashboard");
+      }
+      return;
+    }
+
+    if (
+      isAuthenticated &&
+      user?.emailVerified === false &&
+      !isPublic
+    ) {
+      router.replace("/confirm-email");
       return;
     }
 
@@ -268,7 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       router.push("/login");
     }
-  }, [pathname, router, isAuthenticated, isGuestOnlyRoute]);
+  }, [pathname, router, isAuthenticated, isGuestOnlyRoute, user?.emailVerified, userLoading]);
 
   const contextValue: AuthContextType = {
     accessToken,

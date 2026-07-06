@@ -22,12 +22,9 @@ import {
 
 const router = express.Router();
 
-const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "1";
-
-if (skipEmailVerification) {
-  console.warn(
-    "SKIP_EMAIL_VERIFICATION is enabled — new users are auto-verified and verification emails are not sent."
-  );
+function shouldSkipEmailVerification(): boolean {
+  const raw = process.env.SKIP_EMAIL_VERIFICATION?.trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes";
 }
 
 interface TokenData {
@@ -109,14 +106,14 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
         lastName: last_name,
         age,
         photoUrl: photo_url,
-        emailVerified: skipEmailVerification,
+        emailVerified: shouldSkipEmailVerification(),
         passwordHash,
         createdBy: null,
         createdAt: new Date(),
       })
       .returning();
 
-    if (!skipEmailVerification) {
+    if (!shouldSkipEmailVerification()) {
       const verificationToken = uuidv4();
       verificationTokens.set(verificationToken, {
         userId: appUser.id,
@@ -131,16 +128,17 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
       }
     }
 
+    const skipVerification = shouldSkipEmailVerification();
     const user = formatUserResponse({
       ...appUser,
-      emailVerified: skipEmailVerification || appUser.emailVerified || false,
+      emailVerified: skipVerification || appUser.emailVerified || false,
     });
 
     res.status(201).json({
-      message: skipEmailVerification
+      message: skipVerification
         ? "User created successfully."
         : "User created successfully. Please check your email to verify your account.",
-      ...signTokenPair(appUser.id, appUser.email),
+      ...(skipVerification ? signTokenPair(appUser.id, appUser.email) : {}),
       user,
     });
   } catch (error) {
@@ -167,7 +165,7 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    if (!skipEmailVerification && !appUser.emailVerified) {
+    if (!shouldSkipEmailVerification() && !appUser.emailVerified) {
       return res.status(403).json({
         error: "Email not verified",
         message: "Please verify your email before logging in.",

@@ -1,12 +1,9 @@
+import "dotenv/config";
 import './types/express';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-
-
-dotenv.config();
 
 
 const app = express();
@@ -29,6 +26,15 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`PFM backend listening at http://localhost:${PORT}`);
+
+  const skipEmailVerification = false && ["1", "true", "yes"].includes(
+    process.env.SKIP_EMAIL_VERIFICATION?.trim().toLowerCase() ?? ""
+  );
+  if (skipEmailVerification) {
+    console.warn(
+      "SKIP_EMAIL_VERIFICATION is enabled — new users are auto-verified and verification emails are not sent."
+    );
+  }
 
   startNotificationEmailJob();
 
