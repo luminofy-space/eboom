@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 interface SignupFormData {
   firstName: string;
@@ -44,7 +45,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
 
   const password = watch("password");
 
-  const { signup, loading } = useAuthContext();
+  const { signup, isSignupPending } = useAuthContext();
 
   const onSubmit = (data: SignupFormData) => {
     signup({
@@ -176,8 +177,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
             </Field>
             <FieldGroup>
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? t("signup.submitting") : t("signup.submit")}
+                <Button type="submit" disabled={isSignupPending}>
+                  {isSignupPending && <Loader2 className="size-4 animate-spin" />}
+                  {isSignupPending ? t("signup.submitting") : t("signup.submit")}
                 </Button>
                 <FieldDescription className="px-6 text-center">
                   {t("signup.loginPrompt")}{" "}
