@@ -1,8 +1,7 @@
 import express, { Request, Response } from "express";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { budgets, budgetLines, savingsGoals, wallets } from "../db/schema";
-import { checkCanvasPermission } from "../services/canvasAccessService";
+import { budgets, budgetLines } from "../db/schema";
 import {
   getBudgetProgress,
   getBudgetSuggestions,
@@ -10,38 +9,23 @@ import {
   getBudgetWithLines,
   getCanvasCurrencyUsage,
   getCashFlowForecast,
-  getSavingsGoalProgress,
   upsertBudgetWithLines,
 } from "../services/planningService";
 import type { BudgetLineInput, BudgetPeriodType } from "../types/planning";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
-
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
-}
-
-function parseCanvasId(req: Request): number {
-  return parseRouteParam(req.params.canvasId);
-}
 
 function parseBudgetPeriodType(value: unknown): BudgetPeriodType | null {
   if (value === "weekly" || value === "monthly" || value === "yearly") return value;
   return null;
 }
 
-router.get("/currency-usage", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/currency-usage", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const usage = await getCanvasCurrencyUsage(canvasId);
     res.json({ currencies: usage });
   } catch (err) {
@@ -50,12 +34,8 @@ router.get("/currency-usage", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/suggestions", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/suggestions", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const currencyId = parseRouteParam(String(req.query.currencyId ?? ""));
   const periodType = parseBudgetPeriodType(req.query.periodType);
@@ -64,9 +44,6 @@ router.get("/suggestions", async (req: Request, res: Response) => {
   if (!periodType) return res.status(400).json({ error: "Invalid period type" });
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const suggestions = await getBudgetSuggestions(canvasId, currencyId, periodType);
     if (!suggestions) return res.status(404).json({ error: "Currency not found" });
 
@@ -77,17 +54,10 @@ router.get("/suggestions", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/summary", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/summary", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const summary = await getBudgetSummaryForCanvas(canvasId);
     res.json(summary);
   } catch (err) {
@@ -96,12 +66,8 @@ router.get("/summary", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/forecast", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/forecast", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const currencyId = parseRouteParam(String(req.query.currencyId ?? ""));
   const startDate = typeof req.query.startDate === "string" ? req.query.startDate : undefined;
@@ -113,9 +79,6 @@ router.get("/forecast", async (req: Request, res: Response) => {
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const forecast = await getCashFlowForecast(canvasId, currencyId, startDate, endDate);
     if (!forecast) return res.status(404).json({ error: "Currency not found" });
 
@@ -126,17 +89,10 @@ router.get("/forecast", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const rows = await db.select().from(budgets).where(eq(budgets.canvasId, canvasId));
     const enriched = await Promise.all(
       rows.map(async (budget) => {
@@ -153,12 +109,9 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (Number.isNaN(canvasId)) return res.status(400).json({ error: "Invalid canvas ID" });
+router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
 
   const {
     currencyId,
@@ -194,9 +147,6 @@ router.post("/", async (req: Request, res: Response) => {
     : [];
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const result = await upsertBudgetWithLines(canvasId, user.id, {
       currencyId: parsedCurrencyId,
       periodType,
@@ -216,20 +166,14 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:budgetId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.get("/:budgetId", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
   const budgetId = parseRouteParam(req.params.budgetId);
-  if (Number.isNaN(canvasId) || Number.isNaN(budgetId)) {
+  if (Number.isNaN(budgetId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const detail = await getBudgetWithLines(budgetId);
     if (!detail || detail.budget.canvasId !== canvasId) {
       return res.status(404).json({ error: "Budget not found" });
@@ -243,20 +187,14 @@ router.get("/:budgetId", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:budgetId/progress", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.get("/:budgetId/progress", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
   const budgetId = parseRouteParam(req.params.budgetId);
-  if (Number.isNaN(canvasId) || Number.isNaN(budgetId)) {
+  if (Number.isNaN(budgetId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [budget] = await db.select().from(budgets).where(eq(budgets.id, budgetId));
     if (!budget || budget.canvasId !== canvasId) {
       return res.status(404).json({ error: "Budget not found" });
@@ -270,13 +208,11 @@ router.get("/:budgetId/progress", async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/:budgetId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.patch("/:budgetId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
+  const user = req.appUser!;
   const budgetId = parseRouteParam(req.params.budgetId);
-  if (Number.isNaN(canvasId) || Number.isNaN(budgetId)) {
+  if (Number.isNaN(budgetId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
@@ -302,9 +238,6 @@ router.patch("/:budgetId", async (req: Request, res: Response) => {
     : undefined;
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [updatedBudget] = await db
       .update(budgets)
       .set({
@@ -349,20 +282,14 @@ router.patch("/:budgetId", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:budgetId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
+router.delete("/:budgetId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
   const budgetId = parseRouteParam(req.params.budgetId);
-  if (Number.isNaN(canvasId) || Number.isNaN(budgetId)) {
+  if (Number.isNaN(budgetId)) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
   try {
-    const access = await checkCanvasPermission(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const [existing] = await db.select().from(budgets).where(eq(budgets.id, budgetId));
     if (!existing || existing.canvasId !== canvasId) {
       return res.status(404).json({ error: "Budget not found" });

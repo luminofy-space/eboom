@@ -25,6 +25,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
@@ -32,23 +33,24 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { translateSubmitError } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { WalletTransfer } from "../utils/utils";
+import { useWalletDetail } from "../hooks/useWalletDetail";
 
 interface TransferFormData {
   sourceWalletId: number | null;
   sourceCurrencyId: number | null;
   destinationWalletId: number | null;
   destinationCurrencyId: number | null;
-  sourceAmount: number;
-  destinationAmount: number;
+  sourceAmount?: number;
+  destinationAmount?: number;
   exchangeRate: number;
-  transactionFee: number;
+  transactionFee?: number;
   transferDate: string;
   notes: string;
 }
@@ -58,10 +60,10 @@ const defaultValues: TransferFormData = {
   sourceCurrencyId: null,
   destinationWalletId: null,
   destinationCurrencyId: null,
-  sourceAmount: 0,
-  destinationAmount: 0,
+  sourceAmount: undefined,
+  destinationAmount: undefined,
   exchangeRate: 1,
-  transactionFee: 0,
+  transactionFee: undefined,
   transferDate: "",
   notes: "",
 };
@@ -95,6 +97,7 @@ interface SubWalletOption {
 
 interface NewTransferModalProps {
   transferId?: number;
+  walletId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fixedSourceWalletId?: number;
@@ -106,6 +109,7 @@ interface NewTransferModalProps {
 
 export function NewTransferModal({
   transferId,
+  walletId,
   open,
   onOpenChange,
   fixedSourceWalletId,
@@ -153,26 +157,37 @@ export function NewTransferModal({
 
   const { data: sourceWalletRes } = useQueryApi<{
     wallet: { subWallets?: SubWalletOption[] };
-  }>(API_ROUTES.WALLETS_GET(sourceWalletId ?? 0), {
-    queryKey: ["wallet", sourceWalletId],
-    enabled: !!sourceWalletId && open,
+  }>(canvas && sourceWalletId ? API_ROUTES.WALLETS_GET(canvas, sourceWalletId) : "", {
+    queryKey: ["wallet", canvas, sourceWalletId],
+    enabled: !!canvas && !!sourceWalletId && open,
   });
 
   const { data: destWalletRes } = useQueryApi<{
     wallet: { subWallets?: SubWalletOption[] };
-  }>(API_ROUTES.WALLETS_GET(destinationWalletId ?? 0), {
-    queryKey: ["wallet", destinationWalletId],
-    enabled: !!destinationWalletId && open,
+  }>(canvas && destinationWalletId ? API_ROUTES.WALLETS_GET(canvas, destinationWalletId) : "", {
+    queryKey: ["wallet", canvas, destinationWalletId],
+    enabled: !!canvas && !!destinationWalletId && open,
+  });
+
+  const { transfers, isLoading: isLoadingWalletDetail } = useWalletDetail(walletId ?? 0, {
+    enabled: open && isEditMode && !!walletId,
   });
 
   const { data: transferRes, isLoading: isLoadingTransfer } = useQueryApi<{
     transfer?: WalletTransfer;
-  }>(API_ROUTES.TRANSFERS_GET(transferId ?? 0), {
-    queryKey: ["transfer", transferId],
-    enabled: isEditMode && open && !!transferId,
+  }>(canvas && transferId ? API_ROUTES.TRANSFERS_GET(canvas, transferId) : "", {
+    queryKey: ["transfer", canvas, transferId],
+    enabled: isEditMode && open && !!canvas && !!transferId && !walletId,
   });
 
-  const editingTransfer = transferRes?.transfer ?? null;
+  const editingTransfer = useMemo(() => {
+    if (walletId) {
+      return transfers.find((transfer) => transfer.id === transferId) ?? null;
+    }
+    return transferRes?.transfer ?? null;
+  }, [walletId, transfers, transferId, transferRes?.transfer]);
+
+  const isLoadingEditTransfer = walletId ? isLoadingWalletDetail : isLoadingTransfer;
 
   const wallets = walletsRes?.wallets ?? [];
   const allCurrencies = currenciesRes?.currencies ?? [];
@@ -244,8 +259,19 @@ export function NewTransferModal({
 
   useEffect(() => {
     const fee = Number(transactionFee) || 0;
-    const source = Number(sourceAmount) || 0;
-    const netSource = Math.max(0, source - fee);
+    const sourceParsed = Number(sourceAmount);
+    const hasSource =
+      sourceAmount != null && !Number.isNaN(sourceParsed) && sourceParsed > 0;
+
+    if (!hasSource) {
+      if (!isCrossCurrency) {
+        setValue("destinationAmount", undefined);
+        setValue("exchangeRate", 1);
+      }
+      return;
+    }
+
+    const netSource = Math.max(0, sourceParsed - fee);
 
     if (!isCrossCurrency) {
       setValue("destinationAmount", netSource);
@@ -255,9 +281,16 @@ export function NewTransferModal({
     }
   }, [isCrossCurrency, sourceAmount, exchangeRate, transactionFee, setValue]);
 
-  const { mutateAsync: saveTransfer, isPending } = useMutation({
-    mutationFn: async (formData: TransferFormData) => {
-      const payload = {
+  const { mutateAsync: saveTransfer, isPending } = useMutationApi(
+    (formData: TransferFormData) => {
+      if (isEditMode && transferId && canvas) {
+        return API_ROUTES.TRANSFERS_UPDATE(canvas, transferId);
+      }
+      return API_ROUTES.TRANSFERS_CREATE(canvas!);
+    },
+    {
+      method: () => (isEditMode && transferId ? "put" : "post"),
+      mapPayload: (formData: TransferFormData) => ({
         canvasId: canvas,
         sourceWalletId: formData.sourceWalletId,
         sourceCurrencyId: formData.sourceCurrencyId,
@@ -272,29 +305,18 @@ export function NewTransferModal({
         transactionFee: formData.transactionFee || 0,
         transferDate: formData.transferDate,
         notes: formData.notes.trim() || null,
-      };
-
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && transferId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_UPDATE(transferId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.TRANSFERS_CREATE}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async () => {
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["wallet-transfers"] });
-      await queryClient.invalidateQueries({ queryKey: ["canvas-transfers"] });
-      await queryClient.invalidateQueries({ queryKey: ["wallet"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async () => {
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["wallet-transfers"] });
+        await queryClient.invalidateQueries({ queryKey: ["canvas-transfers"] });
+        await queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -359,7 +381,7 @@ export function NewTransferModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingTransfer);
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingEditTransfer);
 
   const showSourceWalletPicker = !fixedSourceWalletId;
   const showDestWalletPicker = !fixedDestinationWalletId;
@@ -545,11 +567,11 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-source-amount">
                   {t("transferModal.fields.sourceAmount.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-source-amount"
-                  type="number"
                   step="any"
                   min="0"
+                  placeholder={tc("placeholders.amount")}
                   {...register("sourceAmount", {
                     required: tv("amountRequired"),
                     valueAsNumber: true,
@@ -563,12 +585,12 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-dest-amount">
                   {t("transferModal.fields.destinationAmount.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-dest-amount"
-                  type="number"
                   step="any"
                   min="0"
                   readOnly={!isCrossCurrency}
+                  placeholder={tc("placeholders.amount")}
                   {...register("destinationAmount", {
                     required: tv("amountRequired"),
                     valueAsNumber: true,
@@ -584,11 +606,11 @@ export function NewTransferModal({
                 <FieldLabel htmlFor="transfer-exchange-rate">
                   {t("transferModal.fields.exchangeRate.label")}
                 </FieldLabel>
-                <Input
+                <NumberInput
                   id="transfer-exchange-rate"
-                  type="number"
                   step="any"
                   min="0"
+                  hideZeroWhenBlurred={false}
                   {...register("exchangeRate", {
                     required: t("validation.exchangeRateRequired"),
                     valueAsNumber: true,
@@ -603,11 +625,11 @@ export function NewTransferModal({
               <FieldLabel htmlFor="transfer-fee">
                 {t("transferModal.fields.transactionFee.label")}
               </FieldLabel>
-              <Input
+              <NumberInput
                 id="transfer-fee"
-                type="number"
                 step="any"
                 min="0"
+                placeholder="0"
                 {...register("transactionFee", {
                   valueAsNumber: true,
                   min: { value: 0, message: t("validation.feeNonNegative") },

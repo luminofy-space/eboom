@@ -32,6 +32,7 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useWalletDetail } from "../hooks/useWalletDetail";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
@@ -68,6 +69,10 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const { wallet: fetchedWallet } = useWalletDetail(editingItem?.id ?? 0, {
+        enabled: open && isEdit && !!editingItem?.id,
+    });
+
     const {
         register,
         handleSubmit,
@@ -101,7 +106,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     );
 
     const { mutateAsync: updateWallet, isPending: isUpdating } = useMutationApi(
-        editingItem ? API_ROUTES.WALLETS_UPDATE(editingItem.id) : "",
+        editingItem && canvas ? API_ROUTES.WALLETS_UPDATE(canvas, editingItem.id) : "",
         {
             method: "put",
             hasToken: true,
@@ -111,17 +116,18 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const isSaving = isCreating || isUpdating || isSubmitting;
 
     useEffect(() => {
-        if (open && isEdit && editingItem) {
+        const source = fetchedWallet ?? editingItem;
+        if (open && isEdit && source) {
             reset({
-                name: editingItem.name ?? "",
-                walletCategoryId: editingItem.walletCategoryId ?? null,
-                description: typeof editingItem.description === "string" ? editingItem.description : "",
+                name: source.name ?? "",
+                walletCategoryId: source.walletCategoryId ?? null,
+                description: typeof source.description === "string" ? source.description : "",
                 photo: null,
             });
         } else if (open && !isEdit) {
             reset(defaultValues);
         }
-    }, [open, isEdit, editingItem, reset]);
+    }, [open, isEdit, fetchedWallet, editingItem, reset]);
 
     const handleClose = (openState: boolean) => {
         if (!openState) {

@@ -18,15 +18,17 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useExpenseDetail } from "../hooks/useExpenseDetail";
 import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -34,7 +36,7 @@ import { useTranslation } from "react-i18next";
 
 interface PaymentFormData {
   expenseId: number | null;
-  amount: number;
+  amount?: number;
   sourceWalletId: number | null;
   dueDate: string;
   paidDate: string;
@@ -43,7 +45,7 @@ interface PaymentFormData {
 
 const defaultValues: PaymentFormData = {
   expenseId: null,
-  amount: 0,
+  amount: undefined,
   sourceWalletId: null,
   dueDate: "",
   paidDate: "",
@@ -129,32 +131,22 @@ export function NewExpensePaymentModal({
     enabled: open && !!canvas && showWalletPicker,
   });
 
-  const resolvedExpenseIdForFetch = expenseId;
-  const { data: paymentsRes, isLoading: isLoadingPayment } = useQueryApi<{
-    payments?: {
-      id: number;
-      expenseId: number;
-      sourceWalletId: number;
-      amount: string;
-      dueDate: string | null;
-      paidDate: string | null;
-      notes: string | null;
-    }[];
-  }>(
-    resolvedExpenseIdForFetch
-      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(resolvedExpenseIdForFetch)
-      : "",
-    {
-      queryKey: ["expense-payments", resolvedExpenseIdForFetch],
-      hasToken: true,
-      enabled: open && isEditMode && !!resolvedExpenseIdForFetch,
-    }
-  );
+  const resolvedExpenseId = expenseId ?? 0;
+  const {
+    expense,
+    payments,
+    isLoading: isLoadingDetail,
+  } = useExpenseDetail(resolvedExpenseId, {
+    enabled: !!expenseId && open && isEditMode,
+  });
 
   const editingPayment = useMemo(
-    () => paymentsRes?.payments?.find((payment) => payment.id === paymentId),
-    [paymentsRes?.payments, paymentId]
+    () => payments.find((payment) => payment.id === paymentId),
+    [payments, paymentId]
   );
+
+  const resolvedDefaultWalletId =
+    defaultWalletId ?? expense?.defaultWalletId ?? expense?.defaultWallet?.id;
 
   const expenses = expensesRes?.expenses ?? [];
   const expenseLabels = expenses.map((expense) => {
@@ -190,40 +182,36 @@ export function NewExpensePaymentModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: savePayment, isPending } = useMutation({
-    mutationFn: async (formData: PaymentFormData) => {
+  const { mutateAsync: savePayment, isPending } = useMutationApi(
+    (formData: PaymentFormData) => {
       const resolvedExpenseId = expenseId ?? formData.expenseId;
-      const resolvedWalletId = fixedSourceWalletId ?? formData.sourceWalletId;
-      const payload = {
-        sourceWalletId: resolvedWalletId,
+      if (isEditMode && paymentId) {
+        return API_ROUTES.EXPENSE_PAYMENTS_UPDATE(canvas!, paymentId);
+      }
+      return API_ROUTES.EXPENSE_PAYMENTS_CREATE(canvas!, resolvedExpenseId!);
+    },
+    {
+      method: () => (isEditMode && paymentId ? "put" : "post"),
+      mapPayload: (formData: PaymentFormData) => ({
+        sourceWalletId: fixedSourceWalletId ?? formData.sourceWalletId,
         amount: Number(formData.amount),
         dueDate: formData.dueDate || null,
         paidDate: formData.paidDate || null,
         notes: formData.notes.trim() || null,
-      };
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && paymentId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_UPDATE(paymentId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_CREATE(resolvedExpenseId!)}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async (_, formData) => {
-      const resolvedExpenseId = expenseId ?? formData.expenseId;
-      if (resolvedExpenseId) {
-        await queryClient.invalidateQueries({ queryKey: ["expense-payments", resolvedExpenseId] });
-      }
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async (_data, formData) => {
+        const resolvedExpenseId = expenseId ?? (formData as PaymentFormData).expenseId;
+        if (resolvedExpenseId) {
+          await queryClient.invalidateQueries({ queryKey: ["expense-payments", canvas, resolvedExpenseId] });
+        }
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -247,9 +235,9 @@ export function NewExpensePaymentModal({
     reset({
       ...defaultValues,
       expenseId: expenseId ?? null,
-      sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? null,
+      sourceWalletId: fixedSourceWalletId ?? defaultWalletId ?? resolvedDefaultWalletId ?? null,
       dueDate: defaultDueDate ?? "",
-      amount: defaultAmount ?? 0,
+      amount: defaultAmount,
       paidDate: defaultPaidDate ?? new Date().toISOString().slice(0, 10),
       notes: defaultNotes ?? "",
     });
@@ -261,6 +249,7 @@ export function NewExpensePaymentModal({
     expenseId,
     paymentId,
     defaultWalletId,
+    resolvedDefaultWalletId,
     fixedSourceWalletId,
     defaultDueDate,
     defaultPaidDate,
@@ -295,10 +284,12 @@ export function NewExpensePaymentModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingPayment);
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingDetail);
 
-  const description = expenseName
-    ? t("paymentModal.description.forExpense", { expenseName })
+  const resolvedExpenseName = expenseName ?? expense?.name;
+
+  const description = resolvedExpenseName
+    ? t("paymentModal.description.forExpense", { expenseName: resolvedExpenseName })
     : walletName
       ? t("paymentModal.description.fromWallet", { walletName })
       : t("paymentModal.description.default");
@@ -356,9 +347,8 @@ export function NewExpensePaymentModal({
 
             <Field>
               <FieldLabel htmlFor="payment-amount">{t("paymentModal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="payment-amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
@@ -371,7 +361,8 @@ export function NewExpensePaymentModal({
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (value != null && !Number.isNaN(value) && value > 0) ||
+                    tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

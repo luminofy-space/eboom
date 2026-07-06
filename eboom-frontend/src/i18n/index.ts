@@ -31,6 +31,8 @@ if (!i18n.isInitialized) {
     "transactions",
     "calendar",
     "budget-planning",
+    "ai-insights",
+    "landing",
   ],
       defaultNS: "common",
       backend: {

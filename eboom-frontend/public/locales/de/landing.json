@@ -1,0 +1,75 @@
+{
+  "header": {
+    "brand": "eBoom",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "github": "Auf GitHub ansehen"
+  },
+  "hero": {
+    "title": "Persönliche Finanzen, ein Canvas nach dem anderen",
+    "subtitle": "Verfolge Einnahmen, Konten, Ausgaben und Überweisungen in mehreren Währungen. Für Einzelpersonen, Familien und kleine Unternehmen.",
+    "signup": "Kostenlos starten",
+    "login": "Anmelden"
+  },
+  "workflow": {
+    "title": "So funktioniert es",
+    "subtitle": "Jeder Euro hat einen Weg. eBoom modelliert echte Geldflüsse über ein einfaches Ledger.",
+    "steps": {
+      "canvas": {
+        "title": "Canvas erstellen",
+        "description": "Ein abgegrenzter Workspace für Freelancing, Familienbudget oder ein kleines Business — jeweils mit eigener Basiswährung."
+      },
+      "flows": {
+        "title": "Geldflüsse erfassen",
+        "description": "Einnahmen erhöhen Kontostände. Ausgaben reduzieren sie. Überweisungen verschieben Geld — gleiche oder fremde Währung."
+      },
+      "visualize": {
+        "title": "Das große Bild sehen",
+        "description": "Dashboard-Diagramme, Kalender-Timeline und interaktives Whiteboard zeigen, wohin dein Geld fließt."
+      }
+    },
+    "nodes": {
+      "income": "Einnahme",
+      "wallet": "Konto",
+      "expense": "Ausgabe"
+    }
+  },
+  "features": {
+    "title": "Alles, was du brauchst",
+    "subtitle": "Live-Module, die in jedem Canvas zusammenarbeiten.",
+    "canvas": {
+      "title": "Canvas-Workspaces",
+      "description": "Mehrere Finanzprojekte, ein Login. Kontexte wechseln ohne Daten zu vermischen."
+    },
+    "incomeExpense": {
+      "title": "Einnahmen & Ausgaben",
+      "description": "Wiederkehrend oder einmalig, multi-währung, mit Kategorien und Status."
+    },
+    "wallets": {
+      "title": "Konten & Überweisungen",
+      "description": "Sub-Konten pro Währung, einheitliche Salden, Cross-Currency mit Kurs und Gebühren."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Cashflow-Charts, Jahres-Heatmap und letzte Aktivitäten auf einen Blick."
+    },
+    "calendarWhiteboard": {
+      "title": "Kalender & Whiteboard",
+      "description": "Fälligkeitstimeline plus visueller Geldfluss-Graph, den du inline bearbeitest."
+    },
+    "collaborate": {
+      "title": "Zusammenarbeiten & planen",
+      "description": "Mitglieder mit Rollen einladen, Budgets setzen und gemeinsam planen."
+    }
+  },
+  "tech": {
+    "title": "Mit modernen Tools gebaut",
+    "subtitle": "Full-Stack TypeScript — schnelle UI, zuverlässige API, PostgreSQL im Kern."
+  },
+  "footer": {
+    "tagline": "Persönliche Finanzverwaltung für alle, die Klarheit statt Komplexität wollen.",
+    "github": "GitHub",
+    "signup": "Konto erstellen",
+    "collaborators": "Mitwirkende"
+  }
+}

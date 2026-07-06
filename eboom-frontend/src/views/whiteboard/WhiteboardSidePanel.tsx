@@ -66,24 +66,24 @@ export function WhiteboardSidePanel({
   const [deleteMovementId, setDeleteMovementId] = useState<number | null>(null);
 
   const incomeQuery = useQueryApi<{ entries?: IncomeEntryRow[] }>(
-    selectedEdge?.kind === "income"
-      ? API_ROUTES.INCOME_ENTRIES_LIST(selectedEdge.flow.incomeId)
+    selectedEdge?.kind === "income" && canvas
+      ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, selectedEdge.flow.incomeId)
       : "",
     {
-      queryKey: ["income-entries", selectedEdge?.kind === "income" ? selectedEdge.flow.incomeId : null],
+      queryKey: ["income-entries", canvas, selectedEdge?.kind === "income" ? selectedEdge.flow.incomeId : null],
       hasToken: true,
-      enabled: selectedEdge?.kind === "income",
+      enabled: selectedEdge?.kind === "income" && !!canvas,
     }
   );
 
   const expenseQuery = useQueryApi<{ payments?: ExpensePaymentRow[] }>(
-    selectedEdge?.kind === "expense"
-      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(selectedEdge.flow.expenseId)
+    selectedEdge?.kind === "expense" && canvas
+      ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, selectedEdge.flow.expenseId)
       : "",
     {
-      queryKey: ["expense-payments", selectedEdge?.kind === "expense" ? selectedEdge.flow.expenseId : null],
+      queryKey: ["expense-payments", canvas, selectedEdge?.kind === "expense" ? selectedEdge.flow.expenseId : null],
       hasToken: true,
-      enabled: selectedEdge?.kind === "expense",
+      enabled: selectedEdge?.kind === "expense" && !!canvas,
     }
   );
 
@@ -100,24 +100,24 @@ export function WhiteboardSidePanel({
 
   const deleteMovementMutation = useMutation({
     mutationFn: async (movementId: number) => {
-      if (!selectedEdge) return;
+      if (!selectedEdge || !canvas) return;
       const url =
         selectedEdge.kind === "income"
-          ? API_ROUTES.INCOME_ENTRIES_DELETE(movementId)
+          ? API_ROUTES.INCOME_ENTRIES_DELETE(canvas, movementId)
           : selectedEdge.kind === "expense"
-            ? API_ROUTES.EXPENSE_PAYMENTS_DELETE(movementId)
-            : API_ROUTES.TRANSFERS_DELETE(movementId);
+            ? API_ROUTES.EXPENSE_PAYMENTS_DELETE(canvas, movementId)
+            : API_ROUTES.TRANSFERS_DELETE(canvas, movementId);
       await whiteboardApiDelete(url);
     },
     onSuccess: async () => {
       setDeleteMovementId(null);
       if (selectedEdge?.kind === "income") {
         await queryClient.invalidateQueries({
-          queryKey: ["income-entries", selectedEdge.flow.incomeId],
+          queryKey: ["income-entries", canvas, selectedEdge.flow.incomeId],
         });
       } else if (selectedEdge?.kind === "expense") {
         await queryClient.invalidateQueries({
-          queryKey: ["expense-payments", selectedEdge.flow.expenseId],
+          queryKey: ["expense-payments", canvas, selectedEdge.flow.expenseId],
         });
       } else if (selectedEdge?.kind === "transfer" && canvas) {
         await queryClient.invalidateQueries({ queryKey: ["canvas-transfers", canvas] });

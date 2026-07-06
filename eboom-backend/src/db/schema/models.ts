@@ -28,6 +28,9 @@ import {
   budgets,
   budgetLines,
   savingsGoals,
+  aiInsightProfiles,
+  aiFinancialInsights,
+  aiChatMessages,
 } from "./schema";
 
 // SELECT types
@@ -64,6 +67,9 @@ export type WhiteboardEntityType =
 export type Budget = typeof budgets.$inferSelect;
 export type BudgetLine = typeof budgetLines.$inferSelect;
 export type SavingsGoal = typeof savingsGoals.$inferSelect;
+export type AiInsightProfile = typeof aiInsightProfiles.$inferSelect;
+export type AiFinancialInsight = typeof aiFinancialInsights.$inferSelect;
+export type AiInsightProfileStatus = (typeof aiInsightProfiles.$inferSelect)["status"];
 export type BudgetPeriodType = (typeof budgets.$inferSelect)["periodType"];
 
 // INSERT types
@@ -96,3 +102,7 @@ export type NewWhiteboardNodePosition = typeof whiteboardNodePositions.$inferIns
 export type NewBudget = typeof budgets.$inferInsert;
 export type NewBudgetLine = typeof budgetLines.$inferInsert;
 export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
+export type NewAiInsightProfile = typeof aiInsightProfiles.$inferInsert;
+export type NewAiFinancialInsight = typeof aiFinancialInsights.$inferInsert;
+export type AiChatMessage = typeof aiChatMessages.$inferSelect;
+export type NewAiChatMessage = typeof aiChatMessages.$inferInsert;

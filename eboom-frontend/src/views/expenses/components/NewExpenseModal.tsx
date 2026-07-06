@@ -33,6 +33,7 @@ import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useExpenseDetail } from "../hooks/useExpenseDetail";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectExpenseModal, closeExpenseModal } from "@/src/redux/expenseSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
@@ -96,6 +97,10 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
 
   const isRecurring = watch("isRecurring");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { expense: fetchedExpense } = useExpenseDetail(editingItem?.id ?? 0, {
+    enabled: open && isEdit && !!editingItem?.id,
+  });
 
   const { data: categoriesRes, isLoading: isLoadingCategories } = useQueryApi<{
     categories?: { id: number; name: string }[];
@@ -169,7 +174,7 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
   );
 
   const { mutateAsync: updateExpense, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.EXPENSES_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.EXPENSES_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
@@ -179,16 +184,17 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
   const isSaving = isCreating || isUpdating || isSubmitting;
 
   useEffect(() => {
-    if (open && isEdit && editingItem) {
+    const source = fetchedExpense ?? editingItem;
+    if (open && isEdit && source) {
       reset({
-        name: editingItem.name ?? "",
-        expenseCategoryId: editingItem.expenseCategoryId ?? null,
-        currencyId: editingItem.currencyId ?? null,
-        defaultWalletId: editingItem.defaultWalletId ?? editingItem.defaultWallet?.id ?? null,
-        description: typeof editingItem.description === "string" ? editingItem.description : "",
-        isRecurring: editingItem.isRecurring ?? false,
+        name: source.name ?? "",
+        expenseCategoryId: source.expenseCategoryId ?? null,
+        currencyId: source.currencyId ?? null,
+        defaultWalletId: source.defaultWalletId ?? source.defaultWallet?.id ?? null,
+        description: typeof source.description === "string" ? source.description : "",
+        isRecurring: source.isRecurring ?? false,
         recurrencePattern:
-          (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
+          (source.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
         photo: null,
       });
     } else if (open && !isEdit) {
@@ -197,7 +203,7 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
     if (open) {
       setSubmitError(null);
     }
-  }, [open, isEdit, editingItem, reset]);
+  }, [open, isEdit, fetchedExpense, editingItem, reset]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {

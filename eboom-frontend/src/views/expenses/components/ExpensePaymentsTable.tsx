@@ -1,36 +1,26 @@
 "use client";
 
 import API_ROUTES from "@/src/api/urls";
-import useQueryApi from "@/src/api/useQuery";
+import { useMutationApi } from "@/src/api/useMutation";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import {
+  DataTableSection,
+  TableEntityCell,
+  TableNotesCell,
+  tableNotesCellClassName,
+  type DataTableColumn,
+} from "@/src/components/data-table";
+import { useExpenseDetail } from "../hooks/useExpenseDetail";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Container } from "@/components/ui/container";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "./NewExpensePaymentModal";
 import { useTranslation } from "react-i18next";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
@@ -62,8 +52,6 @@ interface ExpensePaymentsTableProps {
   expenseId: number;
 }
 
-const hasWindow = typeof window !== "undefined";
-
 function getPaymentStatus(payment: ExpensePayment, t: TFunction<"expenses">): {
   label: string;
   status: TransactionStatus;
@@ -88,6 +76,7 @@ function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
 export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
+  const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
@@ -95,70 +84,28 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<ExpensePayment | null>(null);
 
-  const { data: expenseRes, isLoading: isLoadingExpense } = useQueryApi<{
-    expense: {
-      id: number;
-      name: string;
-      currencyId: number;
-      defaultWalletId: number | null;
-      defaultWallet?: { id: number; name: string } | null;
-      currency?: { id: number; symbol: string } | null;
-    };
-  }>(API_ROUTES.EXPENSES_GET(expenseId), {
-    queryKey: ["expense", expenseId],
-    enabled: !!expenseId,
-  });
-
-  const { data: currenciesRes } = useQueryApi<{
-    currencies?: { id: number; code: string; symbol: string }[];
-  }>(API_ROUTES.CURRENCIES_METADATA, {
-    queryKey: ["currencies"],
-  });
-
   const {
-    data: paymentsRes,
-    isLoading: isLoadingPayments,
+    expense,
+    payments: rawPayments,
+    currencySymbol,
+    isLoading,
     isError,
-  } = useQueryApi<{ payments: ExpensePayment[] }>(
-    API_ROUTES.EXPENSE_PAYMENTS_LIST(expenseId),
+  } = useExpenseDetail(expenseId);
+
+  const { mutate: deletePayment, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.EXPENSE_PAYMENTS_DELETE(canvas!, id),
     {
-      queryKey: ["expense-payments", expenseId],
-      enabled: !!expenseId,
+      method: "delete",
+      invalidateQueries: false,
+      onSuccess: () => {
+        setDeleteId(null);
+        queryClient.invalidateQueries({ queryKey: ["expense-payments", canvas, expenseId] });
+        queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
     }
   );
 
-  const { mutate: deletePayment, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.EXPENSE_PAYMENTS_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries({ queryKey: ["expense-payments", expenseId] });
-      queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
-
-  const currencySymbol = useMemo(() => {
-    const fromExpense = expenseRes?.expense?.currency?.symbol;
-    if (fromExpense) return fromExpense;
-
-    const currencyId = expenseRes?.expense?.currencyId;
-    if (!currencyId) return undefined;
-    return currenciesRes?.currencies?.find((c) => c.id === currencyId)?.symbol;
-  }, [
-    expenseRes?.expense?.currency?.symbol,
-    expenseRes?.expense?.currencyId,
-    currenciesRes?.currencies,
-  ]);
-
-  const payments = useMemo(
-    () => sortPayments(paymentsRes?.payments ?? []),
-    [paymentsRes?.payments]
-  );
+  const payments = useMemo(() => sortPayments(rawPayments), [rawPayments]);
 
   const totalPaid = useMemo(
     () =>
@@ -168,58 +115,71 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
     [payments]
   );
 
-  const isLoading = isLoadingExpense || isLoadingPayments;
-
-  if (isLoading) {
-    return (
-      <Container>
-        <Stack gap={4}>
-          <Skeleton className="h-7 w-48" />
-          <div className="overflow-hidden rounded-lg border">
-            <div className="space-y-3 p-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          </div>
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container>
-        <Typography variant="muted-sm">
-          {t("paymentsTable.loadError")}
-        </Typography>
-      </Container>
-    );
-  }
+  const columns: DataTableColumn<ExpensePayment>[] = useMemo(
+    () => [
+      {
+        id: "amount",
+        header: t("paymentsTable.headers.amount"),
+        headerClassName: "w-[140px]",
+        cellClassName: "font-medium tabular-nums",
+        cell: (payment) => formatAmount(payment.amount, currencySymbol, emDash),
+      },
+      {
+        id: "wallet",
+        header: t("paymentsTable.headers.wallet"),
+        cell: (payment) => (
+          <TableEntityCell
+            name={payment.sourceWallet?.name ?? emDash}
+            caption={payment.sourceWallet?.category?.name}
+          />
+        ),
+      },
+      {
+        id: "due",
+        header: t("paymentsTable.headers.due"),
+        cellClassName: "text-muted-foreground",
+        cell: (payment) => formatDate(payment.dueDate, { fallback: emDash }),
+      },
+      {
+        id: "paid",
+        header: t("paymentsTable.headers.paid"),
+        cellClassName: "text-muted-foreground",
+        cell: (payment) => formatDate(payment.paidDate, { fallback: emDash }),
+      },
+      {
+        id: "status",
+        header: t("paymentsTable.headers.status"),
+        cell: (payment) => {
+          const status = getPaymentStatus(payment, t);
+          return <TransactionStatusChip status={status.status} label={status.label} />;
+        },
+      },
+      {
+        id: "notes",
+        header: t("paymentsTable.headers.notes"),
+        headerClassName: "hidden md:table-cell",
+        cellClassName: tableNotesCellClassName,
+        cell: (payment) => <TableNotesCell notes={payment.notes} emptyLabel={emDash} />,
+      },
+    ],
+    [t, currencySymbol, emDash]
+  );
 
   return (
     <>
-      <Container>
-        <Stack gap={4}>
-        <Stack direction="row" align="center" justify="between" gap={4}>
-          <div>
-            <Typography variant="heading">{t("paymentsTable.title")}</Typography>
-            {expenseRes?.expense?.name && (
-              <Typography variant="muted-sm">
-                {t("paymentsTable.subtitle", { expenseName: expenseRes.expense.name })}
-              </Typography>
-            )}
-          </div>
-          <Stack direction="row" align="center" gap={3}>
-            {payments.length > 0 && (
-              <Typography variant="count" className="hidden sm:block">
-                {t("paymentsTable.count", {
-                  count: payments.length,
-                  unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
-                })}
-              </Typography>
-            )}
-            {canEdit && (
+      <DataTableSection
+        title={t("paymentsTable.title")}
+        subtitle={expense?.name ? t("paymentsTable.subtitle", { expenseName: expense.name }) : undefined}
+        count={
+          payments.length > 0
+            ? t("paymentsTable.count", {
+                count: payments.length,
+                unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+              })
+            : undefined
+        }
+        headerAction={
+          canEdit ? (
             <Button
               size="sm"
               onClick={() => {
@@ -230,124 +190,34 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
               <Plus className="size-4" />
               {t("paymentsTable.createPayment")}
             </Button>
-            )}
-          </Stack>
-        </Stack>
-
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-[140px]">{t("paymentsTable.headers.amount")}</TableHead>
-                <TableHead>{t("paymentsTable.headers.wallet")}</TableHead>
-                <TableHead>{t("paymentsTable.headers.due")}</TableHead>
-                <TableHead>{t("paymentsTable.headers.paid")}</TableHead>
-                <TableHead>{t("paymentsTable.headers.status")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("paymentsTable.headers.notes")}</TableHead>
-                {canEdit && <TableHead className="w-10" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center">
-                    <p className="text-muted-foreground">
-                      {t("paymentsTable.empty")}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                payments.map((payment) => {
-                  const status = getPaymentStatus(payment, t);
-                  return (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium tabular-nums">
-                        {formatAmount(payment.amount, currencySymbol, emDash)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{payment.sourceWallet?.name ?? emDash}</span>
-                          {payment.sourceWallet?.category?.name && (
-                            <Typography variant="caption">
-                              {payment.sourceWallet.category.name}
-                            </Typography>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(payment.dueDate, { fallback: emDash })}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(payment.paidDate, { fallback: emDash })}
-                      </TableCell>
-                      <TableCell>
-                        <TransactionStatusChip
-                          status={status.status}
-                          label={status.label}
-                        />
-                      </TableCell>
-                      <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                        {payment.notes ? (
-                          <span title={payment.notes}>{payment.notes}</span>
-                        ) : (
-                          <span className="text-muted-foreground">{emDash}</span>
-                        )}
-                      </TableCell>
-                      {canEdit && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground size-8"
-                            >
-                              <MoreVertical className="size-4" />
-                              <span className="sr-only">{tc("actions.openMenu")}</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingPayment(payment);
-                                setModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="size-4" />
-                              {tc("actions.edit")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => setDeleteId(payment.id)}
-                            >
-                              <Trash2 className="size-4" />
-                              {tc("actions.delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-            {payments.length > 0 && (
-              <TableFooter>
-                <TableRow>
-                  <TableCell className="font-semibold tabular-nums">
-                    {formatAmount(totalPaid, currencySymbol, emDash)}
-                  </TableCell>
-                  <TableCell colSpan={6} className="text-muted-foreground">
-                    {t("paymentsTable.footer.totalPaid")}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            )}
-          </Table>
-        </div>
-        </Stack>
-      </Container>
+          ) : undefined
+        }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("paymentsTable.loadError")}
+        columns={columns}
+        data={payments}
+        getRowKey={(payment) => payment.id}
+        emptyMessage={t("paymentsTable.empty")}
+        showActions={canEdit}
+        actions={{
+          onEdit: (payment) => {
+            setEditingPayment(payment);
+            setModalOpen(true);
+          },
+          onDelete: (payment) => setDeleteId(payment.id),
+        }}
+        footer={
+          <TableRow>
+            <TableCell className="font-semibold tabular-nums">
+              {formatAmount(totalPaid, currencySymbol, emDash)}
+            </TableCell>
+            <TableCell colSpan={6} className="text-muted-foreground">
+              {t("paymentsTable.footer.totalPaid")}
+            </TableCell>
+          </TableRow>
+        }
+      />
 
       <ConfirmDeleteDialog
         open={deleteId !== null}
@@ -368,11 +238,8 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
           setModalOpen(open);
           if (!open) setEditingPayment(null);
         }}
-        defaultWalletId={
-          expenseRes?.expense?.defaultWalletId ??
-          expenseRes?.expense?.defaultWallet?.id
-        }
-        expenseName={expenseRes?.expense?.name}
+        defaultWalletId={expense?.defaultWalletId ?? expense?.defaultWallet?.id}
+        expenseName={expense?.name}
       />
     </>
   );

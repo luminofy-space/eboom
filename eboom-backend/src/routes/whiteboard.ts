@@ -1,9 +1,5 @@
 import express, { Request, Response } from "express";
 import {
-  checkCanvasPermission,
-  type CanvasPermission,
-} from "../services/canvasAccessService";
-import {
   getWhiteboardData,
   upsertWhiteboardNodePositions,
   upsertWhiteboardViewport,
@@ -12,19 +8,11 @@ import {
   type WhiteboardNodePositionInput,
 } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
+import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
 
 const VALID_ENTITY_TYPES = new Set<WhiteboardEntityType>(["wallet", "income", "expense"]);
-
-function denyPermission(res: Response, access: { allowed: false; status: 403; error: string }) {
-  return res.status(access.status).json({ error: access.error });
-}
-
-function parseCanvasId(req: Request): number | null {
-  const canvasId = parseRouteParam(req.params.canvasId);
-  return Number.isNaN(canvasId) ? null : canvasId;
-}
 
 function parseEntityType(value: string | string[] | undefined): WhiteboardEntityType | null {
   const entityType = Array.isArray(value) ? value[0] : value;
@@ -35,25 +23,10 @@ function parseEntityType(value: string | string[] | undefined): WhiteboardEntity
   return null;
 }
 
-async function requireCanvasAccess(
-  canvasId: number,
-  userId: number,
-  permission: CanvasPermission
-) {
-  return checkCanvasPermission(canvasId, userId, permission);
-}
-
-router.get("/", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (canvasId == null) return res.status(400).json({ error: "Invalid canvas ID" });
+router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   try {
-    const access = await requireCanvasAccess(canvasId, user.id, "view");
-    if (!access.allowed) return denyPermission(res, access);
-
     const data = await getWhiteboardData(canvasId);
     res.json(data);
   } catch (err) {
@@ -62,12 +35,8 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/viewport", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (canvasId == null) return res.status(400).json({ error: "Invalid canvas ID" });
+router.put("/viewport", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const { x, y, zoom } = req.body ?? {};
   if ([x, y, zoom].some((v) => typeof v !== "number" || Number.isNaN(v))) {
@@ -75,9 +44,6 @@ router.put("/viewport", async (req: Request, res: Response) => {
   }
 
   try {
-    const access = await requireCanvasAccess(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const viewport = await upsertWhiteboardViewport(canvasId, { x, y, zoom });
     res.json({ viewport });
   } catch (err) {
@@ -86,12 +52,8 @@ router.put("/viewport", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/nodes", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (canvasId == null) return res.status(400).json({ error: "Invalid canvas ID" });
+router.put("/nodes", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const nodes = req.body?.nodes as WhiteboardNodePositionInput[] | undefined;
   if (!Array.isArray(nodes) || nodes.length === 0) {
@@ -115,9 +77,6 @@ router.put("/nodes", async (req: Request, res: Response) => {
   }
 
   try {
-    const access = await requireCanvasAccess(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     const saved = await upsertWhiteboardNodePositions(canvasId, nodes);
     res.json({ nodePositions: saved });
   } catch (err) {
@@ -126,12 +85,8 @@ router.put("/nodes", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/nodes/:entityType/:entityId", async (req: Request, res: Response) => {
-  const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const canvasId = parseCanvasId(req);
-  if (canvasId == null) return res.status(400).json({ error: "Invalid canvas ID" });
+router.delete("/nodes/:entityType/:entityId", requireCanvasAccess("edit"), async (req: Request, res: Response) => {
+  const canvasId = req.canvasId!;
 
   const entityType = parseEntityType(req.params.entityType);
   if (!entityType) return res.status(400).json({ error: "Invalid entity type" });
@@ -140,9 +95,6 @@ router.delete("/nodes/:entityType/:entityId", async (req: Request, res: Response
   if (Number.isNaN(entityId)) return res.status(400).json({ error: "Invalid entity ID" });
 
   try {
-    const access = await requireCanvasAccess(canvasId, user.id, "edit");
-    if (!access.allowed) return denyPermission(res, access);
-
     await unregisterWhiteboardNode(canvasId, entityType, entityId);
     res.status(204).send();
   } catch (err) {

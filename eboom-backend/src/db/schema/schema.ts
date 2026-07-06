@@ -508,6 +508,82 @@ export const budgetLines = pgTable(
   ]
 );
 
+export const aiInsightProfileStatusEnum = pgEnum("ai_insight_profile_status", [
+  "draft",
+  "completed",
+]);
+
+export const aiInsightProfiles = pgTable(
+  "ai_insight_profiles",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id")
+      .notNull()
+      .unique()
+      .references(() => canvases.id),
+    status: aiInsightProfileStatusEnum("status").notNull().default("draft"),
+    currentStep: integer("current_step").notNull().default(1),
+    riskProfile: jsonb("risk_profile"),
+    investmentGoals: jsonb("investment_goals"),
+    esgPreferences: jsonb("esg_preferences"),
+    financialKnowledge: jsonb("financial_knowledge"),
+    financialPicture: jsonb("financial_picture"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    updatedByUserId: integer("updated_by_user_id").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    check(
+      "ai_insight_profile_current_step_check",
+      sql`${table.currentStep} >= 1 AND ${table.currentStep} <= 5`
+    ),
+  ]
+);
+
+export const aiFinancialInsights = pgTable(
+  "ai_financial_insights",
+  {
+    id: serial("id").primaryKey(),
+    canvasId: integer("canvas_id")
+      .notNull()
+      .unique()
+      .references(() => canvases.id),
+    profileId: integer("profile_id").references(() => aiInsightProfiles.id),
+    generatedByUserId: integer("generated_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    insights: jsonb("insights").notNull(),
+    completenessScore: integer("completeness_score").notNull().default(0),
+    completenessBreakdown: jsonb("completeness_breakdown"),
+    contextSummary: jsonb("context_summary"),
+    model: varchar("model", { length: 100 }).notNull(),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    check(
+      "ai_financial_insights_completeness_check",
+      sql`${table.completenessScore} >= 0 AND ${table.completenessScore} <= 100`
+    ),
+  ]
+);
+
+export const aiChatMessageRoleEnum = pgEnum("ai_chat_message_role", ["user", "assistant"]);
+
+export const aiChatMessages = pgTable("ai_chat_messages", {
+  id: serial("id").primaryKey(),
+  canvasId: integer("canvas_id")
+    .notNull()
+    .references(() => canvases.id),
+  userId: integer("user_id").references(() => users.id),
+  role: aiChatMessageRoleEnum("role").notNull(),
+  content: text("content").notNull(),
+  model: varchar("model", { length: 100 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 export const savingsGoals = pgTable(
   "savings_goals",
   {

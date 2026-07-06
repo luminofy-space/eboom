@@ -12,8 +12,7 @@ import {
   type AssetItem,
 } from "@/src/redux/assetSlice";
 import { useDebouncedValue } from "@mantine/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,7 +30,6 @@ import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/src/i18n/formatters";
 
-const hasWindow = typeof window !== "undefined";
 
 export default function AssetsListPage() {
   const { t } = useTranslation("assets");
@@ -39,7 +37,6 @@ export default function AssetsListPage() {
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
   const searchQuery = useAppSelector(selectSearchQuery);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -59,19 +56,10 @@ export default function AssetsListPage() {
     }
   );
 
-  const { mutate: deleteAsset, isPending: isDeleting } = useMutation({
-    mutationFn: async (id: number) => {
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.ASSETS_DELETE(id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.delete(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries();
-    },
-  });
+  const { mutate: deleteAsset, isPending: isDeleting } = useMutationApi(
+    (id: number) => API_ROUTES.ASSETS_DELETE(canvas!, id),
+    { method: "delete", onSuccess: () => setDeleteId(null) }
+  );
 
   const showLoading = isLoading || (isFetching && items.length === 0);
 

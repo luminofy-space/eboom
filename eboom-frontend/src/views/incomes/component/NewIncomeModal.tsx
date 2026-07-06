@@ -20,12 +20,14 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectIncomeModal, closeIncomeModal } from "@/src/redux/incomeSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
@@ -41,7 +43,7 @@ import { useTranslation } from "react-i18next";
 interface IncomeFormData {
   name: string;
   currencyId: number | null;
-  amount: number;
+  amount?: number;
   incomeCategoryId: number | null;
   defaultWalletId: number | null;
   description: string;
@@ -53,7 +55,7 @@ interface IncomeFormData {
 const defaultValues: IncomeFormData = {
   name: "",
   currencyId: null,
-  amount: 0,
+  amount: undefined,
   incomeCategoryId: null,
   defaultWalletId: null,
   description: "",
@@ -91,6 +93,10 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
 
   const isRecurring = watch("isRecurring");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { income: fetchedIncome } = useIncomeDetail(editingItem?.id ?? 0, {
+    enabled: open && isEdit && !!editingItem?.id,
+  });
 
   const { data: currenciesRes, isLoading: isLoadingCurr } = useQueryApi<{
     currencies?: { id: number; name: string; code: string }[];
@@ -170,7 +176,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   );
 
   const { mutateAsync: updateIncome, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.INCOMES_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.INCOMES_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
@@ -180,17 +186,18 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
   const isSaving = isCreating || isUpdating || isSubmitting;
 
   useEffect(() => {
-    if (open && isEdit && editingItem) {
+    const source = fetchedIncome ?? editingItem;
+    if (open && isEdit && source) {
       reset({
-        name: editingItem.name ?? "",
-        currencyId: editingItem.currencyId ?? editingItem.currency?.id ?? null,
-        amount: editingItem.amount ?? 0,
-        incomeCategoryId: editingItem.incomeCategoryId ?? null,
-        defaultWalletId: editingItem.defaultWalletId ?? editingItem.defaultWallet?.id ?? null,
-        isRecurring: editingItem.isRecurring ?? false,
+        name: source.name ?? "",
+        currencyId: source.currencyId ?? source.currency?.id ?? null,
+        amount: source.amount ? Number(source.amount) : undefined,
+        incomeCategoryId: source.incomeCategoryId ?? null,
+        defaultWalletId: source.defaultWalletId ?? source.defaultWallet?.id ?? null,
+        isRecurring: source.isRecurring ?? false,
         recurrencePattern:
-          (editingItem.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
-        description: typeof editingItem.description === "string" ? editingItem.description : "",
+          (source.recurrencePattern as RecurrencePattern) ?? DEFAULT_RECURRENCE_PATTERN,
+        description: typeof source.description === "string" ? source.description : "",
         photo: null,
       });
     } else if (open && !isEdit) {
@@ -199,7 +206,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     if (open) {
       setSubmitError(null);
     }
-  }, [open, isEdit, editingItem, reset]);
+  }, [open, isEdit, fetchedIncome, editingItem, reset]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {
@@ -326,12 +333,12 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
           <Stack direction="row" gap={5}>
             <Field className="flex-1">
               <FieldLabel htmlFor="amount">{t("modal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
+                placeholder={tc("placeholders.amount")}
                 {...register("amount", {
                   required: tv("amountRequired"),
                   valueAsNumber: true,
@@ -340,7 +347,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (!Number.isNaN(value) && value && value > 0) || tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

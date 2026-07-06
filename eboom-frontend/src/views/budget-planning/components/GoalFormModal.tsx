@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "@/src/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -28,7 +29,6 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
-import { env } from "@/utils/env";
 import { getApiErrorMessage } from "@/src/utils/formUtils";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
 import type { SavingsGoalListItem, SavingsGoalStatus } from "../types";
@@ -143,58 +143,47 @@ export function GoalFormModal({
     queryClient.invalidateQueries({ queryKey: ["calendar"] });
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async (nextStatus?: SavingsGoalStatus) => {
-      if (!canEdit) throw new Error("Insufficient permissions");
-
-      const payload = {
+  const saveMutation = useMutationApi<SavingsGoalStatus | undefined>(
+    () =>
+      isEdit && resolvedGoal
+        ? API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal.goal.id)
+        : API_ROUTES.CANVAS_SAVINGS_GOALS_CREATE(canvasId),
+    {
+      method: () => (isEdit && resolvedGoal ? "patch" : "post"),
+      mapPayload: (nextStatus?: SavingsGoalStatus) => ({
         name: name.trim(),
         targetAmount,
         targetDate: targetDate || null,
         currencyId: parseInt(currencyId, 10),
         ...(isEdit ? { status: nextStatus ?? status } : {}),
-      };
+      }),
+      invalidateQueries: false,
+      onSuccess: () => {
+        invalidateQueries();
+        onOpenChange(false);
+      },
+      onError: (err: unknown) => {
+        setSubmitError(getApiErrorMessage(err, t("saveError")));
+      },
+    }
+  );
 
-      if (isEdit && resolvedGoal) {
-        await axios.patch(
-          `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal.goal.id)}`,
-          payload,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      } else {
-        await axios.post(
-          `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_CREATE(canvasId)}`,
-          payload,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      }
-    },
-    onSuccess: () => {
-      invalidateQueries();
-      onOpenChange(false);
-    },
-    onError: (err: unknown) => {
-      setSubmitError(getApiErrorMessage(err, t("saveError")));
-    },
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: async (nextStatus: SavingsGoalStatus) => {
-      if (!canEdit || !resolvedGoal) throw new Error("Insufficient permissions");
-      await axios.patch(
-        `${env("NEXT_PUBLIC_BASE_URL")}${API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal.goal.id)}`,
-        { status: nextStatus },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-    },
-    onSuccess: () => {
-      invalidateQueries();
-      onOpenChange(false);
-    },
-    onError: (err: unknown) => {
-      setSubmitError(getApiErrorMessage(err, t("saveError")));
-    },
-  });
+  const statusMutation = useMutationApi(
+    (nextStatus: SavingsGoalStatus) =>
+      API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal!.goal.id),
+    {
+      method: "patch",
+      mapPayload: (nextStatus: SavingsGoalStatus) => ({ status: nextStatus }),
+      invalidateQueries: false,
+      onSuccess: () => {
+        invalidateQueries();
+        onOpenChange(false);
+      },
+      onError: (err: unknown) => {
+        setSubmitError(getApiErrorMessage(err, t("saveError")));
+      },
+    }
+  );
 
   const canSubmit = canEdit && name.trim() && targetAmount && currencyId;
   const isPending = saveMutation.isPending || statusMutation.isPending;
@@ -226,8 +215,7 @@ export function GoalFormModal({
               </Field>
               <Field>
                 <FieldLabel>{t("goals.targetAmount")}</FieldLabel>
-                <Input
-                  type="number"
+                <NumberInput
                   min={0}
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}

@@ -26,6 +26,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
@@ -120,7 +121,7 @@ export function NewAssetModal() {
   );
 
   const { mutateAsync: updateAsset, isPending: isUpdating } = useMutationApi(
-    editingItem ? API_ROUTES.ASSETS_UPDATE(editingItem.id) : "",
+    editingItem && canvas ? API_ROUTES.ASSETS_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
       hasToken: true,
@@ -299,9 +300,8 @@ export function NewAssetModal() {
 
               <Field className="flex-1">
                 <FieldLabel htmlFor="asset-value">{t("modal.fields.estimatedValue.label")}</FieldLabel>
-                <Input
+                <NumberInput
                   id="asset-value"
-                  type="number"
                   min="0"
                   step="any"
                   placeholder={t("modal.fields.estimatedValue.placeholder")}

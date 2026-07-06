@@ -63,7 +63,7 @@
 
 .eventTooltip {
   position: fixed;
-  z-index: 9999;
+  z-index: var(--calendar-layer-tooltip);
   width: min(280px, calc(100vw - 24px));
   border-radius: 12px;
   padding: 12px;
@@ -172,6 +172,8 @@
 }
 
 .calendarWrapper {
+  --calendar-layer-popover: 10000;
+  --calendar-layer-tooltip: 10001;
   --calendar-cell-border: color-mix(in srgb, var(--muted-foreground) 38%, transparent);
   --calendar-cell-height: 107px;
   --fc-border-color: var(--calendar-cell-border);
@@ -368,7 +370,7 @@
 
 .calendarWrapper :global(.fc-popover),
 .calendarWrapper :global(.fc-theme-standard .fc-popover) {
-  z-index: 10000;
+  z-index: var(--calendar-layer-popover);
   overflow: hidden;
   opacity: 1;
   border: 1px solid var(--border) !important;
@@ -420,6 +422,41 @@
 
 .calendarWrapper :global(.fc-popover-body .fc-event-main) {
   color: inherit;
+}
+
+.calendarSkeleton {
+  border-radius: 18px;
+  border: 1px solid var(--calendar-cell-border);
+  overflow: hidden;
+}
+
+.calendarSkeletonHeader {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--calendar-cell-border);
+  background: hsl(var(--background));
+}
+
+.calendarSkeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendarSkeletonCell {
+  height: var(--calendar-cell-height);
+  border-radius: 0;
+  border-right: 1px solid var(--calendar-cell-border);
+  border-bottom: 1px solid var(--calendar-cell-border);
+}
+
+.calendarSkeletonCell:nth-child(7n) {
+  border-right: none;
+}
+
+.calendarSkeletonGrid > :nth-last-child(-n + 7) {
+  border-bottom: none;
 }
 
 @media (max-width: 768px) {

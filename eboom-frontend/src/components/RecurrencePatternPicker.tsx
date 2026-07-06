@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMemo } from "react";
@@ -58,10 +58,10 @@ export function RecurrencePatternPicker({
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground whitespace-nowrap">{t("recurrence.every")}</span>
-        <Input
-          type="number"
+        <NumberInput
           min={1}
           max={99}
+          hideZeroWhenBlurred={false}
           value={value.interval}
           onChange={(e) =>
             onChange({
@@ -127,10 +127,10 @@ export function RecurrencePatternPicker({
       {value.frequency === "monthly" && (
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground whitespace-nowrap">{t("recurrence.onDay")}</Label>
-          <Input
-            type="number"
+          <NumberInput
             min={1}
             max={31}
+            hideZeroWhenBlurred={false}
             value={value.dayOfMonth ?? 1}
             onChange={(e) =>
               onChange({

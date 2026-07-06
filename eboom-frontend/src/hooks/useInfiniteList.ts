@@ -6,6 +6,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "@/src/api/utils";
 import { buildUrlWithParams } from "@/src/api/buildUrlWithParams";
+import { resolveApiUrl } from "@/src/api/resolveApiUrl";
 import { useCallback, useEffect, useRef } from "react";
 import type { PaginatedResponse } from "@/src/types/pagination";
 
@@ -36,15 +37,13 @@ export function useInfiniteList<T>(
         search,
       });
 
-      const fullUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${url}`;
-
       const headers: Record<string, string> = {};
       if (accessToken) {
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
 
       try {
-        const res = await axios.get(fullUrl, { headers });
+        const res = await axios.get(resolveApiUrl(url), { headers });
         return snakeToCamel(res.data) as PaginatedResponse<T>;
       } catch (err: unknown) {
         const axiosErr = err as { response?: { status?: number } };

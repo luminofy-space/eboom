@@ -18,15 +18,17 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
+import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { translateSubmitError, validateDateNotBefore } from "@/src/utils/formUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -34,7 +36,7 @@ import { useTranslation } from "react-i18next";
 
 interface EntryFormData {
   incomeId: number | null;
-  amount: number;
+  amount?: number;
   destinationWalletId: number | null;
   expectedDate: string;
   receivedDate: string;
@@ -43,7 +45,7 @@ interface EntryFormData {
 
 const defaultValues: EntryFormData = {
   incomeId: null,
-  amount: 0,
+  amount: undefined,
   destinationWalletId: null,
   expectedDate: "",
   receivedDate: "",
@@ -129,30 +131,22 @@ export function NewIncomeEntryModal({
     enabled: open && !!canvas && showWalletPicker,
   });
 
-  const resolvedIncomeIdForFetch = incomeId;
-  const { data: entriesRes, isLoading: isLoadingEntry } = useQueryApi<{
-    entries?: {
-      id: number;
-      incomeId: number;
-      destinationWalletId: number;
-      amount: string;
-      expectedDate: string | null;
-      receivedDate: string | null;
-      notes: string | null;
-    }[];
-  }>(
-    resolvedIncomeIdForFetch ? API_ROUTES.INCOME_ENTRIES_LIST(resolvedIncomeIdForFetch) : "",
-    {
-      queryKey: ["income-entries", resolvedIncomeIdForFetch],
-      hasToken: true,
-      enabled: open && isEditMode && !!resolvedIncomeIdForFetch,
-    }
-  );
+  const resolvedIncomeId = incomeId ?? 0;
+  const {
+    income,
+    entries,
+    isLoading: isLoadingDetail,
+  } = useIncomeDetail(resolvedIncomeId, {
+    enabled: !!incomeId && open && isEditMode,
+  });
 
   const editingEntry = useMemo(
-    () => entriesRes?.entries?.find((entry) => entry.id === entryId),
-    [entriesRes?.entries, entryId]
+    () => entries.find((entry) => entry.id === entryId),
+    [entries, entryId]
   );
+
+  const resolvedDefaultWalletId =
+    defaultWalletId ?? income?.defaultWalletId ?? income?.defaultWallet?.id;
 
   const incomes = incomesRes?.incomes ?? [];
   const incomeLabels = incomes.map((income) => {
@@ -188,40 +182,36 @@ export function NewIncomeEntryModal({
     return `${wallet.name}${categorySuffix} – #${wallet.id}`;
   };
 
-  const { mutateAsync: saveEntry, isPending } = useMutation({
-    mutationFn: async (formData: EntryFormData) => {
+  const { mutateAsync: saveEntry, isPending } = useMutationApi(
+    (formData: EntryFormData) => {
       const resolvedIncomeId = incomeId ?? formData.incomeId;
-      const resolvedWalletId = fixedDestinationWalletId ?? formData.destinationWalletId;
-      const payload = {
-        destinationWalletId: resolvedWalletId,
+      if (isEditMode && entryId) {
+        return API_ROUTES.INCOME_ENTRIES_UPDATE(canvas!, entryId);
+      }
+      return API_ROUTES.INCOME_ENTRIES_CREATE(canvas!, resolvedIncomeId!);
+    },
+    {
+      method: () => (isEditMode && entryId ? "put" : "post"),
+      mapPayload: (formData: EntryFormData) => ({
+        destinationWalletId: fixedDestinationWalletId ?? formData.destinationWalletId,
         amount: Number(formData.amount),
         expectedDate: formData.expectedDate || null,
         receivedDate: formData.receivedDate || null,
         notes: formData.notes.trim() || null,
-      };
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      if (isEditMode && entryId) {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_UPDATE(entryId)}`;
-        await axios.put(url, payload, { headers });
-        return;
-      }
-
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.INCOME_ENTRIES_CREATE(resolvedIncomeId!)}`;
-      await axios.post(url, payload, { headers });
-    },
-    onSuccess: async (_, formData) => {
-      const resolvedIncomeId = incomeId ?? formData.incomeId;
-      if (resolvedIncomeId) {
-        await queryClient.invalidateQueries({ queryKey: ["income-entries", resolvedIncomeId] });
-      }
-      for (const key of extraInvalidateKeys) {
-        await queryClient.invalidateQueries({ queryKey: key });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
-    },
-  });
+      }),
+      invalidateQueries: false,
+      onSuccess: async (_data, formData) => {
+        const resolvedIncomeId = incomeId ?? (formData as EntryFormData).incomeId;
+        if (resolvedIncomeId) {
+          await queryClient.invalidateQueries({ queryKey: ["income-entries", canvas, resolvedIncomeId] });
+        }
+        for (const key of extraInvalidateKeys) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
+        await queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
+      },
+    }
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -245,9 +235,9 @@ export function NewIncomeEntryModal({
     reset({
       ...defaultValues,
       incomeId: incomeId ?? null,
-      destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? null,
+      destinationWalletId: fixedDestinationWalletId ?? defaultWalletId ?? resolvedDefaultWalletId ?? null,
       expectedDate: defaultExpectedDate ?? "",
-      amount: defaultAmount ?? 0,
+      amount: defaultAmount,
       receivedDate: defaultReceivedDate ?? new Date().toISOString().slice(0, 10),
       notes: defaultNotes ?? "",
     });
@@ -259,6 +249,7 @@ export function NewIncomeEntryModal({
     incomeId,
     entryId,
     defaultWalletId,
+    resolvedDefaultWalletId,
     fixedDestinationWalletId,
     defaultExpectedDate,
     defaultReceivedDate,
@@ -293,10 +284,12 @@ export function NewIncomeEntryModal({
     }
   };
 
-  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingEntry);
+  const isSaving = isPending || isSubmitting || (isEditMode && isLoadingDetail);
 
-  const description = incomeName
-    ? t("entryModal.description.forIncome", { incomeName })
+  const resolvedIncomeName = incomeName ?? income?.name;
+
+  const description = resolvedIncomeName
+    ? t("entryModal.description.forIncome", { incomeName: resolvedIncomeName })
     : walletName
       ? t("entryModal.description.toWallet", { walletName })
       : t("entryModal.description.default");
@@ -354,9 +347,8 @@ export function NewIncomeEntryModal({
 
             <Field>
               <FieldLabel htmlFor="entry-amount">{t("entryModal.fields.amount.label")}</FieldLabel>
-              <Input
+              <NumberInput
                 id="entry-amount"
-                type="number"
                 step="any"
                 min="0"
                 aria-invalid={!!errors.amount}
@@ -369,7 +361,8 @@ export function NewIncomeEntryModal({
                     message: tv("amountPositive"),
                   },
                   validate: (value) =>
-                    (!Number.isNaN(value) && value > 0) || tv("amountPositive"),
+                    (value != null && !Number.isNaN(value) && value > 0) ||
+                    tv("amountPositive"),
                 })}
               />
               <FieldError errors={[errors.amount]} />

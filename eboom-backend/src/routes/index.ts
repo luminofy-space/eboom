@@ -22,15 +22,26 @@ import notificationsRouter from './notifications';
 import transfersRouter from './transfers';
 import budgetsRouter from './budgets';
 import savingsGoalsRouter from './savings-goals';
+import aiInsightProfilesRouter from './ai-insight-profiles';
+import aiInsightsRouter from './ai-insights';
+import aiChatRouter from './ai-chat';
 
 // Auth routes (no authentication required)
 router.use('/auth', authRoutes);
 
-// Canvas routes (includes canvas-scoped lists: expenses, incomes, wallets)
+// Canvas-scoped entity routes
 router.use('/canvases/:canvasId/members', auth, canvasMembersRouter);
 router.use('/canvases/:canvasId/whiteboard', auth, whiteboardRouter);
 router.use('/canvases/:canvasId/budgets', auth, budgetsRouter);
 router.use('/canvases/:canvasId/savings-goals', auth, savingsGoalsRouter);
+router.use('/canvases/:canvasId/ai-insight-profile', auth, aiInsightProfilesRouter);
+router.use('/canvases/:canvasId/ai-insights', auth, aiInsightsRouter);
+router.use('/canvases/:canvasId/ai-chat', auth, aiChatRouter);
+router.use('/canvases/:canvasId/expenses', auth, expenses);
+router.use('/canvases/:canvasId/incomes', auth, income);
+router.use('/canvases/:canvasId/wallets', auth, wallets);
+router.use('/canvases/:canvasId/assets', auth, assets);
+router.use('/canvases/:canvasId/transfers', auth, transfersRouter);
 router.use('/canvases', auth, canvas);
 
 // Canvas invitations
@@ -42,21 +53,12 @@ router.use('/roles/canvas', auth, canvasRolesRouter);
 // Currency routes
 router.use('/currency', auth, currency);
 
-// Income routes (CRUD + entries, categories)
+// Income categories (not canvas-scoped)
 router.use("/income/categories", auth, incomeCategories);
-router.use('/income', auth, income);
 
-// Wallet routes (individual wallet operations)
-router.use('/wallets', auth, wallets);
+// Category routes (not canvas-scoped)
 router.use('/wallet/categories', auth, walletCategories)
-
-// Transfer routes
-router.use('/transfers', auth, transfersRouter);
-
-// Expense routes (individual expense operations)
-router.use('/expenses', auth, expenses);
 router.use('/expense/categories', auth, expenseCategories);
-router.use('/assets', auth, assets);
 router.use('/asset/categories', auth, assetCategories);
 
 // Calendar routes

@@ -40,8 +40,8 @@ import {
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { closeCanvasModal, selectCanvasModal } from "@/src/redux/canvasSlice";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutationApi } from "@/src/api/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 import { useTranslation } from "react-i18next";
 
@@ -104,20 +104,18 @@ export function NewCanvasModal() {
 
   const { createCanvas, isCreating } = useCanvas();
 
-  const { mutate: updateCanvasMutation, isPending: isUpdating } = useMutation({
-    mutationFn: async (data: { name: string; description?: string; canvasType: string; photoUrl: string }) => {
-      if (!editingItem) return;
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}${API_ROUTES.CANVASES_UPDATE(editingItem.id)}`;
-      const token = hasWindow ? window.localStorage.getItem("accessToken") : null;
-      await axios.put(url, data, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      handleClose();
-    },
-  });
+  const { mutate: updateCanvasMutation, isPending: isUpdating } = useMutationApi(
+    (data: { name: string; description?: string; canvasType: string; photoUrl: string }) =>
+      API_ROUTES.CANVASES_UPDATE(editingItem!.id),
+    {
+      method: "put",
+      invalidateQueries: false,
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        handleClose();
+      },
+    }
+  );
 
   useEffect(() => {
     if (open && isEdit && editingItem) {
@@ -157,7 +155,7 @@ export function NewCanvasModal() {
       try {
         await createCanvas(formData.name, formData.description, formData.canvasType, photoUrl, selectedCurrency.id);
         handleClose();
-        navigate("/");
+        navigate("/dashboard");
       } catch (error) {
         console.error("Error creating canvas:", error);
       }
