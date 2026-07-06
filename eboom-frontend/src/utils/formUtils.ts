@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import type { AxiosError } from "@/src/api/axiosTypes";
 
 type ApiErrorBody = {
   error?: string;
@@ -12,7 +12,9 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (error && typeof error === "object" && "response" in error) {
-    const data = (error as AxiosError<ApiErrorBody>).response?.data;
+    const data = (error as AxiosError<ApiErrorBody>).response?.data as
+      | ApiErrorBody
+      | undefined;
 
     if (data?.error) return data.error;
     if (data?.message) return data.message;

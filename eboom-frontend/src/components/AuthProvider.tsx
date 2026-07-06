@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
-import { User } from "@backend/db/schema";
+import type { User } from "@/src/types/common";
 import { env } from "@/utils/env";
 import { LANGUAGE_STORAGE_KEY } from "@/src/i18n/languages";
 

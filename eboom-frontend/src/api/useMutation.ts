@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import axios, { type AxiosError, type AxiosRequestConfig } from "./axiosTypes";
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "@/src/components/AuthProvider";
@@ -39,7 +39,7 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     onError?: (err: unknown) => void;
     auth?: AuthOptions;
   },
-  axiosProp?: AxiosRequestConfig
+  axiosProp?: Partial<AxiosRequestConfig>
 ) => {
   const queryClient = useQueryClient();
   const { handleError, handleSuccess } = useApiRespond();
@@ -55,7 +55,7 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
   const onErrorCallback = options?.onError;
   const urlParams = options?.urlParams;
   const staticParams = options?.staticParams;
-  const timeout = options?.timeout ?? 15000;
+  const timeout = options?.timeout ?? 150000;
   const retry = options?.retry ?? 0;
 
   const authAccessToken = hasToken
@@ -81,9 +81,10 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     return finalUrl;
   };
 
-  const callApi = async (payload: TVariables) => {
+  const callApi = async (payload: TVariables): Promise<T> => {
     const finalUrl = buildUrl(payload);
-    const method = typeof methodOption === "function" ? methodOption(payload) : methodOption;
+    const method =
+      typeof methodOption === "function" ? methodOption(payload) : methodOption;
     const headers: Record<string, string> = { ...optionHeaders };
 
     if (hasToken && authAccessToken) {
@@ -109,8 +110,8 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
 
     try {
       const res = await axios(config);
-      const parsed = snakeToCamel(res.data);
-      handleSuccess(parsed);
+      const parsed = snakeToCamel(res.data) as T;
+      handleSuccess(res);
       return options?.returnWholeData ? parsed : parsed;
     } catch (err: unknown) {
       const axiosErr = err as AxiosError;
@@ -128,7 +129,7 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
             Authorization: `Bearer ${newToken}`,
           };
           const retryRes = await axios(config);
-          return snakeToCamel(retryRes.data);
+          return snakeToCamel(retryRes.data) as T;
         }
       }
 
@@ -143,7 +144,7 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     }
   };
 
-  const mutation = useMutation({
+  const mutation = useMutation<T, AxiosError, TVariables>({
     mutationFn: callApi,
     retry,
     onSuccess: (data, variables) => {

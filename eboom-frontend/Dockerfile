@@ -1,20 +1,24 @@
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app/eboom-frontend
 
 ARG NEXT_PUBLIC_BASE_URL=http://localhost:4000
+ARG NEXT_PUBLIC_GITHUB_URL=https://github.com
 ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_GITHUB_URL=$NEXT_PUBLIC_GITHUB_URL
 
 COPY eboom-frontend/package.json eboom-frontend/package-lock.json ./
-COPY eboom-backend/package.json ../eboom-backend/
-RUN npm ci && npm install drizzle-orm@^0.45.1 --prefix ../eboom-backend && rm -rf ../eboom-backend/node_modules/@types
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm ci --no-audit --no-fund \
+  && test -x node_modules/.bin/next
 
 COPY eboom-frontend/ .
-COPY eboom-backend/src/db/schema ../eboom-backend/src/db/schema
 
 RUN npm run build
 
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 

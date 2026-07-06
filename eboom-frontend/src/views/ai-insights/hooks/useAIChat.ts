@@ -31,13 +31,13 @@ export function useAIChat() {
   );
 
   const { mutateAsync: sendMessageMutation, isPending: isSending } =
-    useMutationApi<AiChatSendResponse>(
+    useMutationApi<{ content: string }, AiChatSendResponse>(
       canvas ? API_ROUTES.CANVAS_AI_CHAT_MESSAGES(canvas) : "",
       { method: "post" }
     );
 
   const { mutateAsync: clearHistoryMutation, isPending: isClearing } =
-    useMutationApi<AiChatMessagesResponse>(
+    useMutationApi<object, AiChatMessagesResponse>(
       canvas ? API_ROUTES.CANVAS_AI_CHAT(canvas) : "",
       { method: "delete" }
     );
