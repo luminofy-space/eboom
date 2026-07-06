@@ -1,12 +1,7 @@
-"use client";
+import type { Metadata } from "next";
+import CalendarPage from "@/src/views/calendar/CalendarPage";
+import { pageTitle } from "@/src/lib/siteMetadata";
 
-import dynamic from "next/dynamic";
+export const metadata: Metadata = pageTitle("Calendar");
 
-const CalendarView = dynamic(() => import("@/src/views/calendar/CalendarView"), {
-  ssr: false,
-  loading: () => null,
-});
-
-export default function CalendarPage() {
-  return <CalendarView />;
-}
+export default CalendarPage;
