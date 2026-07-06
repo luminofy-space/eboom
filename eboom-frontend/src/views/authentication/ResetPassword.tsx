@@ -23,19 +23,24 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import { isAxiosError } from "@/src/api/axiosTypes";
 
 interface ResetPasswordFormData {
   newPassword: string;
   confirmPassword: string;
 }
 
+type ResetPasswordPayload = {
+  token: string;
+  newPassword: string;
+};
+
 type ResetPasswordResponse = {
   message: string;
 };
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof AxiosError) {
+  if (isAxiosError(error)) {
     const data = error.response?.data as { error?: string } | undefined;
     return data?.error || fallback;
   }
@@ -62,7 +67,10 @@ export function ResetPasswordForm({
 
   const newPassword = watch("newPassword");
 
-  const { mutateAsync, isPending } = useMutationApi<ResetPasswordResponse>(
+  const { mutateAsync, isPending } = useMutationApi<
+    ResetPasswordPayload,
+    ResetPasswordResponse
+  >(
     API_ROUTES.AUTH_RESET_PASSWORD,
     { method: "post", hasToken: false }
   );

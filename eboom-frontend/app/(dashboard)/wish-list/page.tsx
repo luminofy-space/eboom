@@ -1,6 +1,8 @@
-"use client";
-
+import type { Metadata } from "next";
 import { ComingSoonPlaceholder } from "@/src/components/ComingSoonPlaceholder";
+import { pageTitle } from "@/src/lib/siteMetadata";
+
+export const metadata: Metadata = pageTitle("Wish List");
 
 export default function WishListPage() {
   return (

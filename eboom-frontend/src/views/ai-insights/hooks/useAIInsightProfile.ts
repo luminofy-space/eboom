@@ -21,7 +21,10 @@ export function useAIInsightProfile() {
     }
   );
 
-  const { mutateAsync, isPending: isSaving } = useMutationApi<{ profile: AiInsightProfile }>(
+  const { mutateAsync, isPending: isSaving } = useMutationApi<
+    AiInsightProfileSavePayload,
+    { profile: AiInsightProfile }
+  >(
     canvas ? API_ROUTES.CANVAS_AI_INSIGHT_PROFILE(canvas) : "",
     { method: "put" }
   );

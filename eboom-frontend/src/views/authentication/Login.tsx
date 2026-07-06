@@ -22,6 +22,7 @@ import { Stack } from "@/components/ui/stack";
 import { useAuthContext } from "@/src/components/AuthProvider";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 interface LoginFormData {
   email: string;
@@ -42,7 +43,7 @@ export function LoginForm({
     formState: { errors },
   } = useForm<LoginFormData>();
 
-  const { login, loading } = useAuthContext();
+  const { login, isLoginPending } = useAuthContext();
 
   const onSubmit = async (data: LoginFormData) => {
     await login(data)
@@ -120,8 +121,9 @@ export function LoginForm({
                 )}
               </Field>
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? t("login.submitting") : t("login.submit")}
+                <Button type="submit" disabled={isLoginPending}>
+                  {isLoginPending && <Loader2 className="size-4 animate-spin" />}
+                  {isLoginPending ? t("login.submitting") : t("login.submit")}
                 </Button>
                 <FieldDescription className="text-center">
                   {t("login.signupPrompt")}{" "}

@@ -5,7 +5,7 @@ import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
-import { Wallet } from "@backend/db/schema";
+import type { Wallet } from "@/src/types/common";
 
 interface UseWalletDetailOptions {
   enabled?: boolean;

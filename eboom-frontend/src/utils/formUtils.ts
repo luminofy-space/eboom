@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import type { AxiosError } from "@/src/api/axiosTypes";
 
 type ApiErrorBody = {
   error?: string;
@@ -12,7 +12,9 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (error && typeof error === "object" && "response" in error) {
-    const data = (error as AxiosError<ApiErrorBody>).response?.data;
+    const data = (error as AxiosError<ApiErrorBody>).response?.data as
+      | ApiErrorBody
+      | undefined;
 
     if (data?.error) return data.error;
     if (data?.message) return data.message;
@@ -30,7 +32,7 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export function validateOptionalImage(
   file: File | null,

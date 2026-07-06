@@ -21,7 +21,7 @@ export function useAIInsights() {
     }
   );
 
-  const { mutateAsync, isPending: isGenerating } = useMutationApi<AiInsightsResponse>(
+  const { mutateAsync, isPending: isGenerating } = useMutationApi<object, AiInsightsResponse>(
     canvas ? API_ROUTES.CANVAS_AI_INSIGHTS_GENERATE(canvas) : "",
     { method: "post" }
   );

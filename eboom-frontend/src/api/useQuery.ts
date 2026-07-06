@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import axios, { type AxiosError, type AxiosRequestConfig } from "./axiosTypes";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "./utils";
@@ -27,7 +27,7 @@ const useQueryApi = <T>(
     refetchOnWindowFocus?: boolean;
     auth?: AuthOptions;
   },
-  axiosProp?: AxiosRequestConfig
+  axiosProp?: Partial<AxiosRequestConfig>
 ) => {
   const {
     queryKey,

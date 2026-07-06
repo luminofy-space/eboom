@@ -23,7 +23,7 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import { isAxiosError } from "@/src/api/axiosTypes";
 
 interface ForgotPasswordFormData {
   email: string;
@@ -34,7 +34,7 @@ type ForgotPasswordResponse = {
 };
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof AxiosError) {
+  if (isAxiosError(error)) {
     const data = error.response?.data as { error?: string } | undefined;
     return data?.error || fallback;
   }
@@ -56,7 +56,10 @@ export function ForgotPasswordForm({
     formState: { errors },
   } = useForm<ForgotPasswordFormData>();
 
-  const { mutateAsync, isPending } = useMutationApi<ForgotPasswordResponse>(
+  const { mutateAsync, isPending } = useMutationApi<
+    ForgotPasswordFormData,
+    ForgotPasswordResponse
+  >(
     API_ROUTES.AUTH_FORGOT_PASSWORD,
     { method: "post", hasToken: false }
   );

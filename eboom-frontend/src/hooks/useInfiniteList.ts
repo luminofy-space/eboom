@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios from "@/src/api/axiosTypes";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "@/src/api/utils";
