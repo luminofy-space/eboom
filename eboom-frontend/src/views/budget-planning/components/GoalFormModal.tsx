@@ -31,7 +31,7 @@ import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { getApiErrorMessage } from "@/src/utils/formUtils";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
-import type { SavingsGoalListItem, SavingsGoalStatus } from "../types";
+import type { SavingsGoalListItem, SavingsGoalStatus } from "@/src/types/budget-planning";
 
 interface GoalFormModalProps {
   open: boolean;

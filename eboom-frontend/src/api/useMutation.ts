@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type AxiosRequestConfig } from "./axiosTypes";
+import axios, { type AxiosError, type AxiosRequestConfig } from "@/src/types/axios";
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "@/src/components/AuthProvider";

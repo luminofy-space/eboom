@@ -47,7 +47,7 @@ import type {
   WhiteboardContextMenuState,
   WhiteboardCreatedEntity,
   WhiteboardSpawnPosition,
-} from "./types";
+} from "@/src/types/whiteboard";
 import { layoutWhiteboardGraph } from "./utils/autoLayout";
 import { getConnectionIntent } from "./utils/connectionValidator";
 import {
@@ -140,22 +140,22 @@ export default function WhiteboardPage() {
     const flowStillExists =
       selectedEdge.kind === "income"
         ? data.incomeFlows.some(
-            (flow) =>
-              flow.incomeId === selectedEdge.flow.incomeId &&
-              flow.walletId === selectedEdge.flow.walletId
-          )
+          (flow) =>
+            flow.incomeId === selectedEdge.flow.incomeId &&
+            flow.walletId === selectedEdge.flow.walletId
+        )
         : selectedEdge.kind === "expense"
           ? data.expenseFlows.some(
-              (flow) =>
-                flow.expenseId === selectedEdge.flow.expenseId &&
-                flow.walletId === selectedEdge.flow.walletId
-            )
+            (flow) =>
+              flow.expenseId === selectedEdge.flow.expenseId &&
+              flow.walletId === selectedEdge.flow.walletId
+          )
           : (data.transferFlows ?? []).some(
-              (flow) =>
-                flow.sourceWalletId === selectedEdge.flow.sourceWalletId &&
-                flow.destinationWalletId === selectedEdge.flow.destinationWalletId &&
-                flow.sourceCurrencyId === selectedEdge.flow.sourceCurrencyId
-            );
+            (flow) =>
+              flow.sourceWalletId === selectedEdge.flow.sourceWalletId &&
+              flow.destinationWalletId === selectedEdge.flow.destinationWalletId &&
+              flow.sourceCurrencyId === selectedEdge.flow.sourceCurrencyId
+          );
 
     if (!flowStillExists) {
       setSelectedEdge(null);
@@ -446,66 +446,66 @@ export default function WhiteboardPage() {
             onAddEntry={
               selectedEdge?.kind === "income"
                 ? () =>
-                    setEntryModal({
-                      open: true,
-                      incomeId: selectedEdge.flow.incomeId,
-                      walletId: selectedEdge.flow.walletId,
-                      entryId: undefined,
-                    })
+                  setEntryModal({
+                    open: true,
+                    incomeId: selectedEdge.flow.incomeId,
+                    walletId: selectedEdge.flow.walletId,
+                    entryId: undefined,
+                  })
                 : undefined
             }
             onAddPayment={
               selectedEdge?.kind === "expense"
                 ? () =>
-                    setPaymentModal({
-                      open: true,
-                      expenseId: selectedEdge.flow.expenseId,
-                      walletId: selectedEdge.flow.walletId,
-                      paymentId: undefined,
-                    })
+                  setPaymentModal({
+                    open: true,
+                    expenseId: selectedEdge.flow.expenseId,
+                    walletId: selectedEdge.flow.walletId,
+                    paymentId: undefined,
+                  })
                 : undefined
             }
             onEditEntry={
               selectedEdge?.kind === "income"
                 ? (entryId) =>
-                    setEntryModal({
-                      open: true,
-                      incomeId: selectedEdge.flow.incomeId,
-                      walletId: selectedEdge.flow.walletId,
-                      entryId,
-                    })
+                  setEntryModal({
+                    open: true,
+                    incomeId: selectedEdge.flow.incomeId,
+                    walletId: selectedEdge.flow.walletId,
+                    entryId,
+                  })
                 : undefined
             }
             onEditPayment={
               selectedEdge?.kind === "expense"
                 ? (paymentId) =>
-                    setPaymentModal({
-                      open: true,
-                      expenseId: selectedEdge.flow.expenseId,
-                      walletId: selectedEdge.flow.walletId,
-                      paymentId,
-                    })
+                  setPaymentModal({
+                    open: true,
+                    expenseId: selectedEdge.flow.expenseId,
+                    walletId: selectedEdge.flow.walletId,
+                    paymentId,
+                  })
                 : undefined
             }
             onAddTransfer={
               selectedEdge?.kind === "transfer"
                 ? () =>
-                    setTransferModal({
-                      open: true,
-                      sourceWalletId: selectedEdge.flow.sourceWalletId,
-                      destinationWalletId: selectedEdge.flow.destinationWalletId,
-                    })
+                  setTransferModal({
+                    open: true,
+                    sourceWalletId: selectedEdge.flow.sourceWalletId,
+                    destinationWalletId: selectedEdge.flow.destinationWalletId,
+                  })
                 : undefined
             }
             onEditTransfer={
               selectedEdge?.kind === "transfer"
                 ? (transferId) =>
-                    setTransferModal({
-                      open: true,
-                      sourceWalletId: selectedEdge.flow.sourceWalletId,
-                      destinationWalletId: selectedEdge.flow.destinationWalletId,
-                      transferId,
-                    })
+                  setTransferModal({
+                    open: true,
+                    sourceWalletId: selectedEdge.flow.sourceWalletId,
+                    destinationWalletId: selectedEdge.flow.destinationWalletId,
+                    transferId,
+                  })
                 : undefined
             }
           />

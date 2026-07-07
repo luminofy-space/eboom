@@ -16,7 +16,7 @@ import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
 import { SystemCurrencySelect } from "@/src/views/budget-planning/components/SystemCurrencySelect";
-import { GOAL_OPTIONS, type WizardFormData } from "../../types";
+import { GOAL_OPTIONS, type WizardFormData } from "@/src/types/ai-insights";
 
 interface InvestmentGoalsStepProps {
   control: Control<WizardFormData>;

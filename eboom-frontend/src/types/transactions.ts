@@ -1,7 +1,7 @@
 import type {
   CanvasSummaryExpensePayment,
   CanvasSummaryIncomeEntry,
-} from "@/src/views/dashboard/types";
+} from "@/src/types/dashboard";
 import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
 
 export interface CanvasTransactionsIncomeEntry extends CanvasSummaryIncomeEntry {

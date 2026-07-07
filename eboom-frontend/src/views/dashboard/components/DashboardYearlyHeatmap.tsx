@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatMoney } from "@/src/i18n/formatters";
 import { useTranslation } from "react-i18next";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import {
   buildYearlyHeatmapData,
   getAvailableHeatmapYears,

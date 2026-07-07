@@ -29,7 +29,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { formatDate, formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import {
   assignCurrencyChartColors,
   buildMultiCurrencySeriesKeys,

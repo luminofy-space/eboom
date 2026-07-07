@@ -10,7 +10,7 @@ import type {
   CanvasSummaryExpensePayment,
   CanvasSummaryIncomeEntry,
   CanvasSummaryWalletBalance,
-} from "../types";
+} from "@/src/types/dashboard";
 
 export interface CurrencyDashboardStats {
   currencyCode: string;

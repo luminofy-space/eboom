@@ -19,7 +19,7 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { formatCurrency, formatDate } from "@/src/i18n/formatters";
 import { BudgetProgressBar } from "./BudgetProgressBar";
-import type { SavingsGoalProgress, SavingsGoalStatus } from "../types";
+import type { SavingsGoalProgress, SavingsGoalStatus } from "@/src/types/budget-planning";
 
 interface GoalCardProps {
   progress: SavingsGoalProgress;

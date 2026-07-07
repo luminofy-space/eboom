@@ -35,7 +35,7 @@ import { GoalCard } from "./components/GoalCard";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalsSectionEmpty } from "./components/GoalsSectionEmpty";
 import { SystemCurrencySelect } from "./components/SystemCurrencySelect";
-import type { BudgetListItem, BudgetPeriodType, SavingsGoalListItem, SavingsGoalProgress, SavingsGoalStatus } from "./types";
+import type { BudgetListItem, BudgetPeriodType, SavingsGoalListItem, SavingsGoalProgress, SavingsGoalStatus } from "@/src/types/budget-planning";
 
 function addDaysIso(days: number): string {
   const d = new Date();
@@ -112,7 +112,7 @@ export default function BudgetPlanningPage() {
       : "";
 
   const { data: forecastRes, isLoading: forecastLoading } = useQueryApi<{
-    forecast?: import("./types").CashFlowForecast;
+    forecast?: import("@/src/types/budget-planning").CashFlowForecast;
   }>(forecastUrl, {
     queryKey: ["forecast", canvas, forecastCurrencyId],
     enabled: !!canvas && !!forecastCurrencyId,

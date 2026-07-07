@@ -1,4 +1,4 @@
-import type { AxiosError, AxiosResponse } from "./axiosTypes";
+import type { AxiosError, AxiosResponse } from "@/src/types/axios";
 
 export const useApiRespond = () => {
     const handleError = (_error: AxiosError) => {

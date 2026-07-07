@@ -14,7 +14,7 @@ import { formatMoney } from "@/src/i18n/formatters";
 import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
 import { Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { SelectedWhiteboardEdge } from "./types";
+import type { SelectedWhiteboardEdge } from "@/src/types/whiteboard";
 import { whiteboardApiDelete } from "./utils/api";
 
 interface IncomeEntryRow {

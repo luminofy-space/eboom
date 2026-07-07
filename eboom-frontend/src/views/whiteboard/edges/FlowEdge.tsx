@@ -8,7 +8,7 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { ExpenseFlow, IncomeFlow, TransferFlow } from "../types";
+import type { ExpenseFlow, IncomeFlow, TransferFlow } from "@/src/types/whiteboard";
 import { whiteboardEdgeColor } from "../utils/theme";
 
 export interface FlowEdgeData {

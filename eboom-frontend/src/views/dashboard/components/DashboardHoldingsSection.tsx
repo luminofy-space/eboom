@@ -10,7 +10,7 @@ import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { GridCard } from "@/src/components/GridCard";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import { useTranslation } from "react-i18next";
 
 interface DashboardHoldingsSectionProps {

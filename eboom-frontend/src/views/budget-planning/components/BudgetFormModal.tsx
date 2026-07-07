@@ -39,7 +39,7 @@ import type {
   BudgetListItem,
   BudgetPeriodType,
   BudgetSuggestions,
-} from "../types";
+} from "@/src/types/budget-planning";
 
 interface ExpenseCategory {
   id: number;

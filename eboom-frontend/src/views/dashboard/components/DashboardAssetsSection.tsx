@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography, typographyVariants } from "@/components/ui/typography";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import {
   computeDashboardStatsByCurrency,
   type CurrencyDashboardStats,

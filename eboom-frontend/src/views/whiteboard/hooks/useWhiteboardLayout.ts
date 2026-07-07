@@ -4,7 +4,7 @@ import { useCallback, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { WhiteboardEntityType, WhiteboardNodePosition, WhiteboardViewport } from "../types";
+import type { WhiteboardEntityType, WhiteboardNodePosition, WhiteboardViewport } from "@/src/types/whiteboard";
 import { whiteboardApiDelete, whiteboardApiPut } from "../utils/api";
 
 export function useWhiteboardLayout() {

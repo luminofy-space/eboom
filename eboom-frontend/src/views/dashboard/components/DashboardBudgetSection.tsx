@@ -18,7 +18,7 @@ import type {
   BudgetDashboardSummary,
   BudgetPeriodDashboardSummary,
   BudgetPeriodType,
-} from "@/src/views/budget-planning/types";
+} from "@/src/types/budget-planning";
 import { StatusChip } from "./StatusChip";
 
 interface DashboardBudgetSectionProps {

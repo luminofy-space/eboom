@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
-import type { AiInsightItem } from "../types";
+import type { AiInsightItem } from "@/src/types/ai-insights";
 
 interface InsightCardsProps {
   insights: AiInsightItem[];

@@ -1,4 +1,4 @@
-import type { WizardFormData } from "./types";
+import type { WizardFormData } from "@/src/types/ai-insights";
 
 export const defaultWizardFormData: WizardFormData = {
   riskProfile: {

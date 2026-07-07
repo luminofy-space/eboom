@@ -23,7 +23,7 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { isAxiosError } from "@/src/api/axiosTypes";
+import { isAxiosError } from "@/src/types/axios";
 
 interface ForgotPasswordFormData {
   email: string;

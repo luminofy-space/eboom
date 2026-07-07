@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { Spinner } from "@/components/ui/spinner";
-import type { AiInsightProfile, WizardFormData } from "../types";
+import type { AiInsightProfile, WizardFormData } from "@/src/types/ai-insights";
 import { defaultWizardFormData, profileToFormData, validateStep } from "../schemas";
 import { WizardStepper } from "./WizardStepper";
 import { RiskProfileStep } from "./steps/RiskProfileStep";

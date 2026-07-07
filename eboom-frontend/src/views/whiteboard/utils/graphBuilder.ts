@@ -6,7 +6,7 @@ import type {
   WhiteboardData,
   WhiteboardEntityType,
   WhiteboardNodePosition,
-} from "../types";
+} from "@/src/types/whiteboard";
 import { whiteboardEdgeMarker } from "./theme";
 
 export const NODE_WIDTH = 220;

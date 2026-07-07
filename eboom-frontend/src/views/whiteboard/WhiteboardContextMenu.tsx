@@ -9,7 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { WhiteboardContextMenuState } from "./types";
+import type { WhiteboardContextMenuState } from "@/src/types/whiteboard";
 import { parseEntityNodeId } from "./utils/graphBuilder";
 
 interface WhiteboardContextMenuProps {

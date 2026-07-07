@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios, { type AxiosError, type AxiosRequestConfig } from "./axiosTypes";
+import axios, { type AxiosError, type AxiosRequestConfig } from "@/src/types/axios";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "./utils";

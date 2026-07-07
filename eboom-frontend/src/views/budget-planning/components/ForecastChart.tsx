@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Typography } from "@/components/ui/typography";
 import { formatCurrency, formatDate } from "@/src/i18n/formatters";
-import type { CashFlowForecast } from "../types";
+import type { CashFlowForecast } from "@/src/types/budget-planning";
 
 interface ForecastChartProps {
   forecast?: CashFlowForecast;

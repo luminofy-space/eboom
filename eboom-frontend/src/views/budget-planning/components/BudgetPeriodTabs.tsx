@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { BudgetPeriodType } from "../types";
+import type { BudgetPeriodType } from "@/src/types/budget-planning";
 
 const PERIODS: BudgetPeriodType[] = ["weekly", "monthly", "yearly"];
 

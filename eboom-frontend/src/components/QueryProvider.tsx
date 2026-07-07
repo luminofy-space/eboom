@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useApiRespond } from '../api/useApiRespond';
-import type { AxiosError, AxiosResponse } from '../api/axiosTypes';
+import type { AxiosError, AxiosResponse } from '@/src/types/axios';
 
 interface Props {
   children: ReactNode;

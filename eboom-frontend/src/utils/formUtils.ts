@@ -1,4 +1,4 @@
-import type { AxiosError } from "@/src/api/axiosTypes";
+import type { AxiosError } from "@/src/types/axios";
 
 type ApiErrorBody = {
   error?: string;
