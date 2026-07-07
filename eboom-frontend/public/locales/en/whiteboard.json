@@ -4,6 +4,9 @@
     "addWallet": "Add wallet",
     "addIncome": "Add income",
     "addExpense": "Add expense",
+    "addEntry": "Add income entry",
+    "addPayment": "Add expense payment",
+    "addTransfer": "Add transfer",
     "autoLayout": "Auto layout",
     "fitView": "Fit view"
   },
@@ -11,6 +14,9 @@
     "addWallet": "Add wallet",
     "addIncome": "Add income",
     "addExpense": "Add expense",
+    "addEntry": "Add income entry",
+    "addPayment": "Add expense payment",
+    "addTransfer": "Add transfer",
     "edit": "Edit",
     "delete": "Delete",
     "openDetail": "Open detail page"

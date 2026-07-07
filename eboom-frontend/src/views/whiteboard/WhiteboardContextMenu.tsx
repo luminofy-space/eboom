@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  ArrowLeftRight,
   BanknoteArrowDown,
   BanknoteArrowUp,
   ExternalLink,
+  ListPlus,
   Pencil,
+  Receipt,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -19,6 +22,9 @@ interface WhiteboardContextMenuProps {
   onAddWallet: () => void;
   onAddIncome: () => void;
   onAddExpense: () => void;
+  onAddEntry: () => void;
+  onAddPayment: () => void;
+  onAddTransfer: () => void;
   onEditNode: (nodeId: string) => void;
   onDeleteNode: (nodeId: string) => void;
   onOpenDetail: (nodeId: string) => void;
@@ -31,6 +37,9 @@ export function WhiteboardContextMenu({
   onAddWallet,
   onAddIncome,
   onAddExpense,
+  onAddEntry,
+  onAddPayment,
+  onAddTransfer,
   onEditNode,
   onDeleteNode,
   onOpenDetail,
@@ -82,6 +91,40 @@ export function WhiteboardContextMenu({
             >
               <BanknoteArrowDown className="mr-2 h-4 w-4" />
               {t("contextMenu.addExpense")}
+            </button>
+            <div className="my-1 h-px bg-border" />
+            <button
+              type="button"
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              onClick={() => {
+                onAddEntry();
+                onClose();
+              }}
+            >
+              <ListPlus className="mr-2 h-4 w-4" />
+              {t("contextMenu.addEntry")}
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              onClick={() => {
+                onAddPayment();
+                onClose();
+              }}
+            >
+              <Receipt className="mr-2 h-4 w-4" />
+              {t("contextMenu.addPayment")}
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              onClick={() => {
+                onAddTransfer();
+                onClose();
+              }}
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              {t("contextMenu.addTransfer")}
             </button>
           </>
         ) : null}

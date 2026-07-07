@@ -4,6 +4,9 @@
     "addWallet": "Wallet hinzufügen",
     "addIncome": "Einnahme hinzufügen",
     "addExpense": "Ausgabe hinzufügen",
+    "addEntry": "Einnahmebuchung hinzufügen",
+    "addPayment": "Ausgabenzahlung hinzufügen",
+    "addTransfer": "Transfer hinzufügen",
     "autoLayout": "Auto-Layout",
     "fitView": "Ansicht anpassen"
   },
@@ -11,6 +14,9 @@
     "addWallet": "Wallet hinzufügen",
     "addIncome": "Einnahme hinzufügen",
     "addExpense": "Ausgabe hinzufügen",
+    "addEntry": "Einnahmebuchung hinzufügen",
+    "addPayment": "Ausgabenzahlung hinzufügen",
+    "addTransfer": "Transfer hinzufügen",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "openDetail": "Detailseite öffnen"

@@ -4,6 +4,9 @@
     "addWallet": "افزودن کیف پول",
     "addIncome": "افزودن درآمد",
     "addExpense": "افزودن هزینه",
+    "addEntry": "افزودن ثبت درآمد",
+    "addPayment": "افزودن پرداخت هزینه",
+    "addTransfer": "افزودن انتقال",
     "autoLayout": "چیدمان خودکار",
     "fitView": "تنظیم نما"
   },
@@ -11,6 +14,9 @@
     "addWallet": "افزودن کیف پول",
     "addIncome": "افزودن درآمد",
     "addExpense": "افزودن هزینه",
+    "addEntry": "افزودن ثبت درآمد",
+    "addPayment": "افزودن پرداخت هزینه",
+    "addTransfer": "افزودن انتقال",
     "edit": "ویرایش",
     "delete": "حذف",
     "openDetail": "باز کردن صفحه جزئیات"
