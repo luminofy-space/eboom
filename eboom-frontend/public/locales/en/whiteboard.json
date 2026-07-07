@@ -26,6 +26,9 @@
     "income": "Income",
     "expense": "Expense"
   },
+  "walletNode": {
+    "moreBalances": "+{{count}} more"
+  },
   "sidePanel": {
     "incomeFlow": "Income flow",
     "expenseFlow": "Expense flow",

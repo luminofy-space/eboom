@@ -26,6 +26,9 @@
     "income": "درآمد",
     "expense": "هزینه"
   },
+  "walletNode": {
+    "moreBalances": "+{{count}} مورد دیگر"
+  },
   "sidePanel": {
     "incomeFlow": "جریان درآمد",
     "expenseFlow": "جریان هزینه",
