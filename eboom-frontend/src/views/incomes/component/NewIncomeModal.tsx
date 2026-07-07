@@ -20,7 +20,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
@@ -43,7 +42,6 @@ import { useTranslation } from "react-i18next";
 interface IncomeFormData {
   name: string;
   currencyId: number | null;
-  amount?: number;
   incomeCategoryId: number | null;
   defaultWalletId: number | null;
   description: string;
@@ -55,7 +53,6 @@ interface IncomeFormData {
 const defaultValues: IncomeFormData = {
   name: "",
   currencyId: null,
-  amount: undefined,
   incomeCategoryId: null,
   defaultWalletId: null,
   description: "",
@@ -191,7 +188,6 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
       reset({
         name: source.name ?? "",
         currencyId: source.currencyId ?? source.currency?.id ?? null,
-        amount: source.amount ? Number(source.amount) : undefined,
         incomeCategoryId: source.incomeCategoryId ?? null,
         defaultWalletId: source.defaultWalletId ?? source.defaultWallet?.id ?? null,
         isRecurring: source.isRecurring ?? false,
@@ -231,7 +227,6 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
       const data = {
         name: formData.name.trim(),
         currencyId: formData.currencyId,
-        amount: Number(formData.amount),
         isRecurring: formData.isRecurring,
         incomeCategoryId: formData.incomeCategoryId ?? undefined,
         defaultWalletId: formData.defaultWalletId,
@@ -330,63 +325,40 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
               <FieldError errors={[errors.currencyId]} />
             </Field>
           </Stack>
-          <Stack direction="row" gap={5}>
-            <Field className="flex-1">
-              <FieldLabel htmlFor="amount">{t("modal.fields.amount.label")}</FieldLabel>
-              <NumberInput
-                id="amount"
-                step="any"
-                min="0"
-                aria-invalid={!!errors.amount}
-                placeholder={tc("placeholders.amount")}
-                {...register("amount", {
-                  required: tv("amountRequired"),
-                  valueAsNumber: true,
-                  min: {
-                    value: 0.01,
-                    message: tv("amountPositive"),
-                  },
-                  validate: (value) =>
-                    (!Number.isNaN(value) && value && value > 0) || tv("amountPositive"),
-                })}
-              />
-              <FieldError errors={[errors.amount]} />
-            </Field>
-            <Field className="flex-1">
-              <FieldLabel htmlFor="income-category">{t("modal.fields.incomeCategory.label")}</FieldLabel>
-              <Controller
-                name="incomeCategoryId"
-                control={control}
-                rules={{
-                  validate: (value) => value !== null || tv("categoryRequired"),
-                }}
-                render={({ field }) => (
-                  <Combobox
-                    id="income-category"
-                    items={categoryNames}
-                    value={categoryIdToName(field.value)}
-                    disabled={isLoadingCategories}
-                    onValueChange={(val) =>
-                      field.onChange(val ? categoryNameToId(val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(catName) => (
-                          <ComboboxItem key={catName} value={catName}>
-                            {catName}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              />
-              <FieldError errors={[errors.incomeCategoryId]} />
-            </Field>
-          </Stack>
+          <Field>
+            <FieldLabel htmlFor="income-category">{t("modal.fields.incomeCategory.label")}</FieldLabel>
+            <Controller
+              name="incomeCategoryId"
+              control={control}
+              rules={{
+                validate: (value) => value !== null || tv("categoryRequired"),
+              }}
+              render={({ field }) => (
+                <Combobox
+                  id="income-category"
+                  items={categoryNames}
+                  value={categoryIdToName(field.value)}
+                  disabled={isLoadingCategories}
+                  onValueChange={(val) =>
+                    field.onChange(val ? categoryNameToId(val) : null)
+                  }
+                >
+                  <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
+                  <ComboboxContent className="z-[80]">
+                    <ComboboxEmpty>{tc("empty.noItemsFound")}</ComboboxEmpty>
+                    <ComboboxCollection>
+                      {(catName) => (
+                        <ComboboxItem key={catName} value={catName}>
+                          {catName}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxCollection>
+                  </ComboboxContent>
+                </Combobox>
+              )}
+            />
+            <FieldError errors={[errors.incomeCategoryId]} />
+          </Field>
           <Field>
             <FieldLabel htmlFor="default-wallet">{t("modal.fields.defaultWallet.label")}</FieldLabel>
             <Controller

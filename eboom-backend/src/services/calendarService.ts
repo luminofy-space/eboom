@@ -323,6 +323,11 @@ export async function getCalendarEvents(
   for (const income of canvasIncomes) {
     const currency = currencyById.get(income.currencyId) ?? "";
     const incomeEntriesForEntity = allIncomeEntries.filter((e) => e.incomeId === income.id);
+    const receivedEntries = incomeEntriesForEntity.filter((e) => e.receivedDate);
+    const defaultAmount =
+      receivedEntries.length > 0
+        ? String(receivedEntries[receivedEntries.length - 1].amount)
+        : "0";
 
     for (const entry of entries.filter((e) => e.incomeId === income.id)) {
       const eventDate = entry.expectedDate ?? entry.receivedDate;
@@ -375,7 +380,7 @@ export async function getCalendarEvents(
           type: "income",
           entityId: income.id,
           date: new Date(`${dateKey}T00:00:00.000Z`).toISOString(),
-          amount: String(income.amount),
+          amount: defaultAmount,
           currency,
           status: resolveStatus(new Date(`${dateKey}T00:00:00.000Z`), false, now),
           isPredicted: true,

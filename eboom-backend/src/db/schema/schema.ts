@@ -220,7 +220,8 @@ export const incomes = pgTable("incomes", {
   name: varchar("name", { length: 255 }).notNull(),
   currencyId: integer("currency_id").notNull().references(() => currencies.id),
   defaultWalletId: integer("wallet_id").references(() => wallets.id),
-  amount: integer("amount").notNull(),
+  // Derived total: sum of received income_entries.amount (maintained by incomeAmountService).
+  amount: numeric("amount", { precision: 20, scale: 8 }).notNull().default("0"),
   incomeCategoryId: integer("income_category_id")
     .notNull()
     .references(() => incomeCategories.id),

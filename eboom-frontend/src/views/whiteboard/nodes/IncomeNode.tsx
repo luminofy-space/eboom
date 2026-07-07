@@ -13,13 +13,20 @@ export interface IncomeNodeData {
   entityId: number;
   name: string;
   categoryName: string;
-  amount?: number;
+  amount?: number | string;
   currencySymbol?: string;
   canEdit?: boolean;
 }
 
+function parseDisplayAmount(value: number | string | undefined): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = typeof value === "number" ? value : parseFloat(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 function IncomeNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as IncomeNodeData;
+  const displayAmount = parseDisplayAmount(nodeData.amount);
 
   return (
     <>
@@ -42,9 +49,9 @@ function IncomeNodeComponent({ data, selected }: NodeProps) {
                   {nodeData.categoryName}
                 </Badge>
               ) : null}
-              {typeof nodeData.amount === "number" ? (
+              {displayAmount != null && displayAmount > 0 ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {formatMoney(nodeData.amount, nodeData.currencySymbol)}
+                  {formatMoney(displayAmount, nodeData.currencySymbol)}
                 </p>
               ) : null}
             </div>

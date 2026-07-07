@@ -9,7 +9,7 @@ export interface IncomeItem {
   photoUrl?: string | null;
   lastModifiedAt?: string | null;
   currencyId?: number;
-  amount?: number;
+  amount?: number | string;
   incomeCategoryId?: number | null;
   defaultWalletId?: number | null;
   status?: string;

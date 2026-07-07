@@ -10,6 +10,7 @@ import {
   wallets,
 } from "../db/schema";
 import { creditWalletBalance, debitWalletBalance } from "../services/ledgerService";
+import { recalculateIncomeAmount } from "../services/incomeAmountService";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
@@ -69,6 +70,11 @@ router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request
     const parsedExpectedDate = parseOptionalDate(expectedDate);
     const parsedReceivedDate = parseOptionalDate(receivedDate);
 
+    const hadReceivedDate = existing.receivedDate != null;
+    const amountChanged = String(existing.amount) !== amountStr;
+    const receivedDateChanged =
+      (existing.receivedDate?.getTime() ?? null) !== (parsedReceivedDate?.getTime() ?? null);
+
     const updated = await db.transaction(async (tx) => {
       await debitWalletBalance(
         {
@@ -103,6 +109,15 @@ router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request
         tx
       );
 
+      if (
+        hadReceivedDate ||
+        parsedReceivedDate ||
+        receivedDateChanged ||
+        (amountChanged && hadReceivedDate)
+      ) {
+        await recalculateIncomeAmount(existing.incomeId, tx);
+      }
+
       return entry;
     });
 
@@ -132,14 +147,26 @@ router.delete("/entries/:entryId", requireCanvasAccess("edit"), async (req: Requ
       return res.status(404).json({ error: "Income entry not found" });
     }
 
-    await debitWalletBalance({
-      walletId: existing.destinationWalletId,
-      currencyId: income.currencyId,
-      amount: String(existing.amount),
-      allowNegative: false,
+    const hadReceivedDate = existing.receivedDate != null;
+
+    await db.transaction(async (tx) => {
+      await debitWalletBalance(
+        {
+          walletId: existing.destinationWalletId,
+          currencyId: income.currencyId,
+          amount: String(existing.amount),
+          allowNegative: false,
+        },
+        tx
+      );
+
+      await tx.delete(incomeEntries).where(eq(incomeEntries.id, entryId));
+
+      if (hadReceivedDate) {
+        await recalculateIncomeAmount(existing.incomeId, tx);
+      }
     });
 
-    await db.delete(incomeEntries).where(eq(incomeEntries.id, entryId));
     res.json({ message: "Income entry deleted successfully" });
   } catch (err) {
     console.error("Error deleting income entry:", err);
@@ -239,6 +266,10 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
         tx
       );
 
+      if (parsedReceivedDate) {
+        await recalculateIncomeAmount(incomeId, tx);
+      }
+
       return entry;
     });
 
@@ -307,7 +338,6 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     incomeCategoryId,
     currencyId,
     defaultWalletId,
-    amount,
     isRecurring,
     recurrencePattern,
     photoUrl,
@@ -354,7 +384,6 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
         incomeCategoryId: parsedIncomeCategoryId,
         currencyId: parsedCurrencyId,
         ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
-        amount: Number(amount) || 0,
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         photoUrl: photoUrl || null,
@@ -419,7 +448,6 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
     incomeCategoryId,
     currencyId,
     defaultWalletId,
-    amount,
     isRecurring,
     recurrencePattern,
     description,
@@ -468,7 +496,6 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
         ...(parsedCategoryId !== undefined && { incomeCategoryId: parsedCategoryId }),
         ...(parsedCurrencyId !== undefined && { currencyId: parsedCurrencyId }),
         ...(parsedDefaultWalletId !== undefined && { defaultWalletId: parsedDefaultWalletId }),
-        ...(amount !== undefined && { amount: parseInt(amount, 10) || 0 }),
         ...(isRecurring !== undefined && { isRecurring }),
         ...(recurrencePattern !== undefined && { recurrencePattern }),
         ...(description !== undefined && { description }),

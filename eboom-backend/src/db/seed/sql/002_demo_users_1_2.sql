@@ -293,7 +293,7 @@ WITH ins AS (
     is_recurring, recurrence_pattern, status, description, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Acme Corp Salary', l.cur_usd, w.id, 8500, l.ic_salary,
+    d.id, 'Acme Corp Salary', l.cur_usd, w.id, 0, l.ic_salary,
     true,
     jsonb_build_object(
       'frequency', 'monthly',
@@ -317,7 +317,7 @@ WITH ins AS (
     is_recurring, recurrence_pattern, status, description, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Design Consulting', l.cur_usd, w.id, 2200, l.ic_freelance,
+    d.id, 'Design Consulting', l.cur_usd, w.id, 0, l.ic_freelance,
     true,
     jsonb_build_object(
       'frequency', 'weekly',
@@ -341,7 +341,7 @@ WITH ins AS (
     is_recurring, recurrence_pattern, status, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Annual Performance Bonus', l.cur_usd, w.id, 5000, l.ic_bonus,
+    d.id, 'Annual Performance Bonus', l.cur_usd, w.id, 0, l.ic_bonus,
     true,
     jsonb_build_object(
       'frequency', 'yearly',
@@ -363,7 +363,7 @@ WITH ins AS (
     is_recurring, status, description, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Client Project — Meridian', l.cur_usd, w.id, 3500, l.ic_freelance,
+    d.id, 'Client Project — Meridian', l.cur_usd, w.id, 0, l.ic_freelance,
     false, 'pending',
     '{"invoice": "INV-2026-041", "notes": "Awaiting client approval"}'::jsonb,
     1, 1
@@ -379,7 +379,7 @@ WITH ins AS (
     is_recurring, status, is_archived, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Cancelled Speaking Gig', l.cur_usd, w.id, 800, l.ic_freelance,
+    d.id, 'Cancelled Speaking Gig', l.cur_usd, w.id, 0, l.ic_freelance,
     false, 'cancelled', false,
     1, 1
   FROM _demo d, _demo w, _lk l
@@ -394,7 +394,7 @@ WITH ins AS (
     is_recurring, status, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Dividend Payout — Index Fund', l.cur_usd, w.id, 145, l.ic_investment,
+    d.id, 'Dividend Payout — Index Fund', l.cur_usd, w.id, 0, l.ic_investment,
     false, 'failed',
     1, 1
   FROM _demo d, _demo w, _lk l
@@ -410,7 +410,7 @@ WITH ins AS (
     is_recurring, recurrence_pattern, status, created_by, last_modified_by
   )
   SELECT
-    d.id, 'Retainer — Apex Legal', l.cur_usd, w.id, 4000, l.ic_freelance,
+    d.id, 'Retainer — Apex Legal', l.cur_usd, w.id, 0, l.ic_freelance,
     true,
     jsonb_build_object(
       'frequency', 'monthly',
@@ -482,6 +482,17 @@ SELECT i.id, w.id, 3500.00,
        'Overdue — invoice sent, payment not received', 1, 1
 FROM _demo i, _demo w
 WHERE i.entity = 'income_onetime_pending' AND w.entity = 'wallet_checking';
+
+UPDATE incomes i
+SET amount = COALESCE(
+  (
+    SELECT SUM(ie.amount)
+    FROM income_entries ie
+    WHERE ie.income_id = i.id
+      AND ie.received_date IS NOT NULL
+  ),
+  0
+);
 
 -- ---------------------------------------------------------------------------
 -- Expenses — Personal Finance
