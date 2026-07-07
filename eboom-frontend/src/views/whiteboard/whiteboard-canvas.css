@@ -38,6 +38,15 @@
   overflow: hidden;
 }
 
-.whiteboard-canvas .react-flow__minimap-mask {
-  fill: color-mix(in oklch, var(--background) 55%, transparent);
+.whiteboard-canvas .react-flow__node:has(.wallet-node-root) {
+  overflow: visible;
 }
+
+.whiteboard-canvas .react-flow__edges {
+  z-index: 2;
+}
+
+.whiteboard-canvas .react-flow__edgelabel-renderer {
+  z-index: 3;
+}
+

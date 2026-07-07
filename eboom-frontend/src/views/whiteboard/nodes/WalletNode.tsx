@@ -50,7 +50,7 @@ function WalletNodeComponent({ data, selected }: NodeProps) {
   const hiddenCount = Math.max(0, subWallets.length - MAX_VISIBLE_BALANCES);
 
   return (
-    <>
+    <div className="wallet-node-root relative overflow-visible">
       <Handle
         type="target"
         position={Position.Left}
@@ -130,7 +130,7 @@ function WalletNodeComponent({ data, selected }: NodeProps) {
         className="!h-2.5 !w-2.5 !border-2 !border-background !bg-red-500"
         isConnectable={!!nodeData.canEdit}
       />
-    </>
+    </div>
   );
 }
 

@@ -16,6 +16,7 @@ import { Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SelectedWhiteboardEdge } from "@/src/types/whiteboard";
 import { whiteboardApiDelete } from "./utils/api";
+import { formatTransferAmounts } from "./utils/formatTransfer";
 
 interface IncomeEntryRow {
   id: number;
@@ -176,10 +177,7 @@ export function WhiteboardSidePanel({
         })
       : t("sidePanel.transferSummary", {
           count: selectedEdge.flow.transferCount,
-          amount: formatMoney(
-            selectedEdge.flow.totalSourceAmount,
-            selectedEdge.flow.sourceCurrencySymbol
-          ),
+          amount: formatTransferAmounts(selectedEdge.flow),
         });
 
   return (
@@ -228,10 +226,7 @@ export function WhiteboardSidePanel({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">
                         {isTransfer
-                          ? formatMoney(
-                              (row as WalletTransfer).sourceAmount,
-                              (row as WalletTransfer).sourceCurrencySymbol
-                            )
+                          ? formatTransferAmounts(row as WalletTransfer)
                           : formatMoney(
                               (row as IncomeEntryRow | ExpensePaymentRow).amount,
                               isIncome
