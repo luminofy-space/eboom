@@ -20,7 +20,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { useAuthContext } from "@/src/components/AuthProvider";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 
@@ -34,7 +33,6 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation("auth");
 
   const {
@@ -46,16 +44,14 @@ export function LoginForm({
   const { login, isLoginPending } = useAuthContext();
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data)
-      .then((res) => {
-        if (res) {
-          router.push("/dashboard");
-        }
-      })
-      .catch((error) => {
-        console.error("error", error);
-        setError(error.message);
-      });
+    try {
+      const res = await login(data);
+      if (res) {
+        router.push("/dashboard");
+      }
+    } catch {
+      // API failures are shown via the global notistack snackbar.
+    }
   };
 
   return (
@@ -68,11 +64,6 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
             <FieldGroup>
-              {error && (
-                <Field>
-                  <div className="text-sm text-destructive">{error}</div>
-                </Field>
-              )}
               <Field>
                 <FieldLabel htmlFor="email">{t("login.email.label")}</FieldLabel>
                 <Input

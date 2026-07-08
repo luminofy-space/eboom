@@ -12,22 +12,11 @@ import { Button } from "@/components/ui/button";
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
 import { useTranslation } from "react-i18next";
+import { getApiErrorMessage } from "@/src/utils/formUtils";
 
 type VerifyEmailResponse = {
   message: string;
 };
-
-function getVerifyErrorMessage(
-  error: unknown,
-  fallback: string
-): string {
-  if (error && typeof error === "object" && "response" in error) {
-    const data = (error as { response?: { data?: { error?: string } } }).response
-      ?.data;
-    return data?.error || fallback;
-  }
-  return fallback;
-}
 
 export function VerifyEmail() {
   const searchParams = useSearchParams();
@@ -79,7 +68,7 @@ export function VerifyEmail() {
         <CardHeader>
           <CardTitle>{t("verifyEmail.error.title")}</CardTitle>
           <CardDescription>
-            {getVerifyErrorMessage(error, t("verifyEmail.error.default"))}
+            {getApiErrorMessage(error, t("verifyEmail.error.default"))}
           </CardDescription>
         </CardHeader>
         <CardContent>

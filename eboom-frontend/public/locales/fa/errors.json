@@ -1,0 +1,135 @@
+{
+  "common": {
+    "unauthorized": "برای ادامه باید وارد شوید.",
+    "forbidden": "اجازه این کار را ندارید.",
+    "notFound": "مورد درخواستی پیدا نشد.",
+    "internal": "مشکلی پیش آمد. دوباره تلاش کنید.",
+    "unknown": "خطای غیرمنتظره‌ای رخ داد.",
+    "invalidId": "شناسه نامعتبر است.",
+    "missingAuthHeader": "هدر احراز هویت موجود نیست.",
+    "invalidToken": "نشست شما نامعتبر یا منقضی شده است."
+  },
+  "validation": {
+    "failed": "لطفاً فرم را بررسی کرده و دوباره تلاش کنید.",
+    "nameRequired": "نام الزامی است.",
+    "amountPositive": "مبلغ باید بزرگ‌تر از صفر باشد.",
+    "walletRequired": "کیف پول الزامی است.",
+    "categoryRequired": "دسته‌بندی الزامی است.",
+    "currencyRequired": "ارز الزامی است.",
+    "invalidCategoryOrCurrency": "Invalid category or currency.",
+    "invalidWallet": "Invalid wallet.",
+    "defaultWalletInvalid": "Default wallet is invalid for this canvas."
+  },
+  "category": {
+    "notFound": "Category not found.",
+    "systemImmutable": "System categories cannot be modified.",
+    "systemUndeletable": "System categories cannot be deleted.",
+    "createFailed": "Failed to create category.",
+    "updateFailed": "Failed to update category.",
+    "deleteFailed": "Failed to delete category.",
+    "fetchFailed": "Failed to load categories."
+  },
+  "expense": {
+    "notFound": "Expense not found.",
+    "paymentNotFound": "Expense payment not found.",
+    "createFailed": "Failed to create expense.",
+    "updateFailed": "Failed to update expense.",
+    "deleteFailed": "Failed to delete expense.",
+    "fetchFailed": "Failed to load expenses.",
+    "paymentCreateFailed": "Failed to create payment.",
+    "paymentUpdateFailed": "Failed to update payment.",
+    "paymentDeleteFailed": "Failed to delete payment.",
+    "paymentFetchFailed": "Failed to load payments.",
+    "invalidPaymentId": "Invalid payment ID.",
+    "invalidId": "Invalid expense ID.",
+    "sourceWalletInvalid": "Source wallet is invalid for this canvas."
+  },
+  "income": {
+    "notFound": "Income not found.",
+    "entryNotFound": "Income entry not found.",
+    "createFailed": "Failed to create income.",
+    "updateFailed": "Failed to update income.",
+    "deleteFailed": "Failed to delete income.",
+    "fetchFailed": "Failed to load incomes.",
+    "entryCreateFailed": "Failed to create income entry.",
+    "entryUpdateFailed": "Failed to update income entry.",
+    "entryDeleteFailed": "Failed to delete income entry.",
+    "entryFetchFailed": "Failed to load income entries.",
+    "invalidEntryId": "Invalid income entry ID.",
+    "invalidId": "Invalid income ID.",
+    "destinationWalletInvalid": "Destination wallet is invalid for this canvas."
+  },
+  "wallet": {
+    "notFound": "Wallet not found.",
+    "createFailed": "Failed to create wallet.",
+    "updateFailed": "Failed to update wallet.",
+    "deleteFailed": "Failed to delete wallet.",
+    "fetchFailed": "Failed to load wallets.",
+    "invalidId": "Invalid wallet ID.",
+    "insufficientBalance": "Insufficient wallet balance."
+  },
+  "transfer": {
+    "notFound": "Transfer not found.",
+    "createFailed": "Failed to create transfer.",
+    "updateFailed": "Failed to update transfer.",
+    "deleteFailed": "Failed to delete transfer.",
+    "fetchFailed": "Failed to load transfers.",
+    "invalidId": "Invalid transfer ID."
+  },
+  "asset": {
+    "notFound": "Asset not found.",
+    "createFailed": "Failed to create asset.",
+    "updateFailed": "Failed to update asset.",
+    "deleteFailed": "Failed to delete asset.",
+    "fetchFailed": "Failed to load assets.",
+    "invalidId": "Invalid asset ID."
+  },
+  "auth": {
+    "testUserNotFound": "Test user not found.",
+    "testUserFetchFailed": "Failed to load test user.",
+    "invalidCredentials": "Invalid email or password.",
+    "emailExists": "Email is already registered.",
+    "signupFailed": "Failed to create account.",
+    "loginFailed": "Failed to sign in.",
+    "emailNotVerified": "Please verify your email before signing in.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "refreshRequired": "Refresh token is required.",
+    "resetTokenInvalid": "Invalid or expired reset token.",
+    "resetTokenExpired": "Reset token has expired.",
+    "verificationRequired": "Verification token is required.",
+    "verificationInvalid": "Invalid or expired verification token.",
+    "verificationExpired": "Verification token has expired.",
+    "alreadyVerified": "Email is already verified.",
+    "sendEmailFailed": "Failed to send email.",
+    "photoRequired": "Photo URL is required."
+  },
+  "canvas": {
+    "notFound": "Canvas not found.",
+    "accessDenied": "Access denied to this canvas.",
+    "createFailed": "Failed to create canvas.",
+    "updateFailed": "Failed to update canvas.",
+    "deleteFailed": "Failed to delete canvas.",
+    "fetchFailed": "Failed to load canvases."
+  },
+  "invitation": {
+    "notFound": "Invitation not found.",
+    "accessDenied": "Access denied for this invitation.",
+    "expired": "Invitation has expired.",
+    "alreadyMember": "You are already a member of this canvas.",
+    "invalidStatus": "Invitation is no longer pending.",
+    "canvasUnavailable": "Canvas is no longer available.",
+    "acceptFailed": "Failed to accept invitation.",
+    "declineFailed": "Failed to decline invitation.",
+    "cancelFailed": "Failed to cancel invitation.",
+    "fetchFailed": "Failed to load invitations.",
+    "invalidId": "Invalid invitation ID."
+  },
+  "member": {
+    "notFound": "Member not found.",
+    "removeFailed": "Failed to remove member.",
+    "updateRoleFailed": "Failed to update member role.",
+    "inviteFailed": "Failed to create invitations.",
+    "leaveFailed": "Failed to leave canvas.",
+    "insufficientPermissions": "Insufficient permissions for this action."
+  }
+}

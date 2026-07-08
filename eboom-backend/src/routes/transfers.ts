@@ -11,6 +11,8 @@ import {
 } from "../services/transferService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
 
@@ -43,7 +45,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
       : undefined;
 
   if (walletId != null && Number.isNaN(walletId)) {
-    return res.status(400).json({ error: "Invalid wallet ID" });
+    return sendError(res, ErrorKeys.validation.invalidWallet, 400);
   }
 
   try {
@@ -51,7 +53,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
     res.json({ transfers: transfersList, total: transfersList.length });
   } catch (err) {
     console.error("Error fetching canvas transfers:", err);
-    res.status(500).json({ error: "Failed to fetch transfers" });
+    sendError(res, ErrorKeys.transfer.fetchFailed, 500);
   }
 });
 
@@ -66,7 +68,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   } catch (err) {
     console.error("Error creating transfer:", err);
     const { status, message } = mapTransferError(err, "Failed to create transfer");
-    res.status(status).json({ error: message });
+    sendError(res, ErrorKeys.common.internal, status || 500);
   }
 });
 
@@ -74,22 +76,22 @@ router.get("/:transferId", requireCanvasAccess("view"), async (req: Request, res
   const canvasId = req.canvasId!;
   const transferId = parseRouteParam(req.params.transferId);
   if (Number.isNaN(transferId)) {
-    return res.status(400).json({ error: "Invalid transfer ID" });
+    return sendError(res, ErrorKeys.transfer.invalidId, 400);
   }
 
   try {
     const transferCanvasId = await getTransferCanvasId(transferId);
     if (!transferCanvasId || transferCanvasId !== canvasId) {
-      return res.status(404).json({ error: "Transfer not found" });
+      return sendError(res, ErrorKeys.transfer.notFound, 404);
     }
 
     const transfer = await fetchEnrichedTransferById(transferId);
-    if (!transfer) return res.status(404).json({ error: "Transfer not found" });
+    if (!transfer) return sendError(res, ErrorKeys.transfer.notFound, 404);
 
     res.json({ transfer });
   } catch (err) {
     console.error("Error fetching transfer:", err);
-    res.status(500).json({ error: "Failed to fetch transfer" });
+    sendError(res, ErrorKeys.transfer.fetchFailed, 500);
   }
 });
 
@@ -98,13 +100,13 @@ router.put("/:transferId", requireCanvasAccess("edit"), async (req: Request, res
   const user = req.appUser!;
   const transferId = parseRouteParam(req.params.transferId);
   if (Number.isNaN(transferId)) {
-    return res.status(400).json({ error: "Invalid transfer ID" });
+    return sendError(res, ErrorKeys.transfer.invalidId, 400);
   }
 
   try {
     const transferCanvasId = await getTransferCanvasId(transferId);
     if (!transferCanvasId || transferCanvasId !== canvasId) {
-      return res.status(404).json({ error: "Transfer not found" });
+      return sendError(res, ErrorKeys.transfer.notFound, 404);
     }
 
     const input = validateTransferInput({ ...req.body, canvasId });
@@ -113,7 +115,7 @@ router.put("/:transferId", requireCanvasAccess("edit"), async (req: Request, res
   } catch (err) {
     console.error("Error updating transfer:", err);
     const { status, message } = mapTransferError(err, "Failed to update transfer");
-    res.status(status).json({ error: message });
+    sendError(res, ErrorKeys.common.internal, status || 500);
   }
 });
 
@@ -121,13 +123,13 @@ router.delete("/:transferId", requireCanvasAccess("edit"), async (req: Request, 
   const canvasId = req.canvasId!;
   const transferId = parseRouteParam(req.params.transferId);
   if (Number.isNaN(transferId)) {
-    return res.status(400).json({ error: "Invalid transfer ID" });
+    return sendError(res, ErrorKeys.transfer.invalidId, 400);
   }
 
   try {
     const transferCanvasId = await getTransferCanvasId(transferId);
     if (!transferCanvasId || transferCanvasId !== canvasId) {
-      return res.status(404).json({ error: "Transfer not found" });
+      return sendError(res, ErrorKeys.transfer.notFound, 404);
     }
 
     await deleteTransfer(transferId);
@@ -135,7 +137,7 @@ router.delete("/:transferId", requireCanvasAccess("edit"), async (req: Request, 
   } catch (err) {
     console.error("Error deleting transfer:", err);
     const { status, message } = mapTransferError(err, "Failed to delete transfer");
-    res.status(status).json({ error: message });
+    sendError(res, ErrorKeys.common.internal, status || 500);
   }
 });
 

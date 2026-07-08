@@ -37,6 +37,7 @@ export const useCanvas = () => {
 
     const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
         method: "post",
+        successKey: "success.canvas.created",
         hasToken: true,
     });
 

@@ -2,10 +2,11 @@ import axios, { type AxiosError, type AxiosRequestConfig } from "@/src/types/axi
 import { useContext, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "@/src/components/AuthProvider";
-import { useApiRespond } from "./useApiRespond";
+import { useApiRespond, type ApiErrorPayload } from "./useApiRespond";
 import { snakeToCamel } from "./utils";
 import { IHasId } from "../types/hasId";
 import { resolveApiUrl } from "./resolveApiUrl";
+import { toI18nKey, translateNotifyKey } from "@/src/lib/notify";
 
 type AuthOptions = {
   accessToken?: string | null;
@@ -13,18 +14,24 @@ type AuthOptions = {
   refresh?: () => Promise<string | null>;
 };
 
+type MutationMethod =
+  | "post"
+  | "patch"
+  | "put"
+  | "delete"
+  | "get"
+  | ((payload: unknown) => "post" | "patch" | "put" | "delete" | "get");
+
+function isMutatingMethod(method: string): boolean {
+  return method === "post" || method === "put" || method === "patch" || method === "delete";
+}
+
 export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
   url: string | ((payload: TVariables) => string),
   options?: {
     urlParams?: Array<string>;
     staticParams?: string;
-    method?:
-      | "post"
-      | "patch"
-      | "put"
-      | "delete"
-      | "get"
-      | ((payload: TVariables) => "post" | "patch" | "put" | "delete" | "get");
+    method?: MutationMethod;
     headers?: Record<string, string>;
     body?: string | FormData;
     mapPayload?: (payload: TVariables) => unknown;
@@ -35,6 +42,10 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     timeout?: number;
     retry?: number;
     invalidateQueries?: boolean;
+    /** i18n key under `success` namespace, e.g. `success.expense.created` */
+    successKey?: string;
+    /** When false, suppress success snackbar even if successKey is set. Default true when successKey is set. */
+    notifySuccess?: boolean;
     onSuccess?: (data: unknown, variables: TVariables) => void;
     onError?: (err: unknown) => void;
     auth?: AuthOptions;
@@ -57,6 +68,8 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
   const staticParams = options?.staticParams;
   const timeout = options?.timeout ?? 150000;
   const retry = options?.retry ?? 0;
+  const successKey = options?.successKey;
+  const notifySuccess = options?.notifySuccess ?? Boolean(successKey);
 
   const authAccessToken = hasToken
     ? options?.auth?.accessToken ?? authContext?.accessToken ?? null
@@ -79,6 +92,16 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     if (staticParams) finalUrl += `/${staticParams}`;
 
     return finalUrl;
+  };
+
+  const translateFieldErrors = (
+    errors: Record<string, string>
+  ): Record<string, string> => {
+    const translated: Record<string, string> = {};
+    for (const [field, key] of Object.entries(errors)) {
+      translated[field] = translateNotifyKey(key, "errors");
+    }
+    return translated;
   };
 
   const callApi = async (payload: TVariables): Promise<T> => {
@@ -111,7 +134,11 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
     try {
       const res = await axios(config);
       const parsed = snakeToCamel(res.data) as T;
-      handleSuccess(res);
+
+      if (notifySuccess && successKey && isMutatingMethod(method)) {
+        handleSuccess(res, { successKey, notify: true });
+      }
+
       return options?.returnWholeData ? parsed : parsed;
     } catch (err: unknown) {
       const axiosErr = err as AxiosError;
@@ -129,14 +156,27 @@ export const useMutationApi = <TVariables = unknown, T extends object = IHasId>(
             Authorization: `Bearer ${newToken}`,
           };
           const retryRes = await axios(config);
-          return snakeToCamel(retryRes.data) as T;
+          const parsed = snakeToCamel(retryRes.data) as T;
+          if (notifySuccess && successKey && isMutatingMethod(String(config.method))) {
+            handleSuccess(retryRes, { successKey, notify: true });
+          }
+          return parsed;
         }
       }
 
-      const data = axiosErr.response?.data as Record<string, unknown>;
+      const data = axiosErr.response?.data as ApiErrorPayload | undefined;
 
-      if (data?.errors) setFieldError(data.errors as Record<string, string>);
-      if (data?.message) setGeneralError({ message: data.message as string });
+      if (data?.errors) {
+        setFieldError(translateFieldErrors(data.errors));
+      }
+      if (data?.errorKey) {
+        setGeneralError({
+          message: translateNotifyKey(data.errorKey, "errors", data.params),
+          key: toI18nKey(data.errorKey, "errors"),
+        });
+      } else if (data?.message) {
+        setGeneralError({ message: data.message });
+      }
 
       handleError(axiosErr);
       onErrorCallback?.(axiosErr);

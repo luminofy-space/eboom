@@ -58,7 +58,7 @@ export default function AssetsListPage() {
 
   const { mutate: deleteAsset, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.ASSETS_DELETE(canvas!, id),
-    { method: "delete", onSuccess: () => setDeleteId(null) }
+    { method: "delete", successKey: "success.asset.deleted", onSuccess: () => setDeleteId(null) }
   );
 
   const showLoading = isLoading || (isFetching && items.length === 0);

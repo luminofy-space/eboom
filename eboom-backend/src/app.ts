@@ -16,11 +16,14 @@ app.use(express.json({ limit: "10mb" }));
 
 import apiRouter from './routes';
 import { startNotificationEmailJob } from './jobs/notificationEmailJob';
+import { errorHandler } from './middleware/errorHandler';
 app.use('/api', apiRouter);
 
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'pfm-backend' }));
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+app.use(errorHandler);
 
 
 const PORT = process.env.PORT || 4000;

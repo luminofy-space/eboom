@@ -1,0 +1,52 @@
+{
+  "generic": {
+    "created": "Created successfully.",
+    "updated": "Updated successfully.",
+    "deleted": "Deleted successfully."
+  },
+  "expense": {
+    "created": "Expense created.",
+    "updated": "Expense updated.",
+    "deleted": "Expense deleted.",
+    "paymentCreated": "Payment created.",
+    "paymentUpdated": "Payment updated.",
+    "paymentDeleted": "Payment deleted."
+  },
+  "income": {
+    "created": "Income created.",
+    "updated": "Income updated.",
+    "deleted": "Income deleted.",
+    "entryCreated": "Income entry created.",
+    "entryUpdated": "Income entry updated.",
+    "entryDeleted": "Income entry deleted."
+  },
+  "wallet": {
+    "created": "Wallet created.",
+    "updated": "Wallet updated.",
+    "deleted": "Wallet deleted."
+  },
+  "transfer": {
+    "created": "Transfer created.",
+    "updated": "Transfer updated.",
+    "deleted": "Transfer deleted."
+  },
+  "asset": {
+    "created": "Asset created.",
+    "updated": "Asset updated.",
+    "deleted": "Asset deleted."
+  },
+  "canvas": {
+    "created": "Canvas created.",
+    "updated": "Canvas updated.",
+    "deleted": "Canvas deleted."
+  },
+  "member": {
+    "invited": "Invitations sent.",
+    "roleUpdated": "Member role updated.",
+    "removed": "Member removed.",
+    "left": "You left the canvas.",
+    "invitationCancelled": "Invitation cancelled.",
+    "invitationAccepted": "Invitation accepted.",
+    "invitationDeclined": "Invitation declined."
+  }
+}

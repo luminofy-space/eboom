@@ -4,6 +4,8 @@ import { db } from "../db/client";
 import { assets, assetCategories, currencies } from "../db/schema";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
 
@@ -53,7 +55,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
     res.json({ assets: formattedAssets, items: formattedAssets, total, page, limit });
   } catch (err) {
     console.error("Error fetching assets:", err);
-    res.status(500).json({ error: "Failed to fetch assets" });
+    sendError(res, ErrorKeys.asset.fetchFailed, 500);
   }
 });
 
@@ -64,9 +66,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   const { name, assetCategoryId, currencyId, estimatedValue, description, photoUrl } = req.body;
 
   if (!name || !assetCategoryId || !currencyId || estimatedValue === undefined || estimatedValue === null) {
-    return res.status(400).json({
-      error: "Asset name, category, currency, and estimated value are required",
-    });
+    return sendError(res, ErrorKeys.validation.failed, 400);
   }
 
   const parsedAssetCategoryId = Number(assetCategoryId);
@@ -79,7 +79,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     Number.isNaN(parsedEstimatedValue) ||
     parsedEstimatedValue < 0
   ) {
-    return res.status(400).json({ error: "Invalid category, currency, or estimated value" });
+    return sendError(res, ErrorKeys.validation.invalidCategoryOrCurrency, 400);
   }
 
   try {
@@ -88,7 +88,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
       .from(assetCategories)
       .where(eq(assetCategories.id, parsedAssetCategoryId));
     if (!category) {
-      return res.status(400).json({ error: "Invalid asset category" });
+      return sendError(res, ErrorKeys.validation.categoryRequired, 400);
     }
 
     const [newAsset] = await db
@@ -109,7 +109,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     res.status(201).json({ asset: newAsset });
   } catch (err) {
     console.error("Error creating asset:", err);
-    res.status(500).json({ error: "Failed to create asset" });
+    sendError(res, ErrorKeys.asset.createFailed, 500);
   }
 });
 
@@ -117,7 +117,7 @@ router.get("/:assetId", requireCanvasAccess("view"), async (req: Request, res: R
   const canvasId = req.canvasId!;
   const assetId = parseRouteParam(req.params.assetId);
   if (Number.isNaN(assetId)) {
-    return res.status(400).json({ error: "Invalid asset ID" });
+    return sendError(res, ErrorKeys.asset.invalidId, 400);
   }
 
   try {
@@ -133,7 +133,7 @@ router.get("/:assetId", requireCanvasAccess("view"), async (req: Request, res: R
       .where(eq(assets.id, assetId));
 
     if (!row || row.asset.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Asset not found" });
+      return sendError(res, ErrorKeys.asset.notFound, 404);
     }
 
     res.json({
@@ -145,7 +145,7 @@ router.get("/:assetId", requireCanvasAccess("view"), async (req: Request, res: R
     });
   } catch (err) {
     console.error("Error fetching asset:", err);
-    res.status(500).json({ error: "Failed to fetch asset" });
+    sendError(res, ErrorKeys.asset.fetchFailed, 500);
   }
 });
 
@@ -154,7 +154,7 @@ router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: R
   const user = req.appUser!;
   const assetId = parseRouteParam(req.params.assetId);
   if (Number.isNaN(assetId)) {
-    return res.status(400).json({ error: "Invalid asset ID" });
+    return sendError(res, ErrorKeys.asset.invalidId, 400);
   }
 
   const {
@@ -171,7 +171,7 @@ router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: R
     const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
 
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Asset not found" });
+      return sendError(res, ErrorKeys.asset.notFound, 404);
     }
 
     const parsedAssetCategoryId =
@@ -186,7 +186,7 @@ router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: R
       (parsedEstimatedValue !== undefined &&
         (Number.isNaN(parsedEstimatedValue) || parsedEstimatedValue < 0))
     ) {
-      return res.status(400).json({ error: "Invalid category, currency, or estimated value" });
+      return sendError(res, ErrorKeys.validation.invalidCategoryOrCurrency, 400);
     }
 
     if (parsedAssetCategoryId !== undefined) {
@@ -195,7 +195,7 @@ router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: R
         .from(assetCategories)
         .where(eq(assetCategories.id, parsedAssetCategoryId));
       if (!category) {
-        return res.status(400).json({ error: "Invalid asset category" });
+        return sendError(res, ErrorKeys.validation.categoryRequired, 400);
       }
     }
 
@@ -220,7 +220,7 @@ router.put("/:assetId", requireCanvasAccess("edit"), async (req: Request, res: R
     res.json({ asset: updatedAsset });
   } catch (err) {
     console.error("Error updating asset:", err);
-    res.status(500).json({ error: "Failed to update asset" });
+    sendError(res, ErrorKeys.asset.updateFailed, 500);
   }
 });
 
@@ -229,14 +229,14 @@ router.delete("/:assetId", requireCanvasAccess("edit"), async (req: Request, res
   const user = req.appUser!;
   const assetId = parseRouteParam(req.params.assetId);
   if (Number.isNaN(assetId)) {
-    return res.status(400).json({ error: "Invalid asset ID" });
+    return sendError(res, ErrorKeys.asset.invalidId, 400);
   }
 
   try {
     const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
 
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Asset not found" });
+      return sendError(res, ErrorKeys.asset.notFound, 404);
     }
 
     await db
@@ -251,7 +251,7 @@ router.delete("/:assetId", requireCanvasAccess("edit"), async (req: Request, res
     res.json({ message: "Asset archived successfully" });
   } catch (err) {
     console.error("Error deleting asset:", err);
-    res.status(500).json({ error: "Failed to delete asset" });
+    sendError(res, ErrorKeys.asset.deleteFailed, 500);
   }
 });
 

@@ -116,6 +116,7 @@ export function NewAssetModal() {
     API_ROUTES.CANVASES_ASSETS_CREATE(canvas ?? -1),
     {
       method: "post",
+      successKey: "success.asset.created",
       hasToken: true,
     }
   );
@@ -124,6 +125,7 @@ export function NewAssetModal() {
     editingItem && canvas ? API_ROUTES.ASSETS_UPDATE(canvas, editingItem.id) : "",
     {
       method: "put",
+      successKey: "success.asset.updated",
       hasToken: true,
     }
   );

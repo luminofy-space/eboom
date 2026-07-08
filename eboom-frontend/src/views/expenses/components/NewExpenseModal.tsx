@@ -170,6 +170,7 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
     {
       method: "post",
       hasToken: true,
+      successKey: "success.expense.created",
     }
   );
 
@@ -178,6 +179,7 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
     {
       method: "put",
       hasToken: true,
+      successKey: "success.expense.updated",
     }
   );
 

@@ -16,12 +16,12 @@ import { Typography } from "@/components/ui/typography";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useCanvasMembers, type CanvasMember } from "@/src/hooks/useCanvasMembers";
+import { notifySuccess } from "@/src/lib/notify";
 import { CanvasDetailsHeader } from "./CanvasDetailsHeader";
 import { MembersTable } from "./MembersTable";
 import { PendingInvitationsTable } from "./PendingInvitationsTable";
 import { InviteMembersForm } from "./InviteMembersForm";
 import { ConfirmRemoveMemberDialog } from "./ConfirmRemoveMemberDialog";
-import { toast } from "sonner";
 
 function memberDisplayName(member: CanvasMember) {
   return [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email;
@@ -62,7 +62,6 @@ export default function CanvasMembersPage() {
     if (!removeTarget) return;
     await removeMember(removeTarget.id);
     setRemoveTarget(null);
-    toast.success(t("members.memberRemoved"));
   };
 
   return (
@@ -95,7 +94,6 @@ export default function CanvasMembersPage() {
                   canManage={canManageMembers}
                   onRoleChange={async (memberId, role) => {
                     await updateMemberRole({ memberId, role });
-                    toast.success(t("members.roleUpdated"));
                   }}
                   onRemove={(memberId) => {
                     const member = members.find((m) => m.id === memberId);
@@ -142,7 +140,7 @@ export default function CanvasMembersPage() {
                     onSubmit={async (invitations) => {
                       await sendInvitations({ invitations });
                       invalidate();
-                      toast.success(t("members.sendInvitations"));
+                      notifySuccess("success.member.invited");
                     }}
                     isSubmitting={isInviting}
                     hideSectionTitle
@@ -167,7 +165,6 @@ export default function CanvasMembersPage() {
                     canManage={canManageMembers}
                     onCancel={async (invitationId) => {
                       await cancelInvitation(invitationId);
-                      toast.success(t("members.invitationCancelled"));
                     }}
                     isCancelling={isCancellingInvitation}
                   />

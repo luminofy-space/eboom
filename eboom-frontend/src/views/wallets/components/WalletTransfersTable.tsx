@@ -89,6 +89,7 @@ export function WalletTransfersTable({
     (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
     {
       method: "delete",
+      successKey: "success.transfer.deleted",
       invalidateQueries: false,
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["wallet-transfers", canvas, walletId] });

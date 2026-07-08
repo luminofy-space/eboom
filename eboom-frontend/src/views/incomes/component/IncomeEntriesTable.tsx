@@ -96,6 +96,7 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
     (id: number) => API_ROUTES.INCOME_ENTRIES_DELETE(canvas!, id),
     {
       method: "delete",
+      successKey: "success.income.entryDeleted",
       invalidateQueries: false,
       onSuccess: () => {
         setDeleteId(null);

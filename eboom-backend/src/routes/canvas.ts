@@ -14,12 +14,14 @@ import {
 } from "../services/canvasAccessService";
 import { getCanvasSummary, getCanvasTransactions } from "../services/dashboardService";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router();
 
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   try {
     const memberships = await db
@@ -51,18 +53,18 @@ router.get("/", async (req: Request, res: Response) => {
     res.json({ canvases: userCanvases });
   } catch (err) {
     console.error("Error fetching canvases:", err);
-    res.status(500).json({ error: "Failed to fetch canvases" });
+    sendError(res, ErrorKeys.canvas.fetchFailed, 500);
   }
 });
 
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const { name, description, canvasType, photoUrl, baseCurrencyId } = req.body;
 
   if (!name) {
-    return res.status(400).json({ error: "Canvas name is required" });
+    return sendError(res, ErrorKeys.validation.nameRequired, 400);
   }
 
   try {
@@ -73,7 +75,7 @@ router.post("/", async (req: Request, res: Response) => {
         .where(eq(currencies.id, Number(baseCurrencyId)));
 
       if (!selectedCurrency) {
-        return res.status(400).json({ error: "Invalid base currency" });
+        return sendError(res, ErrorKeys.validation.currencyRequired, 400);
       }
 
       const [existingSettings] = await db
@@ -115,7 +117,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.status(201).json({ canvas: newCanvas });
   } catch (err) {
     console.error("Error creating canvas:", err);
-    res.status(500).json({ error: "Failed to create canvas" });
+    sendError(res, ErrorKeys.canvas.createFailed, 500);
   }
 });
 
@@ -127,7 +129,7 @@ router.get("/:canvasId/summary", requireCanvasAccess("view"), async (req: Reques
     res.json(summary);
   } catch (err) {
     console.error("Error fetching canvas summary:", err);
-    res.status(500).json({ error: "Failed to fetch canvas summary" });
+    sendError(res, ErrorKeys.canvas.fetchFailed, 500);
   }
 });
 
@@ -139,7 +141,7 @@ router.get("/:canvasId/transactions", requireCanvasAccess("view"), async (req: R
     res.json(transactions);
   } catch (err) {
     console.error("Error fetching canvas transactions:", err);
-    res.status(500).json({ error: "Failed to fetch canvas transactions" });
+    sendError(res, ErrorKeys.canvas.fetchFailed, 500);
   }
 });
 
@@ -154,7 +156,7 @@ router.get("/:canvasId", requireCanvasAccess("view"), async (req: Request, res: 
       .where(eq(canvases.id, canvasId));
 
     if (!canvas) {
-      return res.status(404).json({ error: "Canvas not found" });
+      return sendError(res, ErrorKeys.canvas.notFound, 404);
     }
 
     res.json({
@@ -165,7 +167,7 @@ router.get("/:canvasId", requireCanvasAccess("view"), async (req: Request, res: 
     });
   } catch (err) {
     console.error("Error fetching canvas:", err);
-    res.status(500).json({ error: "Failed to fetch canvas" });
+    sendError(res, ErrorKeys.canvas.fetchFailed, 500);
   }
 });
 
@@ -191,13 +193,13 @@ router.put("/:canvasId", requireCanvasAccess("manage_canvas"), async (req: Reque
       .returning();
 
     if (!updatedCanvas) {
-      return res.status(404).json({ error: "Canvas not found" });
+      return sendError(res, ErrorKeys.canvas.notFound, 404);
     }
 
     res.json({ canvas: updatedCanvas });
   } catch (err) {
     console.error("Error updating canvas:", err);
-    res.status(500).json({ error: "Failed to update canvas" });
+    sendError(res, ErrorKeys.canvas.updateFailed, 500);
   }
 });
 
@@ -218,7 +220,7 @@ router.delete("/:canvasId", requireCanvasAccess("manage_canvas"), async (req: Re
     res.json({ message: "Canvas archived successfully" });
   } catch (err) {
     console.error("Error deleting canvas:", err);
-    res.status(500).json({ error: "Failed to delete canvas" });
+    sendError(res, ErrorKeys.canvas.deleteFailed, 500);
   }
 });
 
