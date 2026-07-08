@@ -7,7 +7,6 @@
   "groups": {
     "overview": "Overview",
     "finances": "Finances",
-    "planning": "Planning",
     "management": "Management",
     "explore": "Coming soon"
   },
@@ -16,7 +15,7 @@
     "wallets": "Wallets",
     "expenses": "Expenses",
     "assets": "Assets",
-    "manageMembers": "Manage members",
+    "manageCanvas": "Manage canvas",
     "canvasInvitations": "Canvas Invitations",
     "whiteboard": "Whiteboard",
     "calendar": "Calendar",

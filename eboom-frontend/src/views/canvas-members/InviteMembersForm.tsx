@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { MemberRoleSelect } from "./MemberRoleSelect";
+import { displayName, MemberIdentity, UserAvatar } from "./UserAvatar";
 import type { InviteSuggestion } from "@/src/hooks/useCanvasMembers";
 import { Loader2, X } from "lucide-react";
 
@@ -28,6 +29,7 @@ type InviteDraft = {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
+  photoUrl?: string | null;
   role: string;
 };
 
@@ -39,10 +41,6 @@ interface InviteMembersFormProps {
   isLookingUp?: boolean;
   isSubmitting?: boolean;
   hideSectionTitle?: boolean;
-}
-
-function displayName(user: Pick<InviteDraft, "email" | "firstName" | "lastName">) {
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
 }
 
 export function InviteMembersForm({
@@ -117,6 +115,7 @@ export function InviteMembersForm({
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          photoUrl: user.photoUrl,
           role: "visitor",
         });
       }
@@ -188,7 +187,20 @@ export function InviteMembersForm({
                     const label = user ? displayName(user) : id;
                     return (
                       <ComboboxChip key={id} aria-label={label}>
-                        {label}
+                        {user ? (
+                          <span className="flex items-center gap-1.5">
+                            <UserAvatar
+                              photoUrl={user.photoUrl}
+                              firstName={user.firstName}
+                              lastName={user.lastName}
+                              email={user.email}
+                              size="sm"
+                            />
+                            {label}
+                          </span>
+                        ) : (
+                          label
+                        )}
                       </ComboboxChip>
                     );
                   })}
@@ -206,10 +218,13 @@ export function InviteMembersForm({
                   if (!user) return null;
                   return (
                     <ComboboxItem key={id} value={id}>
-                      <Stack gap={1}>
-                        <span className="font-medium">{displayName(user)}</span>
-                        <span className="text-muted-foreground text-xs">{user.email}</span>
-                      </Stack>
+                      <MemberIdentity
+                        photoUrl={user.photoUrl}
+                        firstName={user.firstName}
+                        lastName={user.lastName}
+                        email={user.email}
+                        avatarSize="sm"
+                      />
                     </ComboboxItem>
                   );
                 }}
@@ -260,12 +275,14 @@ export function InviteMembersForm({
               gap={2}
               className="rounded-md border p-2"
             >
-              <Stack className="flex-1" gap={1}>
-                <Typography variant="muted-sm" className="font-medium">
-                  {displayName(draft)}
-                </Typography>
-                <Typography variant="muted-sm">{draft.email}</Typography>
-              </Stack>
+              <MemberIdentity
+                photoUrl={draft.photoUrl}
+                firstName={draft.firstName}
+                lastName={draft.lastName}
+                email={draft.email}
+                avatarSize="sm"
+                className="flex-1"
+              />
               <MemberRoleSelect
                 value={draft.role}
                 onChange={(role) =>

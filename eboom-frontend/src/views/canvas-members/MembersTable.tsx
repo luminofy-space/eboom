@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MemberRoleSelect, roleNameToValue } from "./MemberRoleSelect";
 import { RoleChip } from "./RoleChip";
+import { MemberIdentity } from "./UserAvatar";
 import type { CanvasMember } from "@/src/hooks/useCanvasMembers";
 import { Loader2, UserMinus } from "lucide-react";
 import { useMemo } from "react";
@@ -46,19 +47,14 @@ export function MembersTable({
       {
         id: "member",
         header: "Member",
-        cell: (member) => {
-          const displayName =
-            [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email;
-
-          return (
-            <>
-              <Typography variant="muted-sm" className="font-medium">
-                {displayName}
-              </Typography>
-              <Typography variant="muted-sm">{member.email}</Typography>
-            </>
-          );
-        },
+        cell: (member) => (
+          <MemberIdentity
+            photoUrl={member.photoUrl}
+            firstName={member.firstName}
+            lastName={member.lastName}
+            email={member.email}
+          />
+        ),
       },
       {
         id: "role",

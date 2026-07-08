@@ -5,15 +5,26 @@
     "visitor": "Besucher",
     "owner": "Inhaber"
   },
+  "actions": {
+    "menu": "Canvas-Aktionen",
+    "inviteMember": "Mitglied einladen",
+    "editCanvas": "Canvas-Details bearbeiten",
+    "deleteCanvas": "Canvas löschen",
+    "addMember": "Mitglied hinzufügen"
+  },
   "members": {
-    "title": "Mitglieder verwalten",
-    "description": "Personen einladen und Rollen für dieses Canvas verwalten.",
+    "title": "Canvas verwalten",
+    "description": "Canvas-Details anzeigen und Mitglieder für dieses Canvas verwalten.",
     "canvasType": "Typ: {{type}}",
     "canvasDetails": "Canvas-Übersicht",
+    "canvasMembers": "Canvas-Mitglieder",
+    "canvasMembersDescription": "Personen mit Zugriff auf dieses Canvas.",
     "currentMembers": "Aktuelle Mitglieder",
     "currentMembersDescription": "Personen mit Zugriff auf dieses Canvas.",
     "pendingInvitations": "Ausstehende Einladungen",
     "pendingInvitationsDescription": "Einladungen, die auf eine Antwort warten.",
+    "showPendingInvitations": "Ausstehende Einladungen anzeigen",
+    "hidePendingInvitations": "Ausstehende Einladungen ausblenden",
     "inviteSectionDescription": "Personen aus anderen Canvases oder per E-Mail hinzufügen.",
     "noPendingInvitations": "Keine ausstehenden Einladungen.",
     "invitedMember": "Eingeladenes Mitglied",
@@ -76,7 +87,7 @@
     "ownerBlocked": "Inhaber können nicht austreten. Löschen Sie das Canvas oder übertragen Sie die Inhaberschaft."
   },
   "switcher": {
-    "manageMembers": "Mitglieder verwalten",
+    "manageMembers": "Canvas verwalten",
     "leaveCanvas": "Canvas verlassen"
   }
 }

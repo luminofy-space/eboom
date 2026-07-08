@@ -7,7 +7,6 @@
   "groups": {
     "overview": "نمای کلی",
     "finances": "امور مالی",
-    "planning": "برنامه‌ریزی",
     "management": "مدیریت",
     "explore": "به‌زودی"
   },
@@ -16,7 +15,7 @@
     "wallets": "کیف پول‌ها",
     "expenses": "هزینه‌ها",
     "assets": "دارایی‌ها",
-    "manageMembers": "مدیریت اعضا",
+    "manageCanvas": "مدیریت بوم",
     "canvasInvitations": "دعوت‌نامه‌های بوم",
     "whiteboard": "تخته سفید",
     "calendar": "تقویم",
