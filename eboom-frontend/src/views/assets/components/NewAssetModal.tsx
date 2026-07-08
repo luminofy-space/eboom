@@ -100,7 +100,11 @@ export function NewAssetModal() {
   });
 
   const categories = categoriesRes?.categories ?? [];
-  const categoryIds = categories.map((c) => String(c.id));
+  const categoryNames = categories.map((c) => c.name);
+  const categoryNameToId = (catName: string) =>
+    categories.find((c) => c.name === catName)?.id ?? null;
+  const categoryIdToName = (id: number | null) =>
+    id !== null ? categories.find((c) => c.id === id)?.name ?? "" : "";
 
   const currencies = currenciesRes?.currencies ?? [];
   const currencyLabels = currencies.map((c) => `${c.code} – ${c.name}`);
@@ -244,24 +248,22 @@ export function NewAssetModal() {
                   render={({ field }) => (
                     <Combobox
                       id="asset-category"
-                      items={categoryIds}
-                      value={field.value !== null ? String(field.value) : ""}
+                      items={categoryNames}
+                      value={categoryIdToName(field.value)}
                       disabled={isLoadingCategories}
-                      onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                      onValueChange={(val) =>
+                        field.onChange(val ? categoryNameToId(val) : null)
+                      }
                     >
                       <ComboboxInput placeholder={tc("placeholders.selectCategory")} />
                       <ComboboxContent className="z-[80]">
                         <ComboboxEmpty>{tc("empty.noCategoriesFound")}</ComboboxEmpty>
                         <ComboboxCollection>
-                          {(categoryId) => {
-                            const category = categories.find((c) => String(c.id) === categoryId);
-                            if (!category) return null;
-                            return (
-                              <ComboboxItem key={categoryId} value={categoryId}>
-                                {category.name}
-                              </ComboboxItem>
-                            );
-                          }}
+                          {(catName) => (
+                            <ComboboxItem key={catName} value={catName}>
+                              {catName}
+                            </ComboboxItem>
+                          )}
                         </ComboboxCollection>
                       </ComboboxContent>
                     </Combobox>

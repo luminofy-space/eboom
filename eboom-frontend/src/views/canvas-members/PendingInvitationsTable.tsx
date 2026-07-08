@@ -66,7 +66,7 @@ export function PendingInvitationsTable({
               headerClassName: "w-[140px]",
               cell: (invitation: CanvasPendingInvitation) => (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   className="text-destructive"
                   disabled={isCancelling}
