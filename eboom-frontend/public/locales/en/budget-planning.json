@@ -1,16 +1,11 @@
 {
   "title": "Budget & Planning",
-  "subtitle": "Set spending limits, track progress, and plan what you want to buy.",
+  "subtitle": "Set monthly spending limits, track progress, and plan what you want to buy.",
   "sections": {
     "budgets": "Budgets",
-    "budgetsDescription": "Spending limits for this period — see what's left at a glance.",
+    "budgetsDescription": "Monthly spending limits — see what's left at a glance.",
     "goals": "Goals",
     "goalsDescription": "Things you want to buy — see how your available balance compares."
-  },
-  "tabs": {
-    "overview": "Overview",
-    "categories": "Categories",
-    "forecast": "Forecast"
   },
   "period": {
     "weekly": "Weekly",
@@ -24,36 +19,31 @@
     "limit": "Spending limit",
     "totalLimit": "Total spending limit",
     "categoryLimit": "Category limit",
+    "categoryBudgets": "Category budgets",
     "alertThreshold": "Warn me at",
     "percentUsed": "{{percent}}% used",
     "paidDateHint": "Only payments with a paid date count toward your limit.",
     "scheduledNotCounted": "{{count}} scheduled payment(s) not counted yet",
-    "expected": "Expected",
-    "expectedIn": "Expected in",
-    "expectedOut": "Expected out",
-    "projectedBalance": "Projected balance",
-    "currentBalance": "Current balance",
-    "lastMonthHint": "Last period: ~{{amount}}",
-    "forecastDescription": "Upcoming income and expenses in the next 30 days — separate from your spending limit.",
-    "forecastHint": "Expected in/out counts scheduled transactions not yet received or paid. Budget spent only includes payments with a paid date."
+    "lastMonthHint": "Last period: ~{{amount}}"
   },
   "form": {
-    "createBudget": "Set spending limit",
-    "editBudget": "Edit spending limit",
+    "createBudget": "Make a new Budget",
+    "editBudget": "Edit budget",
     "createGoal": "Add a goal",
     "editGoal": "Edit goal",
     "currency": "Currency",
     "period": "Period",
     "category": "Category",
     "selectCategory": "Select category",
-    "currencyAndPeriod": "Currency & period",
-    "duplicateBudget": "A {{period}} budget already exists for this currency.",
+    "duplicateBudget": "A monthly budget already exists for this currency.",
     "overAllocatedWarning": "Category limits add up to more than your total limit."
   },
   "empty": {
-    "budgetTitle": "No budget yet",
-    "budgetDescription": "Set a total spending limit for this week, month, or year.",
-    "createBudget": "Set spending limit",
+    "budgetTitle": "No budgets yet",
+    "budgetDescription": "Set a monthly spending limit to track what's left.",
+    "budgetForCurrency": "No budget for {{currency}}",
+    "createBudget": "Make a new Budget",
+    "createBudgetForCurrency": "Make a budget for {{currency}}",
     "goalsTitle": "No goals yet",
     "goalsDescription": "Add something you want to buy and track progress against your balance.",
     "addGoal": "Add a goal"
@@ -74,12 +64,12 @@
     "name": "What do you want to buy?",
     "targetAmount": "Target price",
     "targetDate": "Target date (optional)",
+    "targetDateDisplay": "Target date: {{date}}",
+    "photo": "Photo (optional)",
     "currency": "Currency",
     "statusLabel": "Status",
-    "availableAcrossWallets": "Available across your wallets",
+    "availableInWallets": "Available {{amount}} in {{count}} wallets",
     "shadowDisclaimer": "This doesn't reserve money — it shows how your total balance compares to this goal.",
-    "progress": "{{current}} of {{target}}",
-    "daysLeft": "{{count}} days left",
     "tabs": {
       "active": "Active",
       "achieved": "Achieved",

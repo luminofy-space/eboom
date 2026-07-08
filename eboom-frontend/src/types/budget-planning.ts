@@ -85,6 +85,8 @@ export interface SavingsGoalProgress {
   targetAmount: string;
   currentAmount: string;
   availableBalance: string;
+  walletCount: number;
+  photoUrl: string | null;
   remaining: string;
   percent: number;
   targetDate: string | null;
@@ -102,6 +104,7 @@ export interface SavingsGoalListItem {
     targetAmount: string;
     targetDate: string | null;
     status: SavingsGoalStatus;
+    photoUrl?: string | null;
   };
   progress?: SavingsGoalProgress;
 }

@@ -13,7 +13,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
@@ -28,8 +27,7 @@ interface GoalCardProps {
   onStatusChange?: (status: SavingsGoalStatus) => void;
 }
 
-function statusBadgeVariant(status: SavingsGoalStatus): "default" | "secondary" | "outline" {
-  if (status === "active") return "default";
+function statusBadgeVariant(status: SavingsGoalStatus): "secondary" | "outline" {
   if (status === "achieved") return "secondary";
   return "outline";
 }
@@ -37,12 +35,20 @@ function statusBadgeVariant(status: SavingsGoalStatus): "default" | "secondary" 
 export function GoalCard({ progress, canEdit, onEdit, onStatusChange }: GoalCardProps) {
   const { t } = useTranslation("budget-planning");
   const { t: tc } = useTranslation("common");
-  const emDash = tc("empty.emDash");
   const status = progress.status ?? "active";
+  const percent = Math.min(progress.percent, 100);
 
   return (
-    <TooltipProvider>
-      <div className="relative rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted/30">
+    <div className="relative rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted/30">
+      <div className="mb-3 flex items-start justify-between gap-2 pr-8">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <Typography variant="heading" className="line-clamp-2">
+            {progress.name}
+          </Typography>
+          <Badge variant={statusBadgeVariant(status)} className="shrink-0">
+            {t(`goals.status.${status}`)}
+          </Badge>
+        </div>
         {canEdit && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -81,54 +87,61 @@ export function GoalCard({ progress, canEdit, onEdit, onStatusChange }: GoalCard
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+      </div>
+
+      {progress.photoUrl && (
+        <div className="mb-3 overflow-hidden rounded-lg border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={progress.photoUrl}
+            alt=""
+            className="aspect-video w-full object-cover"
+          />
+        </div>
+      )}
+
+      {progress.targetDate && (
+        <Typography variant="muted-sm" className="mb-3">
+          {t("goals.targetDateDisplay", {
+            date: formatDate(progress.targetDate, {
+              month: "2-digit",
+              day: "2-digit",
+              year: "numeric",
+              fallback: tc("empty.emDash"),
+            }),
+          })}
+        </Typography>
+      )}
+
+      <div className="space-y-3">
+        <Typography variant="stat" className="text-lg">
+          {formatCurrency(progress.targetAmount, progress.currencySymbol, {
+            preset: "compact",
+          })}
+        </Typography>
+
+        <BudgetProgressBar
+          percent={percent}
+          variant="goal"
+          showPercent
+        />
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="space-y-4 pr-8">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-2">
-                  <Typography variant="heading" className="line-clamp-2">
-                    {progress.name}
-                  </Typography>
-                  <Badge variant={statusBadgeVariant(status)}>
-                    {t(`goals.status.${status}`)}
-                  </Badge>
-                </div>
-                {progress.targetDate && progress.daysRemaining != null && status === "active" && (
-                  <Typography variant="caption" className="shrink-0">
-                    {progress.daysRemaining >= 0
-                      ? t("goals.daysLeft", { count: progress.daysRemaining })
-                      : formatDate(progress.targetDate, { preset: "short", fallback: emDash })}
-                  </Typography>
-                )}
-              </div>
-
-              <BudgetProgressBar
-                percent={Math.min(progress.percent, 100)}
-                threshold={progress.alertThresholdPercent}
-              />
-
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <Typography variant="stat" className="text-lg">
-                  {t("goals.progress", {
-                    current: formatCurrency(progress.availableBalance, progress.currencySymbol, {
-                      preset: "compact",
-                    }),
-                    target: formatCurrency(progress.targetAmount, progress.currencySymbol, {
-                      preset: "compact",
-                    }),
-                  })}
-                </Typography>
-              </div>
-
-              <Typography variant="muted-sm">{t("goals.availableAcrossWallets")}</Typography>
-            </div>
+            <Typography variant="muted-sm" className="w-fit cursor-default">
+              {t("goals.availableInWallets", {
+                amount: formatCurrency(progress.availableBalance, progress.currencySymbol, {
+                  preset: "compact",
+                }),
+                count: progress.walletCount ?? 0,
+              })}
+            </Typography>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
             <p>{t("goals.shadowDisclaimer")}</p>
           </TooltipContent>
         </Tooltip>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }

@@ -8,7 +8,6 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import { useAuthContext } from "@/src/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
@@ -33,11 +31,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { formatCurrency } from "@/src/i18n/formatters";
 import { getApiErrorMessage } from "@/src/utils/formUtils";
-import { BudgetPeriodTabs } from "./BudgetPeriodTabs";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
 import type {
   BudgetListItem,
-  BudgetPeriodType,
   BudgetSuggestions,
 } from "@/src/types/budget-planning";
 
@@ -57,10 +53,11 @@ interface BudgetFormModalProps {
   onOpenChange: (open: boolean) => void;
   editBudget?: BudgetListItem | null;
   existingBudgets?: BudgetListItem[];
-  defaultPeriodType?: BudgetPeriodType;
   defaultCurrencyId?: number;
   canEdit?: boolean;
 }
+
+const MONTHLY_PERIOD = "monthly" as const;
 
 function getSessionKey(editBudget?: BudgetListItem | null): number | "new" {
   return editBudget?.budget.id ?? "new";
@@ -71,18 +68,15 @@ export function BudgetFormModal({
   onOpenChange,
   editBudget,
   existingBudgets = [],
-  defaultPeriodType = "monthly",
   defaultCurrencyId,
   canEdit = true,
 }: BudgetFormModalProps) {
   const { t } = useTranslation("budget-planning");
   const { canvas } = useCanvas();
-  const { accessToken } = useAuthContext();
   const queryClient = useQueryClient();
   const isEdit = !!editBudget;
 
   const [currencyId, setCurrencyId] = useState("");
-  const [periodType, setPeriodType] = useState<BudgetPeriodType>("monthly");
   const [totalLimit, setTotalLimit] = useState("");
   const [alertThreshold, setAlertThreshold] = useState(80);
   const [lines, setLines] = useState<CategoryLineDraft[]>([]);
@@ -106,13 +100,13 @@ export function BudgetFormModal({
 
   const suggestionsUrl =
     canvas && parsedCurrencyId
-      ? `${API_ROUTES.CANVAS_BUDGETS_SUGGESTIONS(canvas)}?currencyId=${parsedCurrencyId}&periodType=${periodType}`
+      ? `${API_ROUTES.CANVAS_BUDGETS_SUGGESTIONS(canvas)}?currencyId=${parsedCurrencyId}&periodType=${MONTHLY_PERIOD}`
       : "";
 
   const { data: suggestionsRes } = useQueryApi<{ suggestions?: BudgetSuggestions }>(
     suggestionsUrl,
     {
-      queryKey: ["budget-suggestions", canvas, parsedCurrencyId, periodType],
+      queryKey: ["budget-suggestions", canvas, parsedCurrencyId, MONTHLY_PERIOD],
       enabled: !!canvas && parsedCurrencyId != null && open,
     }
   );
@@ -146,7 +140,6 @@ export function BudgetFormModal({
 
     if (editBudget) {
       setCurrencyId(String(editBudget.budget.currencyId));
-      setPeriodType(editBudget.budget.periodType);
       setTotalLimit(String(editBudget.budget.totalLimit));
       setAlertThreshold(editBudget.budget.alertThresholdPercent);
       setLines(
@@ -157,13 +150,12 @@ export function BudgetFormModal({
         }))
       );
     } else {
-      setPeriodType(defaultPeriodType);
       setTotalLimit("");
       setAlertThreshold(80);
       setLines([]);
       setCurrencyId(defaultCurrencyId ? String(defaultCurrencyId) : "");
     }
-  }, [open, editBudget, defaultPeriodType, defaultCurrencyId]);
+  }, [open, editBudget, defaultCurrencyId]);
 
   const allCurrencies = currenciesRes?.currencies ?? [];
 
@@ -180,11 +172,11 @@ export function BudgetFormModal({
     if (isEdit || parsedCurrencyId == null) return null;
     const exists = existingBudgets.some(
       (b) =>
-        b.budget.periodType === periodType && b.budget.currencyId === parsedCurrencyId
+        b.budget.periodType === MONTHLY_PERIOD && b.budget.currencyId === parsedCurrencyId
     );
     if (!exists) return null;
-    return t("form.duplicateBudget", { period: t(`period.${periodType}`) });
-  }, [isEdit, parsedCurrencyId, periodType, existingBudgets, t]);
+    return t("form.duplicateBudget");
+  }, [isEdit, parsedCurrencyId, existingBudgets, t]);
 
   const addLine = () => {
     setLines((prev) => [...prev, { key: `new-${Date.now()}`, categoryId: null, amount: "" }]);
@@ -215,7 +207,7 @@ export function BudgetFormModal({
         if (!canvas || parsedCurrencyId == null) throw new Error("Missing canvas");
         return {
           currencyId: parsedCurrencyId,
-          periodType,
+          periodType: MONTHLY_PERIOD,
           totalLimit,
           alertThresholdPercent: alertThreshold,
           lines: lines
@@ -250,20 +242,13 @@ export function BudgetFormModal({
 
         <div className="flex-1 space-y-6 overflow-y-auto py-2">
           <Field data-invalid={!!duplicateBudgetError}>
-            <FieldLabel>{t("form.currencyAndPeriod")}</FieldLabel>
-            <div className="flex items-stretch gap-3">
-              <div className="w-44 shrink-0 sm:w-52">
-                <SystemCurrencySelect
-                  value={currencyId}
-                  onValueChange={setCurrencyId}
-                  disabled={isEdit}
-                  className="h-11"
-                />
-              </div>
-              <BudgetPeriodTabs
-                value={periodType}
-                onValueChange={setPeriodType}
+            <FieldLabel>{t("form.currency")}</FieldLabel>
+            <div className="w-44 sm:w-52">
+              <SystemCurrencySelect
+                value={currencyId}
+                onValueChange={setCurrencyId}
                 disabled={isEdit}
+                className="h-11"
               />
             </div>
             {duplicateBudgetError && <FieldError>{duplicateBudgetError}</FieldError>}

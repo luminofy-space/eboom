@@ -101,6 +101,8 @@ export interface SavingsGoalProgress {
   targetDate: string | null;
   daysRemaining: number | null;
   availableBalance: string;
+  walletCount: number;
+  photoUrl: string | null;
   alertThresholdPercent: number;
   isOverThreshold: boolean;
 }

@@ -624,6 +624,7 @@ export const savingsGoals = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     targetAmount: numeric("target_amount", { precision: 20, scale: 8 }).notNull(),
     targetDate: date("target_date"),
+    photoUrl: text("photo_url"),
     linkedWalletId: integer("linked_wallet_id").references(() => wallets.id),
     alertThresholdPercent: integer("alert_threshold_percent").notNull().default(80),
     status: savingsGoalStatusEnum("status").notNull().default("active"),

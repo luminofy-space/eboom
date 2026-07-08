@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { and, countDistinct, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   budgetLines,
@@ -474,6 +474,25 @@ export async function getCanvasLiquidBalance(
   return rows.reduce((sum, row) => sum + parseAmount(row.amount), 0);
 }
 
+async function getCanvasWalletCountForCurrency(
+  canvasId: number,
+  currencyId: number
+): Promise<number> {
+  const [row] = await db
+    .select({ walletCount: countDistinct(wallets.id) })
+    .from(subWallets)
+    .innerJoin(wallets, eq(subWallets.walletId, wallets.id))
+    .where(
+      and(
+        eq(wallets.canvasId, canvasId),
+        eq(wallets.isArchived, false),
+        eq(subWallets.currencyId, currencyId)
+      )
+    );
+
+  return row?.walletCount ?? 0;
+}
+
 export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoalProgress | null> {
   const [goal] = await db
     .select()
@@ -484,7 +503,10 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
   const [currency] = await db.select().from(currencies).where(eq(currencies.id, goal.currencyId));
   if (!currency) return null;
 
-  const availableAmount = await getCanvasLiquidBalance(goal.canvasId, goal.currencyId);
+  const [availableAmount, walletCount] = await Promise.all([
+    getCanvasLiquidBalance(goal.canvasId, goal.currencyId),
+    getCanvasWalletCountForCurrency(goal.canvasId, goal.currencyId),
+  ]);
   const targetAmount = parseAmount(goal.targetAmount);
   const remaining = Math.max(0, targetAmount - availableAmount);
   const percent = computePercent(availableAmount, targetAmount);
@@ -506,6 +528,8 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
     targetAmount: formatAmount(targetAmount),
     currentAmount: formatAmount(availableAmount),
     availableBalance: formatAmount(availableAmount),
+    walletCount,
+    photoUrl: goal.photoUrl ?? null,
     remaining: formatAmount(remaining),
     percent,
     targetDate: goal.targetDate ? String(goal.targetDate) : null,
