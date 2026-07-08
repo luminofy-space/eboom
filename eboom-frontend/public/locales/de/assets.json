@@ -8,11 +8,11 @@
   "modal": {
     "create": {
       "title": "Neuen Vermögenswert hinzufügen",
-      "description": "Erfassen Sie einen illiquiden Vermögenswert mit geschätztem Wert und Kategorie."
+      "description": "Erfassen Sie einen Vermögenswert mit Anfangs-Stückpreis und Menge."
     },
     "edit": {
       "title": "Vermögenswert bearbeiten",
-      "description": "Aktualisieren Sie die Details Ihres Vermögenswerts."
+      "description": "Aktualisieren Sie die Details. Mengen und Stückpreisstände verwalten Sie auf der Detailseite."
     },
     "fields": {
       "name": {
@@ -25,8 +25,12 @@
       "currency": {
         "label": "Währung"
       },
-      "estimatedValue": {
-        "label": "Geschätzter Wert",
+      "quantity": {
+        "label": "Menge",
+        "placeholder": "1"
+      },
+      "unitPrice": {
+        "label": "Anfangs-Stückpreis",
         "placeholder": "0,00"
       },
       "description": {
@@ -50,11 +54,150 @@
     "nameMaxLength": "Name darf höchstens 255 Zeichen lang sein",
     "categoryRequired": "Kategorie ist erforderlich",
     "currencyRequired": "Währung ist erforderlich",
-    "estimatedValueRequired": "Geschätzter Wert ist erforderlich",
-    "estimatedValueNonNegative": "Geschätzter Wert muss null oder größer sein",
+    "quantityRequired": "Menge ist erforderlich",
+    "quantityNonZero": "Menge darf nicht null sein",
+    "unitPriceRequired": "Anfangs-Stückpreis ist erforderlich",
+    "unitPriceNonNegative": "Anfangs-Stückpreis muss null oder größer sein",
+    "unitPricePointRequired": "Stückpreis ist erforderlich",
+    "unitPricePointNonNegative": "Stückpreis muss null oder größer sein",
+    "recordedAtRequired": "Datum ist erforderlich",
     "imageTooLarge": "Bild darf höchstens 5 MB groß sein",
     "imageInvalidType": "Bitte wählen Sie eine gültige Bilddatei",
     "noCanvas": "Wählen Sie zuerst ein Canvas aus",
     "saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "detail": {
+    "loadError": "Vermögenswert konnte nicht geladen werden.",
+    "quantityHeld": "Gehaltene Menge",
+    "costBasis": "Einstandswert",
+    "holdingValue": "Bestandswert",
+    "unrealizedPnL": "Unrealisierter G/V"
+  },
+  "summaryCards": {
+    "quantity": {
+      "label": "Gehaltene Menge",
+      "footer": "Aktuelle Bestandsgröße"
+    },
+    "costBasis": {
+      "label": "Einstandswert",
+      "footer": "Durchschnittskosten der Restmenge"
+    },
+    "holdingValue": {
+      "label": "Bestandswert",
+      "footer": "Letzter Stückpreis × Menge"
+    },
+    "unrealizedPnL": {
+      "label": "Unrealisierter G/V",
+      "footer": "Bestandswert minus Einstandswert"
+    }
+  },
+  "chart": {
+    "title": "Bewertung im Zeitverlauf",
+    "description": "Gewinn oder Verlust auf Basis von Stückpreisständen und Mengen",
+    "empty": "Fügen Sie Stückpreisstände hinzu, um Gewinn und Verlust zu sehen.",
+    "legend": {
+      "unrealizedPnL": "Unrealisierter G/V",
+      "holdingValue": "Bestandswert"
+    },
+    "timeRange": {
+      "7d": "7T",
+      "30d": "30T",
+      "90d": "90T",
+      "all": "Alle"
+    }
+  },
+  "volumesTable": {
+    "title": "Mengen",
+    "empty": "Noch keine Mengenänderungen.",
+    "add": "Menge hinzufügen",
+    "headers": {
+      "type": "Typ",
+      "quantity": "Menge",
+      "unitPrice": "Stückpreis",
+      "total": "Summe",
+      "date": "Datum",
+      "notes": "Notizen"
+    },
+    "buy": "Kauf",
+    "sell": "Verkauf"
+  },
+  "pricePointsTable": {
+    "title": "Stückpreisstände",
+    "empty": "Noch keine Stückpreisstände.",
+    "add": "Stückpreisstand hinzufügen",
+    "headers": {
+      "unitPrice": "Stückpreis",
+      "date": "Datum",
+      "notes": "Notizen"
+    }
+  },
+  "volumeModal": {
+    "create": {
+      "title": "Menge hinzufügen",
+      "description": "Erfassen Sie einen Kauf oder Verkauf dieses Vermögenswerts."
+    },
+    "edit": {
+      "title": "Menge bearbeiten",
+      "description": "Aktualisieren Sie diesen Kauf oder Verkauf."
+    },
+    "fields": {
+      "side": {
+        "label": "Typ",
+        "buy": "Kauf",
+        "sell": "Verkauf"
+      },
+      "quantity": {
+        "label": "Menge",
+        "placeholder": "1"
+      },
+      "unitPrice": {
+        "label": "Stückpreis",
+        "placeholder": "0,00"
+      },
+      "recordedAt": {
+        "label": "Datum"
+      },
+      "notes": {
+        "label": "Notizen",
+        "placeholder": "Optional"
+      }
+    },
+    "submit": {
+      "create": "Menge hinzufügen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Menge konnte nicht gespeichert werden."
+    }
+  },
+  "pricePointModal": {
+    "create": {
+      "title": "Stückpreisstand hinzufügen",
+      "description": "Erfassen Sie den Stückpreis dieses Vermögenswerts zu einem Zeitpunkt."
+    },
+    "edit": {
+      "title": "Stückpreisstand bearbeiten",
+      "description": "Aktualisieren Sie diesen Stückpreis."
+    },
+    "fields": {
+      "unitPrice": {
+        "label": "Stückpreis",
+        "placeholder": "0,00"
+      },
+      "recordedAt": {
+        "label": "Datum"
+      },
+      "notes": {
+        "label": "Notizen",
+        "placeholder": "Optional"
+      }
+    },
+    "submit": {
+      "create": "Stückpreisstand hinzufügen",
+      "edit": "Änderungen speichern"
+    },
+    "error": {
+      "saveFailed": "Stückpreisstand konnte nicht gespeichert werden."
+    }
   }
 }

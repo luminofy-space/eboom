@@ -33,7 +33,13 @@
   "asset": {
     "created": "Asset created.",
     "updated": "Asset updated.",
-    "deleted": "Asset deleted."
+    "deleted": "Asset deleted.",
+    "volumeCreated": "Volume added.",
+    "volumeUpdated": "Volume updated.",
+    "volumeDeleted": "Volume deleted.",
+    "pricePointCreated": "Unit price point added.",
+    "pricePointUpdated": "Unit price point updated.",
+    "pricePointDeleted": "Unit price point deleted."
   },
   "canvas": {
     "created": "Canvas created.",

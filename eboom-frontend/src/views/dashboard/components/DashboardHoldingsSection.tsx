@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -23,7 +22,6 @@ export function DashboardHoldingsSection({
   isLoading,
 }: DashboardHoldingsSectionProps) {
   const { t } = useTranslation("dashboard");
-  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -69,7 +67,7 @@ export function DashboardHoldingsSection({
           <Stack direction="row" gap={2} className="flex-wrap">
             {assetsByCurrency.map((row) => (
               <Badge key={row.currencyCode} variant="secondary" className="px-3 py-1">
-                {row.currencyCode}: {formatMoney(row.totalEstimatedValue, row.currencySymbol)}{" "}
+                {row.currencyCode}: {formatMoney(row.totalHoldingValue, row.currencySymbol)}{" "}
                 ({t("assets.assetCount", { count: row.count })})
               </Badge>
             ))}
@@ -81,11 +79,11 @@ export function DashboardHoldingsSection({
             {assetSummaries.map((asset) => (
               <GridCard
                 key={asset.id}
+                href={`/asset/${asset.id}`}
                 imageUrl={asset.photoUrl}
                 title={asset.name}
-                subtitle={formatMoney(asset.estimatedValue, asset.currencySymbol)}
+                subtitle={formatMoney(asset.currentHoldingValue, asset.currencySymbol)}
                 updatedAt={asset.lastModifiedAt}
-                onClick={() => router.push("/assets")}
               />
             ))}
           </Grid>

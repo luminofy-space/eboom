@@ -44,7 +44,8 @@ interface AssetFormData {
   name: string;
   assetCategoryId: number | null;
   currencyId: number | null;
-  estimatedValue: string;
+  quantity: string;
+  unitPrice: string;
   description: string;
   photo: File | null;
 }
@@ -53,7 +54,8 @@ const defaultValues: AssetFormData = {
   name: "",
   assetCategoryId: null,
   currencyId: null,
-  estimatedValue: "",
+  quantity: "1",
+  unitPrice: "",
   description: "",
   photo: null,
 };
@@ -138,7 +140,8 @@ export function NewAssetModal() {
         name: editingItem.name ?? "",
         assetCategoryId: editingItem.assetCategoryId ?? editingItem.category?.id ?? null,
         currencyId: editingItem.currencyId ?? editingItem.currency?.id ?? null,
-        estimatedValue: editingItem.estimatedValue ?? "",
+        quantity: "1",
+        unitPrice: "",
         description:
           typeof editingItem.description === "string" ? editingItem.description : "",
         photo: null,
@@ -165,19 +168,23 @@ export function NewAssetModal() {
     }
 
     try {
-      const data = {
-        name: formData.name.trim(),
-        assetCategoryId: formData.assetCategoryId,
-        currencyId: formData.currencyId,
-        estimatedValue: formData.estimatedValue.trim(),
-        description: formData.description.trim(),
-        ...(formData.photo ? { photoUrl: await fileToDataUrl(formData.photo) } : {}),
-      };
-
       if (isEdit) {
-        await updateAsset(data);
+        await updateAsset({
+          name: formData.name.trim(),
+          assetCategoryId: formData.assetCategoryId,
+          description: formData.description.trim(),
+          ...(formData.photo ? { photoUrl: await fileToDataUrl(formData.photo) } : {}),
+        });
       } else {
-        await createAsset(data);
+        await createAsset({
+          name: formData.name.trim(),
+          assetCategoryId: formData.assetCategoryId,
+          currencyId: formData.currencyId,
+          quantity: formData.quantity.trim(),
+          unitPrice: formData.unitPrice.trim(),
+          description: formData.description.trim(),
+          ...(formData.photo ? { photoUrl: await fileToDataUrl(formData.photo) } : {}),
+        });
       }
 
       reset(defaultValues);
@@ -271,14 +278,15 @@ export function NewAssetModal() {
                   name="currencyId"
                   control={control}
                   rules={{
-                    validate: (value) => value !== null || tv("currencyRequired"),
+                    validate: (value) =>
+                      isEdit || value !== null || tv("currencyRequired"),
                   }}
                   render={({ field }) => (
                     <Combobox
                       id="asset-currency"
                       items={currencyLabels}
                       value={currencyIdToLabel(field.value)}
-                      disabled={isLoadingCurrencies}
+                      disabled={isLoadingCurrencies || isEdit}
                       onValueChange={(label) =>
                         field.onChange(label ? currencyLabelToId(label) : null)
                       }
@@ -300,27 +308,51 @@ export function NewAssetModal() {
                 <FieldError errors={[errors.currencyId]} />
               </Field>
 
-              <Field className="flex-1">
-                <FieldLabel htmlFor="asset-value">{t("modal.fields.estimatedValue.label")}</FieldLabel>
+              {!isEdit && (
+                <Field className="flex-1">
+                  <FieldLabel htmlFor="asset-quantity">{t("modal.fields.quantity.label")}</FieldLabel>
+                  <NumberInput
+                    id="asset-quantity"
+                    step="any"
+                    placeholder={t("modal.fields.quantity.placeholder")}
+                    aria-invalid={!!errors.quantity}
+                    {...register("quantity", {
+                      required: tv("quantityRequired"),
+                      validate: (value) => {
+                        const num = Number(value);
+                        if (Number.isNaN(num)) return tv("quantityRequired");
+                        if (num === 0) return tv("quantityNonZero");
+                        return true;
+                      },
+                    })}
+                  />
+                  <FieldError errors={[errors.quantity]} />
+                </Field>
+              )}
+            </Stack>
+
+            {!isEdit && (
+              <Field>
+                <FieldLabel htmlFor="asset-unit-price">{t("modal.fields.unitPrice.label")}</FieldLabel>
                 <NumberInput
-                  id="asset-value"
+                  id="asset-unit-price"
                   min="0"
                   step="any"
-                  placeholder={t("modal.fields.estimatedValue.placeholder")}
-                  aria-invalid={!!errors.estimatedValue}
-                  {...register("estimatedValue", {
-                    required: tv("estimatedValueRequired"),
+                  placeholder={t("modal.fields.unitPrice.placeholder")}
+                  aria-invalid={!!errors.unitPrice}
+                  {...register("unitPrice", {
+                    required: tv("unitPriceRequired"),
                     validate: (value) => {
                       const num = Number(value);
-                      if (Number.isNaN(num)) return tv("estimatedValueRequired");
-                      if (num < 0) return tv("estimatedValueNonNegative");
+                      if (Number.isNaN(num)) return tv("unitPriceRequired");
+                      if (num < 0) return tv("unitPriceNonNegative");
                       return true;
                     },
                   })}
                 />
-                <FieldError errors={[errors.estimatedValue]} />
+                <FieldError errors={[errors.unitPrice]} />
               </Field>
-            </Stack>
+            )}
 
             <Field>
               <FieldLabel htmlFor="asset-description">{t("modal.fields.description.label")}</FieldLabel>

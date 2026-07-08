@@ -33,7 +33,13 @@
   "asset": {
     "created": "دارایی ایجاد شد.",
     "updated": "دارایی به‌روزرسانی شد.",
-    "deleted": "دارایی حذف شد."
+    "deleted": "دارایی حذف شد.",
+    "volumeCreated": "حجم افزوده شد.",
+    "volumeUpdated": "حجم به‌روزرسانی شد.",
+    "volumeDeleted": "حجم حذف شد.",
+    "pricePointCreated": "نقطه قیمت واحد افزوده شد.",
+    "pricePointUpdated": "نقطه قیمت واحد به‌روزرسانی شد.",
+    "pricePointDeleted": "نقطه قیمت واحد حذف شد."
   },
   "canvas": {
     "created": "بوم ایجاد شد.",

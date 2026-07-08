@@ -147,7 +147,7 @@ export function buildCompactLlmContext(
     })),
     a: context.assetsByCurrency.slice(0, 5).map((asset) => ({
       c: asset.currencyCode,
-      v: roundAmount(asset.totalEstimatedValue),
+      v: roundAmount(asset.totalHoldingValue),
       n: asset.count,
     })),
     s: context.categorySpendLast90Days.slice(0, 6).map((row) => ({

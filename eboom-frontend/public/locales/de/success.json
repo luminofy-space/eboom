@@ -33,7 +33,13 @@
   "asset": {
     "created": "Vermögenswert erstellt.",
     "updated": "Vermögenswert aktualisiert.",
-    "deleted": "Vermögenswert gelöscht."
+    "deleted": "Vermögenswert gelöscht.",
+    "volumeCreated": "Menge hinzugefügt.",
+    "volumeUpdated": "Menge aktualisiert.",
+    "volumeDeleted": "Menge gelöscht.",
+    "pricePointCreated": "Stückpreisstand hinzugefügt.",
+    "pricePointUpdated": "Stückpreisstand aktualisiert.",
+    "pricePointDeleted": "Stückpreisstand gelöscht."
   },
   "canvas": {
     "created": "Canvas erstellt.",

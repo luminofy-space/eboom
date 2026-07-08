@@ -755,23 +755,59 @@ WHERE e.entity = 'expense_shared_rent' AND w.entity = 'wallet_joint';
 -- ---------------------------------------------------------------------------
 -- Assets
 -- ---------------------------------------------------------------------------
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, '2022 Toyota Camry', l.ac_vehicle, l.cur_usd, 18500.00,
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, '2022 Toyota Camry', l.ac_vehicle, l.cur_usd,
        '{"year": 2022, "notes": "Primary vehicle"}'::jsonb,
        1, 1
 FROM _demo d, _lk l WHERE d.entity = 'canvas_personal';
 
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, 'Primary Residence Equity', l.ac_real_estate, l.cur_usd, 85000.00,
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 18500.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = '2022 Toyota Camry';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 18500.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = '2022 Toyota Camry';
+
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, 'Primary Residence Equity', l.ac_real_estate, l.cur_usd,
        '{"notes": "Estimated equity after mortgage"}'::jsonb,
        1, 1
 FROM _demo d, _lk l WHERE d.entity = 'canvas_personal';
 
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, 'Workstation Setup', l.ac_equipment, l.cur_usd, 4200.00,
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 85000.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = 'Primary Residence Equity';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 85000.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = 'Primary Residence Equity';
+
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, 'Workstation Setup', l.ac_equipment, l.cur_usd,
        '{"items": ["MacBook Pro", "Monitor", "Desk"]}'::jsonb,
        2, 2
 FROM _demo d, _lk l WHERE d.entity = 'canvas_consulting';
+
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 4200.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_consulting'
+WHERE a.name = 'Workstation Setup';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 4200.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_consulting'
+WHERE a.name = 'Workstation Setup';
 
 -- ---------------------------------------------------------------------------
 -- Transfers — monthly for last 3 months + upcoming cross-currency

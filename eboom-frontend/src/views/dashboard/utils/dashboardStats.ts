@@ -190,7 +190,7 @@ export function computeDashboardStatsByCurrency(
       topWallets: getTopWallets(summary.walletBalances, currencyCode),
       netCashFlowThisMonth: computeNetCashFlowThisMonth(entries, payments),
       assetCount: assetRow?.count ?? 0,
-      totalAssetValue: parseFloat(assetRow?.totalEstimatedValue ?? "0") || 0,
+      totalAssetValue: parseFloat(assetRow?.totalHoldingValue ?? "0") || 0,
     };
   });
 }

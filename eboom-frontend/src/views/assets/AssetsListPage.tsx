@@ -119,14 +119,14 @@ export default function AssetsListPage() {
           {items.map((asset) => (
             <GridCard
               key={asset.id}
+              href={`/asset/${asset.id}`}
               imageUrl={asset.photoUrl}
               title={asset.name}
               subtitle={formatMoney(
-                asset.estimatedValue ?? "0",
+                asset.currentHoldingValue ?? asset.costBasis ?? "0",
                 asset.currency?.symbol
               )}
               updatedAt={asset.lastModifiedAt}
-              onClick={canEdit ? () => dispatch(openAssetEditModal(asset)) : undefined}
               onEdit={canEdit ? () => dispatch(openAssetEditModal(asset)) : undefined}
               onDelete={canEdit ? () => setDeleteId(asset.id) : undefined}
             />
