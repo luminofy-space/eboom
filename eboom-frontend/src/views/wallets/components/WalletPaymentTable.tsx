@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletPayment } from "../utils/utils";
+import { filterPaymentsByCurrency } from "../utils/currencyFilter";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
@@ -25,6 +26,7 @@ interface WalletPaymentsTableProps {
   walletId: number;
   walletName?: string;
   currencySymbol?: string;
+  currencyCode?: string;
 }
 
 function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
@@ -55,6 +57,7 @@ export function WalletPaymentsTable({
   walletId,
   walletName,
   currencySymbol,
+  currencyCode,
 }: WalletPaymentsTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
@@ -64,7 +67,10 @@ export function WalletPaymentsTable({
   const [editingPayment, setEditingPayment] = useState<WalletPayment | null>(null);
   const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const payments = useMemo(() => sortPayments(paymentsRes ?? []), [paymentsRes]);
+  const payments = useMemo(
+    () => sortPayments(filterPaymentsByCurrency(paymentsRes ?? [], currencyCode)),
+    [paymentsRes, currencyCode]
+  );
 
   const totalPaid = useMemo(
     () =>
@@ -81,7 +87,8 @@ export function WalletPaymentsTable({
         header: t("paymentsTable.headers.amount"),
         headerClassName: "w-[140px]",
         cellClassName: "font-medium tabular-nums",
-        cell: (payment) => formatAmount(payment.amount, currencySymbol, emDash),
+        cell: (payment) =>
+          formatAmount(payment.amount, payment.currencySymbol ?? currencySymbol, emDash),
       },
       {
         id: "expense",

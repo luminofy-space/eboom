@@ -5,6 +5,11 @@ import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { WalletEntry, WalletPayment, WalletTransfer } from "../utils/utils";
+import {
+  getCurrencySymbolForCode,
+  getWalletCurrencyOptions,
+  type WalletSubWallet,
+} from "../utils/currencyFilter";
 import type { Wallet } from "@/src/types/common";
 
 interface UseWalletDetailOptions {
@@ -21,11 +26,7 @@ export function useWalletDetail(
   const { data: walletRes, isLoading: isLoadingWallet, isError: isWalletError } =
     useQueryApi<{
       wallet: Wallet & {
-        subWallets?: Array<{
-          currencyId: number;
-          amount: string;
-          currency?: { id: number; code: string; symbol: string } | null;
-        }>;
+        subWallets?: WalletSubWallet[];
       };
     }>(canvas ? API_ROUTES.WALLETS_GET(canvas, walletId) : "", {
       queryKey: ["wallet", canvas, walletId],
@@ -68,20 +69,29 @@ export function useWalletDetail(
     }
   );
 
-  const currencySymbol = useMemo(() => {
-    const subWallets = walletRes?.wallet?.subWallets ?? [];
-    if (subWallets.length > 0) {
-      return subWallets[0]?.currency?.symbol;
-    }
-    return undefined;
-  }, [walletRes?.wallet?.subWallets]);
+  const entries = entriesRes?.incomeEntries ?? [];
+  const payments = paymentsRes?.expensePayments ?? [];
+  const subWallets = walletRes?.wallet?.subWallets;
+
+  const currencyOptions = useMemo(
+    () => getWalletCurrencyOptions(subWallets),
+    [subWallets]
+  );
+
+  const getCurrencySymbol = useMemo(
+    () => (code: string) =>
+      getCurrencySymbolForCode(code, currencyOptions, entries, payments),
+    [currencyOptions, entries, payments]
+  );
 
   return {
     wallet: walletRes?.wallet,
-    entries: entriesRes?.incomeEntries ?? [],
-    payments: paymentsRes?.expensePayments ?? [],
+    subWallets,
+    currencyOptions,
+    entries,
+    payments,
     transfers: transfersRes?.transfers ?? [],
-    currencySymbol,
+    getCurrencySymbol,
     isLoading: isLoadingWallet || isLoadingEntries || isLoadingPayments || isLoadingTransfers,
     isError: isWalletError || isEntriesError || isPaymentsError || isTransfersError,
   };

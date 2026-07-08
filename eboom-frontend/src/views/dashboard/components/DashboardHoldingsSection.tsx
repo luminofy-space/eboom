@@ -29,7 +29,7 @@ export function DashboardHoldingsSection({
     return (
       <Container>
         <Stack gap={4}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
           <Grid variant="cards" gap={4}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="aspect-[4/3] rounded-xl bg-muted animate-pulse" />
@@ -48,8 +48,8 @@ export function DashboardHoldingsSection({
     return (
       <Container>
         <Stack gap={3}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
-          <Typography variant="muted-sm">{t("holdings.empty")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
+          <Typography variant="muted-sm">{t("assets.empty")}</Typography>
         </Stack>
       </Container>
     );
@@ -59,9 +59,9 @@ export function DashboardHoldingsSection({
     <Container>
       <Stack gap={4}>
         <Stack direction="row" align="center" justify="between" gap={4}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/assets">{t("holdings.viewAll")}</Link>
+            <Link href="/assets">{t("assets.viewAll")}</Link>
           </Button>
         </Stack>
 
@@ -70,7 +70,7 @@ export function DashboardHoldingsSection({
             {assetsByCurrency.map((row) => (
               <Badge key={row.currencyCode} variant="secondary" className="px-3 py-1">
                 {row.currencyCode}: {formatMoney(row.totalEstimatedValue, row.currencySymbol)}{" "}
-                ({t("holdings.assetCount", { count: row.count })})
+                ({t("assets.assetCount", { count: row.count })})
               </Badge>
             ))}
           </Stack>

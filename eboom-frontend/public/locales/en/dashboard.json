@@ -6,17 +6,18 @@
     "noCanvasTitle": "No canvas selected",
     "noCanvasDescription": "Select or create a canvas from the sidebar to view your financial overview."
   },
-  "assets": {
-    "title": "Overall Assets",
-    "totalAssets": "Total assets",
+  "walletsBalance": {
+    "title": "Overall Wallets Balance",
+    "totalBalance": "Total balance",
+    "inWallets": "in {{count}} wallets",
     "netThisMonth": "net this month",
     "loadAll": "Load all",
     "showLess": "Show less",
     "pageIndicator": "{{current}} / {{total}}",
     "previousPage": "Previous page",
     "nextPage": "Next page",
-    "empty": "No assets yet. Add wallets, incomes, or expenses to get started.",
-    "viewAll": "View all Assets",
+    "empty": "No wallet balances yet. Add wallets, incomes, or expenses to get started.",
+    "viewAll": "View all Wallets",
     "tooltip": {
       "wallets": "Wallets",
       "incomes": "Incomes",
@@ -26,8 +27,8 @@
       "paid": "Expenses paid",
       "unpaid": "Expenses unpaid",
       "netCashFlow": "Net cash flow (this month)",
-      "holdings": "Holdings",
-      "holdingsValue": "Holdings value"
+      "assets": "Assets",
+      "assetsValue": "Assets value"
     }
   },
   "budget": {
@@ -55,10 +56,10 @@
   "charts": {
     "title": "Charts & trends"
   },
-  "holdings": {
-    "title": "Property & Holdings",
-    "empty": "No holdings yet. Add vehicles, property, or land to track their estimated value.",
-    "viewAll": "View all Holdings",
+  "assets": {
+    "title": "Assets",
+    "empty": "No assets yet. Add vehicles, property, or land to track their estimated value.",
+    "viewAll": "View all Assets",
     "assetCount_one": "{{count}} asset",
     "assetCount_other": "{{count}} assets",
     "totalValue": "Total estimated value"

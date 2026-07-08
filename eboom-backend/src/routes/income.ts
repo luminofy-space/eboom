@@ -238,6 +238,7 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
         },
         tx
       );
+      // Creates sub_wallet row on first entry for this wallet+currency via getOrCreateSubWalletRow
 
       return entry;
     });

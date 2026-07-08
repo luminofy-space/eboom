@@ -6,7 +6,10 @@
     }
   },
   "detail": {
-    "loadError": "Wallet-Details konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+    "loadError": "Wallet-Details konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "balancesTitle": "Salden",
+    "noBalancesYet": "Noch keine Salden. Salden erscheinen nach der ersten Buchung, Zahlung oder Überweisung.",
+    "currencyFilter": "Nach Währung filtern"
   },
   "modal": {
     "create": {
@@ -128,7 +131,14 @@
     "title": "Transaktionen im Zeitverlauf",
     "description": {
       "withData": "{{amount}} eingehend & ausgehend für die {{timeRange}}",
-      "noData": "Keine Transaktionen in den {{timeRange}}"
+      "noData": "Keine Transaktionen in den {{timeRange}}",
+      "multiCurrency": "Alle Währungen für die {{timeRange}}"
+    },
+    "legend": {
+      "incoming": "Eingehend",
+      "outgoing": "Ausgehend",
+      "transferIn": "Transfer eingehend",
+      "transferOut": "Transfer ausgehend"
     },
     "series": {
       "incoming": "Eingehend",

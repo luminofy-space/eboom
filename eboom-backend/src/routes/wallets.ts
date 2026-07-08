@@ -56,10 +56,14 @@ router.get(
           receivedDate: incomeEntries.receivedDate,
           notes: incomeEntries.notes,
           createdAt: incomeEntries.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(incomeEntries)
         .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
         .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+        .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
         .where(eq(incomeEntries.destinationWalletId, walletId));
 
       res.json({
@@ -102,10 +106,14 @@ router.get(
           paidDate: expensePayments.paidDate,
           notes: expensePayments.notes,
           createdAt: expensePayments.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(expensePayments)
         .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
         .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+        .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
         .where(eq(expensePayments.sourceWalletId, walletId));
 
       res.json({
@@ -177,10 +185,14 @@ router.get(
           receivedDate: incomeEntries.receivedDate,
           notes: incomeEntries.notes,
           createdAt: incomeEntries.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(incomeEntries)
         .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
         .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+        .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
         .where(eq(incomeEntries.destinationWalletId, walletId));
 
       const expenseData = await db
@@ -195,10 +207,14 @@ router.get(
           paidDate: expensePayments.paidDate,
           notes: expensePayments.notes,
           createdAt: expensePayments.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(expensePayments)
         .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
         .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+        .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
         .where(eq(expensePayments.sourceWalletId, walletId));
 
       const transferData = (await listTransfersForWallet(walletId)).map((transfer) => ({

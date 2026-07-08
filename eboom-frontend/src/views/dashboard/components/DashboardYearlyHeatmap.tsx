@@ -17,6 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDate, formatMoney } from "@/src/i18n/formatters";
 import { useTranslation } from "react-i18next";
 import type { CanvasSummary } from "@/src/types/dashboard";
@@ -33,6 +39,47 @@ interface DashboardYearlyHeatmapProps {
 }
 
 const CELL_SIZE_CLASS = "h-3 w-3 rounded-[2px]";
+const HEATMAP_TOOLTIP_CLASS =
+  "w-56 !bg-popover !text-popover-foreground border p-2 shadow-md [&_[class*='rotate-45']]:!bg-popover [&_[class*='rotate-45']]:!fill-popover";
+
+function HeatmapCellTooltip({
+  day,
+  symbol,
+  children,
+}: {
+  day: YearlyHeatmapDay;
+  symbol: string;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation("dashboard");
+  const { t: tc } = useTranslation("common");
+  const emDash = tc("empty.emDash");
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} className={HEATMAP_TOOLTIP_CLASS}>
+        <div className="font-medium">
+          {formatDate(day.date, { preset: "short", fallback: emDash })}
+        </div>
+        <div className="mt-1 grid gap-0.5 text-muted-foreground">
+          <div className="flex justify-between gap-4">
+            <span>{t("heatmap.tooltip.income")}</span>
+            <span className="text-foreground">{formatMoney(day.income, symbol)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span>{t("heatmap.tooltip.expense")}</span>
+            <span className="text-foreground">{formatMoney(day.expense, symbol)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span>{t("heatmap.tooltip.net")}</span>
+            <span className="text-foreground">{formatMoney(day.net, symbol)}</span>
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function getHeatmapCellColor(day: YearlyHeatmapDay): string {
   if (!day.inYear) return "bg-muted/30";
@@ -226,7 +273,8 @@ export function DashboardYearlyHeatmap({
         {!currencyCodes.length || !heatmapData ? (
           <p className="text-sm text-muted-foreground">{t("heatmap.empty")}</p>
         ) : (
-          <div className="inline-block min-w-max">
+          <TooltipProvider>
+            <div className="inline-block min-w-max">
             <div className="mb-2 flex items-center gap-1 pl-8">
               {weekColumns.map((_, weekIndex) => (
                 <div
@@ -272,41 +320,19 @@ export function DashboardYearlyHeatmap({
 
                       const symbol = symbolByCurrency[selectedCurrency] ?? selectedCurrency;
                       return (
-                        <div key={day.date} className="group relative">
-                          <div className={`${CELL_SIZE_CLASS} ${getHeatmapCellColor(day)}`} />
-                          <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border bg-popover px-2 py-1.5 text-xs shadow-md group-hover:block">
-                            <div className="font-medium">
-                              {formatDate(day.date, { preset: "short", fallback: emDash })}
-                            </div>
-                            <div className="mt-1 grid gap-0.5 text-muted-foreground">
-                              <div className="flex justify-between gap-4">
-                                <span>{t("heatmap.tooltip.income")}</span>
-                                <span className="text-foreground">
-                                  {formatMoney(day.income, symbol)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>{t("heatmap.tooltip.expense")}</span>
-                                <span className="text-foreground">
-                                  {formatMoney(day.expense, symbol)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>{t("heatmap.tooltip.net")}</span>
-                                <span className="text-foreground">
-                                  {formatMoney(day.net, symbol)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <HeatmapCellTooltip key={day.date} day={day} symbol={symbol}>
+                          <div
+                            className={`${CELL_SIZE_CLASS} ${getHeatmapCellColor(day)}`}
+                          />
+                        </HeatmapCellTooltip>
                       );
                     })}
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+            </div>
+          </TooltipProvider>
         )}
 
         <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">

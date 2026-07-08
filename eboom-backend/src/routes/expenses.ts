@@ -268,6 +268,7 @@ router.post(
           },
           tx
         );
+        // Creates sub_wallet row on first payment for this wallet+currency via getOrCreateSubWalletRow
 
         return payment;
       });

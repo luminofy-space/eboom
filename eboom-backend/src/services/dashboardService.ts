@@ -418,6 +418,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       .from(assets)
       .where(and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false))),
     db
+      // walletCount = distinct parent wallets with a sub_wallet in this currency
       .select({
         currencyCode: currencies.code,
         currencySymbol: currencies.symbol,
@@ -484,6 +485,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
   );
 
   const walletBalanceRows = await db
+    // One row per sub_wallet; total liquid balance per currency is summed client-side
     .select({
       walletId: wallets.id,
       walletName: wallets.name,

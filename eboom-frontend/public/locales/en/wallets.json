@@ -6,7 +6,10 @@
     }
   },
   "detail": {
-    "loadError": "Failed to load wallet details. Please try again."
+    "loadError": "Failed to load wallet details. Please try again.",
+    "balancesTitle": "Balances",
+    "noBalancesYet": "No balances yet. Balances appear when the first entry, payment, or transfer is recorded.",
+    "currencyFilter": "Filter by currency"
   },
   "modal": {
     "create": {
@@ -128,7 +131,14 @@
     "title": "Transactions Over Time",
     "description": {
       "withData": "{{amount}} incoming & outgoing for the {{timeRange}}",
-      "noData": "No transactions in the {{timeRange}}"
+      "noData": "No transactions in the {{timeRange}}",
+      "multiCurrency": "All currencies shown for the {{timeRange}}"
+    },
+    "legend": {
+      "incoming": "Incoming",
+      "outgoing": "Outgoing",
+      "transferIn": "Transfer in",
+      "transferOut": "Transfer out"
     },
     "series": {
       "incoming": "Incoming",

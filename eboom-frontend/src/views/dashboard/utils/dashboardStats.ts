@@ -16,6 +16,7 @@ export interface CurrencyDashboardStats {
   currencyCode: string;
   currencySymbol: string;
   totalBalance: number;
+  walletCountWithCurrency: number;
   entityCounts: { wallets: number; incomes: number; expenses: number; assets: number };
   incomeStats: ReturnType<typeof computeIncomeStats>;
   expenseStats: ReturnType<typeof computeExpenseStats>;
@@ -86,8 +87,9 @@ function toExpensePayment(payment: CanvasSummaryExpensePayment): ExpensePayment 
 
 function getCurrencyCodes(summary: CanvasSummary): string[] {
   const codes = new Set<string>();
-  summary.currencyBreakdown?.forEach((b) => codes.add(b.currencyCode));
+  // Prioritize liquid currencies from sub-wallets first
   summary.walletBalances.forEach((b) => codes.add(b.currencyCode));
+  summary.currencyBreakdown?.forEach((b) => codes.add(b.currencyCode));
   summary.incomeEntries.forEach((e) => codes.add(e.currencyCode));
   summary.expensePayments.forEach((p) => codes.add(p.currencyCode));
   summary.assetsByCurrency?.forEach((a) => codes.add(a.currencyCode));
@@ -174,11 +176,14 @@ export function computeDashboardStatsByCurrency(
     const walletEntries = entries.map(toWalletEntry);
     const walletPayments = payments.map(toWalletPayment);
 
+    const entityCounts = getEntityCounts(summary, currencyCode);
+
     return {
       currencyCode,
       currencySymbol: getCurrencySymbol(summary, currencyCode),
       totalBalance: balances.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0),
-      entityCounts: getEntityCounts(summary, currencyCode),
+      walletCountWithCurrency: entityCounts.wallets,
+      entityCounts,
       incomeStats: computeIncomeStats(entries.map(toIncomeEntry)),
       expenseStats: computeExpenseStats(payments.map(toExpensePayment)),
       walletStats: computeWalletStats(walletEntries, walletPayments),
