@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { BanknoteArrowDown, BanknoteArrowUp, PiggyBank } from "lucide-react";
+import { BanknoteArrowDown, BanknoteArrowUp, PartyPopper, PiggyBank } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { Stack } from "@/components/ui/stack";
@@ -106,6 +106,42 @@ function BudgetAlertItem({
   );
 }
 
+function GoalAlertItem({
+  alert,
+  onNavigate,
+}: {
+  alert: BudgetAlertNotification;
+  onNavigate: () => void;
+}) {
+  const { t } = useTranslation("navigation");
+
+  return (
+    <button
+      type="button"
+      onClick={onNavigate}
+      className={cn(
+        "flex w-full items-start gap-3 rounded-md p-2 text-start transition-colors",
+        "hover:bg-accent hover:text-accent-foreground"
+      )}
+    >
+      <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+        <PartyPopper className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-snug">
+          {t("notifications.goalAchievable", { goalName: alert.label })}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {formatCurrency(alert.spent, alert.currencySymbol, { preset: "compact" })}
+          {" · "}
+          {alert.currencyCode}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{alert.canvasName}</p>
+      </div>
+    </button>
+  );
+}
+
 interface NotificationsPanelProps {
   notifications: OverdueNotification[];
   budgetAlerts: BudgetAlertNotification[];
@@ -121,6 +157,12 @@ export function NotificationsPanel({
 }: NotificationsPanelProps) {
   const { t } = useTranslation("navigation");
   const router = useRouter();
+
+  const budgetWarnings = budgetAlerts.filter((alert) => alert.type !== "savings_goal");
+  const goalAlerts = budgetAlerts.filter((alert) => alert.type === "savings_goal");
+  const hasMultipleSections =
+    [notifications.length > 0, budgetWarnings.length > 0, goalAlerts.length > 0].filter(Boolean)
+      .length > 1;
 
   const handleOverdueNavigate = (notification: OverdueNotification) => {
     onClose();
@@ -152,7 +194,7 @@ export function NotificationsPanel({
     <Stack gap={3} className="max-h-80 overflow-y-auto">
       {notifications.length > 0 && (
         <Stack gap={1}>
-          {budgetAlerts.length > 0 && (
+          {hasMultipleSections && (
             <Typography variant="muted-sm" className="px-2 font-medium">
               {t("notifications.overdueSection")}
             </Typography>
@@ -167,16 +209,33 @@ export function NotificationsPanel({
         </Stack>
       )}
 
-      {budgetAlerts.length > 0 && (
+      {budgetWarnings.length > 0 && (
         <Stack gap={1}>
-          {notifications.length > 0 && (
+          {hasMultipleSections && (
             <Typography variant="muted-sm" className="px-2 font-medium">
               {t("notifications.budgetSection")}
             </Typography>
           )}
-          {budgetAlerts.map((alert) => (
+          {budgetWarnings.map((alert) => (
             <BudgetAlertItem
-              key={`${alert.type}-${alert.budgetId ?? alert.lineId ?? alert.goalId}-${alert.periodKey}`}
+              key={`${alert.type}-${alert.budgetId ?? alert.lineId}-${alert.periodKey}`}
+              alert={alert}
+              onNavigate={handleBudgetNavigate}
+            />
+          ))}
+        </Stack>
+      )}
+
+      {goalAlerts.length > 0 && (
+        <Stack gap={1}>
+          {hasMultipleSections && (
+            <Typography variant="muted-sm" className="px-2 font-medium">
+              {t("notifications.goalSection")}
+            </Typography>
+          )}
+          {goalAlerts.map((alert) => (
+            <GoalAlertItem
+              key={`${alert.type}-${alert.goalId}-${alert.periodKey}`}
               alert={alert}
               onNavigate={handleBudgetNavigate}
             />

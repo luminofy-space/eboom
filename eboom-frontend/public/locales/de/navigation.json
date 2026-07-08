@@ -34,12 +34,14 @@
   },
   "notifications": {
     "title": "Benachrichtigungen",
-    "empty": "Keine überfälligen Zahlungen, Einnahmen oder Budget-Warnungen.",
+    "empty": "Keine überfälligen Zahlungen, Budget-Warnungen oder Ziel-Updates.",
     "overdueSection": "Überfällig",
     "budgetSection": "Budget-Warnungen",
+    "goalSection": "Ziele",
     "overdueExpense": "Zahlung überfällig",
     "overdueIncome": "Einnahme nicht erhalten",
     "budgetAlert": "{{percent}}% genutzt (Warnung bei {{threshold}}%)",
+    "goalAchievable": "Glückwunsch! Dein Guthaben über alle Wallets reicht für „{{goalName}}“.",
     "daysOverdue_one": "{{count}} Tag überfällig",
     "daysOverdue_other": "{{count}} Tage überfällig"
   }

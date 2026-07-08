@@ -34,12 +34,14 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No overdue payments, income entries, or budget warnings.",
+    "empty": "No overdue payments, budget warnings, or goal updates.",
     "overdueSection": "Overdue",
     "budgetSection": "Budget warnings",
+    "goalSection": "Goals",
     "overdueExpense": "Payment overdue",
     "overdueIncome": "Income not received",
     "budgetAlert": "{{percent}}% used (warn at {{threshold}}%)",
+    "goalAchievable": "Congrats! Your balance across all wallets can cover {{goalName}}.",
     "daysOverdue_one": "{{count}} day overdue",
     "daysOverdue_other": "{{count}} days overdue"
   }

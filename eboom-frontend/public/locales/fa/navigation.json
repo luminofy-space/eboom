@@ -34,12 +34,14 @@
   },
   "notifications": {
     "title": "اعلان‌ها",
-    "empty": "پرداخت معوق، درآمد معوق یا هشدار بودجه‌ای وجود ندارد.",
+    "empty": "پرداخت معوق، هشدار بودجه یا به‌روزرسانی هدف وجود ندارد.",
     "overdueSection": "معوق",
     "budgetSection": "هشدارهای بودجه",
+    "goalSection": "اهداف",
     "overdueExpense": "پرداخت معوق",
     "overdueIncome": "درآمد دریافت نشده",
     "budgetAlert": "{{percent}}٪ مصرف شده (هشدار در {{threshold}}٪)",
+    "goalAchievable": "تبریک! موجودی شما در همه کیف پول‌ها برای «{{goalName}}» کافی است.",
     "daysOverdue_one": "{{count}} روز معوق",
     "daysOverdue_other": "{{count}} روز معوق"
   }

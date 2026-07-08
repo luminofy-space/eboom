@@ -230,15 +230,10 @@ export const sendOverdueNotificationsEmail = async (
   });
 };
 
-function renderBudgetAlertItems(alerts: BudgetAlertNotification[]): string {
+function renderBudgetWarningItems(alerts: BudgetAlertNotification[]): string {
   return alerts
     .map((alert) => {
-      const kind =
-        alert.type === "budget_category"
-          ? "Category budget"
-          : alert.type === "savings_goal"
-            ? "Savings goal"
-            : "Monthly budget";
+      const kind = alert.type === "budget_category" ? "Category budget" : "Monthly budget";
       return `
         <tr>
           <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
@@ -255,17 +250,71 @@ function renderBudgetAlertItems(alerts: BudgetAlertNotification[]): string {
     .join("");
 }
 
+function renderGoalCelebrationItems(alerts: BudgetAlertNotification[]): string {
+  return alerts
+    .map(
+      (alert) => `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <strong>Congrats!</strong><br />
+            <span style="color: #666; font-size: 14px;">
+              Your balance across all wallets can cover ${alert.label}.
+              · ${formatNotificationAmount(alert.spent, alert.currencySymbol)} ${alert.currencyCode}
+            </span><br />
+            <span style="color: #999; font-size: 13px;">${alert.canvasName}</span>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
 export const sendBudgetAlertsEmail = async (
   email: string,
   firstName: string | null | undefined,
   alerts: BudgetAlertNotification[]
 ): Promise<void> => {
   const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const budgetWarnings = alerts.filter((alert) => alert.type !== "savings_goal");
+  const goalAlerts = alerts.filter((alert) => alert.type === "savings_goal");
   const count = alerts.length;
-  const subject =
-    count === 1
-      ? `Budget warning: ${alerts[0].label} at ${Math.round(alerts[0].percent)}%`
-      : `You have ${count} budget warnings`;
+
+  let subject: string;
+  if (budgetWarnings.length > 0 && goalAlerts.length === 0) {
+    subject =
+      budgetWarnings.length === 1
+        ? `Budget warning: ${budgetWarnings[0].label} at ${Math.round(budgetWarnings[0].percent)}%`
+        : `You have ${budgetWarnings.length} budget warnings`;
+  } else if (goalAlerts.length > 0 && budgetWarnings.length === 0) {
+    subject =
+      goalAlerts.length === 1
+        ? `You can afford ${goalAlerts[0].label}!`
+        : `You have ${goalAlerts.length} goals within reach`;
+  } else {
+    subject = `You have ${count} budget and goal updates`;
+  }
+
+  const budgetSection =
+    budgetWarnings.length > 0
+      ? `
+          <h3 style="margin: 24px 0 8px;">Budget warnings</h3>
+          <p>The following monthly budgets have reached your warning threshold:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderBudgetWarningItems(budgetWarnings)}
+          </table>
+        `
+      : "";
+
+  const goalSection =
+    goalAlerts.length > 0
+      ? `
+          <h3 style="margin: 24px 0 8px;">Goals</h3>
+          <p>Good news — your wallet balances can cover these goals:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderGoalCelebrationItems(goalAlerts)}
+          </table>
+        `
+      : "";
 
   const html = `
     <!DOCTYPE html>
@@ -281,13 +330,11 @@ export const sendBudgetAlertsEmail = async (
       </head>
       <body>
         <div class="container">
-          <h2>Budget warnings</h2>
+          <h2>Updates from Eboom</h2>
           <p>${greeting}</p>
-          <p>The following monthly budgets have reached your warning threshold:</p>
-          <table style="width: 100%; border-collapse: collapse;">
-            ${renderBudgetAlertItems(alerts)}
-          </table>
-          <a href="${APP_URL}/budget-planning" class="button">Review budgets</a>
+          ${budgetSection}
+          ${goalSection}
+          <a href="${APP_URL}/budget-planning" class="button">Review budgets & goals</a>
           <p style="color: #666; font-size: 14px;">
             You can review these in the notifications panel inside the app.
           </p>
@@ -296,21 +343,22 @@ export const sendBudgetAlertsEmail = async (
     </html>
   `;
 
-  const textLines = alerts.map((alert) => {
-    const kind =
-      alert.type === "budget_category"
-        ? "Category budget"
-        : alert.type === "savings_goal"
-          ? "Savings goal"
-          : "Monthly budget";
-    return `- ${alert.label}: ${kind}, ${alert.percent}% (threshold ${alert.threshold}%), ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`;
-  });
+  const textLines = [
+    ...budgetWarnings.map((alert) => {
+      const kind = alert.type === "budget_category" ? "Category budget" : "Monthly budget";
+      return `- ${alert.label}: ${kind}, ${alert.percent}% (threshold ${alert.threshold}%), ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`;
+    }),
+    ...goalAlerts.map(
+      (alert) =>
+        `- Congrats! Your balance can cover ${alert.label}. ${formatNotificationAmount(alert.spent, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`
+    ),
+  ];
 
   await sendEmail({
     to: email,
     subject,
     html,
-    text: `${greeting}\n\n${textLines.join("\n")}\n\nReview budgets: ${APP_URL}/budget-planning`,
+    text: `${greeting}\n\n${textLines.join("\n")}\n\nReview budgets & goals: ${APP_URL}/budget-planning`,
   });
 };
 

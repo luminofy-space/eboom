@@ -161,7 +161,7 @@ async function getExistingBudgetNotificationKeys(userId: number): Promise<Set<st
 
 function formatBudgetAlertMessage(alert: BudgetAlertNotification): string {
   if (alert.type === "savings_goal") {
-    return `Savings goal progress: ${alert.label} (${alert.percent}% of ${alert.limit} ${alert.currencyCode}) — ${alert.canvasName}`;
+    return `Congrats! Your balance across all wallets can cover ${alert.label}. (${alert.canvasName})`;
   }
   return `Budget alert: ${alert.label} at ${alert.percent}% (${alert.spent}/${alert.limit} ${alert.currencyCode}) — ${alert.canvasName}`;
 }
