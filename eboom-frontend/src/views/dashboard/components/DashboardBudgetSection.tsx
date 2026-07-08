@@ -17,15 +17,11 @@ import type {
   BudgetCurrencyDashboardCard,
   BudgetDashboardSummary,
   BudgetPeriodDashboardSummary,
-  BudgetPeriodType,
 } from "@/src/types/budget-planning";
-import { StatusChip } from "./StatusChip";
 
 interface DashboardBudgetSectionProps {
   canvasId?: number | null;
 }
-
-const PERIOD_ORDER: BudgetPeriodType[] = ["weekly", "monthly", "yearly"];
 
 type PercentTone = "danger" | "warning" | "success" | "muted";
 
@@ -62,60 +58,15 @@ function CategoryStat({ count, label, tone }: CategoryStatProps) {
   );
 }
 
-interface BudgetPeriodColumnProps {
-  period: BudgetPeriodType;
-  data: BudgetPeriodDashboardSummary | null;
-}
-
-function BudgetPeriodColumn({ period, data }: BudgetPeriodColumnProps) {
-  const { t } = useTranslation("dashboard");
-  const { t: tb } = useTranslation("budget-planning");
-  const tone = percentTone(data);
-
-  return (
-    <Stack
-      gap={2}
-      className="min-w-0 rounded-lg border border-border/60 bg-muted/20 p-3 sm:border-0 sm:bg-transparent sm:p-0"
-    >
-      <Typography variant="muted-sm" className="font-medium">
-        {tb(`period.${period}`)}
-      </Typography>
-
-      {data ? (
-        <>
-          <Typography className={cn(typographyVariants({ variant: "stat" }), "text-lg", TONE_CLASS[tone])}>
-            {t("budget.cards.percentUsed", { percent: Math.round(data.totalPercent) })}
-          </Typography>
-          <Stack gap={1}>
-            <CategoryStat
-              count={data.categoryOverLimit}
-              label={t("budget.categories.overLimit")}
-              tone="danger"
-            />
-            <CategoryStat
-              count={data.categoryOverThreshold}
-              label={t("budget.categories.warnings")}
-              tone="warning"
-            />
-            <CategoryStat
-              count={data.categoryOnTrack}
-              label={t("budget.categories.onTrack")}
-              tone="success"
-            />
-          </Stack>
-        </>
-      ) : (
-        <Typography variant="muted-sm">{t("budget.noBudget")}</Typography>
-      )}
-    </Stack>
-  );
-}
-
 interface BudgetCurrencyCardProps {
   currency: BudgetCurrencyDashboardCard;
 }
 
 function BudgetCurrencyCard({ currency }: BudgetCurrencyCardProps) {
+  const { t } = useTranslation("dashboard");
+  const tone = percentTone(currency.summary);
+  const data = currency.summary;
+
   return (
     <Link
       href="/budget-planning"
@@ -126,15 +77,32 @@ function BudgetCurrencyCard({ currency }: BudgetCurrencyCardProps) {
           {currency.currencyCode}
         </Badge>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          {PERIOD_ORDER.map((period) => (
-            <BudgetPeriodColumn
-              key={period}
-              period={period}
-              data={currency.periods[period]}
-            />
-          ))}
-        </div>
+        {data ? (
+          <>
+            <Typography className={cn(typographyVariants({ variant: "stat" }), "text-lg", TONE_CLASS[tone])}>
+              {t("budget.cards.percentUsed", { percent: Math.round(data.totalPercent) })}
+            </Typography>
+            <Stack gap={1}>
+              <CategoryStat
+                count={data.categoryOverLimit}
+                label={t("budget.categories.overLimit")}
+                tone="danger"
+              />
+              <CategoryStat
+                count={data.categoryOverThreshold}
+                label={t("budget.categories.warnings")}
+                tone="warning"
+              />
+              <CategoryStat
+                count={data.categoryOnTrack}
+                label={t("budget.categories.onTrack")}
+                tone="success"
+              />
+            </Stack>
+          </>
+        ) : (
+          <Typography variant="muted-sm">{t("budget.noBudget")}</Typography>
+        )}
       </Stack>
     </Link>
   );

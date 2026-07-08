@@ -8,10 +8,7 @@
     "goalsDescription": "چیزهایی که می‌خواهید بخرید — مقایسه با موجودی در دسترس."
   },
   "period": {
-    "weekly": "هفتگی",
-    "monthly": "ماهانه",
-    "yearly": "سالانه",
-    "monthlyRecommended": "پیشنهادی"
+    "monthly": "ماهانه"
   },
   "labels": {
     "spent": "خرج شده",

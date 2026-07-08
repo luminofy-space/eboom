@@ -2,6 +2,7 @@
 
 import useQueryApi from "@/src/api/useQuery";
 import API_ROUTES from "@/src/api/urls";
+import type { BudgetAlertNotification } from "@/src/types/budget-planning";
 
 export type OverdueNotificationType = "expense_payment" | "income_entry";
 
@@ -21,6 +22,7 @@ export interface OverdueNotification {
 
 interface NotificationsResponse {
   notifications: OverdueNotification[];
+  budgetAlerts: BudgetAlertNotification[];
 }
 
 export function useNotifications() {
@@ -35,11 +37,14 @@ export function useNotifications() {
   );
 
   const notifications = data?.notifications ?? [];
-  const overdueCount = notifications.length;
+  const budgetAlerts = data?.budgetAlerts ?? [];
+  const notificationCount = notifications.length + budgetAlerts.length;
 
   return {
     notifications,
-    overdueCount,
+    budgetAlerts,
+    notificationCount,
+    overdueCount: notifications.length,
     isLoading,
     refetch,
   };

@@ -1,4 +1,4 @@
-export type BudgetPeriodType = "weekly" | "monthly" | "yearly";
+export type BudgetPeriodType = "monthly";
 
 export interface PeriodBounds {
   start: Date;
@@ -78,7 +78,7 @@ export interface BudgetCurrencyDashboardCard {
   currencyId: number;
   currencyCode: string;
   currencySymbol: string;
-  periods: Record<BudgetPeriodType, BudgetPeriodDashboardSummary | null>;
+  summary: BudgetPeriodDashboardSummary | null;
 }
 
 export interface BudgetDashboardSummary {

@@ -35,8 +35,6 @@ import { GoalsSectionEmpty } from "./components/GoalsSectionEmpty";
 import { SystemCurrencySelect } from "./components/SystemCurrencySelect";
 import type { BudgetListItem, SavingsGoalListItem, SavingsGoalStatus } from "@/src/types/budget-planning";
 
-const MONTHLY_PERIOD = "monthly" as const;
-
 export default function BudgetPlanningPage() {
   const { t } = useTranslation("budget-planning");
   const { t: tc } = useTranslation("common");
@@ -72,10 +70,6 @@ export default function BudgetPlanningPage() {
   });
 
   const budgets = data?.budgets ?? [];
-  const monthlyBudgets = useMemo(
-    () => budgets.filter((b) => b.budget?.periodType === MONTHLY_PERIOD),
-    [budgets]
-  );
   const goals = goalsRes?.goals ?? [];
   const goalsByStatus = useMemo(
     () => ({
@@ -99,21 +93,21 @@ export default function BudgetPlanningPage() {
 
   useEffect(() => {
     if (selectedCurrencyId) return;
-    const firstBudget = monthlyBudgets[0];
+    const firstBudget = budgets[0];
     if (firstBudget) {
       setSelectedCurrencyId(String(firstBudget.budget.currencyId));
     } else if (currencies[0]) {
       setSelectedCurrencyId(String(currencies[0].id));
     }
-  }, [monthlyBudgets, currencies, selectedCurrencyId]);
+  }, [budgets, currencies, selectedCurrencyId]);
 
   const activeBudget = useMemo(() => {
     if (selectedCurrencyIdNum == null) return undefined;
-    return monthlyBudgets.find((b) => b.budget.currencyId === selectedCurrencyIdNum);
-  }, [monthlyBudgets, selectedCurrencyIdNum]);
+    return budgets.find((b) => b.budget.currencyId === selectedCurrencyIdNum);
+  }, [budgets, selectedCurrencyIdNum]);
 
   const progress = activeBudget?.progress;
-  const hasAnyMonthlyBudget = monthlyBudgets.length > 0;
+  const hasAnyBudget = budgets.length > 0;
 
   const deleteMutation = useMutationApi(
     (budgetId: number) => API_ROUTES.CANVAS_BUDGETS_DELETE(canvas!, budgetId),
@@ -222,20 +216,20 @@ export default function BudgetPlanningPage() {
             <div>
               <Stack gap={1} className="sm:flex-row sm:items-center">
                 <Typography variant="heading">{t("sections.budgets")}</Typography>
-                {hasAnyMonthlyBudget && (
-                  <Badge variant="secondary">{monthlyBudgets.length}</Badge>
+                {hasAnyBudget && (
+                  <Badge variant="secondary">{budgets.length}</Badge>
                 )}
               </Stack>
               <Typography variant="muted-sm">{t("sections.budgetsDescription")}</Typography>
             </div>
-            {canEdit && hasAnyMonthlyBudget && (
+            {canEdit && hasAnyBudget && (
               <Button size="sm" onClick={openCreateBudget}>
                 {t("empty.createBudget")}
               </Button>
             )}
           </Stack>
 
-          {!hasAnyMonthlyBudget ? (
+          {!hasAnyBudget ? (
             <BudgetSectionEmpty onCreate={openCreateBudget} canEdit={canEdit} />
           ) : !activeBudget ? (
             <BudgetSectionEmpty
@@ -249,7 +243,7 @@ export default function BudgetPlanningPage() {
                 <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
                   <CardTitle className="text-base">
                     {activeBudget.budget.name ??
-                      `${t(`period.${MONTHLY_PERIOD}`)} · ${progress?.currencyCode}`}
+                      `${t("period.monthly")} · ${progress?.currencyCode}`}
                   </CardTitle>
                   {canEdit && (
                     <DropdownMenu>
@@ -476,7 +470,7 @@ export default function BudgetPlanningPage() {
         open={budgetModalOpen}
         onOpenChange={handleBudgetModalOpenChange}
         editBudget={editBudget}
-        existingBudgets={monthlyBudgets}
+        existingBudgets={budgets}
         defaultCurrencyId={selectedCurrencyIdNum ?? undefined}
         canEdit={canEdit}
       />

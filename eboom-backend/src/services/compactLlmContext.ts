@@ -72,10 +72,10 @@ function compactProfile(profile: AiInsightFinancialContext["profile"]) {
 function compactBudgetSummary(summary: AiInsightFinancialContext["budgetSummary"]) {
   return summary.currencies.slice(0, 3).map((currency) => ({
     c: currency.currencyCode,
-    mo: currency.periods.monthly
+    mo: currency.summary
       ? {
-          pct: Math.round(currency.periods.monthly.totalPercent),
-          over: currency.periods.monthly.isOverLimit,
+          pct: Math.round(currency.summary.totalPercent),
+          over: currency.summary.isOverLimit,
         }
       : null,
   }));

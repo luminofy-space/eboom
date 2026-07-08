@@ -58,7 +58,8 @@ export function NavUser({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { t } = useTranslation("navigation");
   const { pendingReceivedCount } = useCanvasInvitations();
-  const { notifications, overdueCount, isLoading: isLoadingNotifications } = useNotifications();
+  const { notifications, budgetAlerts, notificationCount, isLoading: isLoadingNotifications } =
+    useNotifications();
   const { dropdownSide } = useTextDirection();
   return (
     <SidebarMenu>
@@ -68,9 +69,9 @@ export function NavUser({
             <SidebarMenuButton size="lg" className="relative">
               <Bell className="size-4" />
               <span className="flex-1 text-start">{t("notifications.title")}</span>
-              {overdueCount > 0 && (
+              {notificationCount > 0 && (
                 <span className="flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                  {overdueCount > 99 ? "99+" : overdueCount}
+                  {notificationCount > 99 ? "99+" : notificationCount}
                 </span>
               )}
             </SidebarMenuButton>
@@ -86,6 +87,7 @@ export function NavUser({
             </PopoverHeader>
             <NotificationsPanel
               notifications={notifications}
+              budgetAlerts={budgetAlerts}
               isLoading={isLoadingNotifications}
               onClose={() => setNotificationsOpen(false)}
             />

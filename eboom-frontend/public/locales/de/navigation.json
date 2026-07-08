@@ -34,9 +34,12 @@
   },
   "notifications": {
     "title": "Benachrichtigungen",
-    "empty": "Keine überfälligen Zahlungen oder Einnahmen.",
+    "empty": "Keine überfälligen Zahlungen, Einnahmen oder Budget-Warnungen.",
+    "overdueSection": "Überfällig",
+    "budgetSection": "Budget-Warnungen",
     "overdueExpense": "Zahlung überfällig",
     "overdueIncome": "Einnahme nicht erhalten",
+    "budgetAlert": "{{percent}}% genutzt (Warnung bei {{threshold}}%)",
     "daysOverdue_one": "{{count}} Tag überfällig",
     "daysOverdue_other": "{{count}} Tage überfällig"
   }

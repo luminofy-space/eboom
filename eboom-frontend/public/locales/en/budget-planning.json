@@ -8,10 +8,7 @@
     "goalsDescription": "Things you want to buy — see how your available balance compares."
   },
   "period": {
-    "weekly": "Weekly",
-    "monthly": "Monthly",
-    "yearly": "Yearly",
-    "monthlyRecommended": "Recommended"
+    "monthly": "Monthly"
   },
   "labels": {
     "spent": "Spent",

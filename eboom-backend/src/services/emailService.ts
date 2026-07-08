@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import type { OverdueNotification } from "../types/notifications";
+import type { BudgetAlertNotification } from "../types/planning";
 
 export interface EmailOptions {
   to: string;
@@ -226,6 +227,90 @@ export const sendOverdueNotificationsEmail = async (
     subject,
     html,
     text: `${greeting}\n\n${textLines.join("\n")}\n\nOpen Eboom: ${APP_URL}`,
+  });
+};
+
+function renderBudgetAlertItems(alerts: BudgetAlertNotification[]): string {
+  return alerts
+    .map((alert) => {
+      const kind =
+        alert.type === "budget_category"
+          ? "Category budget"
+          : alert.type === "savings_goal"
+            ? "Savings goal"
+            : "Monthly budget";
+      return `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <strong>${alert.label}</strong><br />
+            <span style="color: #666; font-size: 14px;">
+              ${kind} · ${alert.percent}% of ${alert.threshold}% threshold
+              · ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode}
+            </span><br />
+            <span style="color: #999; font-size: 13px;">${alert.canvasName}</span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+export const sendBudgetAlertsEmail = async (
+  email: string,
+  firstName: string | null | undefined,
+  alerts: BudgetAlertNotification[]
+): Promise<void> => {
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const count = alerts.length;
+  const subject =
+    count === 1
+      ? `Budget warning: ${alerts[0].label} at ${Math.round(alerts[0].percent)}%`
+      : `You have ${count} budget warnings`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button:hover { background-color: #0056b3; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Budget warnings</h2>
+          <p>${greeting}</p>
+          <p>The following monthly budgets have reached your warning threshold:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderBudgetAlertItems(alerts)}
+          </table>
+          <a href="${APP_URL}/budget-planning" class="button">Review budgets</a>
+          <p style="color: #666; font-size: 14px;">
+            You can review these in the notifications panel inside the app.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textLines = alerts.map((alert) => {
+    const kind =
+      alert.type === "budget_category"
+        ? "Category budget"
+        : alert.type === "savings_goal"
+          ? "Savings goal"
+          : "Monthly budget";
+    return `- ${alert.label}: ${kind}, ${alert.percent}% (threshold ${alert.threshold}%), ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`;
+  });
+
+  await sendEmail({
+    to: email,
+    subject,
+    html,
+    text: `${greeting}\n\n${textLines.join("\n")}\n\nReview budgets: ${APP_URL}/budget-planning`,
   });
 };
 

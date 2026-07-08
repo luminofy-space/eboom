@@ -12,7 +12,7 @@ import {
   userSettings,
   users,
 } from "../db/schema";
-import { sendOverdueNotificationsEmail } from "./emailService";
+import { sendBudgetAlertsEmail, sendOverdueNotificationsEmail } from "./emailService";
 import {
   budgetAlertSourceKey,
   getBudgetAlertsForUser,
@@ -169,14 +169,26 @@ function formatBudgetAlertMessage(alert: BudgetAlertNotification): string {
 export async function deliverBudgetAlertNotificationsForUser(
   userId: number
 ): Promise<number> {
-  if (!(await userWantsNotificationEmails(userId))) return 0;
-
   const alerts = await getBudgetAlertsForUser(userId);
   if (alerts.length === 0) return 0;
 
   const existingKeys = await getExistingBudgetNotificationKeys(userId);
   const newAlerts = alerts.filter((alert) => !existingKeys.has(budgetAlertSourceKey(alert)));
   if (newAlerts.length === 0) return 0;
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      emailVerified: users.emailVerified,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (user?.emailVerified && (await userWantsNotificationEmails(userId))) {
+    await sendBudgetAlertsEmail(user.email, user.firstName, newAlerts);
+  }
 
   await db.insert(notifications).values(
     newAlerts.map((alert) => ({

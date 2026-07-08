@@ -34,9 +34,12 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No overdue payments or income entries.",
+    "empty": "No overdue payments, income entries, or budget warnings.",
+    "overdueSection": "Overdue",
+    "budgetSection": "Budget warnings",
     "overdueExpense": "Payment overdue",
     "overdueIncome": "Income not received",
+    "budgetAlert": "{{percent}}% used (warn at {{threshold}}%)",
     "daysOverdue_one": "{{count}} day overdue",
     "daysOverdue_other": "{{count}} days overdue"
   }

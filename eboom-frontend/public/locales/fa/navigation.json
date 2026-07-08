@@ -34,9 +34,12 @@
   },
   "notifications": {
     "title": "اعلان‌ها",
-    "empty": "پرداخت یا درآمد معوقی وجود ندارد.",
+    "empty": "پرداخت معوق، درآمد معوق یا هشدار بودجه‌ای وجود ندارد.",
+    "overdueSection": "معوق",
+    "budgetSection": "هشدارهای بودجه",
     "overdueExpense": "پرداخت معوق",
     "overdueIncome": "درآمد دریافت نشده",
+    "budgetAlert": "{{percent}}٪ مصرف شده (هشدار در {{threshold}}٪)",
     "daysOverdue_one": "{{count}} روز معوق",
     "daysOverdue_other": "{{count}} روز معوق"
   }

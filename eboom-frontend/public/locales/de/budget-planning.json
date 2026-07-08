@@ -8,10 +8,7 @@
     "goalsDescription": "Geplante Anschaffungen — Vergleich mit verfügbarem Guthaben."
   },
   "period": {
-    "weekly": "Wöchentlich",
-    "monthly": "Monatlich",
-    "yearly": "Jährlich",
-    "monthlyRecommended": "Empfohlen"
+    "monthly": "Monatlich"
   },
   "labels": {
     "spent": "Ausgegeben",

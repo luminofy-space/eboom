@@ -57,8 +57,6 @@ interface BudgetFormModalProps {
   canEdit?: boolean;
 }
 
-const MONTHLY_PERIOD = "monthly" as const;
-
 function getSessionKey(editBudget?: BudgetListItem | null): number | "new" {
   return editBudget?.budget.id ?? "new";
 }
@@ -100,13 +98,13 @@ export function BudgetFormModal({
 
   const suggestionsUrl =
     canvas && parsedCurrencyId
-      ? `${API_ROUTES.CANVAS_BUDGETS_SUGGESTIONS(canvas)}?currencyId=${parsedCurrencyId}&periodType=${MONTHLY_PERIOD}`
+      ? `${API_ROUTES.CANVAS_BUDGETS_SUGGESTIONS(canvas)}?currencyId=${parsedCurrencyId}`
       : "";
 
   const { data: suggestionsRes } = useQueryApi<{ suggestions?: BudgetSuggestions }>(
     suggestionsUrl,
     {
-      queryKey: ["budget-suggestions", canvas, parsedCurrencyId, MONTHLY_PERIOD],
+      queryKey: ["budget-suggestions", canvas, parsedCurrencyId],
       enabled: !!canvas && parsedCurrencyId != null && open,
     }
   );
@@ -170,10 +168,7 @@ export function BudgetFormModal({
 
   const duplicateBudgetError = useMemo(() => {
     if (isEdit || parsedCurrencyId == null) return null;
-    const exists = existingBudgets.some(
-      (b) =>
-        b.budget.periodType === MONTHLY_PERIOD && b.budget.currencyId === parsedCurrencyId
-    );
+    const exists = existingBudgets.some((b) => b.budget.currencyId === parsedCurrencyId);
     if (!exists) return null;
     return t("form.duplicateBudget");
   }, [isEdit, parsedCurrencyId, existingBudgets, t]);
@@ -207,9 +202,9 @@ export function BudgetFormModal({
         if (!canvas || parsedCurrencyId == null) throw new Error("Missing canvas");
         return {
           currencyId: parsedCurrencyId,
-          periodType: MONTHLY_PERIOD,
           totalLimit,
           alertThresholdPercent: alertThreshold,
+          alertsEnabled: true,
           lines: lines
             .filter((l) => l.categoryId != null && parseFloat(l.amount) > 0)
             .map((l) => ({
@@ -222,6 +217,7 @@ export function BudgetFormModal({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["budgets", canvas] });
         queryClient.invalidateQueries({ queryKey: ["budget-summary", canvas] });
+        queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
         onOpenChange(false);
       },
       onError: (err: unknown) => {
