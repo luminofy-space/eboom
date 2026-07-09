@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
-import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
 import API_ROUTES from "@/src/api/urls";
@@ -104,6 +103,7 @@ interface NewTransferModalProps {
   fixedDestinationWalletId?: number;
   sourceWalletName?: string;
   destinationWalletName?: string;
+  defaultTransferDate?: string;
   extraInvalidateKeys?: unknown[][];
 }
 
@@ -116,6 +116,7 @@ export function NewTransferModal({
   fixedDestinationWalletId,
   sourceWalletName,
   destinationWalletName,
+  defaultTransferDate,
   extraInvalidateKeys = [],
 }: NewTransferModalProps) {
   const { t } = useTranslation("wallets");
@@ -343,7 +344,7 @@ export function NewTransferModal({
       ...defaultValues,
       sourceWalletId: fixedSourceWalletId ?? null,
       destinationWalletId: fixedDestinationWalletId ?? null,
-      transferDate: new Date().toISOString().slice(0, 10),
+      transferDate: defaultTransferDate ?? new Date().toISOString().slice(0, 10),
     });
     setSubmitError(null);
   }, [
@@ -352,6 +353,7 @@ export function NewTransferModal({
     editingTransfer,
     fixedSourceWalletId,
     fixedDestinationWalletId,
+    defaultTransferDate,
     reset,
   ]);
 
@@ -394,286 +396,298 @@ export function NewTransferModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-full sm:max-w-lg">
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FieldGroup className="gap-4">
-            <DialogHeader>
-              <DialogTitle>
-                {isEditMode ? t("transferModal.editTitle") : t("transferModal.title")}
-              </DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
-            </DialogHeader>
+      <DialogContent className="flex max-h-[min(90dvh,calc(100svh-2rem))] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6">
+            <DialogTitle>
+              {isEditMode ? t("transferModal.editTitle") : t("transferModal.title")}
+            </DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
 
-            <FormSubmitError message={submitError} />
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+            <FieldGroup className="gap-3">
+              <FormSubmitError message={submitError} />
 
-            {showSourceWalletPicker ? (
-              <Field>
-                <FieldLabel htmlFor="transfer-source-wallet">
-                  {t("transferModal.fields.sourceWallet.label")}
-                </FieldLabel>
-                <Controller
-                  name="sourceWalletId"
-                  control={control}
-                  rules={{ validate: (value) => value !== null || tv("walletRequired") }}
-                  render={({ field }) => (
-                    <Combobox
-                      id="transfer-source-wallet"
-                      items={walletLabels}
-                      value={walletIdToLabel(field.value)}
-                      disabled={isLoadingWallets}
-                      onValueChange={(val) => {
-                        field.onChange(val ? walletLabelToId(val) : null);
-                        setValue("sourceCurrencyId", null);
-                      }}
-                    >
-                      <ComboboxInput placeholder={tc("placeholders.selectWallet")} />
-                      <ComboboxContent className="z-[80]">
-                        <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
-                        <ComboboxCollection>
-                          {(label) => (
-                            <ComboboxItem key={label} value={label}>
-                              {label}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxCollection>
-                      </ComboboxContent>
-                    </Combobox>
-                  )}
-                />
-                <FieldError errors={[errors.sourceWalletId]} />
-              </Field>
-            ) : (
-              <Field>
-                <FieldLabel>{t("transferModal.fields.sourceWallet.label")}</FieldLabel>
-                <Input value={sourceWalletName ?? ""} disabled />
-              </Field>
-            )}
-
-            <Field>
-              <FieldLabel htmlFor="transfer-source-currency">
-                {t("transferModal.fields.sourceCurrency.label")}
-              </FieldLabel>
-              <Controller
-                name="sourceCurrencyId"
-                control={control}
-                rules={{ validate: (value) => value !== null || t("validation.currencyRequired") }}
-                render={({ field }) => (
-                  <Combobox
-                    id="transfer-source-currency"
-                    items={currencyLabels(sourceCurrencyOptions)}
-                    value={currencyIdToLabel(sourceCurrencyOptions, field.value)}
-                    disabled={!sourceWalletId}
-                    onValueChange={(val) =>
-                      field.onChange(val ? currencyLabelToId(sourceCurrencyOptions, val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder={t("transferModal.fields.sourceCurrency.placeholder")} />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>{t("transferModal.empty.noCurrencies")}</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(label) => (
-                          <ComboboxItem key={label} value={label}>
-                            {label}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {showSourceWalletPicker ? (
+                  <Field>
+                    <FieldLabel htmlFor="transfer-source-wallet">
+                      {t("transferModal.fields.sourceWallet.label")}
+                    </FieldLabel>
+                    <Controller
+                      name="sourceWalletId"
+                      control={control}
+                      rules={{ validate: (value) => value !== null || tv("walletRequired") }}
+                      render={({ field }) => (
+                        <Combobox
+                          id="transfer-source-wallet"
+                          items={walletLabels}
+                          value={walletIdToLabel(field.value)}
+                          disabled={isLoadingWallets}
+                          onValueChange={(val) => {
+                            field.onChange(val ? walletLabelToId(val) : null);
+                            setValue("sourceCurrencyId", null);
+                          }}
+                        >
+                          <ComboboxInput placeholder={tc("placeholders.selectWallet")} />
+                          <ComboboxContent className="z-[80]">
+                            <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
+                            <ComboboxCollection>
+                              {(label) => (
+                                <ComboboxItem key={label} value={label}>
+                                  {label}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxCollection>
+                          </ComboboxContent>
+                        </Combobox>
+                      )}
+                    />
+                    <FieldError errors={[errors.sourceWalletId]} />
+                  </Field>
+                ) : (
+                  <Field>
+                    <FieldLabel>{t("transferModal.fields.sourceWallet.label")}</FieldLabel>
+                    <Input value={sourceWalletName ?? ""} disabled />
+                  </Field>
                 )}
-              />
-              <FieldError errors={[errors.sourceCurrencyId]} />
-            </Field>
 
-            {showDestWalletPicker ? (
-              <Field>
-                <FieldLabel htmlFor="transfer-dest-wallet">
-                  {t("transferModal.fields.destinationWallet.label")}
-                </FieldLabel>
-                <Controller
-                  name="destinationWalletId"
-                  control={control}
-                  rules={{ validate: (value) => value !== null || tv("walletRequired") }}
-                  render={({ field }) => (
-                    <Combobox
-                      id="transfer-dest-wallet"
-                      items={walletLabels}
-                      value={walletIdToLabel(field.value)}
-                      disabled={isLoadingWallets}
-                      onValueChange={(val) => {
-                        field.onChange(val ? walletLabelToId(val) : null);
-                        setValue("destinationCurrencyId", null);
-                      }}
-                    >
-                      <ComboboxInput placeholder={tc("placeholders.selectWallet")} />
-                      <ComboboxContent className="z-[80]">
-                        <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
-                        <ComboboxCollection>
-                          {(label) => (
-                            <ComboboxItem key={label} value={label}>
-                              {label}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxCollection>
-                      </ComboboxContent>
-                    </Combobox>
-                  )}
-                />
-                <FieldError errors={[errors.destinationWalletId]} />
-              </Field>
-            ) : (
-              <Field>
-                <FieldLabel>{t("transferModal.fields.destinationWallet.label")}</FieldLabel>
-                <Input value={destinationWalletName ?? ""} disabled />
-              </Field>
-            )}
+                <Field>
+                  <FieldLabel htmlFor="transfer-source-currency">
+                    {t("transferModal.fields.sourceCurrency.label")}
+                  </FieldLabel>
+                  <Controller
+                    name="sourceCurrencyId"
+                    control={control}
+                    rules={{ validate: (value) => value !== null || t("validation.currencyRequired") }}
+                    render={({ field }) => (
+                      <Combobox
+                        id="transfer-source-currency"
+                        items={currencyLabels(sourceCurrencyOptions)}
+                        value={currencyIdToLabel(sourceCurrencyOptions, field.value)}
+                        disabled={!sourceWalletId}
+                        onValueChange={(val) =>
+                          field.onChange(val ? currencyLabelToId(sourceCurrencyOptions, val) : null)
+                        }
+                      >
+                        <ComboboxInput placeholder={t("transferModal.fields.sourceCurrency.placeholder")} />
+                        <ComboboxContent className="z-[80]">
+                          <ComboboxEmpty>{t("transferModal.empty.noCurrencies")}</ComboboxEmpty>
+                          <ComboboxCollection>
+                            {(label) => (
+                              <ComboboxItem key={label} value={label}>
+                                {label}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxCollection>
+                        </ComboboxContent>
+                      </Combobox>
+                    )}
+                  />
+                  <FieldError errors={[errors.sourceCurrencyId]} />
+                </Field>
+              </div>
 
-            <Field>
-              <FieldLabel htmlFor="transfer-dest-currency">
-                {t("transferModal.fields.destinationCurrency.label")}
-              </FieldLabel>
-              <Controller
-                name="destinationCurrencyId"
-                control={control}
-                rules={{ validate: (value) => value !== null || t("validation.currencyRequired") }}
-                render={({ field }) => (
-                  <Combobox
-                    id="transfer-dest-currency"
-                    items={currencyLabels(destinationCurrencyOptions)}
-                    value={currencyIdToLabel(destinationCurrencyOptions, field.value)}
-                    disabled={!destinationWalletId}
-                    onValueChange={(val) =>
-                      field.onChange(val ? currencyLabelToId(destinationCurrencyOptions, val) : null)
-                    }
-                  >
-                    <ComboboxInput placeholder={t("transferModal.fields.destinationCurrency.placeholder")} />
-                    <ComboboxContent className="z-[80]">
-                      <ComboboxEmpty>{t("transferModal.empty.noCurrencies")}</ComboboxEmpty>
-                      <ComboboxCollection>
-                        {(label) => (
-                          <ComboboxItem key={label} value={label}>
-                            {label}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxContent>
-                  </Combobox>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {showDestWalletPicker ? (
+                  <Field>
+                    <FieldLabel htmlFor="transfer-dest-wallet">
+                      {t("transferModal.fields.destinationWallet.label")}
+                    </FieldLabel>
+                    <Controller
+                      name="destinationWalletId"
+                      control={control}
+                      rules={{ validate: (value) => value !== null || tv("walletRequired") }}
+                      render={({ field }) => (
+                        <Combobox
+                          id="transfer-dest-wallet"
+                          items={walletLabels}
+                          value={walletIdToLabel(field.value)}
+                          disabled={isLoadingWallets}
+                          onValueChange={(val) => {
+                            field.onChange(val ? walletLabelToId(val) : null);
+                            setValue("destinationCurrencyId", null);
+                          }}
+                        >
+                          <ComboboxInput placeholder={tc("placeholders.selectWallet")} />
+                          <ComboboxContent className="z-[80]">
+                            <ComboboxEmpty>{tc("empty.noWalletsFound")}</ComboboxEmpty>
+                            <ComboboxCollection>
+                              {(label) => (
+                                <ComboboxItem key={label} value={label}>
+                                  {label}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxCollection>
+                          </ComboboxContent>
+                        </Combobox>
+                      )}
+                    />
+                    <FieldError errors={[errors.destinationWalletId]} />
+                  </Field>
+                ) : (
+                  <Field>
+                    <FieldLabel>{t("transferModal.fields.destinationWallet.label")}</FieldLabel>
+                    <Input value={destinationWalletName ?? ""} disabled />
+                  </Field>
                 )}
-              />
-              <FieldError errors={[errors.destinationCurrencyId]} />
-            </Field>
 
-            <Stack direction="row" gap={3} className="flex-col sm:flex-row">
-              <Field className="flex-1">
-                <FieldLabel htmlFor="transfer-source-amount">
-                  {t("transferModal.fields.sourceAmount.label")}
-                </FieldLabel>
-                <NumberInput
-                  id="transfer-source-amount"
-                  step="any"
-                  min="0"
-                  placeholder={tc("placeholders.amount")}
-                  {...register("sourceAmount", {
-                    required: tv("amountRequired"),
-                    valueAsNumber: true,
-                    min: { value: 0.01, message: tv("amountPositive") },
-                  })}
-                />
-                <FieldError errors={[errors.sourceAmount]} />
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="transfer-dest-currency">
+                    {t("transferModal.fields.destinationCurrency.label")}
+                  </FieldLabel>
+                  <Controller
+                    name="destinationCurrencyId"
+                    control={control}
+                    rules={{ validate: (value) => value !== null || t("validation.currencyRequired") }}
+                    render={({ field }) => (
+                      <Combobox
+                        id="transfer-dest-currency"
+                        items={currencyLabels(destinationCurrencyOptions)}
+                        value={currencyIdToLabel(destinationCurrencyOptions, field.value)}
+                        disabled={!destinationWalletId}
+                        onValueChange={(val) =>
+                          field.onChange(val ? currencyLabelToId(destinationCurrencyOptions, val) : null)
+                        }
+                      >
+                        <ComboboxInput placeholder={t("transferModal.fields.destinationCurrency.placeholder")} />
+                        <ComboboxContent className="z-[80]">
+                          <ComboboxEmpty>{t("transferModal.empty.noCurrencies")}</ComboboxEmpty>
+                          <ComboboxCollection>
+                            {(label) => (
+                              <ComboboxItem key={label} value={label}>
+                                {label}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxCollection>
+                        </ComboboxContent>
+                      </Combobox>
+                    )}
+                  />
+                  <FieldError errors={[errors.destinationCurrencyId]} />
+                </Field>
+              </div>
 
-              <Field className="flex-1">
-                <FieldLabel htmlFor="transfer-dest-amount">
-                  {t("transferModal.fields.destinationAmount.label")}
-                </FieldLabel>
-                <NumberInput
-                  id="transfer-dest-amount"
-                  step="any"
-                  min="0"
-                  readOnly={!isCrossCurrency}
-                  placeholder={tc("placeholders.amount")}
-                  {...register("destinationAmount", {
-                    required: tv("amountRequired"),
-                    valueAsNumber: true,
-                    min: { value: 0.01, message: tv("amountPositive") },
-                  })}
-                />
-                <FieldError errors={[errors.destinationAmount]} />
-              </Field>
-            </Stack>
+              <div className={`grid gap-3 ${isCrossCurrency ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                <Field>
+                  <FieldLabel htmlFor="transfer-source-amount">
+                    {t("transferModal.fields.sourceAmount.label")}
+                  </FieldLabel>
+                  <NumberInput
+                    id="transfer-source-amount"
+                    step="any"
+                    min="0"
+                    placeholder={tc("placeholders.amount")}
+                    {...register("sourceAmount", {
+                      required: tv("amountRequired"),
+                      valueAsNumber: true,
+                      min: { value: 0.01, message: tv("amountPositive") },
+                    })}
+                  />
+                  <FieldError errors={[errors.sourceAmount]} />
+                </Field>
 
-            {isCrossCurrency && (
+                <Field>
+                  <FieldLabel htmlFor="transfer-dest-amount">
+                    {t("transferModal.fields.destinationAmount.label")}
+                  </FieldLabel>
+                  <NumberInput
+                    id="transfer-dest-amount"
+                    step="any"
+                    min="0"
+                    readOnly={!isCrossCurrency}
+                    placeholder={tc("placeholders.amount")}
+                    {...register("destinationAmount", {
+                      required: tv("amountRequired"),
+                      valueAsNumber: true,
+                      min: { value: 0.01, message: tv("amountPositive") },
+                    })}
+                  />
+                  <FieldError errors={[errors.destinationAmount]} />
+                </Field>
+
+                {isCrossCurrency && (
+                  <Field>
+                    <FieldLabel htmlFor="transfer-exchange-rate">
+                      {t("transferModal.fields.exchangeRate.label")}
+                    </FieldLabel>
+                    <NumberInput
+                      id="transfer-exchange-rate"
+                      step="any"
+                      min="0"
+                      hideZeroWhenBlurred={false}
+                      {...register("exchangeRate", {
+                        required: t("validation.exchangeRateRequired"),
+                        valueAsNumber: true,
+                        min: { value: 0.00000001, message: t("validation.exchangeRateRequired") },
+                      })}
+                    />
+                    <FieldError errors={[errors.exchangeRate]} />
+                  </Field>
+                )}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="transfer-fee">
+                    {t("transferModal.fields.transactionFee.label")}
+                  </FieldLabel>
+                  <NumberInput
+                    id="transfer-fee"
+                    step="any"
+                    min="0"
+                    placeholder="0"
+                    {...register("transactionFee", {
+                      valueAsNumber: true,
+                      min: { value: 0, message: t("validation.feeNonNegative") },
+                      validate: (value) => {
+                        const fee = Number(value) || 0;
+                        const source = Number(sourceAmount) || 0;
+                        return fee < source || t("validation.feeLessThanSource");
+                      },
+                    })}
+                  />
+                  <FieldError errors={[errors.transactionFee]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="transfer-date">
+                    {t("transferModal.fields.transferDate.label")}
+                  </FieldLabel>
+                  <Input
+                    id="transfer-date"
+                    type="date"
+                    {...register("transferDate", { required: t("validation.transferDateRequired") })}
+                  />
+                  <FieldError errors={[errors.transferDate]} />
+                </Field>
+              </div>
+
               <Field>
-                <FieldLabel htmlFor="transfer-exchange-rate">
-                  {t("transferModal.fields.exchangeRate.label")}
+                <FieldLabel htmlFor="transfer-notes">
+                  {t("transferModal.fields.notes.label")}
                 </FieldLabel>
-                <NumberInput
-                  id="transfer-exchange-rate"
-                  step="any"
-                  min="0"
-                  hideZeroWhenBlurred={false}
-                  {...register("exchangeRate", {
-                    required: t("validation.exchangeRateRequired"),
-                    valueAsNumber: true,
-                    min: { value: 0.00000001, message: t("validation.exchangeRateRequired") },
-                  })}
-                />
-                <FieldError errors={[errors.exchangeRate]} />
+                <Textarea id="transfer-notes" rows={2} {...register("notes")} />
               </Field>
-            )}
+            </FieldGroup>
+          </div>
 
-            <Field>
-              <FieldLabel htmlFor="transfer-fee">
-                {t("transferModal.fields.transactionFee.label")}
-              </FieldLabel>
-              <NumberInput
-                id="transfer-fee"
-                step="any"
-                min="0"
-                placeholder="0"
-                {...register("transactionFee", {
-                  valueAsNumber: true,
-                  min: { value: 0, message: t("validation.feeNonNegative") },
-                  validate: (value) => {
-                    const fee = Number(value) || 0;
-                    const source = Number(sourceAmount) || 0;
-                    return fee < source || t("validation.feeLessThanSource");
-                  },
-                })}
-              />
-              <FieldError errors={[errors.transactionFee]} />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="transfer-date">
-                {t("transferModal.fields.transferDate.label")}
-              </FieldLabel>
-              <Input
-                id="transfer-date"
-                type="date"
-                {...register("transferDate", { required: t("validation.transferDateRequired") })}
-              />
-              <FieldError errors={[errors.transferDate]} />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="transfer-notes">
-                {t("transferModal.fields.notes.label")}
-              </FieldLabel>
-              <Textarea id="transfer-notes" rows={3} {...register("notes")} />
-            </Field>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  {tc("actions.cancel")}
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="size-4 animate-spin" />}
-                {isEditMode ? t("transferModal.submit.edit") : t("transferModal.submit.create")}
+          <DialogFooter className="shrink-0 border-t px-6 py-4">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                {tc("actions.cancel")}
               </Button>
-            </DialogFooter>
-          </FieldGroup>
+            </DialogClose>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="size-4 animate-spin" />}
+              {isEditMode ? t("transferModal.submit.edit") : t("transferModal.submit.create")}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -10,6 +10,8 @@
   "createChoiceDescription": "What would you like to add for {{date}}?",
   "addIncomeEntry": "Income entry",
   "addExpensePayment": "Expense payment",
+  "addTransfer": "Transfer",
+  "addGoal": "Savings goal",
   "overdue": "Overdue",
   "predicted": "Predicted",
   "statusPending": "Pending",

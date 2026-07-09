@@ -38,7 +38,42 @@
     "noCategoriesFound": "دسته‌بندی‌ای یافت نشد.",
     "noItemsFound": "موردی یافت نشد.",
     "noWalletsFound": "کیف پولی یافت نشد.",
-    "noResults": "نتیجه‌ای برای «{{query}}» یافت نشد"
+    "noResults": "نتیجه‌ای برای «{{query}}» یافت نشد",
+    "noFilteredResults": "نتیجه‌ای با جستجو یا فیلترهای شما یافت نشد"
+  },
+  "list": {
+    "view": {
+      "grid": "نمای شبکه‌ای",
+      "table": "نمای جدول"
+    },
+    "filters": {
+      "category": "دسته‌بندی",
+      "currency": "ارز",
+      "recurring": "تکرارشونده",
+      "allCategories": "همه دسته‌بندی‌ها",
+      "allCurrencies": "همه ارزها",
+      "allRecurring": "همه",
+      "recurringYes": "بله",
+      "recurringNo": "خیر",
+      "clear": "پاک کردن فیلترها"
+    },
+    "table": {
+      "name": "نام",
+      "category": "دسته‌بندی",
+      "currency": "ارز",
+      "recurring": "تکرارشونده",
+      "wallet": "کیف پول",
+      "value": "ارزش",
+      "lastModified": "آخرین تغییر"
+    },
+    "pagination": {
+      "previous": "صفحه قبل",
+      "next": "صفحه بعد",
+      "pageIndicator": "{{current}} / {{total}}",
+      "showing": "نمایش {{start}} تا {{end}} از {{total}}",
+      "showingEmpty": "موردی وجود ندارد",
+      "pageSize": "تعداد در صفحه"
+    }
   },
   "loading": {
     "wallets": "در حال بارگذاری کیف پول‌ها..."

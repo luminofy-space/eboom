@@ -175,7 +175,7 @@
   --calendar-layer-popover: 10000;
   --calendar-layer-tooltip: 10001;
   --calendar-cell-border: color-mix(in srgb, var(--muted-foreground) 38%, transparent);
-  --calendar-cell-height: 107px;
+  --calendar-cell-height: 95px;
   --fc-border-color: var(--calendar-cell-border);
   --fc-page-bg-color: var(--card);
   --fc-neutral-bg-color: var(--card);
@@ -461,7 +461,7 @@
 
 @media (max-width: 768px) {
   .calendarWrapper {
-    --calendar-cell-height: 66px;
+    --calendar-cell-height: 59px;
     border-radius: 16px;
     padding: 4px 8px 8px;
   }

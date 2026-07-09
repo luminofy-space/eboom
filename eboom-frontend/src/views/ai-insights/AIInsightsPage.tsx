@@ -100,10 +100,13 @@ export default function AIInsightsPage() {
       await generateInsights();
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
+      const code = (err as { code?: string })?.code;
       if (status === 503) {
         setGenerateError(t("errors.noApiKey"));
       } else if (status === 429) {
         setGenerateError(t("errors.rateLimited"));
+      } else if (code === "GENERATION_TIMEOUT") {
+        setGenerateError(t("errors.generationTimeout"));
       } else {
         setGenerateError(t("errors.generationFailed"));
       }
