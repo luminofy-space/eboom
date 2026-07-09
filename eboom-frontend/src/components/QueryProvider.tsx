@@ -2,29 +2,23 @@
 
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useApiRespond } from '../api/useApiRespond';
-import type { AxiosError, AxiosResponse } from '../api/axiosTypes';
 
 interface Props {
   children: ReactNode;
 }
 
 const QueryProvider = ({ children }: Props) => {
-  const { handleError, handleSuccess } = useApiRespond();
-
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        queryCache: new QueryCache({
-          onError: (error) => {
-            handleError(error as AxiosError);
+        defaultOptions: {
+          queries: {
+            // List/detail failures stay quiet; mutations notify via useMutationApi.
+            retry: 1,
           },
-          onSuccess: (data) => {
-            handleSuccess(data as AxiosResponse<unknown>);
-          }
-        })
+        },
       })
   );
 

@@ -73,7 +73,7 @@ export default function IncomesListPage() {
 
   const { mutate: deleteIncome, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.INCOMES_DELETE(canvas!, id),
-    { method: "delete", onSuccess: () => setDeleteId(null) }
+    { method: "delete", successKey: "success.income.deleted", onSuccess: () => setDeleteId(null) }
   );
 
   const pagination = (

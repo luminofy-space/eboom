@@ -6,17 +6,18 @@
     "noCanvasTitle": "Kein Canvas ausgewählt",
     "noCanvasDescription": "Wählen Sie einen Canvas in der Seitenleiste aus oder erstellen Sie einen, um Ihre Finanzübersicht zu sehen."
   },
-  "assets": {
-    "title": "Gesamtvermögen",
-    "totalAssets": "Gesamtvermögen",
+  "walletsBalance": {
+    "title": "Gesamtsaldo der Wallets",
+    "totalBalance": "Gesamtsaldo",
+    "inWallets": "in {{count}} Wallets",
     "netThisMonth": "netto diesen Monat",
     "loadAll": "Alle laden",
     "showLess": "Weniger anzeigen",
     "pageIndicator": "{{current}} / {{total}}",
     "previousPage": "Vorherige Seite",
     "nextPage": "Nächste Seite",
-    "empty": "Noch keine Vermögenswerte. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
-    "viewAll": "Alle Vermögenswerte anzeigen",
+    "empty": "Noch kein Wallet-Saldo. Fügen Sie Wallets, Einnahmen oder Ausgaben hinzu.",
+    "viewAll": "Alle Wallets anzeigen",
     "tooltip": {
       "wallets": "Wallets",
       "incomes": "Einnahmen",
@@ -26,8 +27,8 @@
       "paid": "Ausgaben bezahlt",
       "unpaid": "Ausgaben unbezahlt",
       "netCashFlow": "Netto-Cashflow (diesen Monat)",
-      "holdings": "Vermögenswerte",
-      "holdingsValue": "Geschätzter Wert"
+      "assets": "Vermögenswerte",
+      "assetsValue": "Geschätzter Wert"
     }
   },
   "budget": {
@@ -55,8 +56,8 @@
   "charts": {
     "title": "Diagramme & Trends"
   },
-  "holdings": {
-    "title": "Immobilien & Vermögenswerte",
+  "assets": {
+    "title": "Vermögenswerte",
     "empty": "Noch keine Vermögenswerte. Fügen Sie Fahrzeuge, Immobilien oder Grundstücke hinzu.",
     "viewAll": "Alle Vermögenswerte anzeigen",
     "assetCount_one": "{{count}} Vermögenswert",
@@ -101,7 +102,7 @@
   },
   "quickActions": {
     "whiteboard": "Whiteboard öffnen",
-    "members": "Mitglieder verwalten"
+    "members": "Canvas verwalten"
   },
   "recentActivity": {
     "title": "Letzte Aktivitäten",

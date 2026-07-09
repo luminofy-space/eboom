@@ -105,7 +105,7 @@ export type AiInsightFinancialContext = {
   }>;
   assetsByCurrency: Array<{
     currencyCode: string;
-    totalEstimatedValue: string;
+    totalHoldingValue: string;
     count: number;
   }>;
   categorySpendLast90Days: Array<{
@@ -250,7 +250,11 @@ export async function buildFinancialContext(
       currencyCode: w.currencyCode,
       balance: w.balance,
     })),
-    assetsByCurrency: summary.assetsByCurrency,
+    assetsByCurrency: summary.assetsByCurrency.map((a) => ({
+      currencyCode: a.currencyCode,
+      totalHoldingValue: a.totalHoldingValue,
+      count: a.count,
+    })),
     categorySpendLast90Days: aggregateCategorySpend(summary.expensePayments),
     recentActivity: summary.recentActivity.slice(0, 3).map((a) => ({
       type: a.type,

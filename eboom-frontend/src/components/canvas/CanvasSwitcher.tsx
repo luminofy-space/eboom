@@ -133,6 +133,7 @@ export function CanvasSwitcher() {
     (id: number) => API_ROUTES.CANVASES_DELETE(id),
     {
       method: "delete",
+      successKey: "success.canvas.deleted",
       onSuccess: () => setDeleteId(null),
     }
   );

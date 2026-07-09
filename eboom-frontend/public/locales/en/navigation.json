@@ -7,7 +7,6 @@
   "groups": {
     "overview": "Overview",
     "finances": "Finances",
-    "planning": "Planning",
     "management": "Management",
     "explore": "Coming soon"
   },
@@ -16,7 +15,7 @@
     "wallets": "Wallets",
     "expenses": "Expenses",
     "assets": "Assets",
-    "manageMembers": "Manage members",
+    "manageCanvas": "Manage canvas",
     "canvasInvitations": "Canvas Invitations",
     "whiteboard": "Whiteboard",
     "calendar": "Calendar",
@@ -35,9 +34,14 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No overdue payments or income entries.",
+    "empty": "No overdue payments, budget warnings, or goal updates.",
+    "overdueSection": "Overdue",
+    "budgetSection": "Budget warnings",
+    "goalSection": "Goals",
     "overdueExpense": "Payment overdue",
     "overdueIncome": "Income not received",
+    "budgetAlert": "{{percent}}% used (warn at {{threshold}}%)",
+    "goalAchievable": "Congrats! Your balance across all wallets can cover {{goalName}}.",
     "daysOverdue_one": "{{count}} day overdue",
     "daysOverdue_other": "{{count}} days overdue"
   }

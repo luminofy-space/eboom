@@ -291,6 +291,7 @@ export function NewTransferModal({
     },
     {
       method: () => (isEditMode && transferId ? "put" : "post"),
+      successKey: isEditMode ? "success.transfer.updated" : "success.transfer.created",
       mapPayload: (formData: TransferFormData) => ({
         canvasId: canvas,
         sourceWalletId: formData.sourceWalletId,

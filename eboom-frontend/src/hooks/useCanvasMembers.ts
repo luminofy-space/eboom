@@ -88,6 +88,7 @@ export function useCanvasMembers(
     canvasId ? API_ROUTES.CANVAS_MEMBERS_INVITE(canvasId) : "",
     {
       method: "post",
+      notifySuccess: false,
       hasToken: true,
     }
   );
@@ -96,6 +97,7 @@ export function useCanvasMembers(
     canvasId ? API_ROUTES.CANVAS_MEMBERS_LOOKUP(canvasId) : "",
     {
       method: "post",
+      notifySuccess: false,
       hasToken: true,
     }
   );
@@ -113,6 +115,7 @@ export function useCanvasMembers(
       API_ROUTES.CANVAS_MEMBERS_UPDATE(canvasId!, memberId),
     {
       method: "patch",
+    successKey: "success.member.roleUpdated",
       mapPayload: ({ role }: { memberId: number; role: string }) => ({ role }),
       onSuccess: invalidate,
       invalidateQueries: false,
@@ -123,6 +126,7 @@ export function useCanvasMembers(
     (memberId: number) => API_ROUTES.CANVAS_MEMBERS_REMOVE(canvasId!, memberId),
     {
       method: "delete",
+    successKey: "success.member.removed",
       onSuccess: invalidate,
       invalidateQueries: false,
     }
@@ -132,6 +136,7 @@ export function useCanvasMembers(
     (invitationId: number) => API_ROUTES.CANVAS_INVITATIONS_CANCEL(invitationId),
     {
       method: "delete",
+    successKey: "success.member.invitationCancelled",
       onSuccess: invalidate,
       invalidateQueries: false,
     }

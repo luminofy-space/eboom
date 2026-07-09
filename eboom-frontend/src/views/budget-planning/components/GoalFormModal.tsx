@@ -6,7 +6,6 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuthContext } from "@/src/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import {
@@ -29,9 +28,9 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
-import { getApiErrorMessage } from "@/src/utils/formUtils";
+import { fileToDataUrl, getApiErrorMessage, validateOptionalImage } from "@/src/utils/formUtils";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
-import type { SavingsGoalListItem, SavingsGoalStatus } from "../types";
+import type { SavingsGoalListItem, SavingsGoalStatus } from "@/src/types/budget-planning";
 
 interface GoalFormModalProps {
   open: boolean;
@@ -66,7 +65,7 @@ export function GoalFormModal({
   extraInvalidateKeys = [],
 }: GoalFormModalProps) {
   const { t } = useTranslation("budget-planning");
-  const { accessToken } = useAuthContext();
+  const { t: tv } = useTranslation("validation");
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
@@ -74,8 +73,12 @@ export function GoalFormModal({
   const [targetDate, setTargetDate] = useState("");
   const [currencyId, setCurrencyId] = useState("");
   const [status, setStatus] = useState<SavingsGoalStatus>("active");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedSession = useRef<number | "new" | null>(null);
 
   const { data: goalsRes, isLoading: goalsLoading } = useQueryApi<{
@@ -107,6 +110,9 @@ export function GoalFormModal({
     if (!open) {
       initializedSession.current = null;
       setSubmitError(null);
+      setPhotoError(null);
+      setPhoto(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -122,12 +128,18 @@ export function GoalFormModal({
       setTargetDate(toDateInputValue(resolvedGoal.goal.targetDate));
       setCurrencyId(String(resolvedGoal.goal.currencyId));
       setStatus(resolvedGoal.goal.status ?? resolvedGoal.progress?.status ?? "active");
+      setExistingPhotoUrl(
+        resolvedGoal.goal.photoUrl ?? resolvedGoal.progress?.photoUrl ?? null
+      );
+      setPhoto(null);
     } else {
       setName("");
       setTargetAmount("");
       setTargetDate(toDateInputValue(defaultTargetDate));
       setCurrencyId(defaultCurrencyId ? String(defaultCurrencyId) : "");
       setStatus("active");
+      setExistingPhotoUrl(null);
+      setPhoto(null);
     }
   }, [open, resolvedGoal, goalId, editGoal, goalsLoading, defaultCurrencyId, defaultTargetDate]);
 
@@ -145,19 +157,20 @@ export function GoalFormModal({
     queryClient.invalidateQueries({ queryKey: ["calendar"] });
   };
 
-  const saveMutation = useMutationApi<SavingsGoalStatus | undefined>(
+  const saveMutation = useMutationApi<{ photoUrl?: string | null }>(
     () =>
       isEdit && resolvedGoal
         ? API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal.goal.id)
         : API_ROUTES.CANVAS_SAVINGS_GOALS_CREATE(canvasId),
     {
       method: () => (isEdit && resolvedGoal ? "patch" : "post"),
-      mapPayload: (nextStatus?: SavingsGoalStatus) => ({
+      mapPayload: ({ photoUrl }) => ({
         name: name.trim(),
         targetAmount,
         targetDate: targetDate || null,
         currencyId: parseInt(currencyId, 10),
-        ...(isEdit ? { status: nextStatus ?? status } : {}),
+        ...(photoUrl !== undefined ? { photoUrl } : {}),
+        ...(isEdit ? { status } : {}),
       }),
       invalidateQueries: false,
       onSuccess: () => {
@@ -170,25 +183,45 @@ export function GoalFormModal({
     }
   );
 
-  const statusMutation = useMutationApi(
-    (nextStatus: SavingsGoalStatus) =>
-      API_ROUTES.CANVAS_SAVINGS_GOALS_UPDATE(canvasId, resolvedGoal!.goal.id),
-    {
-      method: "patch",
-      mapPayload: (nextStatus: SavingsGoalStatus) => ({ status: nextStatus }),
-      invalidateQueries: false,
-      onSuccess: () => {
-        invalidateQueries();
-        onOpenChange(false);
-      },
-      onError: (err: unknown) => {
-        setSubmitError(getApiErrorMessage(err, t("saveError")));
-      },
+  const handlePhotoChange = (file: File | null) => {
+    if (!file) {
+      setPhoto(null);
+      setPhotoError(null);
+      return;
     }
-  );
 
-  const canSubmit = canEdit && name.trim() && targetAmount && currencyId;
-  const isPending = saveMutation.isPending || statusMutation.isPending;
+    const validationError = validateOptionalImage(file, {
+      invalidType: tv("imageInvalidType"),
+      tooLarge: tv("imageTooLarge"),
+    });
+
+    if (validationError !== true) {
+      setPhoto(null);
+      setPhotoError(validationError);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setPhoto(file);
+    setPhotoError(null);
+  };
+
+  const handleSave = async () => {
+    setSubmitError(null);
+
+    let photoUrl: string | null | undefined;
+    if (photo) {
+      photoUrl = await fileToDataUrl(photo);
+    } else if (!isEdit) {
+      photoUrl = null;
+    }
+
+    saveMutation.mutate({ photoUrl });
+  };
+
+  const photoPreviewUrl = photo ? URL.createObjectURL(photo) : existingPhotoUrl;
+  const canSubmit = canEdit && name.trim() && targetAmount && currencyId && !photoError;
+  const isPending = saveMutation.isPending;
 
   if (!canEdit) return null;
 
@@ -239,6 +272,27 @@ export function GoalFormModal({
                   onChange={(e) => setTargetDate(e.target.value)}
                 />
               </Field>
+              <Field data-invalid={!!photoError}>
+                <FieldLabel htmlFor="goal-photo">{t("goals.photo")}</FieldLabel>
+                <Input
+                  ref={fileInputRef}
+                  id="goal-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                />
+                {photoError && <FieldError>{photoError}</FieldError>}
+                {photoPreviewUrl && (
+                  <div className="mt-2 overflow-hidden rounded-lg border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreviewUrl}
+                      alt=""
+                      className="aspect-video w-full object-cover"
+                    />
+                  </div>
+                )}
+              </Field>
               {isEdit && (
                 <Field>
                   <FieldLabel>{t("goals.statusLabel")}</FieldLabel>
@@ -265,55 +319,16 @@ export function GoalFormModal({
               )}
             </div>
 
-            <DialogFooter className="flex-col gap-2 sm:flex-col sm:items-stretch">
-              {isEdit && (
-                <div className="flex flex-wrap gap-2">
-                  {status !== "achieved" && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={isPending}
-                      onClick={() => statusMutation.mutate("achieved")}
-                    >
-                      {t("goals.actions.markAchieved")}
-                    </Button>
-                  )}
-                  {status !== "dropped" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isPending}
-                      onClick={() => statusMutation.mutate("dropped")}
-                    >
-                      {t("goals.actions.drop")}
-                    </Button>
-                  )}
-                  {status !== "active" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isPending}
-                      onClick={() => statusMutation.mutate("active")}
-                    >
-                      {t("goals.actions.reactivate")}
-                    </Button>
-                  )}
-                </div>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  {t("actions.cancel")}
-                </Button>
-                <Button
-                  disabled={!canSubmit || isPending}
-                  onClick={() => {
-                    setSubmitError(null);
-                    saveMutation.mutate(undefined);
-                  }}
-                >
-                  {isPending ? <Spinner className="size-4" /> : t("actions.save")}
-                </Button>
-              </div>
+            <DialogFooter className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {t("actions.cancel")}
+              </Button>
+              <Button
+                disabled={!canSubmit || isPending}
+                onClick={handleSave}
+              >
+                {isPending ? <Spinner className="size-4" /> : t("actions.save")}
+              </Button>
             </DialogFooter>
           </>
         )}

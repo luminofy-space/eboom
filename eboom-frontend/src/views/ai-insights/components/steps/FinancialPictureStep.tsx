@@ -14,7 +14,7 @@ import {
 import { Stack } from "@/components/ui/stack";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
-import type { WizardFormData } from "../../types";
+import type { WizardFormData } from "@/src/types/ai-insights";
 
 interface FinancialPictureStepProps {
   control: Control<WizardFormData>;

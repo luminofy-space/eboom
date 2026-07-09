@@ -16,6 +16,8 @@ import {
   assetCategories,
   expenses,
   assets,
+  assetVolumes,
+  pricePoints,
   expensePayments,
   transfers,
   wishlists,
@@ -53,6 +55,8 @@ export type ExpenseCategory = typeof expenseCategories.$inferSelect;
 export type AssetCategory = typeof assetCategories.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
 export type Asset = typeof assets.$inferSelect;
+export type AssetVolume = typeof assetVolumes.$inferSelect;
+export type PricePoint = typeof pricePoints.$inferSelect;
 export type ExpensePayment = typeof expensePayments.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
 export type Wishlist = typeof wishlists.$inferSelect;
@@ -90,6 +94,8 @@ export type NewExpenseCategory = typeof expenseCategories.$inferInsert;
 export type NewAssetCategory = typeof assetCategories.$inferInsert;
 export type NewExpense = typeof expenses.$inferInsert;
 export type NewAsset = typeof assets.$inferInsert;
+export type NewAssetVolume = typeof assetVolumes.$inferInsert;
+export type NewPricePoint = typeof pricePoints.$inferInsert;
 export type NewExpensePayment = typeof expensePayments.$inferInsert;
 export type NewTransfer = typeof transfers.$inferInsert;
 export type NewWishlist = typeof wishlists.$inferInsert;

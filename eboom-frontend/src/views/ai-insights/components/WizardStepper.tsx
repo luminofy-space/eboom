@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { WIZARD_STEPS } from "../types";
+import { WIZARD_STEPS } from "@/src/types/ai-insights";
 
 interface WizardStepperProps {
   currentStep: number;

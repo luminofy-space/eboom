@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import type {
   CanvasSummaryExpensePayment,
   CanvasSummaryIncomeEntry,
-} from "../types";
+} from "@/src/types/dashboard";
 
 const INTENSITY_STEPS = 4;
 

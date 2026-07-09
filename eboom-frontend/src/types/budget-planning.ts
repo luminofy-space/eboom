@@ -1,4 +1,4 @@
-export type BudgetPeriodType = "weekly" | "monthly" | "yearly";
+export type BudgetPeriodType = "monthly";
 
 export interface BudgetLineProgress {
   lineId: number;
@@ -47,7 +47,7 @@ export interface BudgetCurrencyDashboardCard {
   currencyId: number;
   currencyCode: string;
   currencySymbol: string;
-  periods: Record<BudgetPeriodType, BudgetPeriodDashboardSummary | null>;
+  summary: BudgetPeriodDashboardSummary | null;
 }
 
 export interface BudgetDashboardSummary {
@@ -85,6 +85,8 @@ export interface SavingsGoalProgress {
   targetAmount: string;
   currentAmount: string;
   availableBalance: string;
+  walletCount: number;
+  photoUrl: string | null;
   remaining: string;
   percent: number;
   targetDate: string | null;
@@ -102,6 +104,7 @@ export interface SavingsGoalListItem {
     targetAmount: string;
     targetDate: string | null;
     status: SavingsGoalStatus;
+    photoUrl?: string | null;
   };
   progress?: SavingsGoalProgress;
 }
@@ -131,6 +134,23 @@ export interface CanvasCurrencyUsage {
   currencyCode: string;
   currencySymbol: string;
   usageCount: number;
+}
+
+export interface BudgetAlertNotification {
+  type: "budget_total" | "budget_category" | "savings_goal";
+  budgetId?: number;
+  lineId?: number;
+  goalId?: number;
+  canvasId: number;
+  canvasName: string;
+  label: string;
+  percent: number;
+  threshold: number;
+  spent: string;
+  limit: string;
+  currencyCode: string;
+  currencySymbol: string;
+  periodKey: string;
 }
 
 export interface BudgetListItem {

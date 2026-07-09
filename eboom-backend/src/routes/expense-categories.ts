@@ -3,12 +3,14 @@ import { db } from "../db/client";
 import { expenseCategories } from "../db/schema";
 import { eq, asc } from "drizzle-orm";
 import { parseRouteParam } from "./routeParams";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router();
 
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   try {
     const categories = await db
@@ -19,16 +21,16 @@ router.get("/", async (req: Request, res: Response) => {
     res.json({ categories });
   } catch (err) {
     console.error("Error fetching expense categories:", err);
-    res.status(500).json({ error: "Failed to fetch expense categories" });
+    sendError(res, ErrorKeys.category.fetchFailed, 500);
   }
 });
 
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Category name is required" });
+  if (!name) return sendError(res, ErrorKeys.validation.nameRequired, 400);
 
   try {
     const [category] = await db
@@ -39,19 +41,19 @@ router.post("/", async (req: Request, res: Response) => {
     res.status(201).json({ category });
   } catch (err) {
     console.error("Error creating expense category:", err);
-    res.status(500).json({ error: "Failed to create expense category" });
+    sendError(res, ErrorKeys.category.createFailed, 500);
   }
 });
 
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const categoryId = parseRouteParam(req.params.id);
-  if (isNaN(categoryId)) return res.status(400).json({ error: "Invalid category ID" });
+  if (isNaN(categoryId)) return sendError(res, ErrorKeys.common.invalidId, 400);
 
   const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Category name is required" });
+  if (!name) return sendError(res, ErrorKeys.validation.nameRequired, 400);
 
   try {
     const [existing] = await db
@@ -59,7 +61,7 @@ router.put("/:id", async (req: Request, res: Response) => {
       .from(expenseCategories)
       .where(eq(expenseCategories.id, categoryId));
 
-    if (!existing) return res.status(404).json({ error: "Category not found" });
+    if (!existing) return sendError(res, ErrorKeys.category.notFound, 404);
 
     const [updated] = await db
       .update(expenseCategories)
@@ -70,16 +72,16 @@ router.put("/:id", async (req: Request, res: Response) => {
     res.json({ category: updated });
   } catch (err) {
     console.error("Error updating expense category:", err);
-    res.status(500).json({ error: "Failed to update expense category" });
+    sendError(res, ErrorKeys.category.updateFailed, 500);
   }
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const categoryId = parseRouteParam(req.params.id);
-  if (isNaN(categoryId)) return res.status(400).json({ error: "Invalid category ID" });
+  if (isNaN(categoryId)) return sendError(res, ErrorKeys.common.invalidId, 400);
 
   try {
     const [existing] = await db
@@ -87,14 +89,14 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .from(expenseCategories)
       .where(eq(expenseCategories.id, categoryId));
 
-    if (!existing) return res.status(404).json({ error: "Category not found" });
+    if (!existing) return sendError(res, ErrorKeys.category.notFound, 404);
 
     await db.delete(expenseCategories).where(eq(expenseCategories.id, categoryId));
 
     res.json({ message: "Category deleted successfully" });
   } catch (err) {
     console.error("Error deleting expense category:", err);
-    res.status(500).json({ error: "Failed to delete expense category" });
+    sendError(res, ErrorKeys.category.deleteFailed, 500);
   }
 });
 

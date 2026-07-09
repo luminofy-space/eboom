@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Canvas } from "../types/common";
+import { Canvas } from "@/src/types/common";
 import { useCanvas } from "./useCanvas";
 
 export type CanvasPermissions = {

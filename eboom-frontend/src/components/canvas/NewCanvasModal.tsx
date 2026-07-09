@@ -109,6 +109,7 @@ export function NewCanvasModal() {
       API_ROUTES.CANVASES_UPDATE(editingItem!.id),
     {
       method: "put",
+      successKey: "success.canvas.updated",
       invalidateQueries: false,
       onSuccess: () => {
         queryClient.invalidateQueries();

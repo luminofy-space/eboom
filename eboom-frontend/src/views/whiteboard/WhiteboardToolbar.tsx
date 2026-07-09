@@ -3,10 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import {
+  ArrowLeftRight,
   BanknoteArrowDown,
   BanknoteArrowUp,
   LayoutTemplate,
+  ListPlus,
   Maximize2,
+  Receipt,
   Wallet,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +19,9 @@ interface WhiteboardToolbarProps {
   onAddWallet: () => void;
   onAddIncome: () => void;
   onAddExpense: () => void;
+  onAddEntry: () => void;
+  onAddPayment: () => void;
+  onAddTransfer: () => void;
   onAutoLayout: () => void;
   onFitView: () => void;
 }
@@ -25,6 +31,9 @@ export function WhiteboardToolbar({
   onAddWallet,
   onAddIncome,
   onAddExpense,
+  onAddEntry,
+  onAddPayment,
+  onAddTransfer,
   onAutoLayout,
   onFitView,
 }: WhiteboardToolbarProps) {
@@ -46,6 +55,18 @@ export function WhiteboardToolbar({
             <Button size="sm" variant="outline" onClick={onAddExpense}>
               <BanknoteArrowDown className="mr-1.5 h-4 w-4" />
               {t("toolbar.addExpense")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={onAddEntry}>
+              <ListPlus className="mr-1.5 h-4 w-4" />
+              {t("toolbar.addEntry")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={onAddPayment}>
+              <Receipt className="mr-1.5 h-4 w-4" />
+              {t("toolbar.addPayment")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={onAddTransfer}>
+              <ArrowLeftRight className="mr-1.5 h-4 w-4" />
+              {t("toolbar.addTransfer")}
             </Button>
           </>
         ) : null}

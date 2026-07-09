@@ -1,31 +1,44 @@
-import type { AxiosError } from "@/src/api/axiosTypes";
+import type { AxiosError } from "@/src/types/axios";
+import { translateNotifyKey } from "@/src/lib/notify";
 
 type ApiErrorBody = {
+  errorKey?: string;
+  params?: Record<string, string | number>;
   error?: string;
   message?: string;
   errors?: Record<string, string>;
 };
 
+function isAxiosStatusMessage(message: string): boolean {
+  return /^Request failed with status code \d+$/i.test(message);
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message && !("response" in error)) {
-    return error.message;
-  }
-
   if (error && typeof error === "object" && "response" in error) {
-    const data = (error as AxiosError<ApiErrorBody>).response?.data as
-      | ApiErrorBody
-      | undefined;
+    const axiosError = error as AxiosError<ApiErrorBody>;
+    const data = axiosError.response?.data;
 
-    if (data?.error) return data.error;
-    if (data?.message) return data.message;
+    if (data?.errorKey) {
+      return translateNotifyKey(data.errorKey, "errors", data.params);
+    }
 
     if (data?.errors) {
       const firstFieldError = Object.values(data.errors).find(Boolean);
-      if (firstFieldError) return firstFieldError;
+      if (firstFieldError) {
+        return translateNotifyKey(firstFieldError, "errors");
+      }
     }
+
+    // Legacy English payloads — only use if present and not a bare axios status string.
+    if (data?.error && !isAxiosStatusMessage(data.error)) return data.error;
+    if (data?.message && !isAxiosStatusMessage(data.message)) return data.message;
   }
 
-  if (error instanceof Error && error.message) {
+  if (error instanceof Error && error.message && !isAxiosStatusMessage(error.message)) {
+    // Prefer fallback over transport-level noise when we have no API body.
+    if ("isAxiosError" in error || ("response" in error && (error as AxiosError).response)) {
+      return fallback;
+    }
     return error.message;
   }
 

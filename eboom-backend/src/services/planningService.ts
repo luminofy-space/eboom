@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { and, countDistinct, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   budgetLines,
@@ -16,7 +16,6 @@ import type {
   BudgetAlertNotification,
   BudgetLineInput,
   BudgetLineProgress,
-  BudgetPeriodType,
   BudgetProgress,
   BudgetSuggestionCategory,
   BudgetSuggestions,
@@ -67,32 +66,10 @@ function roundToFriendly(value: number): number {
   return Math.ceil(value / 10) * 10;
 }
 
-function getWeekStart(date: Date): Date {
-  const d = startOfDay(date);
-  const day = d.getUTCDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d;
-}
+export const MONTHLY_BUDGET_PERIOD = "monthly" as const;
 
-export function resolvePeriodBounds(
-  periodType: BudgetPeriodType,
-  referenceDate: Date = new Date()
-): PeriodBounds {
+export function resolvePeriodBounds(referenceDate: Date = new Date()): PeriodBounds {
   const ref = startOfDay(referenceDate);
-
-  if (periodType === "weekly") {
-    const start = getWeekStart(ref);
-    const end = endOfDay(addDays(start, 6));
-    return { start, end, periodKey: `week:${toDateKey(start)}` };
-  }
-
-  if (periodType === "yearly") {
-    const start = startOfDay(new Date(Date.UTC(ref.getUTCFullYear(), 0, 1)));
-    const end = endOfDay(new Date(Date.UTC(ref.getUTCFullYear(), 11, 31)));
-    return { start, end, periodKey: `year:${ref.getUTCFullYear()}` };
-  }
-
   const start = startOfDay(new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1)));
   const lastDay = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, 0));
   const end = endOfDay(lastDay);
@@ -103,24 +80,11 @@ export function resolvePeriodBounds(
   };
 }
 
-export function resolvePreviousPeriodBounds(
-  periodType: BudgetPeriodType,
-  referenceDate: Date = new Date()
-): PeriodBounds {
-  const current = resolvePeriodBounds(periodType, referenceDate);
-
-  if (periodType === "weekly") {
-    return resolvePeriodBounds(periodType, addDays(current.start, -1));
-  }
-  if (periodType === "yearly") {
-    const prev = new Date(current.start);
-    prev.setUTCFullYear(prev.getUTCFullYear() - 1);
-    return resolvePeriodBounds(periodType, prev);
-  }
-
+export function resolvePreviousPeriodBounds(referenceDate: Date = new Date()): PeriodBounds {
+  const current = resolvePeriodBounds(referenceDate);
   const prev = new Date(current.start);
   prev.setUTCMonth(prev.getUTCMonth() - 1);
-  return resolvePeriodBounds(periodType, prev);
+  return resolvePeriodBounds(prev);
 }
 
 function computePercent(spent: number, limit: number): number {
@@ -200,13 +164,12 @@ async function countUnscheduledPayments(
 
 export async function getBudgetSuggestions(
   canvasId: number,
-  currencyId: number,
-  periodType: BudgetPeriodType
+  currencyId: number
 ): Promise<BudgetSuggestions | null> {
   const [currency] = await db.select().from(currencies).where(eq(currencies.id, currencyId));
   if (!currency) return null;
 
-  const previous = resolvePreviousPeriodBounds(periodType);
+  const previous = resolvePreviousPeriodBounds();
   const spentByCategory = await aggregateSpentByCategory(
     canvasId,
     currencyId,
@@ -246,7 +209,7 @@ export async function getBudgetSuggestions(
     currencyId,
     currencyCode: currency.code,
     currencySymbol: currency.symbol,
-    periodType,
+    periodType: MONTHLY_BUDGET_PERIOD,
     referencePeriodStart: previous.start.toISOString(),
     referencePeriodEnd: previous.end.toISOString(),
     suggestedTotal: formatAmount(suggestedTotal),
@@ -325,7 +288,7 @@ export async function getBudgetProgress(
   const [currency] = await db.select().from(currencies).where(eq(currencies.id, budget.currencyId));
   if (!currency) return null;
 
-  const bounds = resolvePeriodBounds(budget.periodType as BudgetPeriodType, referenceDate);
+  const bounds = resolvePeriodBounds(referenceDate);
   const lines = await db.select().from(budgetLines).where(eq(budgetLines.budgetId, budgetId));
 
   const categoryIds = lines.map((l) => l.expenseCategoryId);
@@ -376,7 +339,7 @@ export async function getBudgetProgress(
     currencyId: budget.currencyId,
     currencyCode: currency.code,
     currencySymbol: currency.symbol,
-    periodType: budget.periodType as BudgetPeriodType,
+    periodType: MONTHLY_BUDGET_PERIOD,
     periodStart: bounds.start.toISOString(),
     periodEnd: bounds.end.toISOString(),
     periodKey: bounds.periodKey,
@@ -389,14 +352,6 @@ export async function getBudgetProgress(
     isOverLimit: totalSpent > totalLimit,
     lines: lineProgress,
     unscheduledPaymentCount,
-  };
-}
-
-function emptyBudgetPeriods(): Record<BudgetPeriodType, BudgetPeriodDashboardSummary | null> {
-  return {
-    weekly: null,
-    monthly: null,
-    yearly: null,
   };
 }
 
@@ -421,31 +376,28 @@ export async function getBudgetSummaryForCanvas(
   canvasId: number,
   referenceDate: Date = new Date()
 ): Promise<BudgetDashboardSummary> {
-  const canvasBudgets = await db.select().from(budgets).where(eq(budgets.canvasId, canvasId));
+  const canvasBudgets = await db
+    .select()
+    .from(budgets)
+    .where(and(eq(budgets.canvasId, canvasId), eq(budgets.periodType, MONTHLY_BUDGET_PERIOD)));
   const byCurrency = new Map<number, BudgetCurrencyDashboardCard>();
 
   for (const budget of canvasBudgets) {
     const progress = await getBudgetProgress(budget.id, referenceDate);
     if (!progress) continue;
 
-    let card = byCurrency.get(progress.currencyId);
-    if (!card) {
-      card = {
-        currencyId: progress.currencyId,
-        currencyCode: progress.currencyCode,
-        currencySymbol: progress.currencySymbol,
-        periods: emptyBudgetPeriods(),
-      };
-      byCurrency.set(progress.currencyId, card);
-    }
-
     const categoryStatus = countCategoryStatus(progress.lines);
-    card.periods[progress.periodType as BudgetPeriodType] = {
-      totalPercent: progress.totalPercent,
-      isOverLimit: progress.isOverLimit,
-      isOverThreshold: progress.isOverThreshold,
-      ...categoryStatus,
-    };
+    byCurrency.set(progress.currencyId, {
+      currencyId: progress.currencyId,
+      currencyCode: progress.currencyCode,
+      currencySymbol: progress.currencySymbol,
+      summary: {
+        totalPercent: progress.totalPercent,
+        isOverLimit: progress.isOverLimit,
+        isOverThreshold: progress.isOverThreshold,
+        ...categoryStatus,
+      },
+    });
   }
 
   return {
@@ -474,6 +426,25 @@ export async function getCanvasLiquidBalance(
   return rows.reduce((sum, row) => sum + parseAmount(row.amount), 0);
 }
 
+async function getCanvasWalletCountForCurrency(
+  canvasId: number,
+  currencyId: number
+): Promise<number> {
+  const [row] = await db
+    .select({ walletCount: countDistinct(wallets.id) })
+    .from(subWallets)
+    .innerJoin(wallets, eq(subWallets.walletId, wallets.id))
+    .where(
+      and(
+        eq(wallets.canvasId, canvasId),
+        eq(wallets.isArchived, false),
+        eq(subWallets.currencyId, currencyId)
+      )
+    );
+
+  return row?.walletCount ?? 0;
+}
+
 export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoalProgress | null> {
   const [goal] = await db
     .select()
@@ -484,7 +455,10 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
   const [currency] = await db.select().from(currencies).where(eq(currencies.id, goal.currencyId));
   if (!currency) return null;
 
-  const availableAmount = await getCanvasLiquidBalance(goal.canvasId, goal.currencyId);
+  const [availableAmount, walletCount] = await Promise.all([
+    getCanvasLiquidBalance(goal.canvasId, goal.currencyId),
+    getCanvasWalletCountForCurrency(goal.canvasId, goal.currencyId),
+  ]);
   const targetAmount = parseAmount(goal.targetAmount);
   const remaining = Math.max(0, targetAmount - availableAmount);
   const percent = computePercent(availableAmount, targetAmount);
@@ -506,6 +480,8 @@ export async function getSavingsGoalProgress(goalId: number): Promise<SavingsGoa
     targetAmount: formatAmount(targetAmount),
     currentAmount: formatAmount(availableAmount),
     availableBalance: formatAmount(availableAmount),
+    walletCount,
+    photoUrl: goal.photoUrl ?? null,
     remaining: formatAmount(remaining),
     percent,
     targetDate: goal.targetDate ? String(goal.targetDate) : null,
@@ -611,7 +587,12 @@ export async function getBudgetAlertsForUser(userId: number): Promise<BudgetAler
   const alerts: BudgetAlertNotification[] = [];
 
   for (const { canvasId, canvasName } of memberships) {
-    const canvasBudgets = await db.select().from(budgets).where(eq(budgets.canvasId, canvasId));
+    const canvasBudgets = await db
+      .select()
+      .from(budgets)
+      .where(
+        and(eq(budgets.canvasId, canvasId), eq(budgets.periodType, MONTHLY_BUDGET_PERIOD))
+      );
 
     for (const budget of canvasBudgets) {
       if (!budget.alertsEnabled) continue;
@@ -624,7 +605,7 @@ export async function getBudgetAlertsForUser(userId: number): Promise<BudgetAler
           budgetId: budget.id,
           canvasId,
           canvasName,
-          label: budget.name ?? `${progress.periodType} budget`,
+          label: budget.name ?? "Monthly budget",
           percent: progress.totalPercent,
           threshold: progress.alertThresholdPercent,
           spent: progress.totalSpent,
@@ -698,7 +679,6 @@ export async function upsertBudgetWithLines(
   userId: number,
   input: {
     currencyId: number;
-    periodType: BudgetPeriodType;
     totalLimit: string;
     alertThresholdPercent?: number;
     alertsEnabled?: boolean;
@@ -706,7 +686,7 @@ export async function upsertBudgetWithLines(
     lines: BudgetLineInput[];
   }
 ): Promise<{ budget: typeof budgets.$inferSelect; lines: typeof budgetLines.$inferSelect[] }> {
-  const bounds = resolvePeriodBounds(input.periodType);
+  const bounds = resolvePeriodBounds();
   const periodStartStr = toDateKey(bounds.start);
 
   const [existing] = await db
@@ -716,7 +696,7 @@ export async function upsertBudgetWithLines(
       and(
         eq(budgets.canvasId, canvasId),
         eq(budgets.currencyId, input.currencyId),
-        eq(budgets.periodType, input.periodType)
+        eq(budgets.periodType, MONTHLY_BUDGET_PERIOD)
       )
     );
 
@@ -744,7 +724,7 @@ export async function upsertBudgetWithLines(
       .values({
         canvasId,
         currencyId: input.currencyId,
-        periodType: input.periodType,
+        periodType: MONTHLY_BUDGET_PERIOD,
         periodStart: periodStartStr,
         totalLimit: input.totalLimit,
         alertThresholdPercent: input.alertThresholdPercent ?? 80,

@@ -6,7 +6,7 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { AiChatMessage, AiChatMessagesResponse, AiChatSendResponse } from "../types";
+import type { AiChatMessage, AiChatMessagesResponse, AiChatSendResponse } from "@/src/types/ai-insights";
 
 function createOptimisticUserMessage(content: string): AiChatMessage {
   return {

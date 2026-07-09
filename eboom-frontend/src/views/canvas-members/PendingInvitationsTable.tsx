@@ -7,6 +7,7 @@ import { Typography } from "@/components/ui/typography";
 import type { CanvasPendingInvitation } from "@/src/hooks/useCanvasMembers";
 import { RoleChip } from "./RoleChip";
 import { roleNameToValue } from "./MemberRoleSelect";
+import { MemberIdentity } from "./UserAvatar";
 import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -30,21 +31,14 @@ export function PendingInvitationsTable({
       {
         id: "member",
         header: t("members.invitedMember"),
-        cell: (invitation) => {
-          const displayName =
-            [invitation.invitee.firstName, invitation.invitee.lastName]
-              .filter(Boolean)
-              .join(" ") || invitation.invitee.email;
-
-          return (
-            <>
-              <Typography variant="muted-sm" className="font-medium">
-                {displayName}
-              </Typography>
-              <Typography variant="muted-sm">{invitation.invitee.email}</Typography>
-            </>
-          );
-        },
+        cell: (invitation) => (
+          <MemberIdentity
+            photoUrl={invitation.invitee.photoUrl}
+            firstName={invitation.invitee.firstName}
+            lastName={invitation.invitee.lastName}
+            email={invitation.invitee.email}
+          />
+        ),
       },
       {
         id: "role",
@@ -66,7 +60,7 @@ export function PendingInvitationsTable({
               headerClassName: "w-[140px]",
               cell: (invitation: CanvasPendingInvitation) => (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   className="text-destructive"
                   disabled={isCancelling}

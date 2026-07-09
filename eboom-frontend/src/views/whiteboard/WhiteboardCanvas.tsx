@@ -106,6 +106,7 @@ export function WhiteboardCanvas({
       isValidConnection={isValidConnection}
       deleteKeyCode={canEdit ? ["Backspace", "Delete"] : null}
       proOptions={{ hideAttribution: true }}
+      zIndexMode="manual"
       className="whiteboard-canvas bg-muted/20"
     >
       <Background gap={16} size={1} color="var(--border)" />

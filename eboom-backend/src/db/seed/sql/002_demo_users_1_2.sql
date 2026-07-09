@@ -755,23 +755,59 @@ WHERE e.entity = 'expense_shared_rent' AND w.entity = 'wallet_joint';
 -- ---------------------------------------------------------------------------
 -- Assets
 -- ---------------------------------------------------------------------------
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, '2022 Toyota Camry', l.ac_vehicle, l.cur_usd, 18500.00,
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, '2022 Toyota Camry', l.ac_vehicle, l.cur_usd,
        '{"year": 2022, "notes": "Primary vehicle"}'::jsonb,
        1, 1
 FROM _demo d, _lk l WHERE d.entity = 'canvas_personal';
 
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, 'Primary Residence Equity', l.ac_real_estate, l.cur_usd, 85000.00,
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 18500.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = '2022 Toyota Camry';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 18500.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = '2022 Toyota Camry';
+
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, 'Primary Residence Equity', l.ac_real_estate, l.cur_usd,
        '{"notes": "Estimated equity after mortgage"}'::jsonb,
        1, 1
 FROM _demo d, _lk l WHERE d.entity = 'canvas_personal';
 
-INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, estimated_value, description, created_by, last_modified_by)
-SELECT d.id, 'Workstation Setup', l.ac_equipment, l.cur_usd, 4200.00,
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 85000.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = 'Primary Residence Equity';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 85000.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_personal'
+WHERE a.name = 'Primary Residence Equity';
+
+INSERT INTO assets (canvas_id, name, asset_category_id, currency_id, description, created_by, last_modified_by)
+SELECT d.id, 'Workstation Setup', l.ac_equipment, l.cur_usd,
        '{"items": ["MacBook Pro", "Monitor", "Desk"]}'::jsonb,
        2, 2
 FROM _demo d, _lk l WHERE d.entity = 'canvas_consulting';
+
+INSERT INTO asset_volumes (asset_id, quantity, unit_price, recorded_at, created_by)
+SELECT a.id, 1, 4200.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_consulting'
+WHERE a.name = 'Workstation Setup';
+
+INSERT INTO price_points (asset_id, unit_price, recorded_at, created_by)
+SELECT a.id, 4200.00, a.created_at, a.created_by
+FROM assets a
+JOIN _demo d ON d.id = a.canvas_id AND d.entity = 'canvas_consulting'
+WHERE a.name = 'Workstation Setup';
 
 -- ---------------------------------------------------------------------------
 -- Transfers — monthly for last 3 months + upcoming cross-currency
@@ -830,40 +866,6 @@ FROM _demo b, _lk l WHERE b.entity = 'budget_monthly';
 INSERT INTO budget_lines (budget_id, expense_category_id, amount_limit)
 SELECT b.id, l.ec_utilities, 250.00
 FROM _demo b, _lk l WHERE b.entity = 'budget_monthly';
-
-WITH ins AS (
-  INSERT INTO budgets (
-    canvas_id, currency_id, period_type, period_start, total_limit,
-    alert_threshold_percent, alerts_enabled, name, created_by, last_modified_by
-  )
-  SELECT
-    d.id, l.cur_usd, 'yearly', DATE_TRUNC('year', CURRENT_DATE)::date,
-    52000.00, 85, true, 'Annual Overview', 1, 1
-  FROM _demo d, _lk l WHERE d.entity = 'canvas_personal'
-  RETURNING id
-)
-INSERT INTO _demo SELECT 'budget_yearly', id FROM ins;
-
-WITH ins AS (
-  INSERT INTO budgets (
-    canvas_id, currency_id, period_type, period_start, total_limit,
-    alert_threshold_percent, alerts_enabled, name, created_by, last_modified_by
-  )
-  SELECT
-    d.id, l.cur_usd, 'weekly', DATE_TRUNC('week', CURRENT_DATE)::date,
-    800.00, 70, true, 'Shared Weekly Allowance', 1, 1
-  FROM _demo d, _lk l WHERE d.entity = 'canvas_household'
-  RETURNING id
-)
-INSERT INTO _demo SELECT 'budget_weekly', id FROM ins;
-
-INSERT INTO budget_lines (budget_id, expense_category_id, amount_limit)
-SELECT b.id, l.ec_groceries, 350.00
-FROM _demo b, _lk l WHERE b.entity = 'budget_weekly';
-
-INSERT INTO budget_lines (budget_id, expense_category_id, amount_limit)
-SELECT b.id, l.ec_travel, 200.00
-FROM _demo b, _lk l WHERE b.entity = 'budget_weekly';
 
 -- ---------------------------------------------------------------------------
 -- Savings goals (active / achieved / dropped + calendar targets)

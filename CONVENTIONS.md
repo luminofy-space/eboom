@@ -73,7 +73,15 @@ Reference: `src/views/expenses/ExpensesListPage.tsx`, `src/views/incomes/Incomes
 ### Forms
 
 - Use `react-hook-form` with shadcn Dialog and form field components
-- Handle field errors from API `data.errors` in mutation callbacks
+- Handle field errors from API `data.errors` (i18n keys) via `useMutationApi`'s `fieldError`
+- For create/update/delete, pass `successKey` to `useMutationApi`; errors snackbar automatically from `errorKey`
+
+```ts
+useMutationApi(url, {
+  method: "post",
+  successKey: "success.expense.created",
+});
+```
 
 ### API URLs
 
@@ -140,16 +148,49 @@ On success, the middleware sets `req.canvasId` and `req.canvasMembership`. Permi
 
 ### Error handling
 
-```typescript
-try {
-  // database operation
-} catch (err) {
-  console.error("Error fetching X:", err);
-  res.status(500).json({ error: "Failed to fetch X" });
+All API failures use a stable **error key** (i18n path), not English copy, so the UI can translate them:
+
+```json
+{
+  "errorKey": "errors.expense.notFound",
+  "params": { "id": 12 }
 }
 ```
 
-Use early returns for `400`, `401`, `403`, and `404`. Response shape: `{ error: "message" }`.
+Optional field errors (values are also keys):
+
+```json
+{
+  "errorKey": "errors.validation.failed",
+  "errors": { "amount": "errors.validation.amountPositive" }
+}
+```
+
+Backend helpers (use these instead of ad-hoc `{ error: "..." }`):
+
+- [`src/errors/errorKeys.ts`](eboom-backend/src/errors/errorKeys.ts) — catalog of keys
+- [`src/errors/AppError.ts`](eboom-backend/src/errors/AppError.ts) — throwable typed error
+- [`src/errors/sendError.ts`](eboom-backend/src/errors/sendError.ts) — `sendError` / `sendFieldErrors`
+- [`src/middleware/errorHandler.ts`](eboom-backend/src/middleware/errorHandler.ts) — maps `AppError` / unknowns to the unified JSON
+- [`src/utils/asyncHandler.ts`](eboom-backend/src/utils/asyncHandler.ts) — forwards async rejections to the error middleware
+
+```typescript
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
+
+if (!existing) {
+  return sendError(res, ErrorKeys.expense.notFound, 404);
+}
+
+try {
+  // database operation
+} catch (err) {
+  console.error("Error creating expense:", err);
+  return sendError(res, ErrorKeys.expense.createFailed, 500);
+}
+```
+
+Prefer throwing `AppError` inside `asyncHandler` when a whole handler can be wrapped; otherwise early-return with `sendError`. New and updated handlers must use `errorKey` responses.
 
 ### Authentication
 
@@ -210,14 +251,15 @@ For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 - **Page loading:** `PageLoader` from [`components/ui/page-loader.tsx`](eboom-frontend/components/ui/page-loader.tsx) in route `loading.tsx` files; use `Spinner` for inline/button loading states
 - **Forms:** shadcn `Field`, `FieldGroup`, `FieldLabel` for form layout; combine with `Stack` for multi-column rows
 - **Icons:** Lucide for sidebar and navigation; Tabler where already used in a feature
-- **Toasts:** Prefer `sonner` (wired in the app layout). Do not add another toast library.
+- **Snackbars:** Prefer **notistack** via [`src/lib/notify.ts`](eboom-frontend/src/lib/notify.ts) (`notifySuccess` / `notifyError`). Do not add new `sonner` or ad-hoc toast usage. Wire success through `useMutationApi`'s `successKey` whenever possible so CRUD feedback stays centralized.
 - **Themes:** Dark mode supported via `next-themes`
 
 ## Internationalization (i18n)
 
 - **Stack:** `i18next` + `react-i18next` with JSON files in [`public/locales/{lng}/`](eboom-frontend/public/locales/)
 - **Config:** [`src/i18n/index.ts`](eboom-frontend/src/i18n/index.ts), wrapped by `I18nProvider` in the root layout
-- **Namespaces:** One JSON file per feature area — `common`, `auth`, `navigation`, `expenses`, `incomes`, `wallets`, `profile`, `canvas`
+- **Namespaces:** One JSON file per feature area — `common`, `errors`, `success`, `auth`, `navigation`, `expenses`, `incomes`, `wallets`, `profile`, `canvas`, …
+- **API errors / success:** Backend `errorKey` values map to the `errors` namespace (strip leading `errors.`). Mutation success copy uses the `success` namespace via `successKey` on `useMutationApi` (e.g. `success.expense.created`).
 - **Usage:** `const { t } = useTranslation("expenses")` then `t("modal.create.title")` — never hardcode user-facing strings in JSX
 - **Key naming:** Nested camelCase objects grouped by section (e.g. `actions.add`, `status.paid`); use `{{variable}}` for interpolation
 - **Shared strings:** Put reusable labels (`Add`, `Cancel`, `Delete`) in `common.json`
@@ -242,7 +284,8 @@ Do not extend these patterns; match nearby code when touching related areas:
 | Trailing slashes | Auth routes use trailing slashes (`/api/auth/login/`); most others do not — follow `urls.ts` per route group |
 | Duplicate sidebar components | Use `src/components/layout/app-sidebar.tsx`, not `components/layout/SideBar.tsx` |
 | Unused dependencies | `joi` and `roleAuth` middleware are installed but not wired — do not build on them until integrated |
-| Toast libraries | Both `sonner` and `react-toastify` exist — use `sonner` for new code |
+| Toast libraries | Prefer notistack (`notify*`); migrate remaining `sonner` / custom `useToast` usages when touching those files |
+| Legacy `{ error: "English" }` responses | Do not add new ones — use `sendError` / `errorKey`. Some niche routers may still be mid-migration |
 | Redux persist whitelist | Store references `auth` reducer that does not exist — do not add auth to Redux |
 
 ## What We Don't Have Yet

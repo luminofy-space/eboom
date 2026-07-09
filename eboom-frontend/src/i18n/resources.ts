@@ -16,6 +16,8 @@ import enCalendar from "../../public/locales/en/calendar.json";
 import enBudgetPlanning from "../../public/locales/en/budget-planning.json";
 import enAiInsights from "../../public/locales/en/ai-insights.json";
 import enLanding from "../../public/locales/en/landing.json";
+import enErrors from "../../public/locales/en/errors.json";
+import enSuccess from "../../public/locales/en/success.json";
 
 import deCommon from "../../public/locales/de/common.json";
 import deValidation from "../../public/locales/de/validation.json";
@@ -35,6 +37,8 @@ import deCalendar from "../../public/locales/de/calendar.json";
 import deBudgetPlanning from "../../public/locales/de/budget-planning.json";
 import deAiInsights from "../../public/locales/de/ai-insights.json";
 import deLanding from "../../public/locales/de/landing.json";
+import deErrors from "../../public/locales/de/errors.json";
+import deSuccess from "../../public/locales/de/success.json";
 
 import faCommon from "../../public/locales/fa/common.json";
 import faValidation from "../../public/locales/fa/validation.json";
@@ -54,6 +58,8 @@ import faCalendar from "../../public/locales/fa/calendar.json";
 import faBudgetPlanning from "../../public/locales/fa/budget-planning.json";
 import faAiInsights from "../../public/locales/fa/ai-insights.json";
 import faLanding from "../../public/locales/fa/landing.json";
+import faErrors from "../../public/locales/fa/errors.json";
+import faSuccess from "../../public/locales/fa/success.json";
 
 export const resources = {
   en: {
@@ -75,6 +81,8 @@ export const resources = {
     "budget-planning": enBudgetPlanning,
     "ai-insights": enAiInsights,
     landing: enLanding,
+    errors: enErrors,
+    success: enSuccess,
   },
   de: {
     common: deCommon,
@@ -95,6 +103,8 @@ export const resources = {
     "budget-planning": deBudgetPlanning,
     "ai-insights": deAiInsights,
     landing: deLanding,
+    errors: deErrors,
+    success: deSuccess,
   },
   fa: {
     common: faCommon,
@@ -115,5 +125,7 @@ export const resources = {
     "budget-planning": faBudgetPlanning,
     "ai-insights": faAiInsights,
     landing: faLanding,
+    errors: faErrors,
+    success: faSuccess,
   },
 };

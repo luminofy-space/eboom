@@ -76,7 +76,7 @@ export default function WalletsListPage() {
 
   const { mutate: deleteWallet, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.WALLETS_DELETE(canvas!, id),
-    { method: "delete", onSuccess: () => setDeleteId(null) }
+    { method: "delete", successKey: "success.wallet.deleted", onSuccess: () => setDeleteId(null) }
   );
 
   const pagination = (

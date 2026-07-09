@@ -64,6 +64,7 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
     (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
     {
       method: "delete",
+      successKey: "success.transfer.deleted",
       invalidateQueries: false,
       onSuccess: async () => {
         if (!canvas) return;

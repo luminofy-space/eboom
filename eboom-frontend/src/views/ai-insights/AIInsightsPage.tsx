@@ -15,7 +15,7 @@ import { useAIInsights } from "./hooks/useAIInsights";
 import { InsightLanding } from "./components/InsightLanding";
 import { WizardShell, stepPayload } from "./components/WizardShell";
 import { AIChatPanel } from "./components/chat/AIChatPanel";
-import type { WizardFormData } from "./types";
+import type { WizardFormData } from "@/src/types/ai-insights";
 
 type ViewMode = "landing" | "wizard";
 type MainTab = "insights" | "chat";

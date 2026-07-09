@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/src/components/AuthProvider";
 import ReduxProvider from "@/src/redux/ReduxProvider";
 import { I18nProvider } from "@/src/i18n/I18nProvider";
+import { NotifyProvider } from "@/src/components/NotifyProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_DESCRIPTION, APP_NAME } from "@/src/lib/siteMetadata";
 
@@ -42,15 +43,17 @@ export default async function RootLayout({
       >
         <ReduxProvider>
           <I18nProvider>
-            <QueryProvider>
-              <AuthProvider>
-                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                  <TooltipProvider>
-                    {children}
-                  </TooltipProvider>
-                </ThemeProvider>
-              </AuthProvider>
-            </QueryProvider>
+            <NotifyProvider>
+              <QueryProvider>
+                <AuthProvider>
+                  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                    <TooltipProvider>
+                      {children}
+                    </TooltipProvider>
+                  </ThemeProvider>
+                </AuthProvider>
+              </QueryProvider>
+            </NotifyProvider>
           </I18nProvider>
         </ReduxProvider>
       </body>

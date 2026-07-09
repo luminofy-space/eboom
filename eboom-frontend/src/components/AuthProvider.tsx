@@ -121,7 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { mutateAsync: refreshMutation } = useMutationApi<
     RefreshPayload,
     AuthResponse
-  >(API_ROUTES.AUTH_REFRESH, { method: "post", hasToken: false, invalidateQueries: false });
+  >(API_ROUTES.AUTH_REFRESH, {
+    method: "post",
+    hasToken: false,
+    invalidateQueries: false,
+  });
 
   const {
     mutateAsync: loginMutation,

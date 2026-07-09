@@ -11,7 +11,7 @@ import type {
   AiFinancialInsight,
   AiInsightProfile,
   CompletenessResult,
-} from "../types";
+} from "@/src/types/ai-insights";
 import { CompletenessMeter } from "./CompletenessMeter";
 import { InsightCards } from "./InsightCards";
 import { RefreshInsightsButton } from "./RefreshInsightsButton";

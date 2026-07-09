@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
-import type { CanvasSummaryRecentActivity } from "../types";
+import type { CanvasSummaryRecentActivity } from "@/src/types/dashboard";
 import { StatusChip } from "./StatusChip";
 import { useTranslation } from "react-i18next";
 

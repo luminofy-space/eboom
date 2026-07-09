@@ -13,6 +13,8 @@ import {
 import { db } from "../db/client";
 import { User, users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 import {
   hashPassword,
   verifyPassword,
@@ -81,19 +83,17 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
     const { email, password, first_name, last_name, age, photo_url } = req.body;
 
     if (!email || !password || !first_name || !last_name) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return sendError(res, ErrorKeys.validation.failed, 400);
     }
 
     if (password.length < 8) {
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 8 characters long" });
+      return sendError(res, ErrorKeys.auth.passwordTooShort, 400);
     }
 
     const normalizedEmail = email.toLowerCase();
     const existingUser = await getUserByEmail(normalizedEmail);
     if (existingUser) {
-      return res.status(400).json({ error: "Email already registered" });
+      return sendError(res, ErrorKeys.auth.emailExists, 400);
     }
 
     const passwordHash = await hashPassword(password);
@@ -143,7 +143,7 @@ router.post("/signup", authRateLimiter, async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Signup error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -152,24 +152,21 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return sendError(res, ErrorKeys.validation.failed, 400);
     }
 
     const appUser = await getUserByEmail(email);
     if (!appUser || !appUser.passwordHash) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return sendError(res, ErrorKeys.auth.invalidCredentials, 401);
     }
 
     const passwordValid = await verifyPassword(password, appUser.passwordHash);
     if (!passwordValid) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return sendError(res, ErrorKeys.auth.invalidCredentials, 401);
     }
 
     if (!shouldSkipEmailVerification() && !appUser.emailVerified) {
-      return res.status(403).json({
-        error: "Email not verified",
-        message: "Please verify your email before logging in.",
-      });
+      return sendError(res, ErrorKeys.auth.emailNotVerified, 403);
     }
 
     const tokens = signTokenPair(appUser.id, appUser.email);
@@ -182,7 +179,7 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -194,7 +191,7 @@ router.post(
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        return res.status(400).json({ error: "Refresh token is required" });
+        return sendError(res, ErrorKeys.validation.failed, 400);
       }
 
       const payload = verifyRefreshToken(refreshToken);
@@ -204,9 +201,7 @@ router.post(
         .where(eq(users.id, payload.sub));
 
       if (!appUser) {
-        return res
-          .status(401)
-          .json({ error: "Invalid or expired refresh token" });
+        return sendError(res, ErrorKeys.common.invalidToken, 401);
       }
 
       const tokens = signTokenPair(appUser.id, appUser.email);
@@ -214,9 +209,7 @@ router.post(
       res.json(tokens);
     } catch (error) {
       console.error("Refresh token error:", error);
-      return res
-        .status(401)
-        .json({ error: "Invalid or expired refresh token" });
+      return sendError(res, ErrorKeys.common.invalidToken, 401);
     }
   }
 );
@@ -233,7 +226,7 @@ router.post(
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ error: "Email is required" });
+        return sendError(res, ErrorKeys.validation.failed, 400);
       }
 
       const appUser = await getUserByEmail(email);
@@ -256,9 +249,7 @@ router.post(
         await sendPasswordResetEmail(appUser.email, resetToken);
       } catch (emailError) {
         console.error("Failed to send password reset email:", emailError);
-        return res
-          .status(500)
-          .json({ error: "Failed to send password reset email" });
+        return sendError(res, ErrorKeys.auth.sendEmailFailed, 500);
       }
 
       res.json({
@@ -267,7 +258,7 @@ router.post(
       });
     } catch (error) {
       console.error("Forgot password error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -280,27 +271,21 @@ router.post(
       const { token, newPassword } = req.body;
 
       if (!token || !newPassword) {
-        return res
-          .status(400)
-          .json({ error: "Token and new password are required" });
+        return sendError(res, ErrorKeys.validation.failed, 400);
       }
 
       if (newPassword.length < 8) {
-        return res
-          .status(400)
-          .json({ error: "Password must be at least 8 characters long" });
+        return sendError(res, ErrorKeys.auth.passwordTooShort, 400);
       }
 
       const tokenData = resetTokens.get(token);
       if (!tokenData) {
-        return res
-          .status(400)
-          .json({ error: "Invalid or expired reset token" });
+        return sendError(res, ErrorKeys.auth.resetTokenInvalid, 400);
       }
 
       if (tokenData.expiresAt < new Date()) {
         resetTokens.delete(token);
-        return res.status(400).json({ error: "Reset token has expired" });
+        return sendError(res, ErrorKeys.auth.resetTokenExpired, 400);
       }
 
       const passwordHash = await hashPassword(newPassword);
@@ -318,7 +303,7 @@ router.post(
       res.json({ message: "Password reset successfully" });
     } catch (error) {
       console.error("Reset password error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -331,23 +316,17 @@ router.get(
       const { token } = req.query;
 
       if (!token || typeof token !== "string") {
-        return res
-          .status(400)
-          .json({ error: "Verification token is required" });
+        return sendError(res, ErrorKeys.auth.verificationRequired, 400);
       }
 
       const tokenData = verificationTokens.get(token);
       if (!tokenData) {
-        return res
-          .status(400)
-          .json({ error: "Invalid or expired verification token" });
+        return sendError(res, ErrorKeys.auth.verificationInvalid, 400);
       }
 
       if (tokenData.expiresAt < new Date()) {
         verificationTokens.delete(token);
-        return res
-          .status(400)
-          .json({ error: "Verification token has expired" });
+        return sendError(res, ErrorKeys.auth.verificationExpired, 400);
       }
 
       await db
@@ -363,7 +342,7 @@ router.get(
       res.json({ message: "Email verified successfully" });
     } catch (error) {
       console.error("Verify email error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -376,7 +355,7 @@ router.post(
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ error: "Email is required" });
+        return sendError(res, ErrorKeys.validation.failed, 400);
       }
 
       const appUser = await getUserByEmail(email);
@@ -389,7 +368,7 @@ router.post(
       }
 
       if (appUser.emailVerified) {
-        return res.status(400).json({ error: "Email is already verified" });
+        return sendError(res, ErrorKeys.auth.alreadyVerified, 400);
       }
 
       const verificationToken = uuidv4();
@@ -403,9 +382,7 @@ router.post(
         await sendVerificationEmail(appUser.email, verificationToken);
       } catch (emailError) {
         console.error("Failed to send verification email:", emailError);
-        return res
-          .status(500)
-          .json({ error: "Failed to send verification email" });
+        return sendError(res, ErrorKeys.auth.sendEmailFailed, 500);
       }
 
       res.json({
@@ -414,7 +391,7 @@ router.post(
       });
     } catch (error) {
       console.error("Resend verification error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -425,7 +402,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       if (!req.appUser) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return sendError(res, ErrorKeys.common.unauthorized, 401);
       }
       const user = formatUserResponse(req.appUser);
 
@@ -434,7 +411,7 @@ router.get(
       });
     } catch (error) {
       console.error("Get user error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -443,11 +420,11 @@ router.post("/change-photo", authMiddleware, async (req: Request, res: Response)
   try {
     const { photo_url } = req.body;
     if (!photo_url) {
-      return res.status(400).json({ error: "Photo URL is required" });
+      return sendError(res, ErrorKeys.auth.photoRequired, 400);
     }
 
     if (!req.appUser) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return sendError(res, ErrorKeys.common.unauthorized, 401);
     }
 
     await db
@@ -461,7 +438,7 @@ router.post("/change-photo", authMiddleware, async (req: Request, res: Response)
     res.json({ message: "Photo updated successfully" });
   } catch (error) {
     console.error("Change photo error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 

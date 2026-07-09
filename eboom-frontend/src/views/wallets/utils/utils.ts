@@ -17,6 +17,9 @@ export interface WalletEntry {
   receivedDate: string | null;
   notes: string | null;
   createdAt: string;
+  currencyId?: number;
+  currencyCode?: string;
+  currencySymbol?: string;
 }
 
 export interface WalletPayment {
@@ -30,6 +33,9 @@ export interface WalletPayment {
   paidDate: string | null;
   notes: string | null;
   createdAt: string;
+  currencyId?: number;
+  currencyCode?: string;
+  currencySymbol?: string;
 }
 
 export interface WalletTransfer {

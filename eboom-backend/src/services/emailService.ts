@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import type { OverdueNotification } from "../types/notifications";
+import type { BudgetAlertNotification } from "../types/planning";
 
 export interface EmailOptions {
   to: string;
@@ -226,6 +227,138 @@ export const sendOverdueNotificationsEmail = async (
     subject,
     html,
     text: `${greeting}\n\n${textLines.join("\n")}\n\nOpen Eboom: ${APP_URL}`,
+  });
+};
+
+function renderBudgetWarningItems(alerts: BudgetAlertNotification[]): string {
+  return alerts
+    .map((alert) => {
+      const kind = alert.type === "budget_category" ? "Category budget" : "Monthly budget";
+      return `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <strong>${alert.label}</strong><br />
+            <span style="color: #666; font-size: 14px;">
+              ${kind} · ${alert.percent}% of ${alert.threshold}% threshold
+              · ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode}
+            </span><br />
+            <span style="color: #999; font-size: 13px;">${alert.canvasName}</span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderGoalCelebrationItems(alerts: BudgetAlertNotification[]): string {
+  return alerts
+    .map(
+      (alert) => `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <strong>Congrats!</strong><br />
+            <span style="color: #666; font-size: 14px;">
+              Your balance across all wallets can cover ${alert.label}.
+              · ${formatNotificationAmount(alert.spent, alert.currencySymbol)} ${alert.currencyCode}
+            </span><br />
+            <span style="color: #999; font-size: 13px;">${alert.canvasName}</span>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+export const sendBudgetAlertsEmail = async (
+  email: string,
+  firstName: string | null | undefined,
+  alerts: BudgetAlertNotification[]
+): Promise<void> => {
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const budgetWarnings = alerts.filter((alert) => alert.type !== "savings_goal");
+  const goalAlerts = alerts.filter((alert) => alert.type === "savings_goal");
+  const count = alerts.length;
+
+  let subject: string;
+  if (budgetWarnings.length > 0 && goalAlerts.length === 0) {
+    subject =
+      budgetWarnings.length === 1
+        ? `Budget warning: ${budgetWarnings[0].label} at ${Math.round(budgetWarnings[0].percent)}%`
+        : `You have ${budgetWarnings.length} budget warnings`;
+  } else if (goalAlerts.length > 0 && budgetWarnings.length === 0) {
+    subject =
+      goalAlerts.length === 1
+        ? `You can afford ${goalAlerts[0].label}!`
+        : `You have ${goalAlerts.length} goals within reach`;
+  } else {
+    subject = `You have ${count} budget and goal updates`;
+  }
+
+  const budgetSection =
+    budgetWarnings.length > 0
+      ? `
+          <h3 style="margin: 24px 0 8px;">Budget warnings</h3>
+          <p>The following monthly budgets have reached your warning threshold:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderBudgetWarningItems(budgetWarnings)}
+          </table>
+        `
+      : "";
+
+  const goalSection =
+    goalAlerts.length > 0
+      ? `
+          <h3 style="margin: 24px 0 8px;">Goals</h3>
+          <p>Good news — your wallet balances can cover these goals:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${renderGoalCelebrationItems(goalAlerts)}
+          </table>
+        `
+      : "";
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button:hover { background-color: #0056b3; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Updates from Eboom</h2>
+          <p>${greeting}</p>
+          ${budgetSection}
+          ${goalSection}
+          <a href="${APP_URL}/budget-planning" class="button">Review budgets & goals</a>
+          <p style="color: #666; font-size: 14px;">
+            You can review these in the notifications panel inside the app.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textLines = [
+    ...budgetWarnings.map((alert) => {
+      const kind = alert.type === "budget_category" ? "Category budget" : "Monthly budget";
+      return `- ${alert.label}: ${kind}, ${alert.percent}% (threshold ${alert.threshold}%), ${formatNotificationAmount(alert.spent, alert.currencySymbol)}/${formatNotificationAmount(alert.limit, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`;
+    }),
+    ...goalAlerts.map(
+      (alert) =>
+        `- Congrats! Your balance can cover ${alert.label}. ${formatNotificationAmount(alert.spent, alert.currencySymbol)} ${alert.currencyCode} (${alert.canvasName})`
+    ),
+  ];
+
+  await sendEmail({
+    to: email,
+    subject,
+    html,
+    text: `${greeting}\n\n${textLines.join("\n")}\n\nReview budgets & goals: ${APP_URL}/budget-planning`,
   });
 };
 

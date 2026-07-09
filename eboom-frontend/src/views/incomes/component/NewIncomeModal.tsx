@@ -172,6 +172,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     {
       method: "post",
       hasToken: true,
+      successKey: "success.income.created",
     }
   );
 
@@ -180,6 +181,7 @@ export function NewIncomeModal({ onCreateSuccess }: NewIncomeModalProps) {
     {
       method: "put",
       hasToken: true,
+      successKey: "success.income.updated",
     }
   );
 

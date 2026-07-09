@@ -23,7 +23,6 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { isAxiosError } from "@/src/api/axiosTypes";
 
 interface ResetPasswordFormData {
   newPassword: string;
@@ -39,14 +38,6 @@ type ResetPasswordResponse = {
   message: string;
 };
 
-function getApiErrorMessage(error: unknown, fallback: string): string {
-  if (isAxiosError(error)) {
-    const data = error.response?.data as { error?: string } | undefined;
-    return data?.error || fallback;
-  }
-  return fallback;
-}
-
 export function ResetPasswordForm({
   className,
   ...props
@@ -54,7 +45,6 @@ export function ResetPasswordForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const { t } = useTranslation("auth");
 
@@ -78,12 +68,11 @@ export function ResetPasswordForm({
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) return;
 
-    setError(null);
     try {
       await mutateAsync({ token, newPassword: data.newPassword });
       setSubmitted(true);
-    } catch (err) {
-      setError(getApiErrorMessage(err, t("resetPassword.error.default")));
+    } catch {
+      // API failures are shown via the global notistack snackbar.
     }
   };
 
@@ -137,11 +126,6 @@ export function ResetPasswordForm({
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
             <FieldGroup>
-              {error && (
-                <Field>
-                  <div className="text-sm text-destructive">{error}</div>
-                </Field>
-              )}
               <Field>
                 <FieldLabel htmlFor="newPassword">
                   {t("resetPassword.password.label")}

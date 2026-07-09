@@ -2,7 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
-import type { CanvasTransactions } from "../types";
+import type { CanvasTransactions } from "@/src/types/transactions";
 
 export function useCanvasTransactions(canvasId: number | null) {
   const { data, isLoading, isError } = useQueryApi<CanvasTransactions>(

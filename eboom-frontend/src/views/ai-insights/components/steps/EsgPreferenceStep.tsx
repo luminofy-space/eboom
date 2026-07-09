@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
-import { ESG_SECTOR_OPTIONS, type WizardFormData } from "../../types";
+import { ESG_SECTOR_OPTIONS, type WizardFormData } from "@/src/types/ai-insights";
 
 interface EsgPreferenceStepProps {
   control: Control<WizardFormData>;

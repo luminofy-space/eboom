@@ -77,6 +77,7 @@ export default function ExpensesListPage() {
     (id: number) => API_ROUTES.EXPENSES_DELETE(canvas!, id),
     {
       method: "delete",
+      successKey: "success.expense.deleted",
       onSuccess: () => setDeleteId(null),
     }
   );

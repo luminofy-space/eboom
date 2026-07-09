@@ -1,8 +1,9 @@
-import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { and, count, countDistinct, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   assets,
   assetCategories,
+  assetVolumes,
   currencies,
   expenseCategories,
   expensePayments as expensePaymentsTable,
@@ -10,12 +11,19 @@ import {
   incomeCategories,
   incomeEntries as incomeEntriesTable,
   incomes,
+  pricePoints,
   subWallets,
   transfers as transfersTable,
   wallets,
 } from "../db/schema";
 import { alias } from "drizzle-orm/pg-core";
 import type { EnrichedTransfer } from "./transferService";
+import {
+  deriveAssetValuation,
+  formatMoneyNumber,
+  type PricePointInput,
+  type VolumeInput,
+} from "../utils/assetValuation";
 
 export interface CanvasSummaryWalletBalance {
   walletId: number;
@@ -87,7 +95,8 @@ export interface CanvasSummaryAssetSummary {
   categoryName: string | null;
   currencyCode: string;
   currencySymbol: string;
-  estimatedValue: string;
+  currentHoldingValue: string;
+  unrealizedPnL: string;
   photoUrl: string | null;
   lastModifiedAt: string;
 }
@@ -95,7 +104,7 @@ export interface CanvasSummaryAssetSummary {
 export interface CanvasSummaryAssetsByCurrency {
   currencyCode: string;
   currencySymbol: string;
-  totalEstimatedValue: string;
+  totalHoldingValue: string;
   count: number;
 }
 
@@ -418,6 +427,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       .from(assets)
       .where(and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false))),
     db
+      // walletCount = distinct parent wallets with a sub_wallet in this currency
       .select({
         currencyCode: currencies.code,
         currencySymbol: currencies.symbol,
@@ -484,6 +494,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
   );
 
   const walletBalanceRows = await db
+    // One row per sub_wallet; total liquid balance per currency is summed client-side
     .select({
       walletId: wallets.id,
       walletName: wallets.name,
@@ -531,7 +542,6 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       categoryName: assetCategories.name,
       currencyCode: currencies.code,
       currencySymbol: currencies.symbol,
-      estimatedValue: assets.estimatedValue,
       photoUrl: assets.photoUrl,
       lastModifiedAt: assets.lastModifiedAt,
     })
@@ -542,17 +552,79 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     .orderBy(desc(assets.lastModifiedAt))
     .limit(6);
 
-  const assetsByCurrencyRows = await db
+  const allCanvasAssets = await db
     .select({
+      id: assets.id,
       currencyCode: currencies.code,
       currencySymbol: currencies.symbol,
-      totalEstimatedValue: sql<string>`coalesce(sum(${assets.estimatedValue}), 0)`,
-      count: count(),
     })
     .from(assets)
     .innerJoin(currencies, eq(assets.currencyId, currencies.id))
-    .where(and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false)))
-    .groupBy(currencies.code, currencies.symbol);
+    .where(and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false)));
+
+  const allAssetIds = allCanvasAssets.map((a) => a.id);
+  const summaryAssetIds = assetSummaryRows.map((a) => a.id);
+  const valuationAssetIds = [...new Set([...allAssetIds, ...summaryAssetIds])];
+
+  const allVolumes =
+    valuationAssetIds.length > 0
+      ? await db.select().from(assetVolumes).where(inArray(assetVolumes.assetId, valuationAssetIds))
+      : [];
+  const allPoints =
+    valuationAssetIds.length > 0
+      ? await db.select().from(pricePoints).where(inArray(pricePoints.assetId, valuationAssetIds))
+      : [];
+
+  const volumesByAsset = new Map<number, VolumeInput[]>();
+  for (const v of allVolumes) {
+    const list = volumesByAsset.get(v.assetId) ?? [];
+    list.push({
+      id: v.id,
+      quantity: v.quantity,
+      unitPrice: v.unitPrice,
+      recordedAt: v.recordedAt ?? new Date(0),
+    });
+    volumesByAsset.set(v.assetId, list);
+  }
+  const pointsByAsset = new Map<number, PricePointInput[]>();
+  for (const p of allPoints) {
+    const list = pointsByAsset.get(p.assetId) ?? [];
+    list.push({
+      id: p.id,
+      unitPrice: p.unitPrice,
+      recordedAt: p.recordedAt ?? new Date(0),
+    });
+    pointsByAsset.set(p.assetId, list);
+  }
+
+  const valuationByAsset = new Map(
+    valuationAssetIds.map((id) => [
+      id,
+      deriveAssetValuation(volumesByAsset.get(id) ?? [], pointsByAsset.get(id) ?? []),
+    ])
+  );
+
+  const assetsByCurrencyMap = new Map<
+    string,
+    { currencyCode: string; currencySymbol: string; totalHoldingValue: number; count: number }
+  >();
+  for (const asset of allCanvasAssets) {
+    const derived = valuationByAsset.get(asset.id);
+    const holdingValue = derived?.currentHoldingValue ?? 0;
+    const existing = assetsByCurrencyMap.get(asset.currencyCode);
+    if (existing) {
+      existing.totalHoldingValue += holdingValue;
+      existing.count += 1;
+    } else {
+      assetsByCurrencyMap.set(asset.currencyCode, {
+        currencyCode: asset.currencyCode,
+        currencySymbol: asset.currencySymbol,
+        totalHoldingValue: holdingValue,
+        count: 1,
+      });
+    }
+  }
+  const assetsByCurrencyRows = [...assetsByCurrencyMap.values()];
 
   const entryActivities: CanvasSummaryRecentActivity[] = incomeEntries.map((entry) => ({
     id: entry.id,
@@ -640,20 +712,24 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     incomeEntries,
     expensePayments,
     recentActivity,
-    assetSummaries: assetSummaryRows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      categoryName: row.categoryName,
-      currencyCode: row.currencyCode,
-      currencySymbol: row.currencySymbol,
-      estimatedValue: String(row.estimatedValue),
-      photoUrl: row.photoUrl,
-      lastModifiedAt: toIsoString(row.lastModifiedAt) ?? new Date().toISOString(),
-    })),
+    assetSummaries: assetSummaryRows.map((row) => {
+      const derived = valuationByAsset.get(row.id);
+      return {
+        id: row.id,
+        name: row.name,
+        categoryName: row.categoryName,
+        currencyCode: row.currencyCode,
+        currencySymbol: row.currencySymbol,
+        currentHoldingValue: formatMoneyNumber(derived?.currentHoldingValue ?? 0),
+        unrealizedPnL: formatMoneyNumber(derived?.unrealizedPnL ?? 0),
+        photoUrl: row.photoUrl,
+        lastModifiedAt: toIsoString(row.lastModifiedAt) ?? new Date().toISOString(),
+      };
+    }),
     assetsByCurrency: assetsByCurrencyRows.map((row) => ({
       currencyCode: row.currencyCode,
       currencySymbol: row.currencySymbol,
-      totalEstimatedValue: String(row.totalEstimatedValue),
+      totalHoldingValue: formatMoneyNumber(row.totalHoldingValue),
       count: row.count,
     })),
   };

@@ -2,7 +2,7 @@
 
 import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 
 export function useDashboardSummary(canvasId: number | null) {
   return useQueryApi<CanvasSummary>(

@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from "@/src/api/axiosTypes";
+import axios, { type AxiosRequestConfig } from "@/src/types/axios";
 import { resolveApiUrl } from "@/src/api/resolveApiUrl";
 
 const hasWindow = typeof window !== "undefined";

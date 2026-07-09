@@ -3,12 +3,14 @@ import { db } from "../db/client";
 import { incomeCategories } from "../db/schema";
 import { eq, asc } from "drizzle-orm";
 import { parseRouteParam } from "./routeParams";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router();
 
 router.get("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   try {
     const categories = await db
@@ -19,17 +21,17 @@ router.get("/", async (req: Request, res: Response) => {
     res.json({ categories });
   } catch (err) {
     console.error("Error fetching income categories:", err);
-    res.status(500).json({ error: "Failed to fetch income categories" });
+    sendError(res, ErrorKeys.category.fetchFailed, 500);
   }
 });
 
 router.post("/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const { name } = req.body;
   if (!name)
-    return res.status(400).json({ error: "Category name is required" });
+    return sendError(res, ErrorKeys.validation.nameRequired, 400);
 
   try {
     const [category] = await db
@@ -40,21 +42,21 @@ router.post("/", async (req: Request, res: Response) => {
     res.status(201).json({ category });
   } catch (err) {
     console.error("Error creating income category:", err);
-    res.status(500).json({ error: "Failed to create income category" });
+    sendError(res, ErrorKeys.category.createFailed, 500);
   }
 });
 
 router.put("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const categoryId = parseRouteParam(req.params.id);
   if (isNaN(categoryId))
-    return res.status(400).json({ error: "Invalid category ID" });
+    return sendError(res, ErrorKeys.common.invalidId, 400);
 
   const { name } = req.body;
   if (!name)
-    return res.status(400).json({ error: "Category name is required" });
+    return sendError(res, ErrorKeys.validation.nameRequired, 400);
 
   try {
     const [existing] = await db
@@ -62,7 +64,7 @@ router.put("/:id", async (req: Request, res: Response) => {
       .from(incomeCategories)
       .where(eq(incomeCategories.id, categoryId));
 
-    if (!existing) return res.status(404).json({ error: "Category not found" });
+    if (!existing) return sendError(res, ErrorKeys.category.notFound, 404);
 
     const [updated] = await db
       .update(incomeCategories)
@@ -73,17 +75,17 @@ router.put("/:id", async (req: Request, res: Response) => {
     res.json({ category: updated });
   } catch (err) {
     console.error("Error updating income category:", err);
-    res.status(500).json({ error: "Failed to update income category" });
+    sendError(res, ErrorKeys.category.updateFailed, 500);
   }
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const categoryId = parseRouteParam(req.params.id);
   if (isNaN(categoryId))
-    return res.status(400).json({ error: "Invalid category ID" });
+    return sendError(res, ErrorKeys.common.invalidId, 400);
 
   try {
     const [existing] = await db
@@ -91,7 +93,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .from(incomeCategories)
       .where(eq(incomeCategories.id, categoryId));
 
-    if (!existing) return res.status(404).json({ error: "Category not found" });
+    if (!existing) return sendError(res, ErrorKeys.category.notFound, 404);
 
     await db
       .delete(incomeCategories)
@@ -100,7 +102,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.json({ message: "Category deleted successfully" });
   } catch (err) {
     console.error("Error deleting income category:", err);
-    res.status(500).json({ error: "Failed to delete income category" });
+    sendError(res, ErrorKeys.category.deleteFailed, 500);
   }
 });
 
