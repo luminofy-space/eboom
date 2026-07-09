@@ -71,6 +71,11 @@
       "last7Days": "letzten 7 Tage",
       "last30Days": "letzten 30 Tage",
       "last3Months": "letzten 3 Monate"
+    },
+    "scale": {
+      "select": "Skala auswählen",
+      "linear": "Linear",
+      "loglike": "Log-ähnlich"
     }
   },
   "gridCard": {

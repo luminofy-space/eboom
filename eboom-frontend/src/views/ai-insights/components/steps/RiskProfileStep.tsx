@@ -13,7 +13,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
-import type { WizardFormData } from "../../types";
+import type { WizardFormData } from "@/src/types/ai-insights";
 
 interface RiskProfileStepProps {
   control: Control<WizardFormData>;

@@ -10,10 +10,10 @@ import {
   PiggyBank,
   ShoppingBag,
   BrainCircuit,
-  Users,
   LayoutDashboard,
   CalendarDays,
   Landmark,
+  Settings,
 } from "lucide-react";
 
 import { NavGroups } from "./nav-main";
@@ -47,11 +47,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: LayoutDashboard,
         },
         {
-          title: t("routes.transactions"),
-          url: "/transactions",
-          icon: ArrowLeftRight,
-        },
-        {
           title: t("routes.calendar"),
           url: "/calendar",
           icon: CalendarDays,
@@ -61,11 +56,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/whiteboard",
           icon: Presentation,
         },
+        {
+          title: t("routes.transactions"),
+          url: "/transactions",
+          icon: ArrowLeftRight,
+        },
       ],
     },
     {
       label: t("groups.finances"),
       items: [
+        {
+          title: t("routes.assets"),
+          url: "/assets",
+          icon: Landmark,
+        },
         {
           title: t("routes.incomes"),
           url: "/incomes",
@@ -81,15 +86,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/expenses",
           icon: BanknoteArrowDown,
         },
-        {
-          title: t("routes.assets"),
-          url: "/assets",
-          icon: Landmark,
-        },
       ],
     },
     {
-      label: t("groups.planning"),
+      label: t("groups.management"),
       items: [
         {
           title: t("routes.budgetPlanning"),
@@ -104,9 +104,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ...(canManageMembers
           ? [
             {
-              title: t("routes.manageMembers"),
-              url: "/members",
-              icon: Users,
+              title: t("routes.manageCanvas"),
+              url: "/manage-canvas",
+              icon: Settings,
             },
           ]
           : []),

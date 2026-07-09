@@ -8,11 +8,11 @@
   "modal": {
     "create": {
       "title": "Add New Asset",
-      "description": "Record a non-liquid asset with its estimated value and category."
+      "description": "Record a holding with its initial unit price and quantity."
     },
     "edit": {
       "title": "Edit Asset",
-      "description": "Update the details of your asset."
+      "description": "Update the details of your asset. Manage volumes and unit price points on the detail page."
     },
     "fields": {
       "name": {
@@ -25,8 +25,12 @@
       "currency": {
         "label": "Currency"
       },
-      "estimatedValue": {
-        "label": "Estimated Value",
+      "quantity": {
+        "label": "Quantity",
+        "placeholder": "1"
+      },
+      "unitPrice": {
+        "label": "Initial unit price",
         "placeholder": "0.00"
       },
       "description": {
@@ -50,11 +54,150 @@
     "nameMaxLength": "Name must be 255 characters or less",
     "categoryRequired": "Category is required",
     "currencyRequired": "Currency is required",
-    "estimatedValueRequired": "Estimated value is required",
-    "estimatedValueNonNegative": "Estimated value must be zero or greater",
+    "quantityRequired": "Quantity is required",
+    "quantityNonZero": "Quantity must not be zero",
+    "unitPriceRequired": "Initial unit price is required",
+    "unitPriceNonNegative": "Initial unit price must be zero or greater",
+    "unitPricePointRequired": "Unit price is required",
+    "unitPricePointNonNegative": "Unit price must be zero or greater",
+    "recordedAtRequired": "Date is required",
     "imageTooLarge": "Image must be 5 MB or smaller",
     "imageInvalidType": "Please select a valid image file",
     "noCanvas": "Select a canvas before continuing",
     "saveFailed": "Failed to save. Please try again."
+  },
+  "detail": {
+    "loadError": "Failed to load asset.",
+    "quantityHeld": "Quantity held",
+    "costBasis": "Cost basis",
+    "holdingValue": "Holding value",
+    "unrealizedPnL": "Unrealized P/L"
+  },
+  "summaryCards": {
+    "quantity": {
+      "label": "Quantity held",
+      "footer": "Current holding size"
+    },
+    "costBasis": {
+      "label": "Cost basis",
+      "footer": "Average cost of remaining quantity"
+    },
+    "holdingValue": {
+      "label": "Holding value",
+      "footer": "Latest unit price × quantity"
+    },
+    "unrealizedPnL": {
+      "label": "Unrealized P/L",
+      "footer": "Holding value minus cost basis"
+    }
+  },
+  "chart": {
+    "title": "Valuation over time",
+    "description": "Profit or loss based on unit price points and volumes",
+    "empty": "Add unit price points to see profit and loss over time.",
+    "legend": {
+      "unrealizedPnL": "Unrealized P/L",
+      "holdingValue": "Holding value"
+    },
+    "timeRange": {
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d",
+      "all": "All"
+    }
+  },
+  "volumesTable": {
+    "title": "Volumes",
+    "empty": "No volume changes yet.",
+    "add": "Add volume",
+    "headers": {
+      "type": "Type",
+      "quantity": "Quantity",
+      "unitPrice": "Unit price",
+      "total": "Total",
+      "date": "Date",
+      "notes": "Notes"
+    },
+    "buy": "Buy",
+    "sell": "Sell"
+  },
+  "pricePointsTable": {
+    "title": "Unit price points",
+    "empty": "No unit price points yet.",
+    "add": "Add unit price point",
+    "headers": {
+      "unitPrice": "Unit price",
+      "date": "Date",
+      "notes": "Notes"
+    }
+  },
+  "volumeModal": {
+    "create": {
+      "title": "Add volume",
+      "description": "Record a buy or sell of this asset."
+    },
+    "edit": {
+      "title": "Edit volume",
+      "description": "Update this buy or sell."
+    },
+    "fields": {
+      "side": {
+        "label": "Type",
+        "buy": "Buy",
+        "sell": "Sell"
+      },
+      "quantity": {
+        "label": "Quantity",
+        "placeholder": "1"
+      },
+      "unitPrice": {
+        "label": "Unit price",
+        "placeholder": "0.00"
+      },
+      "recordedAt": {
+        "label": "Date"
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": "Optional"
+      }
+    },
+    "submit": {
+      "create": "Add volume",
+      "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save volume."
+    }
+  },
+  "pricePointModal": {
+    "create": {
+      "title": "Add unit price point",
+      "description": "Record the unit price of this asset at a point in time."
+    },
+    "edit": {
+      "title": "Edit unit price point",
+      "description": "Update this unit price."
+    },
+    "fields": {
+      "unitPrice": {
+        "label": "Unit price",
+        "placeholder": "0.00"
+      },
+      "recordedAt": {
+        "label": "Date"
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": "Optional"
+      }
+    },
+    "submit": {
+      "create": "Add unit price point",
+      "edit": "Save changes"
+    },
+    "error": {
+      "saveFailed": "Failed to save unit price point."
+    }
   }
 }

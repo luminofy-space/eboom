@@ -5,20 +5,37 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  useInternalNode,
   type EdgeProps,
 } from "@xyflow/react";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { ExpenseFlow, IncomeFlow, TransferFlow } from "../types";
+import type { ExpenseFlow, IncomeFlow, TransferFlow } from "@/src/types/whiteboard";
+import { formatTransferAmounts } from "../utils/formatTransfer";
+import {
+  getInternalTransferPathFromNode,
+  isInternalTransfer,
+  NODE_WIDTH,
+} from "../utils/edgePaths";
+import { NODE_HEIGHT } from "../utils/graphBuilder";
 import { whiteboardEdgeColor } from "../utils/theme";
 
 export interface FlowEdgeData {
   kind: "income" | "expense" | "transfer";
   flow: IncomeFlow | ExpenseFlow | TransferFlow;
+  internal?: boolean;
+  internalStackIndex?: number;
   selected?: boolean;
+}
+
+function formatInternalTransferLabel(transfer: TransferFlow): string {
+  const amounts = formatTransferAmounts(transfer);
+  return transfer.transferCount > 1 ? `${transfer.transferCount} · ${amounts}` : amounts;
 }
 
 function FlowEdgeComponent({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -33,19 +50,36 @@ function FlowEdgeComponent({
   const kind = edgeData?.kind;
   const isSelected = selected || edgeData?.selected;
   const strokeColor = kind ? whiteboardEdgeColor(kind, isSelected) : "var(--foreground)";
-
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+  const sourceNode = useInternalNode(source);
 
   const flow = edgeData?.flow;
-  const label =
-    flow && kind === "income"
+  const isInternalTransferEdge =
+    source === target &&
+    kind === "transfer" &&
+    flow &&
+    (edgeData?.internal || isInternalTransfer(flow as TransferFlow));
+
+  const [edgePath, labelX, labelY] =
+    isInternalTransferEdge && sourceNode
+      ? getInternalTransferPathFromNode(
+          sourceNode.internals.positionAbsolute.x,
+          sourceNode.internals.positionAbsolute.y,
+          sourceNode.measured.width ?? NODE_WIDTH,
+          sourceNode.measured.height ?? sourceNode.height ?? NODE_HEIGHT,
+          edgeData?.internalStackIndex ?? 0
+        )
+      : getBezierPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+        });
+
+  const label = isInternalTransferEdge
+    ? formatInternalTransferLabel(flow as TransferFlow)
+    : flow && kind === "income"
       ? `${(flow as IncomeFlow).entryCount} · ${formatMoney((flow as IncomeFlow).totalAmount, (flow as IncomeFlow).currencySymbol)}`
       : flow && kind === "expense"
         ? `${(flow as ExpenseFlow).paymentCount} · ${formatMoney((flow as ExpenseFlow).totalAmount, (flow as ExpenseFlow).currencySymbol)}`
@@ -73,7 +107,11 @@ function FlowEdgeComponent({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: "all",
             }}
-            className="nodrag nopan rounded-md border bg-background px-2 py-0.5 text-[10px] font-medium shadow-sm"
+            className={
+              isInternalTransferEdge
+                ? "nodrag nopan max-w-[200px] truncate rounded-md border border-amber-500/25 bg-background px-2 py-0.5 text-[10px] font-medium tabular-nums shadow-sm"
+                : "nodrag nopan rounded-md border bg-background px-2 py-0.5 text-[10px] font-medium shadow-sm"
+            }
           >
             {label}
           </div>

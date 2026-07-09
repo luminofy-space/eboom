@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDown, UserPlus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,19 +10,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useCanvasMembers, type CanvasMember } from "@/src/hooks/useCanvasMembers";
+import { notifySuccess } from "@/src/lib/notify";
 import { CanvasDetailsHeader } from "./CanvasDetailsHeader";
 import { MembersTable } from "./MembersTable";
 import { PendingInvitationsTable } from "./PendingInvitationsTable";
-import { InviteMembersForm } from "./InviteMembersForm";
+import { InviteMembersModal } from "./InviteMembersModal";
+import { CanvasPageActions } from "./CanvasPageActions";
 import { ConfirmRemoveMemberDialog } from "./ConfirmRemoveMemberDialog";
-import { toast } from "sonner";
 
 function memberDisplayName(member: CanvasMember) {
   return [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email;
@@ -29,9 +38,11 @@ function memberDisplayName(member: CanvasMember) {
 
 export default function CanvasMembersPage() {
   const { t } = useTranslation("canvas-members");
-  const { canvas: canvasId, activeCanvas } = useCanvas();
-  const { canManageMembers } = useCanvasPermissions();
+  const { canvas: canvasId } = useCanvas();
+  const { canManageMembers, canManageCanvas, activeCanvas } = useCanvasPermissions();
   const [removeTarget, setRemoveTarget] = useState<CanvasMember | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [pendingOpen, setPendingOpen] = useState(false);
 
   const {
     members,
@@ -58,125 +69,146 @@ export default function CanvasMembersPage() {
     [removeTarget]
   );
 
+  const hasPendingInvitations = pendingInvitations.length > 0;
+
   const handleConfirmRemove = async () => {
     if (!removeTarget) return;
     await removeMember(removeTarget.id);
     setRemoveTarget(null);
-    toast.success(t("members.memberRemoved"));
+  };
+
+  const handleSendInvitations = async (invitations: { email: string; role: string }[]) => {
+    await sendInvitations({ invitations });
+    invalidate();
+    notifySuccess("success.member.invited");
+    setPendingOpen(true);
   };
 
   return (
     <Container className="py-6">
       <Stack gap={8}>
-        <Stack gap={4}>
+        <div className="flex items-start justify-between gap-4">
           <Stack gap={1}>
             <Typography variant="title" className="text-2xl">
               {t("members.title")}
             </Typography>
             <Typography variant="muted-sm">{t("members.description")}</Typography>
           </Stack>
-          <CanvasDetailsHeader canvas={activeCanvas} />
-        </Stack>
+          <CanvasPageActions
+            canvas={activeCanvas}
+            canManageMembers={canManageMembers}
+            canManageCanvas={canManageCanvas}
+            onInviteMember={() => setInviteOpen(true)}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("members.currentMembers")}</CardTitle>
-              <CardDescription>{t("members.currentMembersDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Stack align="center" className="py-8">
-                  <Spinner />
-                </Stack>
-              ) : (
-                <MembersTable
-                  members={members}
-                  canManage={canManageMembers}
-                  onRoleChange={async (memberId, role) => {
-                    await updateMemberRole({ memberId, role });
-                    toast.success(t("members.roleUpdated"));
-                  }}
-                  onRemove={(memberId) => {
-                    const member = members.find((m) => m.id === memberId);
-                    if (member) setRemoveTarget(member);
-                  }}
-                  isUpdating={isUpdatingRole}
-                  isRemoving={isRemoving}
-                />
-              )}
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("members.canvasDetails")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CanvasDetailsHeader canvas={activeCanvas} />
+          </CardContent>
+        </Card>
 
-          <Stack gap={6}>
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div className="space-y-1.5">
+              <CardTitle>{t("members.canvasMembers")}</CardTitle>
+              <CardDescription>{t("members.canvasMembersDescription")}</CardDescription>
+            </div>
             {canManageMembers && canvasId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("members.inviteSection")}</CardTitle>
-                  <CardDescription>{t("members.inviteSectionDescription")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InviteMembersForm
-                    suggestions={inviteSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    onLookup={async (emails) => {
-                      const result = (await lookupUsers({ emails })) as {
-                        users?: {
-                          id: number;
-                          email: string;
-                          firstName?: string;
-                          lastName?: string;
-                        }[];
-                      };
-                      return {
-                        users: (result?.users ?? []).map((user) => ({
-                          id: user.id,
-                          email: user.email,
-                          firstName: user.firstName,
-                          lastName: user.lastName,
-                          role: "visitor",
-                        })),
-                      };
-                    }}
-                    isLookingUp={isLookingUp}
-                    onSubmit={async (invitations) => {
-                      await sendInvitations({ invitations });
-                      invalidate();
-                      toast.success(t("members.sendInvitations"));
-                    }}
-                    isSubmitting={isInviting}
-                    hideSectionTitle
-                  />
-                </CardContent>
-              </Card>
+              <Button onClick={() => setInviteOpen(true)}>
+                <UserPlus className="size-4" />
+                {t("actions.addMember")}
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoading ? (
+              <Stack align="center" className="py-8">
+                <Spinner />
+              </Stack>
+            ) : (
+              <MembersTable
+                members={members}
+                canManage={canManageMembers}
+                onRoleChange={async (memberId, role) => {
+                  await updateMemberRole({ memberId, role });
+                }}
+                onRemove={(memberId) => {
+                  const member = members.find((m) => m.id === memberId);
+                  if (member) setRemoveTarget(member);
+                }}
+                isUpdating={isUpdatingRole}
+                isRemoving={isRemoving}
+              />
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("members.pendingInvitations")}</CardTitle>
-                <CardDescription>{t("members.pendingInvitationsDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingPending ? (
-                  <Stack align="center" className="py-8">
-                    <Spinner />
-                  </Stack>
-                ) : (
-                  <PendingInvitationsTable
-                    invitations={pendingInvitations}
-                    canManage={canManageMembers}
-                    onCancel={async (invitationId) => {
-                      await cancelInvitation(invitationId);
-                      toast.success(t("members.invitationCancelled"));
-                    }}
-                    isCancelling={isCancellingInvitation}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </Stack>
-        </div>
+            {hasPendingInvitations && (
+              <Collapsible open={pendingOpen} onOpenChange={setPendingOpen}>
+                <div className="flex justify-center">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="gap-2 px-2">
+                      <span>
+                        {pendingOpen
+                          ? t("members.hidePendingInvitations")
+                          : t("members.showPendingInvitations")}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "size-4 transition-transform",
+                          pendingOpen && "rotate-180"
+                        )}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent className="pt-4">
+                  {isLoadingPending ? (
+                    <Stack align="center" className="py-8">
+                      <Spinner />
+                    </Stack>
+                  ) : (
+                    <PendingInvitationsTable
+                      invitations={pendingInvitations}
+                      canManage={canManageMembers}
+                      onCancel={async (invitationId) => {
+                        await cancelInvitation(invitationId);
+                      }}
+                      isCancelling={isCancellingInvitation}
+                    />
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </CardContent>
+        </Card>
       </Stack>
+
+      {canManageMembers && canvasId && (
+        <InviteMembersModal
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          suggestions={inviteSuggestions}
+          isLoadingSuggestions={isLoadingSuggestions}
+          onLookup={async (emails) => {
+            const result = (await lookupUsers({ emails })) as {
+              users?: {
+                id: number;
+                email: string;
+                firstName?: string | null;
+                lastName?: string | null;
+                photoUrl?: string | null;
+              }[];
+            };
+            return result;
+          }}
+          isLookingUp={isLookingUp}
+          onSubmit={handleSendInvitations}
+          isSubmitting={isInviting}
+        />
+      )}
 
       <ConfirmRemoveMemberDialog
         open={removeTarget !== null}

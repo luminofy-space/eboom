@@ -6,10 +6,16 @@ import type {
   WhiteboardData,
   WhiteboardEntityType,
   WhiteboardNodePosition,
-} from "../types";
+} from "@/src/types/whiteboard";
+import {
+  getInternalTransferStackIndex,
+  groupInternalTransfersByWallet,
+  isInternalTransfer,
+  NODE_WIDTH,
+} from "./edgePaths";
 import { whiteboardEdgeMarker } from "./theme";
 
-export const NODE_WIDTH = 220;
+export { NODE_WIDTH };
 export const NODE_HEIGHT = 96;
 
 export function entityNodeId(type: WhiteboardEntityType, id: number): string {
@@ -48,6 +54,7 @@ function positionMap(positions: WhiteboardNodePosition[]) {
 export function buildWhiteboardGraph(data: WhiteboardData): { nodes: Node[]; edges: Edge[] } {
   const positions = positionMap(data.nodePositions);
   const nodes: Node[] = [];
+  const internalTransfersByWallet = groupInternalTransfersByWallet(data.transferFlows);
 
   for (const wallet of data.wallets) {
     const id = entityNodeId("wallet", wallet.id);
@@ -55,6 +62,7 @@ export function buildWhiteboardGraph(data: WhiteboardData): { nodes: Node[]; edg
       id,
       type: "wallet",
       position: positions.get(id) ?? { x: 0, y: 0 },
+      zIndex: 0,
       data: {
         entityId: wallet.id,
         name: wallet.name,
@@ -118,17 +126,34 @@ export function buildWhiteboardGraph(data: WhiteboardData): { nodes: Node[]; edg
         flow,
       },
     })),
-    ...(data.transferFlows ?? []).map((flow) => ({
-      id: transferFlowEdgeId(flow),
-      source: entityNodeId("wallet", flow.sourceWalletId),
-      target: entityNodeId("wallet", flow.destinationWalletId),
-      type: "flow",
-      markerEnd: whiteboardEdgeMarker("transfer"),
-      data: {
-        kind: "transfer" as const,
-        flow,
-      },
-    })),
+    ...(data.transferFlows ?? []).map((flow) => {
+      const internal = isInternalTransfer(flow);
+      const internalStackIndex = internal
+        ? getInternalTransferStackIndex(
+            internalTransfersByWallet.get(Number(flow.sourceWalletId)) ?? [],
+            flow
+          )
+        : 0;
+      return {
+        id: transferFlowEdgeId(flow),
+        source: entityNodeId("wallet", flow.sourceWalletId),
+        target: entityNodeId("wallet", flow.destinationWalletId),
+        ...(internal
+          ? {
+              zIndex: 1000,
+              selectable: true,
+            }
+          : {}),
+        type: "flow",
+        markerEnd: whiteboardEdgeMarker("transfer"),
+        data: {
+          kind: "transfer" as const,
+          flow,
+          internal,
+          internalStackIndex,
+        },
+      };
+    }),
   ];
 
   return { nodes, edges };

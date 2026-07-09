@@ -15,7 +15,7 @@ import { Typography, typographyVariants } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { SavingsGoalListItem } from "@/src/views/budget-planning/types";
+import type { SavingsGoalListItem } from "@/src/types/budget-planning";
 
 interface DashboardGoalsSectionProps {
   canvasId?: number | null;

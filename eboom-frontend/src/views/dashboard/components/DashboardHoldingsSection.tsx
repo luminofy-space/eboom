@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -10,7 +9,7 @@ import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { GridCard } from "@/src/components/GridCard";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import { useTranslation } from "react-i18next";
 
 interface DashboardHoldingsSectionProps {
@@ -23,13 +22,12 @@ export function DashboardHoldingsSection({
   isLoading,
 }: DashboardHoldingsSectionProps) {
   const { t } = useTranslation("dashboard");
-  const router = useRouter();
 
   if (isLoading) {
     return (
       <Container>
         <Stack gap={4}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
           <Grid variant="cards" gap={4}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="aspect-[4/3] rounded-xl bg-muted animate-pulse" />
@@ -48,8 +46,8 @@ export function DashboardHoldingsSection({
     return (
       <Container>
         <Stack gap={3}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
-          <Typography variant="muted-sm">{t("holdings.empty")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
+          <Typography variant="muted-sm">{t("assets.empty")}</Typography>
         </Stack>
       </Container>
     );
@@ -59,9 +57,9 @@ export function DashboardHoldingsSection({
     <Container>
       <Stack gap={4}>
         <Stack direction="row" align="center" justify="between" gap={4}>
-          <Typography variant="title">{t("holdings.title")}</Typography>
+          <Typography variant="title">{t("assets.title")}</Typography>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/assets">{t("holdings.viewAll")}</Link>
+            <Link href="/assets">{t("assets.viewAll")}</Link>
           </Button>
         </Stack>
 
@@ -69,8 +67,8 @@ export function DashboardHoldingsSection({
           <Stack direction="row" gap={2} className="flex-wrap">
             {assetsByCurrency.map((row) => (
               <Badge key={row.currencyCode} variant="secondary" className="px-3 py-1">
-                {row.currencyCode}: {formatMoney(row.totalEstimatedValue, row.currencySymbol)}{" "}
-                ({t("holdings.assetCount", { count: row.count })})
+                {row.currencyCode}: {formatMoney(row.totalHoldingValue, row.currencySymbol)}{" "}
+                ({t("assets.assetCount", { count: row.count })})
               </Badge>
             ))}
           </Stack>
@@ -81,11 +79,11 @@ export function DashboardHoldingsSection({
             {assetSummaries.map((asset) => (
               <GridCard
                 key={asset.id}
+                href={`/asset/${asset.id}`}
                 imageUrl={asset.photoUrl}
                 title={asset.name}
-                subtitle={formatMoney(asset.estimatedValue, asset.currencySymbol)}
+                subtitle={formatMoney(asset.currentHoldingValue, asset.currencySymbol)}
                 updatedAt={asset.lastModifiedAt}
-                onClick={() => router.push("/assets")}
               />
             ))}
           </Grid>

@@ -45,7 +45,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   const canvasId = req.canvasId!;
   const user = req.appUser!;
 
-  const { name, currencyId, targetAmount, targetDate, alertThresholdPercent } = req.body;
+  const { name, currencyId, targetAmount, targetDate, alertThresholdPercent, photoUrl } = req.body;
 
   const parsedCurrencyId = parseRouteParam(String(currencyId ?? ""));
 
@@ -64,6 +64,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
         name,
         targetAmount: String(targetAmount),
         targetDate: typeof targetDate === "string" ? targetDate : null,
+        photoUrl: typeof photoUrl === "string" ? photoUrl : null,
         linkedWalletId: null,
         status: "active",
         isArchived: false,
@@ -112,7 +113,8 @@ router.patch("/:goalId", requireCanvasAccess("edit"), async (req: Request, res: 
     return res.status(400).json({ error: "Invalid ID" });
   }
 
-  const { name, targetAmount, targetDate, alertThresholdPercent, currencyId, status } = req.body;
+  const { name, targetAmount, targetDate, alertThresholdPercent, currencyId, status, photoUrl } =
+    req.body;
 
   try {
     const [existing] = await db
@@ -145,6 +147,9 @@ router.patch("/:goalId", requireCanvasAccess("edit"), async (req: Request, res: 
             : typeof targetDate === "string"
               ? targetDate
               : existing.targetDate,
+        ...(photoUrl !== undefined && {
+          photoUrl: typeof photoUrl === "string" ? photoUrl : null,
+        }),
         alertThresholdPercent:
           alertThresholdPercent != null
             ? parseRouteParam(String(alertThresholdPercent))

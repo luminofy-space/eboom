@@ -21,27 +21,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Grid } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
 import { formatCurrency } from "@/src/i18n/formatters";
 import { BudgetFormModal } from "./components/BudgetFormModal";
-import { BudgetPeriodTabs } from "./components/BudgetPeriodTabs";
 import { BudgetProgressBar } from "./components/BudgetProgressBar";
 import { BudgetSectionEmpty } from "./components/BudgetSectionEmpty";
-import { ForecastChart } from "./components/ForecastChart";
 import { GoalCard } from "./components/GoalCard";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalsSectionEmpty } from "./components/GoalsSectionEmpty";
 import { SystemCurrencySelect } from "./components/SystemCurrencySelect";
-import type { BudgetListItem, BudgetPeriodType, SavingsGoalListItem, SavingsGoalProgress, SavingsGoalStatus } from "./types";
-
-function addDaysIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+import type { BudgetListItem, SavingsGoalListItem, SavingsGoalStatus } from "@/src/types/budget-planning";
 
 export default function BudgetPlanningPage() {
   const { t } = useTranslation("budget-planning");
@@ -50,7 +42,6 @@ export default function BudgetPlanningPage() {
   const { canEdit } = useCanvasPermissions();
   const queryClient = useQueryClient();
 
-  const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriodType>("monthly");
   const [selectedCurrencyId, setSelectedCurrencyId] = useState("");
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [editBudget, setEditBudget] = useState<BudgetListItem | null>(null);
@@ -63,6 +54,13 @@ export default function BudgetPlanningPage() {
     canvas ? API_ROUTES.CANVAS_BUDGETS_LIST(canvas) : "",
     { queryKey: ["budgets", canvas], enabled: !!canvas }
   );
+
+  const { data: currenciesRes } = useQueryApi<{
+    currencies?: { id: number; code: string }[];
+  }>(API_ROUTES.CURRENCIES_METADATA, {
+    queryKey: ["currencies"],
+    hasToken: true,
+  });
 
   const { data: goalsRes, isLoading: goalsLoading } = useQueryApi<{
     goals?: SavingsGoalListItem[];
@@ -83,40 +81,33 @@ export default function BudgetPlanningPage() {
   );
   const visibleGoals = goalsByStatus[goalStatusTab];
 
+  const currencies = currenciesRes?.currencies ?? [];
   const selectedCurrencyIdNum = selectedCurrencyId
     ? parseInt(selectedCurrencyId, 10)
     : null;
 
+  const selectedCurrencyCode = useMemo(() => {
+    if (selectedCurrencyIdNum == null) return undefined;
+    return currencies.find((c) => c.id === selectedCurrencyIdNum)?.code;
+  }, [currencies, selectedCurrencyIdNum]);
+
   useEffect(() => {
-    if (budgets.length === 0 || selectedCurrencyId) return;
-    const forPeriod = budgets.filter((b) => b.budget?.periodType === selectedPeriod);
-    const pick = forPeriod[0] ?? budgets[0];
-    if (pick) setSelectedCurrencyId(String(pick.budget.currencyId));
-  }, [budgets, selectedPeriod, selectedCurrencyId]);
+    if (selectedCurrencyId) return;
+    const firstBudget = budgets[0];
+    if (firstBudget) {
+      setSelectedCurrencyId(String(firstBudget.budget.currencyId));
+    } else if (currencies[0]) {
+      setSelectedCurrencyId(String(currencies[0].id));
+    }
+  }, [budgets, currencies, selectedCurrencyId]);
 
   const activeBudget = useMemo(() => {
     if (selectedCurrencyIdNum == null) return undefined;
-    return budgets.find(
-      (b) =>
-        b.budget?.periodType === selectedPeriod &&
-        b.budget.currencyId === selectedCurrencyIdNum
-    );
-  }, [budgets, selectedPeriod, selectedCurrencyIdNum]);
+    return budgets.find((b) => b.budget.currencyId === selectedCurrencyIdNum);
+  }, [budgets, selectedCurrencyIdNum]);
 
   const progress = activeBudget?.progress;
-  const forecastCurrencyId = activeBudget?.budget?.currencyId;
-
-  const forecastUrl =
-    canvas && forecastCurrencyId
-      ? `${API_ROUTES.CANVAS_BUDGETS_FORECAST(canvas)}?currencyId=${forecastCurrencyId}&startDate=${addDaysIso(0)}&endDate=${addDaysIso(30)}`
-      : "";
-
-  const { data: forecastRes, isLoading: forecastLoading } = useQueryApi<{
-    forecast?: import("./types").CashFlowForecast;
-  }>(forecastUrl, {
-    queryKey: ["forecast", canvas, forecastCurrencyId],
-    enabled: !!canvas && !!forecastCurrencyId,
-  });
+  const hasAnyBudget = budgets.length > 0;
 
   const deleteMutation = useMutationApi(
     (budgetId: number) => API_ROUTES.CANVAS_BUDGETS_DELETE(canvas!, budgetId),
@@ -205,9 +196,18 @@ export default function BudgetPlanningPage() {
   return (
     <Container>
       <Stack gap={8} className="pb-10">
-        <Stack gap={2}>
-          <Typography variant="display">{t("title")}</Typography>
-          <Typography variant="muted">{t("subtitle")}</Typography>
+        <Stack direction="row" justify="between" align="start" className="gap-4">
+          <Stack gap={2} className="min-w-0">
+            <Typography variant="display">{t("title")}</Typography>
+            <Typography variant="muted">{t("subtitle")}</Typography>
+          </Stack>
+          <div className="w-44 shrink-0 sm:w-52">
+            <SystemCurrencySelect
+              value={selectedCurrencyId}
+              onValueChange={setSelectedCurrencyId}
+              className="h-11"
+            />
+          </div>
         </Stack>
 
         {/* Budgets section */}
@@ -216,200 +216,165 @@ export default function BudgetPlanningPage() {
             <div>
               <Stack gap={1} className="sm:flex-row sm:items-center">
                 <Typography variant="heading">{t("sections.budgets")}</Typography>
-                {budgets.length > 0 && (
+                {hasAnyBudget && (
                   <Badge variant="secondary">{budgets.length}</Badge>
                 )}
               </Stack>
               <Typography variant="muted-sm">{t("sections.budgetsDescription")}</Typography>
             </div>
-            {canEdit && budgets.length > 0 && (
-              <Button variant="outline" size="sm" onClick={openCreateBudget}>
+            {canEdit && hasAnyBudget && (
+              <Button size="sm" onClick={openCreateBudget}>
                 {t("empty.createBudget")}
               </Button>
             )}
           </Stack>
 
-          {budgets.length === 0 ? (
+          {!hasAnyBudget ? (
             <BudgetSectionEmpty onCreate={openCreateBudget} canEdit={canEdit} />
+          ) : !activeBudget ? (
+            <BudgetSectionEmpty
+              onCreate={openCreateBudget}
+              canEdit={canEdit}
+              currencyCode={selectedCurrencyCode}
+            />
           ) : (
             <Stack gap={4}>
-              <div className="flex items-stretch gap-3">
-                <div className="w-44 shrink-0 sm:w-52">
-                  <SystemCurrencySelect
-                    value={selectedCurrencyId}
-                    onValueChange={setSelectedCurrencyId}
-                    className="h-11"
-                  />
-                </div>
-                <BudgetPeriodTabs
-                  value={selectedPeriod}
-                  onValueChange={setSelectedPeriod}
-                />
-              </div>
-
-              {!activeBudget ? (
-                <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-                  <Typography variant="muted-sm" className="mb-3">
-                    {t("empty.budgetDescription")}
-                  </Typography>
+              <Card className="rounded-xl shadow-sm">
+                <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+                  <CardTitle className="text-base">
+                    {activeBudget.budget.name ??
+                      `${t("period.monthly")} · ${progress?.currencyCode}`}
+                  </CardTitle>
                   {canEdit && (
-                    <Button size="sm" onClick={openCreateBudget}>
-                      {t("empty.createBudget")}
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 shrink-0 text-muted-foreground"
+                        >
+                          <MoreVertical className="size-4" />
+                          <span className="sr-only">{tc("actions.openMenu")}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={openEditBudget}>
+                          <Pencil className="size-4" />
+                          {t("actions.editLimits")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setDeleteBudgetId(activeBudget.budget.id)}
+                        >
+                          <Trash2 className="size-4" />
+                          {t("actions.deleteBudget")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
-                </div>
-              ) : (
-                <Tabs defaultValue="overview">
-                  <TabsList>
-                    <TabsTrigger value="overview">{t("tabs.overview")}</TabsTrigger>
-                    <TabsTrigger value="categories">{t("tabs.categories")}</TabsTrigger>
-                    <TabsTrigger value="forecast">{t("tabs.forecast")}</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="overview" className="mt-4">
-                    <Card className="rounded-xl shadow-sm">
-                      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-                        <CardTitle className="text-base">
-                          {activeBudget.budget.name ??
-                            `${t(`period.${activeBudget.budget.periodType}`)} · ${progress?.currencyCode}`}
-                        </CardTitle>
-                        {canEdit && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 shrink-0 text-muted-foreground"
-                              >
-                                <MoreVertical className="size-4" />
-                                <span className="sr-only">{tc("actions.openMenu")}</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={openEditBudget}>
-                                <Pencil className="size-4" />
-                                {t("actions.editLimits")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteBudgetId(activeBudget.budget.id)}
-                              >
-                                <Trash2 className="size-4" />
-                                {t("actions.deleteBudget")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                          {progress && (
-                            <>
-                              <BudgetProgressBar
-                                percent={progress.totalPercent}
-                                threshold={progress.alertThresholdPercent}
-                                label={t("labels.limit")}
-                              />
-                              <div className="grid gap-4 sm:grid-cols-3">
-                                <div>
-                                  <Typography variant="muted-sm">{t("labels.spent")}</Typography>
-                                  <Typography variant="stat" className="text-lg">
-                                    {formatCurrency(
-                                      progress.totalSpent,
-                                      progress.currencySymbol,
-                                      { preset: "compact" }
-                                    )}
-                                  </Typography>
-                                </div>
-                                <div>
-                                  <Typography variant="muted-sm">{t("labels.left")}</Typography>
-                                  <Typography variant="stat" className="text-lg">
-                                    {formatCurrency(
-                                      progress.totalRemaining,
-                                      progress.currencySymbol,
-                                      { preset: "compact" }
-                                    )}
-                                  </Typography>
-                                </div>
-                                <div>
-                                  <Typography variant="muted-sm">{t("labels.limit")}</Typography>
-                                  <Typography variant="stat" className="text-lg">
-                                    {formatCurrency(
-                                      progress.totalLimit,
-                                      progress.currencySymbol,
-                                      { preset: "compact" }
-                                    )}
-                                  </Typography>
-                                </div>
-                              </div>
-                              <Typography variant="muted-sm">{t("labels.paidDateHint")}</Typography>
-                              {progress.unscheduledPaymentCount > 0 && (
-                                <Typography variant="muted-sm">
-                                  {t("labels.scheduledNotCounted", {
-                                    count: progress.unscheduledPaymentCount,
-                                  })}
-                                </Typography>
-                              )}
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="categories" className="mt-4">
-                      {progress?.lines.length === 0 ? (
-                        <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-                          <Typography variant="muted-sm" className="mb-3">
-                            {t("actions.addCategoryLimit")}
-                          </Typography>
-                          {canEdit && (
-                            <Button size="sm" variant="outline" onClick={openEditBudget}>
-                              {t("actions.editLimits")}
-                            </Button>
-                          )}
-                        </div>
-                      ) : (
-                        <Stack gap={3}>
-                          {progress?.lines.map((line) => (
-                            <div
-                              key={line.lineId}
-                              className="rounded-xl border bg-card p-4 shadow-sm"
-                            >
-                              <Stack gap={3}>
-                                <Typography variant="label">{line.categoryName}</Typography>
-                                <BudgetProgressBar
-                                  percent={line.percent}
-                                  threshold={line.alertThresholdPercent}
-                                />
-                                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                  <span>
-                                    {t("labels.spent")}:{" "}
-                                    {formatCurrency(line.spent, undefined, { preset: "compact" })}
-                                  </span>
-                                  <span>
-                                    {t("labels.left")}:{" "}
-                                    {formatCurrency(line.remaining, undefined, {
-                                      preset: "compact",
-                                    })}
-                                  </span>
-                                  <span>
-                                    {t("labels.limit")}:{" "}
-                                    {formatCurrency(line.limit, undefined, { preset: "compact" })}
-                                  </span>
-                                </div>
-                              </Stack>
-                            </div>
-                          ))}
-                        </Stack>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="forecast" className="mt-4">
-                      <ForecastChart
-                        forecast={forecastRes?.forecast}
-                        isLoading={forecastLoading}
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {progress && (
+                    <>
+                      <BudgetProgressBar
+                        percent={progress.totalPercent}
+                        threshold={progress.alertThresholdPercent}
+                        label={t("labels.limit")}
                       />
-                    </TabsContent>
-                  </Tabs>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                          <Typography variant="muted-sm">{t("labels.spent")}</Typography>
+                          <Typography variant="stat" className="text-lg">
+                            {formatCurrency(
+                              progress.totalSpent,
+                              progress.currencySymbol,
+                              { preset: "compact" }
+                            )}
+                          </Typography>
+                        </div>
+                        <div>
+                          <Typography variant="muted-sm">{t("labels.left")}</Typography>
+                          <Typography variant="stat" className="text-lg">
+                            {formatCurrency(
+                              progress.totalRemaining,
+                              progress.currencySymbol,
+                              { preset: "compact" }
+                            )}
+                          </Typography>
+                        </div>
+                        <div>
+                          <Typography variant="muted-sm">{t("labels.limit")}</Typography>
+                          <Typography variant="stat" className="text-lg">
+                            {formatCurrency(
+                              progress.totalLimit,
+                              progress.currencySymbol,
+                              { preset: "compact" }
+                            )}
+                          </Typography>
+                        </div>
+                      </div>
+                      <Typography variant="muted-sm">{t("labels.paidDateHint")}</Typography>
+                      {progress.unscheduledPaymentCount > 0 && (
+                        <Typography variant="muted-sm">
+                          {t("labels.scheduledNotCounted", {
+                            count: progress.unscheduledPaymentCount,
+                          })}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {progress && (
+                <Stack gap={3}>
+                  {progress.lines.length > 0 && (
+                    <Typography variant="label">{t("labels.categoryBudgets")}</Typography>
+                  )}
+                  {progress.lines.length === 0 ? (
+                    <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
+                      <Typography variant="muted-sm" className="mb-3">
+                        {t("actions.addCategoryLimit")}
+                      </Typography>
+                      {canEdit && (
+                        <Button size="sm" onClick={openEditBudget}>
+                          {t("actions.addCategoryLimit")}
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    progress.lines.map((line) => (
+                      <div
+                        key={line.lineId}
+                        className="rounded-xl border bg-card p-4 shadow-sm"
+                      >
+                        <Stack gap={3}>
+                          <Typography variant="label">{line.categoryName}</Typography>
+                          <BudgetProgressBar
+                            percent={line.percent}
+                            threshold={line.alertThresholdPercent}
+                          />
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <span>
+                              {t("labels.spent")}:{" "}
+                              {formatCurrency(line.spent, undefined, { preset: "compact" })}
+                            </span>
+                            <span>
+                              {t("labels.left")}:{" "}
+                              {formatCurrency(line.remaining, undefined, {
+                                preset: "compact",
+                              })}
+                            </span>
+                            <span>
+                              {t("labels.limit")}:{" "}
+                              {formatCurrency(line.limit, undefined, { preset: "compact" })}
+                            </span>
+                          </div>
+                        </Stack>
+                      </div>
+                    ))
+                  )}
+                </Stack>
               )}
             </Stack>
           )}
@@ -428,7 +393,7 @@ export default function BudgetPlanningPage() {
               <Typography variant="muted-sm">{t("sections.goalsDescription")}</Typography>
             </div>
             {canEdit && goalsByStatus.active.length > 0 && (
-              <Button variant="outline" size="sm" onClick={openCreateGoal}>
+              <Button size="sm" onClick={openCreateGoal}>
                 {t("empty.addGoal")}
               </Button>
             )}
@@ -506,7 +471,6 @@ export default function BudgetPlanningPage() {
         onOpenChange={handleBudgetModalOpenChange}
         editBudget={editBudget}
         existingBudgets={budgets}
-        defaultPeriodType={selectedPeriod}
         defaultCurrencyId={selectedCurrencyIdNum ?? undefined}
         canEdit={canEdit}
       />
@@ -515,7 +479,7 @@ export default function BudgetPlanningPage() {
         open={goalModalOpen}
         onOpenChange={handleGoalModalOpenChange}
         canvasId={canvas}
-        defaultCurrencyId={forecastCurrencyId}
+        defaultCurrencyId={selectedCurrencyIdNum ?? undefined}
         editGoal={editGoal}
         canEdit={canEdit}
       />

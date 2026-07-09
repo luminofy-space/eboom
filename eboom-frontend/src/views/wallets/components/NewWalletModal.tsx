@@ -101,6 +101,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
         API_ROUTES.CANVASES_WALLETS_CREATE(canvas ?? -1),
         {
             method: "post",
+            successKey: "success.wallet.created",
             hasToken: true,
         }
     );
@@ -109,6 +110,7 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
         editingItem && canvas ? API_ROUTES.WALLETS_UPDATE(canvas, editingItem.id) : "",
         {
             method: "put",
+            successKey: "success.wallet.updated",
             hasToken: true,
         }
     );

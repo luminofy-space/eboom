@@ -54,17 +54,17 @@ export function useCanvasInvitations() {
 
   const { mutateAsync: acceptInvitation, isPending: isAccepting } = useMutationApi(
     (id: number) => API_ROUTES.CANVAS_INVITATIONS_ACCEPT(id),
-    { method: "post", onSuccess: invalidate, invalidateQueries: false }
+    { method: "post", successKey: "success.member.invitationAccepted", onSuccess: invalidate, invalidateQueries: false }
   );
 
   const { mutateAsync: declineInvitation, isPending: isDeclining } = useMutationApi(
     (id: number) => API_ROUTES.CANVAS_INVITATIONS_DECLINE(id),
-    { method: "post", onSuccess: invalidate, invalidateQueries: false }
+    { method: "post", successKey: "success.member.invitationDeclined", onSuccess: invalidate, invalidateQueries: false }
   );
 
   const { mutateAsync: cancelInvitation, isPending: isCancelling } = useMutationApi(
     (id: number) => API_ROUTES.CANVAS_INVITATIONS_CANCEL(id),
-    { method: "delete", onSuccess: invalidate, invalidateQueries: false }
+    { method: "delete", successKey: "success.member.invitationCancelled", onSuccess: invalidate, invalidateQueries: false }
   );
 
   const sent = sentData?.invitations ?? [];

@@ -17,6 +17,8 @@ import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/wh
 import { listTransfersForWallet } from "../services/transferService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
 
@@ -35,13 +37,13 @@ router.get(
     const canvasId = req.canvasId!;
     const walletId = parseRouteParam(req.params.walletId);
     if (Number.isNaN(walletId)) {
-      return res.status(400).json({ error: "Invalid wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidWallet, 400);
     }
 
     try {
       const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(404).json({ error: "Wallet not found" });
+        return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
       const entries = await db
@@ -56,10 +58,14 @@ router.get(
           receivedDate: incomeEntries.receivedDate,
           notes: incomeEntries.notes,
           createdAt: incomeEntries.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(incomeEntries)
         .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
         .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+        .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
         .where(eq(incomeEntries.destinationWalletId, walletId));
 
       res.json({
@@ -69,7 +75,7 @@ router.get(
       });
     } catch (err) {
       console.error("Error fetching income entries:", err);
-      res.status(500).json({ error: "Failed to fetch income entries" });
+      sendError(res, ErrorKeys.income.entryFetchFailed, 500);
     }
   }
 );
@@ -81,13 +87,13 @@ router.get(
     const canvasId = req.canvasId!;
     const walletId = parseRouteParam(req.params.walletId);
     if (Number.isNaN(walletId)) {
-      return res.status(400).json({ error: "Invalid wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidWallet, 400);
     }
 
     try {
       const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(404).json({ error: "Wallet not found" });
+        return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
       const payments = await db
@@ -102,10 +108,14 @@ router.get(
           paidDate: expensePayments.paidDate,
           notes: expensePayments.notes,
           createdAt: expensePayments.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(expensePayments)
         .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
         .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+        .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
         .where(eq(expensePayments.sourceWalletId, walletId));
 
       res.json({
@@ -115,7 +125,7 @@ router.get(
       });
     } catch (err) {
       console.error("Error fetching expense payments:", err);
-      res.status(500).json({ error: "Failed to fetch expense payments" });
+      sendError(res, ErrorKeys.expense.paymentFetchFailed, 500);
     }
   }
 );
@@ -127,13 +137,13 @@ router.get(
     const canvasId = req.canvasId!;
     const walletId = parseRouteParam(req.params.walletId);
     if (Number.isNaN(walletId)) {
-      return res.status(400).json({ error: "Invalid wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidWallet, 400);
     }
 
     try {
       const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(404).json({ error: "Wallet not found" });
+        return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
       const transfersList = await listTransfersForWallet(walletId);
@@ -144,7 +154,7 @@ router.get(
       });
     } catch (err) {
       console.error("Error fetching wallet transfers:", err);
-      res.status(500).json({ error: "Failed to fetch wallet transfers" });
+      sendError(res, ErrorKeys.transfer.fetchFailed, 500);
     }
   }
 );
@@ -156,13 +166,13 @@ router.get(
     const canvasId = req.canvasId!;
     const walletId = parseRouteParam(req.params.walletId);
     if (Number.isNaN(walletId)) {
-      return res.status(400).json({ error: "Invalid wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidWallet, 400);
     }
 
     try {
       const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(404).json({ error: "Wallet not found" });
+        return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
       const incomeData = await db
@@ -177,10 +187,14 @@ router.get(
           receivedDate: incomeEntries.receivedDate,
           notes: incomeEntries.notes,
           createdAt: incomeEntries.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(incomeEntries)
         .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
         .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+        .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
         .where(eq(incomeEntries.destinationWalletId, walletId));
 
       const expenseData = await db
@@ -195,10 +209,14 @@ router.get(
           paidDate: expensePayments.paidDate,
           notes: expensePayments.notes,
           createdAt: expensePayments.createdAt,
+          currencyId: currencies.id,
+          currencyCode: currencies.code,
+          currencySymbol: currencies.symbol,
         })
         .from(expensePayments)
         .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
         .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+        .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
         .where(eq(expensePayments.sourceWalletId, walletId));
 
       const transferData = (await listTransfersForWallet(walletId)).map((transfer) => ({
@@ -238,7 +256,7 @@ router.get(
       });
     } catch (err) {
       console.error("Error fetching transactions:", err);
-      res.status(500).json({ error: "Failed to fetch transactions" });
+      sendError(res, ErrorKeys.common.internal, 500);
     }
   }
 );
@@ -250,13 +268,13 @@ router.get(
     const canvasId = req.canvasId!;
     const walletId = parseRouteParam(req.params.walletId);
     if (Number.isNaN(walletId)) {
-      return res.status(400).json({ error: "Invalid wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidWallet, 400);
     }
 
     try {
       const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(404).json({ error: "Wallet not found" });
+        return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
       const subWalletRows = await db
@@ -273,7 +291,7 @@ router.get(
       });
     } catch (err) {
       console.error("Error fetching sub-wallets:", err);
-      res.status(500).json({ error: "Failed to fetch sub-wallets" });
+      sendError(res, ErrorKeys.wallet.fetchFailed, 500);
     }
   }
 );
@@ -313,7 +331,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
     res.json({ wallets: formattedWallets, items: formattedWallets, total, page, limit });
   } catch (err) {
     console.error("Error fetching wallets:", err);
-    res.status(500).json({ error: "Failed to fetch wallets" });
+    sendError(res, ErrorKeys.wallet.fetchFailed, 500);
   }
 });
 
@@ -324,14 +342,12 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   const { name, walletCategoryId, description, photoUrl } = req.body;
 
   if (!name || !walletCategoryId) {
-    return res.status(400).json({
-      error: "Wallet name and category are required",
-    });
+    return sendError(res, ErrorKeys.validation.failed, 400);
   }
 
   const parsedWalletCategoryId = Number(walletCategoryId);
   if (Number.isNaN(parsedWalletCategoryId)) {
-    return res.status(400).json({ error: "Invalid wallet category ID" });
+    return sendError(res, ErrorKeys.common.invalidId, 400);
   }
 
   try {
@@ -354,7 +370,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     res.status(201).json({ wallet: newWallet });
   } catch (err) {
     console.error("Error creating wallet:", err);
-    res.status(500).json({ error: "Failed to create wallet" });
+    sendError(res, ErrorKeys.wallet.createFailed, 500);
   }
 });
 
@@ -362,7 +378,7 @@ router.get("/:walletId", requireCanvasAccess("view"), async (req: Request, res: 
   const canvasId = req.canvasId!;
   const walletId = parseRouteParam(req.params.walletId);
   if (Number.isNaN(walletId)) {
-    return res.status(400).json({ error: "Invalid wallet ID" });
+    return sendError(res, ErrorKeys.validation.invalidWallet, 400);
   }
 
   try {
@@ -373,7 +389,7 @@ router.get("/:walletId", requireCanvasAccess("view"), async (req: Request, res: 
       .where(eq(wallets.id, walletId));
 
     if (!walletRecord || walletRecord.wallet.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Wallet not found" });
+      return sendError(res, ErrorKeys.wallet.notFound, 404);
     }
 
     const subWalletRows = await db
@@ -394,7 +410,7 @@ router.get("/:walletId", requireCanvasAccess("view"), async (req: Request, res: 
     });
   } catch (err) {
     console.error("Error fetching wallet:", err);
-    res.status(500).json({ error: "Failed to fetch wallet" });
+    sendError(res, ErrorKeys.wallet.fetchFailed, 500);
   }
 });
 
@@ -403,7 +419,7 @@ router.put("/:walletId", requireCanvasAccess("edit"), async (req: Request, res: 
   const user = req.appUser!;
   const walletId = parseRouteParam(req.params.walletId);
   if (Number.isNaN(walletId)) {
-    return res.status(400).json({ error: "Invalid wallet ID" });
+    return sendError(res, ErrorKeys.validation.invalidWallet, 400);
   }
 
   const { name, walletCategoryId, description, photoUrl, isArchived } = req.body;
@@ -411,13 +427,13 @@ router.put("/:walletId", requireCanvasAccess("edit"), async (req: Request, res: 
   try {
     const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Wallet not found" });
+      return sendError(res, ErrorKeys.wallet.notFound, 404);
     }
 
     const parsedWalletCategoryId =
       walletCategoryId !== undefined ? Number(walletCategoryId) : undefined;
     if (parsedWalletCategoryId !== undefined && Number.isNaN(parsedWalletCategoryId)) {
-      return res.status(400).json({ error: "Invalid wallet category ID" });
+      return sendError(res, ErrorKeys.common.invalidId, 400);
     }
 
     const [updatedWallet] = await db
@@ -437,7 +453,7 @@ router.put("/:walletId", requireCanvasAccess("edit"), async (req: Request, res: 
     res.json({ wallet: updatedWallet });
   } catch (err) {
     console.error("Error updating wallet:", err);
-    res.status(500).json({ error: "Failed to update wallet" });
+    sendError(res, ErrorKeys.wallet.updateFailed, 500);
   }
 });
 
@@ -446,13 +462,13 @@ router.delete("/:walletId", requireCanvasAccess("edit"), async (req: Request, re
   const user = req.appUser!;
   const walletId = parseRouteParam(req.params.walletId);
   if (Number.isNaN(walletId)) {
-    return res.status(400).json({ error: "Invalid wallet ID" });
+    return sendError(res, ErrorKeys.validation.invalidWallet, 400);
   }
 
   try {
     const [existing] = await db.select().from(wallets).where(eq(wallets.id, walletId));
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Wallet not found" });
+      return sendError(res, ErrorKeys.wallet.notFound, 404);
     }
 
     await db
@@ -469,7 +485,7 @@ router.delete("/:walletId", requireCanvasAccess("edit"), async (req: Request, re
     res.json({ message: "Wallet archived successfully" });
   } catch (err) {
     console.error("Error deleting wallet:", err);
-    res.status(500).json({ error: "Failed to delete wallet" });
+    sendError(res, ErrorKeys.wallet.deleteFailed, 500);
   }
 });
 

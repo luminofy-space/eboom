@@ -6,7 +6,7 @@ import {
 import type {
   CanvasSummaryExpensePayment,
   CanvasSummaryIncomeEntry,
-} from "../types";
+} from "@/src/types/dashboard";
 
 export interface CashFlowChartPoint {
   date: string;

@@ -33,6 +33,8 @@ if (!i18n.isInitialized) {
         "budget-planning",
         "ai-insights",
         "landing",
+        "errors",
+        "success",
       ],
       defaultNS: "common",
       detection: {

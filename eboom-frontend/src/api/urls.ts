@@ -112,6 +112,24 @@ const API_ROUTES = {
     `/api/canvases/${canvasId}/assets/${assetId}/`,
   ASSETS_DELETE: (canvasId: number, assetId: number) =>
     `/api/canvases/${canvasId}/assets/${assetId}/`,
+  ASSET_VOLUMES_LIST: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/volumes/`,
+  ASSET_VOLUMES_CREATE: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/volumes/`,
+  ASSET_VOLUMES_UPDATE: (canvasId: number, assetId: number, volumeId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/volumes/${volumeId}/`,
+  ASSET_VOLUMES_DELETE: (canvasId: number, assetId: number, volumeId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/volumes/${volumeId}/`,
+  ASSET_PRICE_POINTS_LIST: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/price-points/`,
+  ASSET_PRICE_POINTS_CREATE: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/price-points/`,
+  ASSET_PRICE_POINTS_UPDATE: (canvasId: number, assetId: number, pricePointId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/price-points/${pricePointId}/`,
+  ASSET_PRICE_POINTS_DELETE: (canvasId: number, assetId: number, pricePointId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/price-points/${pricePointId}/`,
+  ASSET_VALUATION_SERIES: (canvasId: number, assetId: number) =>
+    `/api/canvases/${canvasId}/assets/${assetId}/valuation-series/`,
 
   // Canvas-scoped transfers
   CANVAS_TRANSFERS_LIST: (canvasId: number) => `/api/canvases/${canvasId}/transfers/`,

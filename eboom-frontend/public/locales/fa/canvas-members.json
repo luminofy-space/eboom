@@ -5,15 +5,26 @@
     "visitor": "بازدیدکننده",
     "owner": "مالک"
   },
+  "actions": {
+    "menu": "اقدامات بوم",
+    "inviteMember": "دعوت عضو",
+    "editCanvas": "ویرایش جزئیات بوم",
+    "deleteCanvas": "حذف بوم",
+    "addMember": "افزودن عضو"
+  },
   "members": {
-    "title": "مدیریت اعضا",
-    "description": "افراد را دعوت کنید و نقش‌ها را برای این بوم مدیریت کنید.",
+    "title": "مدیریت بوم",
+    "description": "جزئیات بوم را مشاهده کنید و اعضای این بوم را مدیریت کنید.",
     "canvasType": "نوع: {{type}}",
     "canvasDetails": "نمای کلی بوم",
+    "canvasMembers": "اعضای بوم",
+    "canvasMembersDescription": "افرادی که به این بوم دسترسی دارند.",
     "currentMembers": "اعضای فعلی",
     "currentMembersDescription": "افرادی که به این بوم دسترسی دارند.",
     "pendingInvitations": "دعوت‌نامه‌های در انتظار",
     "pendingInvitationsDescription": "دعوت‌نامه‌هایی که منتظر پاسخ هستند.",
+    "showPendingInvitations": "نمایش دعوت‌نامه‌های در انتظار",
+    "hidePendingInvitations": "پنهان کردن دعوت‌نامه‌های در انتظار",
     "inviteSectionDescription": "افراد را از بوم‌های دیگر یا با ایمیل اضافه کنید.",
     "noPendingInvitations": "دعوت‌نامه در انتظاری وجود ندارد.",
     "invitedMember": "عضو دعوت‌شده",
@@ -76,7 +87,7 @@
     "ownerBlocked": "مالک نمی‌تواند خارج شود. بوم را حذف کنید یا مالکیت را منتقل کنید."
   },
   "switcher": {
-    "manageMembers": "مدیریت اعضا",
+    "manageMembers": "مدیریت بوم",
     "leaveCanvas": "ترک بوم"
   }
 }

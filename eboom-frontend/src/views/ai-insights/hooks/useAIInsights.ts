@@ -6,7 +6,7 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { AiInsightsResponse } from "../types";
+import type { AiInsightsResponse } from "@/src/types/ai-insights";
 
 export function useAIInsights() {
   const { canvas } = useCanvas();

@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAuthContext } from "@/src/components/AuthProvider";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 
@@ -33,7 +32,6 @@ interface SignupFormData {
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation("auth");
 
   const {
@@ -47,22 +45,20 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
 
   const { signup, isSignupPending } = useAuthContext();
 
-  const onSubmit = (data: SignupFormData) => {
-    signup({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      password: data.password,
-    })
-      .then((res) => {
-        router.replace(
-          res?.user?.emailVerified ? "/dashboard" : "/confirm-email"
-        );
-      })
-      .catch((error) => {
-        console.error("error", error);
-        setError(error.message);
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      const res = await signup({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
       });
+      router.replace(
+        res?.user?.emailVerified ? "/dashboard" : "/confirm-email"
+      );
+    } catch {
+      // API failures are shown via the global notistack snackbar.
+    }
   };
 
   return (
@@ -74,11 +70,6 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
-            {error && (
-              <Field>
-                <div className="text-sm text-destructive">{error}</div>
-              </Field>
-            )}
             <Field>
               <FieldLabel htmlFor="firstName">{t("signup.firstName.label")}</FieldLabel>
               <Input

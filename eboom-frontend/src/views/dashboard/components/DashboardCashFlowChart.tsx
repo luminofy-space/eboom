@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Card,
@@ -28,11 +28,19 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
-import { formatDate, formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import { MultiCurrencyChartTooltip } from "@/src/components/charts/MultiCurrencyChartTooltip";
+import { formatDate } from "@/src/i18n/formatters";
+import {
+  formatChartScaleTick,
+  getRawSeriesValue,
+  transformSeriesForScaleMode,
+  type ChartScaleMode,
+} from "@/src/utils/chartScale";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import {
   assignCurrencyChartColors,
   buildMultiCurrencySeriesKeys,
+  getCurrencyColorMap,
   getCurrencyFromSeriesKey,
   isPaidSeriesKey,
 } from "../utils/assignCurrencyChartColors";
@@ -55,6 +63,7 @@ export function DashboardCashFlowChart({
   const emDash = tc("empty.emDash");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
+  const [scaleMode, setScaleMode] = React.useState<ChartScaleMode>("loglike");
 
   const currencyStats = React.useMemo(
     () => (summary ? computeDashboardStatsByCurrency(summary) : []),
@@ -72,6 +81,11 @@ export function DashboardCashFlowChart({
         currencyStats.map((item) => [item.currencyCode, item.currencySymbol])
       ),
     [currencyStats]
+  );
+
+  const colorByCurrency = React.useMemo(
+    () => getCurrencyColorMap(currencyCodes),
+    [currencyCodes]
   );
 
   const seriesKeys = React.useMemo(
@@ -104,7 +118,7 @@ export function DashboardCashFlowChart({
     }
   }, [isMobile]);
 
-  const chartData = React.useMemo(
+  const rawChartData = React.useMemo(
     () =>
       summary
         ? buildMultiCurrencyCashFlowChartData(
@@ -117,16 +131,26 @@ export function DashboardCashFlowChart({
     [summary, timeRange, currencyCodes]
   );
 
+  const displayChartData = React.useMemo(
+    () => transformSeriesForScaleMode(rawChartData, seriesKeys, scaleMode),
+    [rawChartData, seriesKeys, scaleMode]
+  );
+
+  const rawChartByDate = React.useMemo(
+    () => new Map(rawChartData.map((point) => [String(point.date), point])),
+    [rawChartData]
+  );
+
   const rangeTotal = React.useMemo(
     () =>
-      chartData.reduce((sum, point) => {
+      rawChartData.reduce((sum, point) => {
         let pointTotal = 0;
         for (const key of seriesKeys) {
           pointTotal += Number(point[key]) || 0;
         }
         return sum + pointTotal;
       }, 0),
-    [chartData, seriesKeys]
+    [rawChartData, seriesKeys]
   );
 
   const timeRangeLabel =
@@ -163,37 +187,55 @@ export function DashboardCashFlowChart({
           <span className="@[540px]/card:hidden">{timeRangeLabel}</span>
         </CardDescription>
         <CardAction>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={(value) => value && setTimeRange(value)}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">{tc("chart.last3Months")}</ToggleGroupItem>
-            <ToggleGroupItem value="30d">{tc("chart.last30Days")}</ToggleGroupItem>
-            <ToggleGroupItem value="7d">{tc("chart.last7Days")}</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label={tc("chart.selectTimeRange")}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <ToggleGroup
+              type="single"
+              value={scaleMode}
+              onValueChange={(value) =>
+                value && setScaleMode(value as ChartScaleMode)
+              }
+              variant="outline"
+              className="*:data-[slot=toggle-group-item]:!px-3"
             >
-              <SelectValue placeholder={tc("chart.last3Months")} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                {tc("chart.last3Months")}
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                {tc("chart.last30Days")}
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                {tc("chart.last7Days")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+              <ToggleGroupItem value="linear">
+                {tc("chart.scale.linear")}
+              </ToggleGroupItem>
+              <ToggleGroupItem value="loglike">
+                {tc("chart.scale.loglike")}
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <ToggleGroup
+              type="single"
+              value={timeRange}
+              onValueChange={(value) => value && setTimeRange(value)}
+              variant="outline"
+              className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+            >
+              <ToggleGroupItem value="90d">{tc("chart.last3Months")}</ToggleGroupItem>
+              <ToggleGroupItem value="30d">{tc("chart.last30Days")}</ToggleGroupItem>
+              <ToggleGroupItem value="7d">{tc("chart.last7Days")}</ToggleGroupItem>
+            </ToggleGroup>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+                size="sm"
+                aria-label={tc("chart.selectTimeRange")}
+              >
+                <SelectValue placeholder={tc("chart.last3Months")} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="90d" className="rounded-lg">
+                  {tc("chart.last3Months")}
+                </SelectItem>
+                <SelectItem value="30d" className="rounded-lg">
+                  {tc("chart.last30Days")}
+                </SelectItem>
+                <SelectItem value="7d" className="rounded-lg">
+                  {tc("chart.last7Days")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -201,7 +243,7 @@ export function DashboardCashFlowChart({
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
-          <LineChart data={chartData}>
+          <LineChart data={displayChartData}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -213,11 +255,23 @@ export function DashboardCashFlowChart({
                 formatDate(value, { preset: "monthDay", fallback: emDash })
               }
             />
+            {scaleMode === "loglike" && (
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={52}
+                tickFormatter={(value) =>
+                  formatChartScaleTick(Number(value), scaleMode)
+                }
+              />
+            )}
             <ChartTooltip
               cursor={false}
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
 
+                const rawPoint = rawChartByDate.get(String(label));
                 const byCurrency = new Map<
                   string,
                   { received?: number; paid?: number }
@@ -226,48 +280,53 @@ export function DashboardCashFlowChart({
                 for (const item of payload) {
                   const key = String(item.dataKey);
                   const currency = getCurrencyFromSeriesKey(key);
+                  const raw = getRawSeriesValue(rawPoint, key);
+                  if (raw <= 0) continue;
+
                   const entry = byCurrency.get(currency) ?? {};
                   if (isPaidSeriesKey(key)) {
-                    entry.paid = Number(item.value) || 0;
+                    entry.paid = raw;
                   } else {
-                    entry.received = Number(item.value) || 0;
+                    entry.received = raw;
                   }
                   byCurrency.set(currency, entry);
                 }
 
+                const groups = Array.from(byCurrency.entries()).map(
+                  ([currency, values]) => ({
+                    currency,
+                    color: colorByCurrency[currency] ?? "",
+                    rows: [
+                      ...(values.received != null && values.received > 0
+                        ? [
+                            {
+                              label: t("chart.legend.received"),
+                              amount: values.received,
+                              symbol: symbolByCurrency[currency] ?? currency,
+                            },
+                          ]
+                        : []),
+                      ...(values.paid != null && values.paid > 0
+                        ? [
+                            {
+                              label: t("chart.legend.paid"),
+                              amount: values.paid,
+                              symbol: symbolByCurrency[currency] ?? currency,
+                            },
+                          ]
+                        : []),
+                    ],
+                  })
+                );
+
                 return (
-                  <div className="rounded-lg border bg-background px-3 py-2 text-xs shadow-md">
-                    <div className="mb-2 font-medium">
-                      {formatDate(String(label), { preset: "short", fallback: emDash })}
-                    </div>
-                    <div className="grid gap-2">
-                      {Array.from(byCurrency.entries()).map(([currency, values]) => (
-                        <div key={currency} className="grid gap-1">
-                          <div className="font-medium">{currency}</div>
-                          {values.received != null && values.received > 0 && (
-                            <div className="flex justify-between gap-4 tabular-nums">
-                              <span className="text-muted-foreground">
-                                {t("chart.legend.received")}
-                              </span>
-                              <span>
-                                {formatMoney(values.received, symbolByCurrency[currency])}
-                              </span>
-                            </div>
-                          )}
-                          {values.paid != null && values.paid > 0 && (
-                            <div className="flex justify-between gap-4 tabular-nums">
-                              <span className="text-muted-foreground">
-                                {t("chart.legend.paid")}
-                              </span>
-                              <span>
-                                {formatMoney(values.paid, symbolByCurrency[currency])}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <MultiCurrencyChartTooltip
+                    dateLabel={formatDate(String(label), {
+                      preset: "short",
+                      fallback: emDash,
+                    })}
+                    groups={groups}
+                  />
                 );
               }}
             />

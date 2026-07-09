@@ -14,6 +14,8 @@ import {
   resolveRoleIdByName,
 } from "../services/canvasAccessService";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
 
@@ -54,7 +56,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
     });
   } catch (err) {
     console.error("Error fetching canvas members:", err);
-    res.status(500).json({ error: "Failed to fetch canvas members" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -105,7 +107,7 @@ router.get("/invitations/", requireCanvasAccess("view"), async (req: Request, re
     });
   } catch (err) {
     console.error("Error fetching canvas invitations:", err);
-    res.status(500).json({ error: "Failed to fetch canvas invitations" });
+    sendError(res, ErrorKeys.invitation.fetchFailed, 500);
   }
 });
 
@@ -187,7 +189,7 @@ router.get("/suggestions/", requireCanvasAccess("manage_members"), async (req: R
     res.json({ users: suggestions });
   } catch (err) {
     console.error("Error fetching invite suggestions:", err);
-    res.status(500).json({ error: "Failed to fetch invite suggestions" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -196,7 +198,7 @@ router.post("/lookup/", requireCanvasAccess("manage_members"), async (req: Reque
 
   const { emails } = req.body as { emails?: string[] };
   if (!Array.isArray(emails) || emails.length === 0) {
-    return res.status(400).json({ error: "emails array is required" });
+    return sendError(res, ErrorKeys.validation.failed, 400);
   }
 
   try {
@@ -211,7 +213,8 @@ router.post("/lookup/", requireCanvasAccess("manage_members"), async (req: Reque
     const missingEmails = normalizedEmails.filter((email) => !usersByEmail.has(email));
     if (missingEmails.length > 0) {
       return res.status(400).json({
-        error: "Some users were not found",
+        errorKey: ErrorKeys.member.notFound,
+        params: { count: missingEmails.length },
         missingEmails,
       });
     }
@@ -230,7 +233,7 @@ router.post("/lookup/", requireCanvasAccess("manage_members"), async (req: Reque
     });
   } catch (err) {
     console.error("Error looking up users:", err);
-    res.status(500).json({ error: "Failed to look up users" });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -243,13 +246,13 @@ router.post("/invitations/", requireCanvasAccess("manage_members"), async (req: 
   };
 
   if (!Array.isArray(invitations) || invitations.length === 0) {
-    return res.status(400).json({ error: "invitations array is required" });
+    return sendError(res, ErrorKeys.validation.failed, 400);
   }
 
   try {
     const [canvas] = await db.select().from(canvases).where(eq(canvases.id, canvasId));
     if (!canvas || canvas.isArchived) {
-      return res.status(404).json({ error: "Canvas not found" });
+      return sendError(res, ErrorKeys.canvas.notFound, 404);
     }
 
     const created: { id: number; email: string; role: string; status: string }[] = [];
@@ -359,13 +362,13 @@ router.post("/invitations/", requireCanvasAccess("manage_members"), async (req: 
     }
 
     if (created.length === 0 && errors.length > 0) {
-      return res.status(400).json({ error: "No invitations created", errors });
+      return res.status(400).json({ errorKey: ErrorKeys.member.inviteFailed, errors });
     }
 
     res.status(201).json({ invitations: created, errors });
   } catch (err) {
     console.error("Error creating invitations:", err);
-    res.status(500).json({ error: "Failed to create invitations" });
+    sendError(res, ErrorKeys.member.inviteFailed, 500);
   }
 });
 
@@ -373,10 +376,10 @@ router.patch("/:memberId/", requireCanvasAccess("manage_members"), async (req: R
   const canvasId = req.canvasId!;
 
   const memberId = parseInt(String(req.params.memberId), 10);
-  if (Number.isNaN(memberId)) return res.status(400).json({ error: "Invalid member ID" });
+  if (Number.isNaN(memberId)) return sendError(res, ErrorKeys.common.invalidId, 400);
 
   const { role } = req.body as { role?: string };
-  if (!role) return res.status(400).json({ error: "role is required" });
+  if (!role) return sendError(res, ErrorKeys.validation.failed, 400);
 
   try {
     const [target] = await db
@@ -386,13 +389,13 @@ router.patch("/:memberId/", requireCanvasAccess("manage_members"), async (req: R
         and(eq(canvasMembers.id, memberId), eq(canvasMembers.canvasId, canvasId))
       );
 
-    if (!target) return res.status(404).json({ error: "Member not found" });
+    if (!target) return sendError(res, ErrorKeys.member.notFound, 404);
     if (target.isOwner) {
-      return res.status(403).json({ error: "Cannot change the owner's role" });
+      return sendError(res, ErrorKeys.member.insufficientPermissions, 403);
     }
 
     const roleId = await resolveRoleIdByName(String(role));
-    if (!roleId) return res.status(400).json({ error: "Invalid role" });
+    if (!roleId) return sendError(res, ErrorKeys.validation.failed, 400);
 
     const [updated] = await db
       .update(canvasMembers)
@@ -403,7 +406,7 @@ router.patch("/:memberId/", requireCanvasAccess("manage_members"), async (req: R
     res.json({ member: updated });
   } catch (err) {
     console.error("Error updating member role:", err);
-    res.status(500).json({ error: "Failed to update member role" });
+    sendError(res, ErrorKeys.member.updateRoleFailed, 500);
   }
 });
 
@@ -411,7 +414,7 @@ router.delete("/:memberId/", requireCanvasAccess("manage_members"), async (req: 
   const canvasId = req.canvasId!;
 
   const memberId = parseInt(String(req.params.memberId), 10);
-  if (Number.isNaN(memberId)) return res.status(400).json({ error: "Invalid member ID" });
+  if (Number.isNaN(memberId)) return sendError(res, ErrorKeys.common.invalidId, 400);
 
   try {
     const [target] = await db
@@ -421,16 +424,16 @@ router.delete("/:memberId/", requireCanvasAccess("manage_members"), async (req: 
         and(eq(canvasMembers.id, memberId), eq(canvasMembers.canvasId, canvasId))
       );
 
-    if (!target) return res.status(404).json({ error: "Member not found" });
+    if (!target) return sendError(res, ErrorKeys.member.notFound, 404);
     if (target.isOwner) {
-      return res.status(403).json({ error: "Cannot remove the canvas owner" });
+      return sendError(res, ErrorKeys.member.insufficientPermissions, 403);
     }
 
     await db.delete(canvasMembers).where(eq(canvasMembers.id, memberId));
     res.json({ message: "Member removed successfully" });
   } catch (err) {
     console.error("Error removing member:", err);
-    res.status(500).json({ error: "Failed to remove member" });
+    sendError(res, ErrorKeys.member.removeFailed, 500);
   }
 });
 
@@ -441,9 +444,7 @@ router.post("/leave/", requireCanvasAccess("view"), async (req: Request, res: Re
 
   try {
     if (membership.isOwner) {
-      return res.status(403).json({
-        error: "Canvas owner cannot leave. Transfer ownership or delete the canvas first.",
-      });
+      return sendError(res, ErrorKeys.member.insufficientPermissions, 403);
     }
 
     await db
@@ -458,7 +459,7 @@ router.post("/leave/", requireCanvasAccess("view"), async (req: Request, res: Re
     res.json({ message: "Left canvas successfully" });
   } catch (err) {
     console.error("Error leaving canvas:", err);
-    res.status(500).json({ error: "Failed to leave canvas" });
+    sendError(res, ErrorKeys.member.leaveFailed, 500);
   }
 });
 

@@ -72,10 +72,10 @@ function compactProfile(profile: AiInsightFinancialContext["profile"]) {
 function compactBudgetSummary(summary: AiInsightFinancialContext["budgetSummary"]) {
   return summary.currencies.slice(0, 3).map((currency) => ({
     c: currency.currencyCode,
-    mo: currency.periods.monthly
+    mo: currency.summary
       ? {
-          pct: Math.round(currency.periods.monthly.totalPercent),
-          over: currency.periods.monthly.isOverLimit,
+          pct: Math.round(currency.summary.totalPercent),
+          over: currency.summary.isOverLimit,
         }
       : null,
   }));
@@ -147,7 +147,7 @@ export function buildCompactLlmContext(
     })),
     a: context.assetsByCurrency.slice(0, 5).map((asset) => ({
       c: asset.currencyCode,
-      v: roundAmount(asset.totalEstimatedValue),
+      v: roundAmount(asset.totalHoldingValue),
       n: asset.count,
     })),
     s: context.categorySpendLast90Days.slice(0, 6).map((row) => ({

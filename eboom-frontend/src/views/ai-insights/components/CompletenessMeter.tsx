@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
-import type { CompletenessBreakdown, CompletenessResult } from "../types";
+import type { CompletenessBreakdown, CompletenessResult } from "@/src/types/ai-insights";
 
 const FACTOR_KEYS: (keyof CompletenessBreakdown)[] = [
   "wizard",

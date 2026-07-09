@@ -58,7 +58,7 @@ export default function AssetsListPage() {
 
   const { mutate: deleteAsset, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.ASSETS_DELETE(canvas!, id),
-    { method: "delete", onSuccess: () => setDeleteId(null) }
+    { method: "delete", successKey: "success.asset.deleted", onSuccess: () => setDeleteId(null) }
   );
 
   const showLoading = isLoading || (isFetching && items.length === 0);
@@ -119,14 +119,14 @@ export default function AssetsListPage() {
           {items.map((asset) => (
             <GridCard
               key={asset.id}
+              href={`/asset/${asset.id}`}
               imageUrl={asset.photoUrl}
               title={asset.name}
               subtitle={formatMoney(
-                asset.estimatedValue ?? "0",
+                asset.currentHoldingValue ?? asset.costBasis ?? "0",
                 asset.currency?.symbol
               )}
               updatedAt={asset.lastModifiedAt}
-              onClick={canEdit ? () => dispatch(openAssetEditModal(asset)) : undefined}
               onEdit={canEdit ? () => dispatch(openAssetEditModal(asset)) : undefined}
               onDelete={canEdit ? () => setDeleteId(asset.id) : undefined}
             />

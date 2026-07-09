@@ -192,6 +192,9 @@ export function NewIncomeEntryModal({
     },
     {
       method: () => (isEditMode && entryId ? "put" : "post"),
+      successKey: isEditMode
+        ? "success.income.entryUpdated"
+        : "success.income.entryCreated",
       mapPayload: (formData: EntryFormData) => ({
         destinationWalletId: fixedDestinationWalletId ?? formData.destinationWalletId,
         amount: Number(formData.amount),

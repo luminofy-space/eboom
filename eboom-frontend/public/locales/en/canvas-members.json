@@ -5,15 +5,26 @@
     "visitor": "Visitor",
     "owner": "Owner"
   },
+  "actions": {
+    "menu": "Canvas actions",
+    "inviteMember": "Invite member",
+    "editCanvas": "Edit canvas details",
+    "deleteCanvas": "Delete canvas",
+    "addMember": "Add member"
+  },
   "members": {
-    "title": "Manage members",
-    "description": "Invite people and manage roles for this canvas.",
+    "title": "Manage canvas",
+    "description": "View canvas details and manage members for this canvas.",
     "canvasType": "Type: {{type}}",
     "canvasDetails": "Canvas overview",
+    "canvasMembers": "Canvas members",
+    "canvasMembersDescription": "People who have access to this canvas.",
     "currentMembers": "Current members",
     "currentMembersDescription": "People who have access to this canvas.",
     "pendingInvitations": "Pending invitations",
     "pendingInvitationsDescription": "Invitations waiting for a response.",
+    "showPendingInvitations": "Show pending invitations",
+    "hidePendingInvitations": "Hide pending invitations",
     "inviteSectionDescription": "Add people from your other canvases or by email.",
     "noPendingInvitations": "No pending invitations.",
     "invitedMember": "Invited member",
@@ -76,7 +87,7 @@
     "ownerBlocked": "Owners cannot leave. Delete the canvas or transfer ownership first."
   },
   "switcher": {
-    "manageMembers": "Manage members",
+    "manageMembers": "Manage canvas",
     "leaveCanvas": "Leave canvas"
   }
 }

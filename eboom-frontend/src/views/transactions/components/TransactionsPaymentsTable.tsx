@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import type { CanvasTransactionsExpensePayment } from "../types";
+import type { CanvasTransactionsExpensePayment } from "@/src/types/transactions";
 
 interface TransactionsPaymentsTableProps {
   payments: CanvasTransactionsExpensePayment[];
