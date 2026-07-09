@@ -4,26 +4,32 @@ import { db } from "../db/client";
 import { assets, assetCategories, currencies } from "../db/schema";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { parseListQueryParams } from "./listQueryParams";
 
 const router = express.Router({ mergeParams: true });
-
-function parsePaginationParams(req: Request) {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const search = (req.query.search as string) || "";
-  const offset = (page - 1) * limit;
-  return { page, limit, search, offset };
-}
 
 router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId, currencyId } = parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false), ilike(assets.name, `%${search}%`))
-      : and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false));
+    const conditions = [
+      eq(assets.canvasId, canvasId),
+      eq(assets.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(assets.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(assets.assetCategoryId, categoryId));
+    }
+    if (currencyId !== undefined) {
+      conditions.push(eq(assets.currencyId, currencyId));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })

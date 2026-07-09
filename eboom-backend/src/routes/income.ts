@@ -13,16 +13,9 @@ import { creditWalletBalance, debitWalletBalance } from "../services/ledgerServi
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { parseListQueryParams } from "./listQueryParams";
 
 const router = express.Router({ mergeParams: true });
-
-function parsePaginationParams(req: Request) {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const search = (req.query.search as string) || "";
-  const offset = (page - 1) * limit;
-  return { page, limit, search, offset };
-}
 
 function parseOptionalDate(value: unknown): Date | null {
   if (!value) return null;
@@ -253,15 +246,28 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId, currencyId, isRecurring } =
+      parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(
-          eq(incomes.canvasId, canvasId),
-          eq(incomes.isArchived, false),
-          ilike(incomes.name, `%${search}%`)
-        )
-      : and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false));
+    const conditions = [
+      eq(incomes.canvasId, canvasId),
+      eq(incomes.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(incomes.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(incomes.incomeCategoryId, categoryId));
+    }
+    if (currencyId !== undefined) {
+      conditions.push(eq(incomes.currencyId, currencyId));
+    }
+    if (isRecurring !== undefined) {
+      conditions.push(eq(incomes.isRecurring, isRecurring));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })
