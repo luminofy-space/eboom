@@ -264,6 +264,7 @@
     "retry": "Retry",
     "noApiKey": "AI insights are not configured on the server. Contact your administrator.",
     "generationFailed": "Could not generate insights. Please try again later.",
+    "generationTimeout": "Insight generation is taking longer than expected. Please wait a moment and refresh the page.",
     "rateLimited": "Please wait a minute before refreshing again."
   },
   "disclaimer": "Insights are for informational purposes only and are not legal, tax, or investment advice.",

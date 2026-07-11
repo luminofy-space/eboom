@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Stack } from "@/components/ui/stack";
-import { BanknoteArrowDown, BanknoteArrowUp } from "lucide-react";
+import { BanknoteArrowDown, BanknoteArrowUp, ArrowLeftRight, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface CalendarCreateChoiceModalProps {
@@ -18,6 +18,8 @@ interface CalendarCreateChoiceModalProps {
   dateLabel: string;
   onChooseIncomeEntry: () => void;
   onChooseExpensePayment: () => void;
+  onChooseGoal: () => void;
+  onChooseTransfer: () => void;
 }
 
 export function CalendarCreateChoiceModal({
@@ -26,6 +28,8 @@ export function CalendarCreateChoiceModal({
   dateLabel,
   onChooseIncomeEntry,
   onChooseExpensePayment,
+  onChooseGoal,
+  onChooseTransfer,
 }: CalendarCreateChoiceModalProps) {
   const { t } = useTranslation("calendar");
 
@@ -60,6 +64,28 @@ export function CalendarCreateChoiceModal({
             <BanknoteArrowDown className="size-5 shrink-0 text-red-600" aria-hidden />
             <span className="text-left">
               <span className="block font-medium">{t("addExpensePayment")}</span>
+            </span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto justify-start gap-3 px-4 py-3"
+            onClick={onChooseTransfer}
+          >
+            <ArrowLeftRight className="size-5 shrink-0 text-amber-600" aria-hidden />
+            <span className="text-left">
+              <span className="block font-medium">{t("addTransfer")}</span>
+            </span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto justify-start gap-3 px-4 py-3"
+            onClick={onChooseGoal}
+          >
+            <Target className="size-5 shrink-0 text-violet-600" aria-hidden />
+            <span className="text-left">
+              <span className="block font-medium">{t("addGoal")}</span>
             </span>
           </Button>
         </Stack>

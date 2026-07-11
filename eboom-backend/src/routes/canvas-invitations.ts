@@ -9,6 +9,8 @@ import {
   roles,
   users,
 } from "../db/schema";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 import {
   getCanvasMembership,
 } from "../services/canvasAccessService";
@@ -94,7 +96,7 @@ async function fetchInvitationRows(whereClause: SQL) {
 
 router.get("/sent/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   try {
     const rows = await fetchInvitationRows(eq(canvasInvitations.invitedBy, user.id));
@@ -102,13 +104,13 @@ router.get("/sent/", async (req: Request, res: Response) => {
     res.json({ invitations });
   } catch (err) {
     console.error("Error fetching sent invitations:", err);
-    res.status(500).json({ error: "Failed to fetch sent invitations" });
+    sendError(res, ErrorKeys.invitation.fetchFailed, 500);
   }
 });
 
 router.get("/received/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   try {
     const rows = await fetchInvitationRows(
@@ -121,17 +123,17 @@ router.get("/received/", async (req: Request, res: Response) => {
     res.json({ invitations });
   } catch (err) {
     console.error("Error fetching received invitations:", err);
-    res.status(500).json({ error: "Failed to fetch received invitations" });
+    sendError(res, ErrorKeys.invitation.fetchFailed, 500);
   }
 });
 
 router.post("/:id/accept/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const invitationId = parseInt(String(req.params.id), 10);
   if (Number.isNaN(invitationId)) {
-    return res.status(400).json({ error: "Invalid invitation ID" });
+    return sendError(res, ErrorKeys.invitation.invalidId, 400);
   }
 
   try {
@@ -140,17 +142,17 @@ router.post("/:id/accept/", async (req: Request, res: Response) => {
       .from(canvasInvitations)
       .where(eq(canvasInvitations.id, invitationId));
 
-    if (!invitation) return res.status(404).json({ error: "Invitation not found" });
+    if (!invitation) return sendError(res, ErrorKeys.invitation.notFound, 404);
     if (invitation.inviteeUserId !== user.id) {
-      return res.status(403).json({ error: "Access denied" });
+      return sendError(res, ErrorKeys.common.forbidden, 403);
     }
 
     const current = await markExpiredIfNeeded(invitation);
     if (current.status !== "pending") {
-      return res.status(400).json({ error: `Invitation is ${current.status}` });
+      return sendError(res, ErrorKeys.invitation.invalidStatus, 400);
     }
     if (isExpired(current.expiresAt)) {
-      return res.status(403).json({ error: "Invitation has expired" });
+      return sendError(res, ErrorKeys.invitation.expired, 403);
     }
 
     const [canvas] = await db
@@ -159,7 +161,7 @@ router.post("/:id/accept/", async (req: Request, res: Response) => {
       .where(eq(canvases.id, current.canvasId));
 
     if (!canvas || canvas.isArchived) {
-      return res.status(403).json({ error: "Canvas is no longer available" });
+      return sendError(res, ErrorKeys.invitation.canvasUnavailable, 403);
     }
 
     const [existingMember] = await db
@@ -173,7 +175,7 @@ router.post("/:id/accept/", async (req: Request, res: Response) => {
       );
 
     if (existingMember) {
-      return res.status(400).json({ error: "You are already a member of this canvas" });
+      return sendError(res, ErrorKeys.invitation.alreadyMember, 400);
     }
 
     await db.insert(canvasMembers).values({
@@ -195,17 +197,17 @@ router.post("/:id/accept/", async (req: Request, res: Response) => {
     res.json({ message: "Invitation accepted" });
   } catch (err) {
     console.error("Error accepting invitation:", err);
-    res.status(500).json({ error: "Failed to accept invitation" });
+    sendError(res, ErrorKeys.invitation.acceptFailed, 500);
   }
 });
 
 router.post("/:id/decline/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const invitationId = parseInt(String(req.params.id), 10);
   if (Number.isNaN(invitationId)) {
-    return res.status(400).json({ error: "Invalid invitation ID" });
+    return sendError(res, ErrorKeys.invitation.invalidId, 400);
   }
 
   try {
@@ -214,12 +216,12 @@ router.post("/:id/decline/", async (req: Request, res: Response) => {
       .from(canvasInvitations)
       .where(eq(canvasInvitations.id, invitationId));
 
-    if (!invitation) return res.status(404).json({ error: "Invitation not found" });
+    if (!invitation) return sendError(res, ErrorKeys.invitation.notFound, 404);
     if (invitation.inviteeUserId !== user.id) {
-      return res.status(403).json({ error: "Access denied" });
+      return sendError(res, ErrorKeys.common.forbidden, 403);
     }
     if (invitation.status !== "pending") {
-      return res.status(400).json({ error: `Invitation is ${invitation.status}` });
+      return sendError(res, ErrorKeys.invitation.invalidStatus, 400);
     }
 
     await db
@@ -234,17 +236,17 @@ router.post("/:id/decline/", async (req: Request, res: Response) => {
     res.json({ message: "Invitation declined" });
   } catch (err) {
     console.error("Error declining invitation:", err);
-    res.status(500).json({ error: "Failed to decline invitation" });
+    sendError(res, ErrorKeys.invitation.declineFailed, 500);
   }
 });
 
 router.delete("/:id/", async (req: Request, res: Response) => {
   const user = req.appUser;
-  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user) return sendError(res, ErrorKeys.common.unauthorized, 401);
 
   const invitationId = parseInt(String(req.params.id), 10);
   if (Number.isNaN(invitationId)) {
-    return res.status(400).json({ error: "Invalid invitation ID" });
+    return sendError(res, ErrorKeys.invitation.invalidId, 400);
   }
 
   try {
@@ -253,9 +255,9 @@ router.delete("/:id/", async (req: Request, res: Response) => {
       .from(canvasInvitations)
       .where(eq(canvasInvitations.id, invitationId));
 
-    if (!invitation) return res.status(404).json({ error: "Invitation not found" });
+    if (!invitation) return sendError(res, ErrorKeys.invitation.notFound, 404);
     if (invitation.status !== "pending") {
-      return res.status(400).json({ error: `Invitation is ${invitation.status}` });
+      return sendError(res, ErrorKeys.invitation.invalidStatus, 400);
     }
 
     const isInviter = invitation.invitedBy === user.id;
@@ -265,7 +267,7 @@ router.delete("/:id/", async (req: Request, res: Response) => {
       (membership.isOwner || membership.permissions.manage_members);
 
     if (!isInviter && !canManage) {
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
+      return sendError(res, ErrorKeys.member.insufficientPermissions, 403);
     }
 
     await db
@@ -280,7 +282,7 @@ router.delete("/:id/", async (req: Request, res: Response) => {
     res.json({ message: "Invitation cancelled" });
   } catch (err) {
     console.error("Error cancelling invitation:", err);
-    res.status(500).json({ error: "Failed to cancel invitation" });
+    sendError(res, ErrorKeys.invitation.cancelFailed, 500);
   }
 });
 

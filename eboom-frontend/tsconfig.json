@@ -25,9 +25,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@backend/*": [
-        "../eboom-backend/src/*"
       ]
     }
   },

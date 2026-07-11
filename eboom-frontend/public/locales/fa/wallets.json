@@ -6,7 +6,10 @@
     }
   },
   "detail": {
-    "loadError": "بارگذاری جزئیات کیف پول ناموفق بود. لطفاً دوباره تلاش کنید."
+    "loadError": "بارگذاری جزئیات کیف پول ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "balancesTitle": "موجودی‌ها",
+    "noBalancesYet": "هنوز موجودی وجود ندارد. موجودی پس از اولین ثبت، پرداخت یا انتقال نمایش داده می‌شود.",
+    "currencyFilter": "فیلتر بر اساس ارز"
   },
   "modal": {
     "create": {
@@ -128,7 +131,14 @@
     "title": "تراکنش‌ها در طول زمان",
     "description": {
       "withData": "{{amount}} ورودی و خروجی برای {{timeRange}}",
-      "noData": "تراکنشی در {{timeRange}} وجود ندارد"
+      "noData": "تراکنشی در {{timeRange}} وجود ندارد",
+      "multiCurrency": "همه ارزها برای {{timeRange}}"
+    },
+    "legend": {
+      "incoming": "ورودی",
+      "outgoing": "خروجی",
+      "transferIn": "انتقال ورودی",
+      "transferOut": "انتقال خروجی"
     },
     "series": {
       "incoming": "ورودی",

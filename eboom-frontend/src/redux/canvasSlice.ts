@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "./store";
-import type { Canvas } from "../types/common";
+import type { Canvas } from "@/src/types/common";
 
 export interface CanvasItem {
   id: number;

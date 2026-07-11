@@ -264,6 +264,7 @@
     "retry": "Erneut versuchen",
     "noApiKey": "KI-Einblicke sind auf dem Server nicht konfiguriert. Administrator kontaktieren.",
     "generationFailed": "Einblicke konnten nicht generiert werden. Bitte später erneut versuchen.",
+    "generationTimeout": "Die Generierung dauert länger als erwartet. Bitte warten Sie einen Moment und laden Sie die Seite neu.",
     "rateLimited": "Bitte eine Minute warten, bevor Sie erneut aktualisieren."
   },
   "disclaimer": "Einblicke dienen nur zur Information und sind keine Rechts-, Steuer- oder Anlageberatung.",

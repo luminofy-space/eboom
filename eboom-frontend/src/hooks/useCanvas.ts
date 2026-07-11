@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import API_ROUTES from "../api/urls";
 import { useMutationApi } from "../api/useMutation";
 import useQueryApi from "../api/useQuery";
-import { Canvas } from "../types/common";
+import { Canvas } from "@/src/types/common";
 import { useDispatch } from "react-redux";
 import { updateCanvas } from "../redux/canvasSlice";
 
@@ -37,6 +37,7 @@ export const useCanvas = () => {
 
     const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
         method: "post",
+        successKey: "success.canvas.created",
         hasToken: true,
     });
 

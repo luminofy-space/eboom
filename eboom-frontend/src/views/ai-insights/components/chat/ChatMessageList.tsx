@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import type { AiChatMessage } from "../../types";
+import type { AiChatMessage } from "@/src/types/ai-insights";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 
 const SUGGESTION_KEYS = ["budget", "goals", "cashflow"] as const;

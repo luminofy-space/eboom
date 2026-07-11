@@ -8,12 +8,15 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
-import { User } from "@backend/db/schema";
+import type { User } from "@/src/types/common";
 import { env } from "@/utils/env";
 import { LANGUAGE_STORAGE_KEY } from "@/src/i18n/languages";
+
+const USER_QUERY_KEY = ["user"];
 
 const hasWindow = typeof window !== "undefined";
 const isTestMode = env("NEXT_PUBLIC_TEST_MODE") === "true";
@@ -86,7 +89,8 @@ function clearStoredTokens() {
 export interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
-  loading: boolean;
+  isLoginPending: boolean;
+  isSignupPending: boolean;
   login: (credentials: { email: string; password: string }) => Promise<AuthResponse | null>;
   signup: (data: {
     firstName: string;
@@ -105,6 +109,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   const [accessToken, setAccessToken] = useState<string | null>(() =>
     getStoredToken("accessToken")
@@ -112,22 +117,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [refreshToken, setRefreshToken] = useState<string | null>(() =>
     getStoredToken("refreshToken")
   );
-  const [loading, setLoading] = useState(false);
 
   const { mutateAsync: refreshMutation } = useMutationApi<
     RefreshPayload,
     AuthResponse
-  >(API_ROUTES.AUTH_REFRESH, { method: "post", hasToken: false });
+  >(API_ROUTES.AUTH_REFRESH, {
+    method: "post",
+    hasToken: false,
+    invalidateQueries: false,
+  });
 
-  const { mutateAsync: loginMutation } = useMutationApi<
-    LoginPayload,
-    AuthResponse
-  >(API_ROUTES.AUTH_LOGIN, { method: "post", hasToken: false });
+  const {
+    mutateAsync: loginMutation,
+    isPending: isLoginPending,
+  } = useMutationApi<LoginPayload, AuthResponse>(API_ROUTES.AUTH_LOGIN, {
+    method: "post",
+    hasToken: false,
+    invalidateQueries: false,
+  });
 
-  const { mutateAsync: signupMutation } = useMutationApi<
-    SignupPayload,
-    AuthResponse
-  >(API_ROUTES.AUTH_SIGNUP, { method: "post", hasToken: false });
+  const {
+    mutateAsync: signupMutation,
+    isPending: isSignupPending,
+  } = useMutationApi<SignupPayload, AuthResponse>(API_ROUTES.AUTH_SIGNUP, {
+    method: "post",
+    hasToken: false,
+    invalidateQueries: false,
+  });
 
   const applyTokens = useCallback((access: string, refresh: string) => {
     setAccessToken(access);
@@ -135,13 +151,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     persistTokens(access, refresh);
   }, []);
 
+  const seedUserCache = useCallback(
+    (authUser: AuthUser | undefined) => {
+      if (authUser) {
+        queryClient.setQueryData(USER_QUERY_KEY, { user: authUser });
+      }
+    },
+    [queryClient]
+  );
+
   const signOut = useCallback(() => {
-    setLoading(true);
     setAccessToken(null);
     setRefreshToken(null);
     clearStoredTokens();
-    setLoading(false);
-  }, []);
+    queryClient.removeQueries({ queryKey: USER_QUERY_KEY });
+  }, [queryClient]);
 
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     if (!refreshToken) return null;
@@ -149,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = (await refreshMutation({ refreshToken })) as AuthResponse;
       if (res?.accessToken && res?.refreshToken) {
         applyTokens(res.accessToken, res.refreshToken);
+        seedUserCache(res.user);
         return res.accessToken;
       }
       return null;
@@ -156,23 +181,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut();
       return null;
     }
-  }, [refreshToken, refreshMutation, applyTokens, signOut]);
+  }, [refreshToken, refreshMutation, applyTokens, seedUserCache, signOut]);
 
   const login = useCallback(
     async ({ email, password }: { email: string; password: string }) => {
-      setLoading(true);
-      try {
-        const res = (await loginMutation({ email, password })) as AuthResponse;
-        if (res?.accessToken && res?.refreshToken) {
-          applyTokens(res.accessToken, res.refreshToken);
-          return res;
-        }
-        return null;
-      } finally {
-        setLoading(false);
+      const res = (await loginMutation({ email, password })) as AuthResponse;
+      if (res?.accessToken && res?.refreshToken) {
+        applyTokens(res.accessToken, res.refreshToken);
+        seedUserCache(res.user);
+        return res;
       }
+      return null;
     },
-    [loginMutation, applyTokens]
+    [loginMutation, applyTokens, seedUserCache]
   );
 
   const signup = useCallback(
@@ -187,31 +208,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string;
       password: string;
     }) => {
-      setLoading(true);
-      try {
-        const res = (await signupMutation({
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          password,
-        })) as AuthResponse;
-        if (res?.accessToken && res?.refreshToken) {
-          applyTokens(res.accessToken, res.refreshToken);
-        }
-        return res;
-      } finally {
-        setLoading(false);
+      const res = (await signupMutation({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+      })) as AuthResponse;
+      if (res?.accessToken && res?.refreshToken && res.user?.emailVerified) {
+        applyTokens(res.accessToken, res.refreshToken);
+        seedUserCache(res.user);
       }
+      return res;
     },
-    [signupMutation, applyTokens]
+    [signupMutation, applyTokens, seedUserCache]
   );
 
   const isAuthenticated = !!accessToken;
 
-  const { data: userData, isLoading: userLoading } = useQueryApi<{
+  const { data: userData, isLoading } = useQueryApi<{
     user: Partial<User>;
   }>(API_ROUTES.USERS_GET_ME, {
-    queryKey: ["user"],
+    queryKey: USER_QUERY_KEY,
     hasToken: true,
     enabled: isAuthenticated,
     auth: {
@@ -222,10 +239,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const user = userData?.user ?? null;
+  const userLoading = isAuthenticated && !user && isLoading;
+
+  const guestOnlyRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+  ];
+  const isGuestOnlyRoute = guestOnlyRoutes.includes(pathname);
 
   useEffect(() => {
-    if (loading) return;
-
     const publicRoutes = [
       "/",
       "/login",
@@ -237,18 +261,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ];
     const isPublic = publicRoutes.includes(pathname);
 
+    if (isAuthenticated && isGuestOnlyRoute) {
+      if (user?.emailVerified === false) {
+        router.replace("/confirm-email");
+      } else if (user?.emailVerified || !userLoading) {
+        router.replace("/dashboard");
+      }
+      return;
+    }
+
+    if (
+      isAuthenticated &&
+      user?.emailVerified === false &&
+      !isPublic
+    ) {
+      router.replace("/confirm-email");
+      return;
+    }
+
     if (!isAuthenticated && !isPublic) {
       if (hasWindow) {
         localStorage.setItem("redirectAfterLogin", pathname);
       }
       router.push("/login");
     }
-  }, [loading, pathname, router, isAuthenticated]);
+  }, [pathname, router, isAuthenticated, isGuestOnlyRoute, user?.emailVerified, userLoading]);
 
   const contextValue: AuthContextType = {
     accessToken,
     refreshToken,
-    loading,
+    isLoginPending,
+    isSignupPending,
     login,
     signup,
     signOut,
@@ -259,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={contextValue}>
-      {loading ? <div>Loading...</div> : children}
+      {isAuthenticated && isGuestOnlyRoute ? null : children}
     </AuthContext.Provider>
   );
 }

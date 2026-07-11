@@ -3,6 +3,8 @@ import { db } from "../db/client";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { verifyAccessToken } from "../services/jwtService";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 export default async function authMiddleware(
   req: Request,
@@ -15,7 +17,7 @@ export default async function authMiddleware(
     try {
       const [appUser] = await db.select().from(users).where(eq(users.id, TEST_USER_ID));
       if (!appUser) {
-        return res.status(401).json({ error: "Test user not found in database" });
+        return sendError(res, ErrorKeys.auth.testUserNotFound, 401);
       }
 
       req.appUser = appUser;
@@ -23,13 +25,14 @@ export default async function authMiddleware(
       return next();
     } catch (err) {
       console.error("Test user fetch error:", err);
-      return res.status(500).json({ error: "Failed to fetch test user" });
+      return sendError(res, ErrorKeys.auth.testUserFetchFailed, 500);
     }
   }
 
   const auth = req.headers.authorization;
-  if (!auth)
-    return res.status(401).json({ error: "Missing authorization header" });
+  if (!auth) {
+    return sendError(res, ErrorKeys.common.missingAuthHeader, 401);
+  }
 
   const token = auth.replace(/^Bearer\s+/i, "");
   try {
@@ -40,13 +43,13 @@ export default async function authMiddleware(
       .where(eq(users.id, payload.sub));
 
     if (!appUser) {
-      return res.status(401).json({ error: "Invalid token" });
+      return sendError(res, ErrorKeys.common.invalidToken, 401);
     }
 
     req.appUser = appUser;
     next();
   } catch (err) {
     console.error("auth error", err);
-    return res.status(401).json({ error: "Invalid token" });
+    return sendError(res, ErrorKeys.common.invalidToken, 401);
   }
 }

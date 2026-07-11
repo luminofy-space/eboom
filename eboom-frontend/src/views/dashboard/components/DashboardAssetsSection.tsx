@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography, typographyVariants } from "@/components/ui/typography";
 import { formatMoney } from "@/src/i18n/formatters";
-import type { CanvasSummary } from "../types";
+import type { CanvasSummary } from "@/src/types/dashboard";
 import {
   computeDashboardStatsByCurrency,
   type CurrencyDashboardStats,
@@ -55,17 +55,22 @@ function AssetCard({ stats }: { stats: CurrencyDashboardStats }) {
                   {stats.currencyCode}
                 </Badge>
                 <Stack gap={1}>
-                  <Typography variant="muted-sm">{t("assets.totalAssets")}</Typography>
+                  <Typography variant="muted-sm">{t("walletsBalance.totalBalance")}</Typography>
                   <Typography className={typographyVariants({ variant: "stat" })}>
                     {formatMoney(stats.totalBalance, stats.currencySymbol)}
                   </Typography>
+                  {stats.walletCountWithCurrency > 0 ? (
+                    <Typography variant="muted-sm">
+                      {t("walletsBalance.inWallets", { count: stats.walletCountWithCurrency })}
+                    </Typography>
+                  ) : null}
                 </Stack>
                 <Typography
                   variant="muted-sm"
                   className={netPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}
                 >
                   {formatMoney(stats.netCashFlowThisMonth, stats.currencySymbol)}{" "}
-                  {t("assets.netThisMonth")}
+                  {t("walletsBalance.netThisMonth")}
                 </Typography>
               </Stack>
             </button>
@@ -133,7 +138,7 @@ export function DashboardAssetsSection({
   if (statsByCurrency.length === 0) {
     return (
       <Container>
-        <Typography variant="muted-sm">{t("assets.empty")}</Typography>
+        <Typography variant="muted-sm">{t("walletsBalance.empty")}</Typography>
       </Container>
     );
   }
@@ -149,10 +154,10 @@ export function DashboardAssetsSection({
             gap={4}
             className="flex-wrap"
           >
-            <Typography variant="title">{t("assets.title")}</Typography>
+            <Typography variant="title">{t("walletsBalance.title")}</Typography>
             <Stack direction="row" align="center" gap={2}>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/wallets">{t("assets.viewAll")}</Link>
+                <Link href="/wallets">{t("walletsBalance.viewAll")}</Link>
               </Button>
               {!showAll && statsByCurrency.length > PAGE_SIZE && (
                 <>
@@ -161,12 +166,12 @@ export function DashboardAssetsSection({
                     size="icon-sm"
                     onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    aria-label={t("assets.previousPage")}
+                    aria-label={t("walletsBalance.previousPage")}
                   >
                     <IconChevronLeft className="size-4" />
                   </Button>
                   <Typography variant="muted-sm">
-                    {t("assets.pageIndicator", {
+                    {t("walletsBalance.pageIndicator", {
                       current: page + 1,
                       total: totalPages,
                     })}
@@ -176,7 +181,7 @@ export function DashboardAssetsSection({
                     size="icon-sm"
                     onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
-                    aria-label={t("assets.nextPage")}
+                    aria-label={t("walletsBalance.nextPage")}
                   >
                     <IconChevronRight className="size-4" />
                   </Button>
@@ -191,7 +196,7 @@ export function DashboardAssetsSection({
                     setPage(0);
                   }}
                 >
-                  {showAll ? t("assets.showLess") : t("assets.loadAll")}
+                  {showAll ? t("walletsBalance.showLess") : t("walletsBalance.loadAll")}
                 </Button>
               )}
             </Stack>

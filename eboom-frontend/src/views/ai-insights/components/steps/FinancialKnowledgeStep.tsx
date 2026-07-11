@@ -6,7 +6,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
-import { QUIZ_QUESTION_IDS, type WizardFormData } from "../../types";
+import { QUIZ_QUESTION_IDS, type WizardFormData } from "@/src/types/ai-insights";
 
 interface FinancialKnowledgeStepProps {
   control: Control<WizardFormData>;

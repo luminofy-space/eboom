@@ -6,7 +6,7 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { AiChatMessage, AiChatMessagesResponse, AiChatSendResponse } from "../types";
+import type { AiChatMessage, AiChatMessagesResponse, AiChatSendResponse } from "@/src/types/ai-insights";
 
 function createOptimisticUserMessage(content: string): AiChatMessage {
   return {
@@ -31,13 +31,13 @@ export function useAIChat() {
   );
 
   const { mutateAsync: sendMessageMutation, isPending: isSending } =
-    useMutationApi<AiChatSendResponse>(
+    useMutationApi<{ content: string }, AiChatSendResponse>(
       canvas ? API_ROUTES.CANVAS_AI_CHAT_MESSAGES(canvas) : "",
       { method: "post" }
     );
 
   const { mutateAsync: clearHistoryMutation, isPending: isClearing } =
-    useMutationApi<AiChatMessagesResponse>(
+    useMutationApi<object, AiChatMessagesResponse>(
       canvas ? API_ROUTES.CANVAS_AI_CHAT(canvas) : "",
       { method: "delete" }
     );

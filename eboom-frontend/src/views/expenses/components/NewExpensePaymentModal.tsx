@@ -192,6 +192,9 @@ export function NewExpensePaymentModal({
     },
     {
       method: () => (isEditMode && paymentId ? "put" : "post"),
+      successKey: isEditMode
+        ? "success.expense.paymentUpdated"
+        : "success.expense.paymentCreated",
       mapPayload: (formData: PaymentFormData) => ({
         sourceWalletId: fixedSourceWalletId ?? formData.sourceWalletId,
         amount: Number(formData.amount),

@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/src/components/AuthProvider";
 
 export function LandingRedirect({ children }: { children: React.ReactNode }) {
-  const { accessToken, loading } = useAuthContext();
+  const { accessToken } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && accessToken) {
+    if (accessToken) {
       router.replace("/dashboard");
     }
-  }, [accessToken, loading, router]);
+  }, [accessToken, router]);
 
-  if (loading || accessToken) {
+  if (accessToken) {
     return null;
   }
 

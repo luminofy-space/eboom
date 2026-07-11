@@ -13,16 +13,11 @@ import { creditWalletBalance, debitWalletBalance } from "../services/ledgerServi
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { parseListQueryParams } from "./listQueryParams";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
-
-function parsePaginationParams(req: Request) {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const search = (req.query.search as string) || "";
-  const offset = (page - 1) * limit;
-  return { page, limit, search, offset };
-}
 
 function parseOptionalDate(value: unknown): Date | null {
   if (!value) return null;
@@ -35,7 +30,7 @@ router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request
   const user = req.appUser!;
   const entryId = parseRouteParam(req.params.entryId);
   if (Number.isNaN(entryId)) {
-    return res.status(400).json({ error: "Invalid income entry ID" });
+    return sendError(res, ErrorKeys.income.invalidEntryId, 400);
   }
 
   const { destinationWalletId, amount, expectedDate, receivedDate, notes } = req.body;
@@ -44,25 +39,25 @@ router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request
   const parsedAmount = Number(amount);
 
   if (!parsedWalletId || Number.isNaN(parsedWalletId)) {
-    return res.status(400).json({ error: "Destination wallet is required" });
+    return sendError(res, ErrorKeys.validation.walletRequired, 400);
   }
 
   if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-    return res.status(400).json({ error: "A valid amount greater than zero is required" });
+    return sendError(res, ErrorKeys.validation.amountPositive, 400);
   }
 
   try {
     const [existing] = await db.select().from(incomeEntries).where(eq(incomeEntries.id, entryId));
-    if (!existing) return res.status(404).json({ error: "Income entry not found" });
+    if (!existing) return sendError(res, ErrorKeys.income.entryNotFound, 404);
 
     const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
     if (!income || income.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income entry not found" });
+      return sendError(res, ErrorKeys.income.entryNotFound, 404);
     }
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
     if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
+      return sendError(res, ErrorKeys.income.destinationWalletInvalid, 400);
     }
 
     const amountStr = String(parsedAmount);
@@ -112,7 +107,7 @@ router.put("/entries/:entryId", requireCanvasAccess("edit"), async (req: Request
     const message = err instanceof Error && err.message === "Insufficient wallet balance"
       ? "Insufficient wallet balance"
       : "Failed to update income entry";
-    res.status(500).json({ error: message });
+    sendError(res, ErrorKeys.common.internal, 500);
   }
 });
 
@@ -120,16 +115,16 @@ router.delete("/entries/:entryId", requireCanvasAccess("edit"), async (req: Requ
   const canvasId = req.canvasId!;
   const entryId = parseRouteParam(req.params.entryId);
   if (Number.isNaN(entryId)) {
-    return res.status(400).json({ error: "Invalid income entry ID" });
+    return sendError(res, ErrorKeys.income.invalidEntryId, 400);
   }
 
   try {
     const [existing] = await db.select().from(incomeEntries).where(eq(incomeEntries.id, entryId));
-    if (!existing) return res.status(404).json({ error: "Income entry not found" });
+    if (!existing) return sendError(res, ErrorKeys.income.entryNotFound, 404);
 
     const [income] = await db.select().from(incomes).where(eq(incomes.id, existing.incomeId));
     if (!income || income.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income entry not found" });
+      return sendError(res, ErrorKeys.income.entryNotFound, 404);
     }
 
     await debitWalletBalance({
@@ -143,7 +138,7 @@ router.delete("/entries/:entryId", requireCanvasAccess("edit"), async (req: Requ
     res.json({ message: "Income entry deleted successfully" });
   } catch (err) {
     console.error("Error deleting income entry:", err);
-    res.status(500).json({ error: "Failed to delete income entry" });
+    sendError(res, ErrorKeys.income.entryDeleteFailed, 500);
   }
 });
 
@@ -151,13 +146,13 @@ router.get("/:incomeId/entries", requireCanvasAccess("view"), async (req: Reques
   const canvasId = req.canvasId!;
   const incomeId = parseRouteParam(req.params.incomeId);
   if (Number.isNaN(incomeId)) {
-    return res.status(400).json({ error: "Invalid income ID" });
+    return sendError(res, ErrorKeys.income.invalidId, 400);
   }
 
   try {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!income || income.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income not found" });
+      return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
     const entries = await db
@@ -175,7 +170,7 @@ router.get("/:incomeId/entries", requireCanvasAccess("view"), async (req: Reques
     });
   } catch (err) {
     console.error("Error fetching income entries:", err);
-    res.status(500).json({ error: "Failed to fetch income entries" });
+    sendError(res, ErrorKeys.income.entryFetchFailed, 500);
   }
 });
 
@@ -184,7 +179,7 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
   const user = req.appUser!;
   const incomeId = parseRouteParam(req.params.incomeId);
   if (Number.isNaN(incomeId)) {
-    return res.status(400).json({ error: "Invalid income ID" });
+    return sendError(res, ErrorKeys.income.invalidId, 400);
   }
 
   const { destinationWalletId, amount, expectedDate, receivedDate, notes } = req.body;
@@ -193,22 +188,22 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
   const parsedAmount = Number(amount);
 
   if (!parsedWalletId || Number.isNaN(parsedWalletId)) {
-    return res.status(400).json({ error: "Destination wallet is required" });
+    return sendError(res, ErrorKeys.validation.walletRequired, 400);
   }
 
   if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-    return res.status(400).json({ error: "A valid amount greater than zero is required" });
+    return sendError(res, ErrorKeys.validation.amountPositive, 400);
   }
 
   try {
     const [income] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!income || income.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income not found" });
+      return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
     const [wallet] = await db.select().from(wallets).where(eq(wallets.id, parsedWalletId));
     if (!wallet || wallet.canvasId !== canvasId) {
-      return res.status(400).json({ error: "Destination wallet is invalid for this canvas" });
+      return sendError(res, ErrorKeys.income.destinationWalletInvalid, 400);
     }
 
     const amountStr = String(parsedAmount);
@@ -238,6 +233,7 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
         },
         tx
       );
+      // Creates sub_wallet row on first entry for this wallet+currency via getOrCreateSubWalletRow
 
       return entry;
     });
@@ -245,7 +241,7 @@ router.post("/:incomeId/entries", requireCanvasAccess("edit"), async (req: Reque
     res.status(201).json({ entry: created });
   } catch (err) {
     console.error("Error creating income entry:", err);
-    res.status(500).json({ error: "Failed to create income entry" });
+    sendError(res, ErrorKeys.income.entryCreateFailed, 500);
   }
 });
 
@@ -253,15 +249,28 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId, currencyId, isRecurring } =
+      parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(
-          eq(incomes.canvasId, canvasId),
-          eq(incomes.isArchived, false),
-          ilike(incomes.name, `%${search}%`)
-        )
-      : and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false));
+    const conditions = [
+      eq(incomes.canvasId, canvasId),
+      eq(incomes.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(incomes.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(incomes.incomeCategoryId, categoryId));
+    }
+    if (currencyId !== undefined) {
+      conditions.push(eq(incomes.currencyId, currencyId));
+    }
+    if (isRecurring !== undefined) {
+      conditions.push(eq(incomes.isRecurring, isRecurring));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -294,7 +303,7 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
     res.json({ incomes: formattedIncomes, items: formattedIncomes, total, page, limit });
   } catch (err) {
     console.error("Error fetching incomes:", err);
-    res.status(500).json({ error: "Failed to fetch incomes" });
+    sendError(res, ErrorKeys.income.fetchFailed, 500);
   }
 });
 
@@ -316,9 +325,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   } = req.body;
 
   if (!name || !incomeCategoryId || !currencyId) {
-    return res.status(400).json({
-      error: "Name, category, and currency are required",
-    });
+    return sendError(res, ErrorKeys.validation.failed, 400);
   }
 
   const parsedIncomeCategoryId = Number(incomeCategoryId);
@@ -328,11 +335,11 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   const parsedDefaultWalletId = hasDefaultWallet ? Number(defaultWalletId) : undefined;
 
   if (Number.isNaN(parsedIncomeCategoryId) || Number.isNaN(parsedCurrencyId)) {
-    return res.status(400).json({ error: "Invalid category or currency ID" });
+    return sendError(res, ErrorKeys.validation.invalidCategoryOrCurrency, 400);
   }
 
   if (parsedDefaultWalletId !== undefined && Number.isNaN(parsedDefaultWalletId)) {
-    return res.status(400).json({ error: "Invalid wallet ID" });
+    return sendError(res, ErrorKeys.validation.invalidWallet, 400);
   }
 
   try {
@@ -342,7 +349,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
         .from(wallets)
         .where(eq(wallets.id, parsedDefaultWalletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+        return sendError(res, ErrorKeys.validation.defaultWalletInvalid, 400);
       }
     }
 
@@ -370,7 +377,7 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     res.status(201).json({ income: newIncome });
   } catch (err) {
     console.error("Error creating income:", err);
-    res.status(500).json({ error: "Failed to create income" });
+    sendError(res, ErrorKeys.income.createFailed, 500);
   }
 });
 
@@ -378,7 +385,7 @@ router.get("/:incomeId", requireCanvasAccess("view"), async (req: Request, res: 
   const canvasId = req.canvasId!;
   const incomeId = parseRouteParam(req.params.incomeId);
   if (Number.isNaN(incomeId)) {
-    return res.status(400).json({ error: "Invalid income ID" });
+    return sendError(res, ErrorKeys.income.invalidId, 400);
   }
 
   try {
@@ -390,7 +397,7 @@ router.get("/:incomeId", requireCanvasAccess("view"), async (req: Request, res: 
       .where(eq(incomes.id, incomeId));
 
     if (!record || record.income.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income not found" });
+      return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
     res.json({
@@ -402,7 +409,7 @@ router.get("/:incomeId", requireCanvasAccess("view"), async (req: Request, res: 
     });
   } catch (err) {
     console.error("Error fetching income:", err);
-    res.status(500).json({ error: "Failed to fetch income" });
+    sendError(res, ErrorKeys.income.fetchFailed, 500);
   }
 });
 
@@ -411,7 +418,7 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
   const user = req.appUser!;
   const incomeId = parseRouteParam(req.params.incomeId);
   if (Number.isNaN(incomeId)) {
-    return res.status(400).json({ error: "Invalid income ID" });
+    return sendError(res, ErrorKeys.income.invalidId, 400);
   }
 
   const {
@@ -431,7 +438,7 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
   try {
     const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income not found" });
+      return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
     const parsedCategoryId =
@@ -448,7 +455,7 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
       (parsedCurrencyId !== undefined && Number.isNaN(parsedCurrencyId)) ||
       (typeof parsedDefaultWalletId === "number" && Number.isNaN(parsedDefaultWalletId))
     ) {
-      return res.status(400).json({ error: "Invalid category, currency, or wallet ID" });
+      return sendError(res, ErrorKeys.validation.invalidCategoryOrCurrency, 400);
     }
 
     if (typeof parsedDefaultWalletId === "number") {
@@ -457,7 +464,7 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
         .from(wallets)
         .where(eq(wallets.id, parsedDefaultWalletId));
       if (!wallet || wallet.canvasId !== canvasId) {
-        return res.status(400).json({ error: "Default wallet is invalid for this canvas" });
+        return sendError(res, ErrorKeys.validation.defaultWalletInvalid, 400);
       }
     }
 
@@ -484,7 +491,7 @@ router.put("/:incomeId", requireCanvasAccess("edit"), async (req: Request, res: 
     res.json({ income: updated });
   } catch (err) {
     console.error("Error updating income:", err);
-    res.status(500).json({ error: "Failed to update income" });
+    sendError(res, ErrorKeys.income.updateFailed, 500);
   }
 });
 
@@ -493,13 +500,13 @@ router.delete("/:incomeId", requireCanvasAccess("edit"), async (req: Request, re
   const user = req.appUser!;
   const incomeId = parseRouteParam(req.params.incomeId);
   if (Number.isNaN(incomeId)) {
-    return res.status(400).json({ error: "Invalid income ID" });
+    return sendError(res, ErrorKeys.income.invalidId, 400);
   }
 
   try {
     const [existing] = await db.select().from(incomes).where(eq(incomes.id, incomeId));
     if (!existing || existing.canvasId !== canvasId) {
-      return res.status(404).json({ error: "Income not found" });
+      return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
     await db
@@ -516,7 +523,7 @@ router.delete("/:incomeId", requireCanvasAccess("edit"), async (req: Request, re
     res.json({ message: "Income archived successfully" });
   } catch (err) {
     console.error("Error deleting income:", err);
-    res.status(500).json({ error: "Failed to delete income" });
+    sendError(res, ErrorKeys.income.deleteFailed, 500);
   }
 });
 

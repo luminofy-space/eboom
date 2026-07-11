@@ -23,11 +23,13 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletTransfer } from "../utils/utils";
+import { filterTransfersByCurrency } from "../utils/currencyFilter";
 import { NewTransferModal } from "./NewTransferModal";
 
 interface WalletTransfersTableProps {
   walletId: number;
   walletName?: string;
+  currencyCode?: string;
 }
 
 function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
@@ -36,7 +38,11 @@ function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
   );
 }
 
-export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTableProps) {
+export function WalletTransfersTable({
+  walletId,
+  walletName,
+  currencyCode,
+}: WalletTransfersTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
@@ -50,28 +56,40 @@ export function WalletTransfersTable({ walletId, walletName }: WalletTransfersTa
 
   const { transfers: transfersRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const transfers = useMemo(() => sortTransfers(transfersRes ?? []), [transfersRes]);
+  const transfers = useMemo(
+    () => sortTransfers(filterTransfersByCurrency(transfersRes ?? [], walletId, currencyCode)),
+    [transfersRes, walletId, currencyCode]
+  );
 
   const totalOut = useMemo(
     () =>
       transfers
-        .filter((tr) => tr.sourceWalletId === walletId)
+        .filter(
+          (tr) =>
+            tr.sourceWalletId === walletId &&
+            (!currencyCode || tr.sourceCurrencyCode === currencyCode)
+        )
         .reduce((sum, tr) => sum + parseFloat(tr.sourceAmount), 0),
-    [transfers, walletId]
+    [transfers, walletId, currencyCode]
   );
 
   const totalIn = useMemo(
     () =>
       transfers
-        .filter((tr) => tr.destinationWalletId === walletId)
+        .filter(
+          (tr) =>
+            tr.destinationWalletId === walletId &&
+            (!currencyCode || tr.destinationCurrencyCode === currencyCode)
+        )
         .reduce((sum, tr) => sum + parseFloat(tr.destinationAmount), 0),
-    [transfers, walletId]
+    [transfers, walletId, currencyCode]
   );
 
   const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutationApi(
     (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
     {
       method: "delete",
+      successKey: "success.transfer.deleted",
       invalidateQueries: false,
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["wallet-transfers", canvas, walletId] });

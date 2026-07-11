@@ -10,6 +10,8 @@
   "createChoiceDescription": "Was möchten Sie für {{date}} hinzufügen?",
   "addIncomeEntry": "Einnahmeeintrag",
   "addExpensePayment": "Ausgabenzahlung",
+  "addTransfer": "Transfer",
+  "addGoal": "Sparziel",
   "overdue": "Überfällig",
   "predicted": "Vorhergesagt",
   "statusPending": "Ausstehend",

@@ -1,0 +1,58 @@
+{
+  "generic": {
+    "created": "با موفقیت ایجاد شد.",
+    "updated": "با موفقیت به‌روزرسانی شد.",
+    "deleted": "با موفقیت حذف شد."
+  },
+  "expense": {
+    "created": "هزینه ایجاد شد.",
+    "updated": "هزینه به‌روزرسانی شد.",
+    "deleted": "هزینه حذف شد.",
+    "paymentCreated": "پرداخت ایجاد شد.",
+    "paymentUpdated": "پرداخت به‌روزرسانی شد.",
+    "paymentDeleted": "پرداخت حذف شد."
+  },
+  "income": {
+    "created": "درآمد ایجاد شد.",
+    "updated": "درآمد به‌روزرسانی شد.",
+    "deleted": "درآمد حذف شد.",
+    "entryCreated": "واریز ایجاد شد.",
+    "entryUpdated": "واریز به‌روزرسانی شد.",
+    "entryDeleted": "واریز حذف شد."
+  },
+  "wallet": {
+    "created": "کیف پول ایجاد شد.",
+    "updated": "کیف پول به‌روزرسانی شد.",
+    "deleted": "کیف پول حذف شد."
+  },
+  "transfer": {
+    "created": "انتقال ایجاد شد.",
+    "updated": "انتقال به‌روزرسانی شد.",
+    "deleted": "انتقال حذف شد."
+  },
+  "asset": {
+    "created": "دارایی ایجاد شد.",
+    "updated": "دارایی به‌روزرسانی شد.",
+    "deleted": "دارایی حذف شد.",
+    "volumeCreated": "حجم افزوده شد.",
+    "volumeUpdated": "حجم به‌روزرسانی شد.",
+    "volumeDeleted": "حجم حذف شد.",
+    "pricePointCreated": "نقطه قیمت واحد افزوده شد.",
+    "pricePointUpdated": "نقطه قیمت واحد به‌روزرسانی شد.",
+    "pricePointDeleted": "نقطه قیمت واحد حذف شد."
+  },
+  "canvas": {
+    "created": "بوم ایجاد شد.",
+    "updated": "بوم به‌روزرسانی شد.",
+    "deleted": "بوم حذف شد."
+  },
+  "member": {
+    "invited": "دعوت‌نامه‌ها ارسال شد.",
+    "roleUpdated": "نقش عضو به‌روزرسانی شد.",
+    "removed": "عضو حذف شد.",
+    "left": "از بوم خارج شدید.",
+    "invitationCancelled": "دعوت‌نامه لغو شد.",
+    "invitationAccepted": "دعوت‌نامه پذیرفته شد.",
+    "invitationDeclined": "دعوت‌نامه رد شد."
+  }
+}

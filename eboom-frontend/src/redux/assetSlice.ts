@@ -9,7 +9,10 @@ export interface AssetItem {
   lastModifiedAt?: string | null;
   assetCategoryId?: number | null;
   currencyId?: number | null;
-  estimatedValue?: string | null;
+  currentQuantity?: string | null;
+  costBasis?: string | null;
+  currentHoldingValue?: string | null;
+  unrealizedPnL?: string | null;
   isArchived?: boolean;
   category?: {
     id: number;

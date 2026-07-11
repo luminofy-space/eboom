@@ -23,7 +23,6 @@ import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 
 interface ForgotPasswordFormData {
   email: string;
@@ -33,20 +32,11 @@ type ForgotPasswordResponse = {
   message: string;
 };
 
-function getApiErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof AxiosError) {
-    const data = error.response?.data as { error?: string } | undefined;
-    return data?.error || fallback;
-  }
-  return fallback;
-}
-
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const { t } = useTranslation("auth");
 
@@ -56,18 +46,20 @@ export function ForgotPasswordForm({
     formState: { errors },
   } = useForm<ForgotPasswordFormData>();
 
-  const { mutateAsync, isPending } = useMutationApi<ForgotPasswordResponse>(
+  const { mutateAsync, isPending } = useMutationApi<
+    ForgotPasswordFormData,
+    ForgotPasswordResponse
+  >(
     API_ROUTES.AUTH_FORGOT_PASSWORD,
     { method: "post", hasToken: false }
   );
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setError(null);
     try {
       await mutateAsync({ email: data.email });
       setSubmitted(true);
-    } catch (err) {
-      setError(getApiErrorMessage(err, t("forgotPassword.error.default")));
+    } catch {
+      // API failures are shown via the global notistack snackbar.
     }
   };
 
@@ -101,11 +93,6 @@ export function ForgotPasswordForm({
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
             <FieldGroup>
-              {error && (
-                <Field>
-                  <div className="text-sm text-destructive">{error}</div>
-                </Field>
-              )}
               <Field>
                 <FieldLabel htmlFor="email">
                   {t("forgotPassword.email.label")}

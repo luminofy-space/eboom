@@ -5,24 +5,26 @@ import {
   membershipHasPermission,
 } from "../services/canvasAccessService";
 import { parseRouteParam } from "../routes/routeParams";
+import { ErrorKeys } from "../errors/errorKeys";
+import { sendError } from "../errors/sendError";
 
 export function requireCanvasAccess(permission: CanvasPermission) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.appUser) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return sendError(res, ErrorKeys.common.unauthorized, 401);
     }
 
     const canvasId = parseRouteParam(req.params.canvasId);
     if (Number.isNaN(canvasId)) {
-      return res.status(400).json({ error: "Invalid canvas ID" });
+      return sendError(res, ErrorKeys.common.invalidId, 400);
     }
 
     const membership = await getCanvasMembership(canvasId, req.appUser.id);
     if (!membership) {
-      return res.status(403).json({ error: "Access denied to this canvas" });
+      return sendError(res, ErrorKeys.canvas.accessDenied, 403);
     }
     if (!membershipHasPermission(membership, permission)) {
-      return res.status(403).json({ error: "Insufficient permissions for this action" });
+      return sendError(res, ErrorKeys.member.insufficientPermissions, 403);
     }
 
     req.canvasId = canvasId;

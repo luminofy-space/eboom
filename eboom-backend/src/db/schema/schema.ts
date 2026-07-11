@@ -293,26 +293,57 @@ export const expenses = pgTable("expenses", {
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
 });
 
-export const assets = pgTable(
-  "assets",
+export const assets = pgTable("assets", {
+  id: serial("id").primaryKey(),
+  canvasId: integer("canvas_id").notNull().references(() => canvases.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  assetCategoryId: integer("asset_category_id")
+    .notNull()
+    .references(() => assetCategories.id),
+  currencyId: integer("currency_id").notNull().references(() => currencies.id),
+  photoUrl: text("photo_url"),
+  description: jsonb("description"),
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+});
+
+export const assetVolumes = pgTable(
+  "asset_volumes",
   {
     id: serial("id").primaryKey(),
-    canvasId: integer("canvas_id").notNull().references(() => canvases.id),
-    name: varchar("name", { length: 255 }).notNull(),
-    assetCategoryId: integer("asset_category_id")
+    assetId: integer("asset_id")
       .notNull()
-      .references(() => assetCategories.id),
-    currencyId: integer("currency_id").notNull().references(() => currencies.id),
-    estimatedValue: numeric("estimated_value", { precision: 20, scale: 8 }).notNull(),
-    photoUrl: text("photo_url"),
-    description: jsonb("description"),
-    isArchived: boolean("is_archived").default(false),
+      .references(() => assets.id, { onDelete: "cascade" }),
+    quantity: numeric("quantity", { precision: 20, scale: 8 }).notNull(),
+    unitPrice: numeric("unit_price", { precision: 20, scale: 8 }).notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+    notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     createdBy: integer("created_by").notNull().references(() => users.id),
-    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
-    lastModifiedBy: integer("last_modified_by").references(() => users.id),
   },
-  (table) => [check("asset_estimated_value_check", sql`${table.estimatedValue} >= 0`)]
+  (table) => [
+    check("asset_volume_quantity_nonzero_check", sql`${table.quantity} <> 0`),
+    check("asset_volume_unit_price_check", sql`${table.unitPrice} >= 0`),
+  ]
+);
+
+export const pricePoints = pgTable(
+  "price_points",
+  {
+    id: serial("id").primaryKey(),
+    assetId: integer("asset_id")
+      .notNull()
+      .references(() => assets.id, { onDelete: "cascade" }),
+    unitPrice: numeric("unit_price", { precision: 20, scale: 8 }).notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+  },
+  (table) => [check("price_point_unit_price_check", sql`${table.unitPrice} >= 0`)]
 );
 
 export const expensePayments = pgTable(
@@ -593,6 +624,7 @@ export const savingsGoals = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     targetAmount: numeric("target_amount", { precision: 20, scale: 8 }).notNull(),
     targetDate: date("target_date"),
+    photoUrl: text("photo_url"),
     linkedWalletId: integer("linked_wallet_id").references(() => wallets.id),
     alertThresholdPercent: integer("alert_threshold_percent").notNull().default(80),
     status: savingsGoalStatusEnum("status").notNull().default("active"),

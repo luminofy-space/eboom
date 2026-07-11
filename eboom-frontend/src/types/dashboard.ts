@@ -68,7 +68,8 @@ export interface CanvasSummaryAssetSummary {
   categoryName: string | null;
   currencyCode: string;
   currencySymbol: string;
-  estimatedValue: string;
+  currentHoldingValue: string;
+  unrealizedPnL: string;
   photoUrl: string | null;
   lastModifiedAt: string;
 }
@@ -76,7 +77,7 @@ export interface CanvasSummaryAssetSummary {
 export interface CanvasSummaryAssetsByCurrency {
   currencyCode: string;
   currencySymbol: string;
-  totalEstimatedValue: string;
+  totalHoldingValue: string;
   count: number;
 }
 

@@ -10,6 +10,8 @@
   "createChoiceDescription": "برای {{date}} چه چیزی می‌خواهید اضافه کنید؟",
   "addIncomeEntry": "ورودی درآمد",
   "addExpensePayment": "پرداخت هزینه",
+  "addTransfer": "انتقال",
+  "addGoal": "هدف پس‌انداز",
   "overdue": "سررسید گذشته",
   "predicted": "پیش‌بینی‌شده",
   "statusPending": "در انتظار",

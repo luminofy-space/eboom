@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletEntry } from "../utils/utils";
+import { filterEntriesByCurrency } from "../utils/currencyFilter";
 import { useTranslation } from "react-i18next";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import type { TFunction } from "i18next";
@@ -25,6 +26,7 @@ interface WalletEntriesTableProps {
   walletId: number;
   walletName?: string;
   currencySymbol?: string;
+  currencyCode?: string;
 }
 
 function getEntryStatus(entry: WalletEntry, t: TFunction<"wallets">): {
@@ -52,6 +54,7 @@ export function WalletEntriesTable({
   walletId,
   walletName,
   currencySymbol,
+  currencyCode,
 }: WalletEntriesTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
@@ -61,7 +64,10 @@ export function WalletEntriesTable({
   const [editingEntry, setEditingEntry] = useState<WalletEntry | null>(null);
   const { entries: entriesRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const entries = useMemo(() => sortEntries(entriesRes ?? []), [entriesRes]);
+  const entries = useMemo(
+    () => sortEntries(filterEntriesByCurrency(entriesRes ?? [], currencyCode)),
+    [entriesRes, currencyCode]
+  );
 
   const totalReceived = useMemo(
     () =>
@@ -78,7 +84,8 @@ export function WalletEntriesTable({
         header: t("entriesTable.headers.amount"),
         headerClassName: "w-[140px]",
         cellClassName: "font-medium tabular-nums",
-        cell: (entry) => formatAmount(entry.amount, currencySymbol, emDash),
+        cell: (entry) =>
+          formatAmount(entry.amount, entry.currencySymbol ?? currencySymbol, emDash),
       },
       {
         id: "income",

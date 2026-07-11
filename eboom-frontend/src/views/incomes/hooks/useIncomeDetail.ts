@@ -5,7 +5,7 @@ import useQueryApi from "@/src/api/useQuery";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useMemo } from "react";
 import type { IncomeEntry } from "../component/IncomeEntriesTable";
-import { Income } from "@backend/db/schema";
+import type { Income } from "@/src/types/common";
 
 export type IncomeDetail = Income & {
   defaultWallet?: { id: number; name: string } | null;

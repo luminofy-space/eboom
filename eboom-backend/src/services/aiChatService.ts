@@ -15,19 +15,19 @@ import { getAiInsightProfileByCanvas } from "./aiInsightProfileService";
 import { DEFAULT_LLM_MODEL, getOpenAIClient } from "./llmClient";
 
 const DEFAULT_MODEL = DEFAULT_LLM_MODEL;
-const CHAT_COOLDOWN_MS = 5_000;
-const MAX_MESSAGE_LENGTH = 2_000;
-const MAX_HISTORY_MESSAGES = 8;
-const MAX_STORED_MESSAGES = 100;
+// const CHAT_COOLDOWN_MS = 5_000;
+// const MAX_MESSAGE_LENGTH = 2_000;
+// const MAX_HISTORY_MESSAGES = 8;
+// const MAX_STORED_MESSAGES = 100;
 
 const lastMessageByCanvas = new Map<number, number>();
 
-function assertRateLimit(canvasId: number): void {
-  const last = lastMessageByCanvas.get(canvasId);
-  if (last && Date.now() - last < CHAT_COOLDOWN_MS) {
-    throw new Error("RATE_LIMITED");
-  }
-}
+// function assertRateLimit(canvasId: number): void {
+//   const last = lastMessageByCanvas.get(canvasId);
+//   if (last && Date.now() - last < CHAT_COOLDOWN_MS) {
+//     throw new Error("RATE_LIMITED");
+//   }
+// }
 
 function toPayload(row: AiChatMessage): AiChatMessagePayload {
   return {
@@ -63,20 +63,20 @@ export async function getChatMessagesByCanvas(
   return rows.map(toPayload);
 }
 
-async function trimOldMessages(canvasId: number): Promise<void> {
-  const rows = await db
-    .select({ id: aiChatMessages.id })
-    .from(aiChatMessages)
-    .where(eq(aiChatMessages.canvasId, canvasId))
-    .orderBy(desc(aiChatMessages.createdAt), desc(aiChatMessages.id));
+// async function trimOldMessages(canvasId: number): Promise<void> {
+//   const rows = await db
+//     .select({ id: aiChatMessages.id })
+//     .from(aiChatMessages)
+//     .where(eq(aiChatMessages.canvasId, canvasId))
+//     .orderBy(desc(aiChatMessages.createdAt), desc(aiChatMessages.id));
 
-  if (rows.length <= MAX_STORED_MESSAGES) return;
+//   if (rows.length <= MAX_STORED_MESSAGES) return;
 
-  const idsToDelete = rows.slice(MAX_STORED_MESSAGES).map((row) => row.id);
-  for (const id of idsToDelete) {
-    await db.delete(aiChatMessages).where(eq(aiChatMessages.id, id));
-  }
-}
+//   const idsToDelete = rows.slice(MAX_STORED_MESSAGES).map((row) => row.id);
+//   for (const id of idsToDelete) {
+//     await db.delete(aiChatMessages).where(eq(aiChatMessages.id, id));
+//   }
+// }
 
 export async function sendChatMessage(
   canvasId: number,
@@ -87,11 +87,11 @@ export async function sendChatMessage(
   if (!trimmed) {
     throw new Error("EMPTY_MESSAGE");
   }
-  if (trimmed.length > MAX_MESSAGE_LENGTH) {
-    throw new Error("MESSAGE_TOO_LONG");
-  }
+  // if (trimmed.length > MAX_MESSAGE_LENGTH) {
+  //   throw new Error("MESSAGE_TOO_LONG");
+  // }
 
-  assertRateLimit(canvasId);
+  // assertRateLimit(canvasId);
 
   const profile = await getAiInsightProfileByCanvas(canvasId);
   const { context, completeness } = await buildFinancialContext(canvasId, profile);
@@ -101,7 +101,7 @@ export async function sendChatMessage(
     .from(aiChatMessages)
     .where(eq(aiChatMessages.canvasId, canvasId))
     .orderBy(desc(aiChatMessages.createdAt), desc(aiChatMessages.id))
-    .limit(MAX_HISTORY_MESSAGES);
+    // .limit(MAX_HISTORY_MESSAGES);
 
   const chronological = [...history].reverse();
 
@@ -152,7 +152,7 @@ export async function sendChatMessage(
     .returning();
 
   lastMessageByCanvas.set(canvasId, Date.now());
-  await trimOldMessages(canvasId);
+  // await trimOldMessages(canvasId);
 
   return {
     userMessage: toPayload(userMessage),

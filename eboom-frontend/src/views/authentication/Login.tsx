@@ -20,8 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { useAuthContext } from "@/src/components/AuthProvider";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 interface LoginFormData {
   email: string;
@@ -33,7 +33,6 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation("auth");
 
   const {
@@ -42,19 +41,17 @@ export function LoginForm({
     formState: { errors },
   } = useForm<LoginFormData>();
 
-  const { login, loading } = useAuthContext();
+  const { login, isLoginPending } = useAuthContext();
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data)
-      .then((res) => {
-        if (res) {
-          router.push("/dashboard");
-        }
-      })
-      .catch((error) => {
-        console.error("error", error);
-        setError(error.message);
-      });
+    try {
+      const res = await login(data);
+      if (res) {
+        router.push("/dashboard");
+      }
+    } catch {
+      // API failures are shown via the global notistack snackbar.
+    }
   };
 
   return (
@@ -67,11 +64,6 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
             <FieldGroup>
-              {error && (
-                <Field>
-                  <div className="text-sm text-destructive">{error}</div>
-                </Field>
-              )}
               <Field>
                 <FieldLabel htmlFor="email">{t("login.email.label")}</FieldLabel>
                 <Input
@@ -120,8 +112,9 @@ export function LoginForm({
                 )}
               </Field>
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? t("login.submitting") : t("login.submit")}
+                <Button type="submit" disabled={isLoginPending}>
+                  {isLoginPending && <Loader2 className="size-4 animate-spin" />}
+                  {isLoginPending ? t("login.submitting") : t("login.submit")}
                 </Button>
                 <FieldDescription className="text-center">
                   {t("login.signupPrompt")}{" "}

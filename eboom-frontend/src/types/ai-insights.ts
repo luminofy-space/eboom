@@ -162,10 +162,20 @@ export type AiFinancialInsight = {
   lastModifiedAt: string | null;
 };
 
+export type InsightGenerationStatus = "running" | "failed";
+
+export type InsightGenerationState = {
+  status: InsightGenerationStatus;
+  startedAt: string;
+  error?: string;
+};
+
 export type AiInsightsResponse = {
   insight: AiFinancialInsight | null;
   profile: AiInsightProfile | null;
   completeness: CompletenessResult;
+  generation?: InsightGenerationState | null;
+  status?: "started" | "already_running";
 };
 
 export type AiChatMessageRole = "user" | "assistant";

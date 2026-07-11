@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BanknoteArrowUp } from "lucide-react";
 import { formatMoney } from "@/src/i18n/formatters";
-import { ENTITY_CARD_GRADIENT } from "@/src/styles/entity-card-styles";
+import { ENTITY_CARD_GRADIENT } from "./entity-card-styles";
 import { cn } from "@/lib/utils";
 
 export interface IncomeNodeData {

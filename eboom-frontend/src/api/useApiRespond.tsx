@@ -1,43 +1,36 @@
-import { AxiosError, AxiosResponse } from "axios";
-import logger from "./logger";
+import type { AxiosError, AxiosResponse } from "@/src/types/axios";
+import {
+  errorKeyFromStatus,
+  notifyError,
+  notifySuccess,
+} from "@/src/lib/notify";
+
+export interface ApiErrorPayload {
+  errorKey?: string;
+  params?: Record<string, string | number>;
+  errors?: Record<string, string>;
+  error?: string;
+  message?: string;
+}
 
 export const useApiRespond = () => {
-    // const router = useRouter();
-    const isDevelopMode = process.env.NODE_ENV === 'development';
+  const handleError = (error: AxiosError) => {
+    const data = error.response?.data as ApiErrorPayload | undefined;
+    const errorKey =
+      data?.errorKey ?? errorKeyFromStatus(error.response?.status);
+    notifyError(errorKey, data?.params);
+  };
 
-    const handleError = (error: AxiosError) => {
+  const handleSuccess = (
+    _data: AxiosResponse,
+    options?: { successKey?: string; notify?: boolean }
+  ) => {
+    if (!options?.notify || !options.successKey) return;
+    notifySuccess(options.successKey);
+  };
 
-        if (isDevelopMode) logError(error);
-
-        //TODO: add a snackbar here...
-    
-        // if (error?.response?.status === 404) {
-        //   router.push(Routes.NOT_FOUND);
-        // }
-      };
-
-      const handleSuccess = (data: AxiosResponse) => {
-        if (isDevelopMode) logSuccess(data);
-      };
-
-      return {
-        handleError,
-        handleSuccess,
-      }
-}
-
-const logError = (error: AxiosError) => {
-    logger.error(error.message, {
-        status: error.response?.status,
-        data: error.response?.data,
-        config: error.config,
-    });
-}
-
-const logSuccess = (data: AxiosResponse) => {
-    logger.info(data.statusText, {
-        status: data.status,
-        data: data.data,
-        config: data.config,
-    });
-}
+  return {
+    handleError,
+    handleSuccess,
+  };
+};

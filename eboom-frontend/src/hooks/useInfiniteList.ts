@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios from "@/src/types/axios";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
 import { snakeToCamel } from "@/src/api/utils";
@@ -10,31 +10,42 @@ import { resolveApiUrl } from "@/src/api/resolveApiUrl";
 import { useCallback, useEffect, useRef } from "react";
 import type { PaginatedResponse } from "@/src/types/pagination";
 
+export interface ListQueryFilters {
+  categoryId?: number;
+  currencyId?: number;
+  isRecurring?: boolean;
+}
+
 interface UseInfiniteListOptions {
   queryKey: unknown[];
   enabled?: boolean;
   limit?: number;
   search?: string;
+  filters?: ListQueryFilters;
 }
 
 export function useInfiniteList<T>(
   baseUrl: string,
   options: UseInfiniteListOptions
 ) {
-  const { queryKey, enabled = true, limit = 20, search = "" } = options;
+  const { queryKey, enabled = true, limit = 20, search = "", filters = {} } = options;
   const authContext = useContext(AuthContext);
   const accessToken = authContext?.accessToken ?? null;
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const query = useInfiniteQuery<PaginatedResponse<T>>({
-    queryKey: [...queryKey, search],
+    queryKey: [...queryKey, search, filters],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const url = buildUrlWithParams(baseUrl, {
         page: pageParam as number,
         limit,
         search,
+        categoryId: filters.categoryId,
+        currencyId: filters.currencyId,
+        isRecurring:
+          filters.isRecurring !== undefined ? String(filters.isRecurring) : undefined,
       });
 
       const headers: Record<string, string> = {};
@@ -67,7 +78,6 @@ export function useInfiniteList<T>(
 
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
 
-  // Intersection observer for infinite scroll
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const setSentinelRef = useCallback(
@@ -93,7 +103,6 @@ export function useInfiniteList<T>(
     [fetchNextPage, hasNextPage, isFetchingNextPage]
   );
 
-  // Cleanup observer on unmount
   useEffect(() => {
     return () => {
       if (observerRef.current) {
@@ -102,7 +111,6 @@ export function useInfiniteList<T>(
     };
   }, []);
 
-  // Flatten all pages into a single items array
   const items: T[] = query.data?.pages.flatMap((page) => page.items) ?? [];
 
   return {

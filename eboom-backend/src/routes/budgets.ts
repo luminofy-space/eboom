@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { budgets, budgetLines } from "../db/schema";
 import {
@@ -9,18 +9,14 @@ import {
   getBudgetWithLines,
   getCanvasCurrencyUsage,
   getCashFlowForecast,
+  MONTHLY_BUDGET_PERIOD,
   upsertBudgetWithLines,
 } from "../services/planningService";
-import type { BudgetLineInput, BudgetPeriodType } from "../types/planning";
+import type { BudgetLineInput } from "../types/planning";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
 
 const router = express.Router({ mergeParams: true });
-
-function parseBudgetPeriodType(value: unknown): BudgetPeriodType | null {
-  if (value === "weekly" || value === "monthly" || value === "yearly") return value;
-  return null;
-}
 
 router.get("/currency-usage", requireCanvasAccess("view"), async (req: Request, res: Response) => {
   const canvasId = req.canvasId!;
@@ -38,13 +34,11 @@ router.get("/suggestions", requireCanvasAccess("view"), async (req: Request, res
   const canvasId = req.canvasId!;
 
   const currencyId = parseRouteParam(String(req.query.currencyId ?? ""));
-  const periodType = parseBudgetPeriodType(req.query.periodType);
 
   if (Number.isNaN(currencyId)) return res.status(400).json({ error: "Invalid currency ID" });
-  if (!periodType) return res.status(400).json({ error: "Invalid period type" });
 
   try {
-    const suggestions = await getBudgetSuggestions(canvasId, currencyId, periodType);
+    const suggestions = await getBudgetSuggestions(canvasId, currencyId);
     if (!suggestions) return res.status(404).json({ error: "Currency not found" });
 
     res.json({ suggestions });
@@ -93,7 +87,10 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const rows = await db.select().from(budgets).where(eq(budgets.canvasId, canvasId));
+    const rows = await db
+      .select()
+      .from(budgets)
+      .where(and(eq(budgets.canvasId, canvasId), eq(budgets.periodType, MONTHLY_BUDGET_PERIOD)));
     const enriched = await Promise.all(
       rows.map(async (budget) => {
         const detail = await getBudgetWithLines(budget.id);
@@ -115,7 +112,6 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
 
   const {
     currencyId,
-    periodType: rawPeriodType,
     totalLimit,
     alertThresholdPercent,
     alertsEnabled,
@@ -123,10 +119,8 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
     lines,
   } = req.body;
 
-  const periodType = parseBudgetPeriodType(rawPeriodType);
   const parsedCurrencyId = parseRouteParam(String(currencyId ?? ""));
 
-  if (!periodType) return res.status(400).json({ error: "Invalid period type" });
   if (Number.isNaN(parsedCurrencyId)) return res.status(400).json({ error: "Invalid currency ID" });
   if (!totalLimit || parseFloat(String(totalLimit)) < 0) {
     return res.status(400).json({ error: "Invalid total limit" });
@@ -149,7 +143,6 @@ router.post("/", requireCanvasAccess("edit"), async (req: Request, res: Response
   try {
     const result = await upsertBudgetWithLines(canvasId, user.id, {
       currencyId: parsedCurrencyId,
-      periodType,
       totalLimit: String(totalLimit),
       alertThresholdPercent:
         alertThresholdPercent != null ? parseRouteParam(String(alertThresholdPercent)) : undefined,

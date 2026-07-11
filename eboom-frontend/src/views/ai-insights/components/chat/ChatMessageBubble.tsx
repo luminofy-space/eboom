@@ -5,7 +5,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/src/components/AuthProvider";
-import type { AiChatMessage } from "../../types";
+import type { AiChatMessage } from "@/src/types/ai-insights";
 
 interface ChatMessageBubbleProps {
   message: AiChatMessage;

@@ -96,6 +96,7 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
     (id: number) => API_ROUTES.EXPENSE_PAYMENTS_DELETE(canvas!, id),
     {
       method: "delete",
+      successKey: "success.expense.paymentDeleted",
       invalidateQueries: false,
       onSuccess: () => {
         setDeleteId(null);

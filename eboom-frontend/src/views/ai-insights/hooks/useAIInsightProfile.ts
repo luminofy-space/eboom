@@ -6,7 +6,7 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useCanvas } from "@/src/hooks/useCanvas";
-import type { AiInsightProfile, AiInsightProfileSavePayload } from "../types";
+import type { AiInsightProfile, AiInsightProfileSavePayload } from "@/src/types/ai-insights";
 
 export function useAIInsightProfile() {
   const { canvas } = useCanvas();
@@ -21,7 +21,10 @@ export function useAIInsightProfile() {
     }
   );
 
-  const { mutateAsync, isPending: isSaving } = useMutationApi<{ profile: AiInsightProfile }>(
+  const { mutateAsync, isPending: isSaving } = useMutationApi<
+    AiInsightProfileSavePayload,
+    { profile: AiInsightProfile }
+  >(
     canvas ? API_ROUTES.CANVAS_AI_INSIGHT_PROFILE(canvas) : "",
     { method: "put" }
   );

@@ -11,9 +11,16 @@ import { serializeCompactLlmContext } from "./compactLlmContext";
 import { DEFAULT_LLM_MODEL, getOpenAIClient } from "./llmClient";
 
 const DEFAULT_MODEL = DEFAULT_LLM_MODEL;
-const GENERATE_COOLDOWN_MS = 60_000;
 
-const lastGenerateByCanvas = new Map<number, number>();
+export type InsightGenerationStatus = "running" | "failed";
+
+export type InsightGenerationState = {
+  status: InsightGenerationStatus;
+  startedAt: string;
+  error?: string;
+};
+
+const generationStateByCanvas = new Map<number, InsightGenerationState>();
 
 const VALID_CATEGORIES = new Set([
   "budget",
@@ -25,13 +32,6 @@ const VALID_CATEGORIES = new Set([
 ]);
 
 const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
-
-function assertRateLimit(canvasId: number): void {
-  const last = lastGenerateByCanvas.get(canvasId);
-  if (last && Date.now() - last < GENERATE_COOLDOWN_MS) {
-    throw new Error("RATE_LIMITED");
-  }
-}
 
 function validateInsightItem(item: unknown, index: number): AiInsightItem {
   if (!item || typeof item !== "object") {
@@ -117,13 +117,50 @@ export async function getAiFinancialInsightByCanvas(
   return row ?? null;
 }
 
+export function getInsightGenerationState(
+  canvasId: number
+): InsightGenerationState | null {
+  return generationStateByCanvas.get(canvasId) ?? null;
+}
+
+export function startAiFinancialInsightsGeneration(
+  canvasId: number,
+  userId: number,
+  profile: AiInsightProfile | null
+): { started: boolean; alreadyRunning: boolean } {
+  const existing = generationStateByCanvas.get(canvasId);
+  if (existing?.status === "running") {
+    return { started: false, alreadyRunning: true };
+  }
+
+  generationStateByCanvas.set(canvasId, {
+    status: "running",
+    startedAt: new Date().toISOString(),
+  });
+
+  void (async () => {
+    try {
+      await generateAiFinancialInsights(canvasId, userId, profile);
+      generationStateByCanvas.delete(canvasId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      generationStateByCanvas.set(canvasId, {
+        status: "failed",
+        startedAt: new Date().toISOString(),
+        error: message,
+      });
+      console.error("Background AI insight generation failed:", err);
+    }
+  })();
+
+  return { started: true, alreadyRunning: false };
+}
+
 export async function generateAiFinancialInsights(
   canvasId: number,
   userId: number,
   profile: AiInsightProfile | null
 ): Promise<AiFinancialInsight> {
-  assertRateLimit(canvasId);
-
   const { context, completeness } = await buildFinancialContext(canvasId, profile);
 
   let insights: AiInsightItem[];
@@ -133,7 +170,6 @@ export async function generateAiFinancialInsights(
     insights = await callOpenAI(context, completeness, true);
   }
 
-  lastGenerateByCanvas.set(canvasId, Date.now());
   const now = new Date();
   const existing = await getAiFinancialInsightByCanvas(canvasId);
 
@@ -174,6 +210,6 @@ export async function generateAiFinancialInsights(
   return created;
 }
 
-export function resetGenerateRateLimitForTests(): void {
-  lastGenerateByCanvas.clear();
+export function resetInsightGenerationStateForTests(): void {
+  generationStateByCanvas.clear();
 }

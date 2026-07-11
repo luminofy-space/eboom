@@ -8,11 +8,11 @@
   "modal": {
     "create": {
       "title": "افزودن دارایی جدید",
-      "description": "یک دارایی غیرنقدی با ارزش برآوردی و دسته‌بندی ثبت کنید."
+      "description": "دارایی را با قیمت واحد اولیه و مقدار ثبت کنید."
     },
     "edit": {
       "title": "ویرایش دارایی",
-      "description": "جزئیات دارایی خود را به‌روزرسانی کنید."
+      "description": "جزئیات را به‌روزرسانی کنید. حجم و نقاط قیمت واحد را در صفحه جزئیات مدیریت کنید."
     },
     "fields": {
       "name": {
@@ -25,8 +25,12 @@
       "currency": {
         "label": "ارز"
       },
-      "estimatedValue": {
-        "label": "ارزش برآوردی",
+      "quantity": {
+        "label": "مقدار",
+        "placeholder": "۱"
+      },
+      "unitPrice": {
+        "label": "قیمت واحد اولیه",
         "placeholder": "۰٫۰۰"
       },
       "description": {
@@ -50,11 +54,150 @@
     "nameMaxLength": "نام باید حداکثر ۲۵۵ کاراکتر باشد",
     "categoryRequired": "دسته‌بندی الزامی است",
     "currencyRequired": "ارز الزامی است",
-    "estimatedValueRequired": "ارزش برآوردی الزامی است",
-    "estimatedValueNonNegative": "ارزش برآوردی باید صفر یا بیشتر باشد",
+    "quantityRequired": "مقدار الزامی است",
+    "quantityNonZero": "مقدار نباید صفر باشد",
+    "unitPriceRequired": "قیمت واحد اولیه الزامی است",
+    "unitPriceNonNegative": "قیمت واحد اولیه باید صفر یا بیشتر باشد",
+    "unitPricePointRequired": "قیمت واحد الزامی است",
+    "unitPricePointNonNegative": "قیمت واحد باید صفر یا بیشتر باشد",
+    "recordedAtRequired": "تاریخ الزامی است",
     "imageTooLarge": "تصویر باید حداکثر ۵ مگابایت باشد",
     "imageInvalidType": "لطفاً یک فایل تصویر معتبر انتخاب کنید",
     "noCanvas": "ابتدا یک بوم انتخاب کنید",
     "saveFailed": "ذخیره ناموفق بود. لطفاً دوباره تلاش کنید."
+  },
+  "detail": {
+    "loadError": "بارگذاری دارایی ناموفق بود.",
+    "quantityHeld": "مقدار نگهداری‌شده",
+    "costBasis": "بهای تمام‌شده",
+    "holdingValue": "ارزش نگهداری",
+    "unrealizedPnL": "سود/زیان تحقق‌نیافته"
+  },
+  "summaryCards": {
+    "quantity": {
+      "label": "مقدار نگهداری‌شده",
+      "footer": "اندازه فعلی دارایی"
+    },
+    "costBasis": {
+      "label": "بهای تمام‌شده",
+      "footer": "میانگین هزینه مقدار باقیمانده"
+    },
+    "holdingValue": {
+      "label": "ارزش نگهداری",
+      "footer": "آخرین قیمت واحد × مقدار"
+    },
+    "unrealizedPnL": {
+      "label": "سود/زیان تحقق‌نیافته",
+      "footer": "ارزش نگهداری منهای بهای تمام‌شده"
+    }
+  },
+  "chart": {
+    "title": "ارزش‌گذاری در گذر زمان",
+    "description": "سود یا زیان بر اساس نقاط قیمت واحد و حجم‌ها",
+    "empty": "برای دیدن سود و زیان، نقاط قیمت واحد اضافه کنید.",
+    "legend": {
+      "unrealizedPnL": "سود/زیان تحقق‌نیافته",
+      "holdingValue": "ارزش نگهداری"
+    },
+    "timeRange": {
+      "7d": "۷ر",
+      "30d": "۳۰ر",
+      "90d": "۹۰ر",
+      "all": "همه"
+    }
+  },
+  "volumesTable": {
+    "title": "حجم‌ها",
+    "empty": "هنوز تغییر حجمی نیست.",
+    "add": "افزودن حجم",
+    "headers": {
+      "type": "نوع",
+      "quantity": "مقدار",
+      "unitPrice": "قیمت واحد",
+      "total": "جمع",
+      "date": "تاریخ",
+      "notes": "یادداشت"
+    },
+    "buy": "خرید",
+    "sell": "فروش"
+  },
+  "pricePointsTable": {
+    "title": "نقاط قیمت واحد",
+    "empty": "هنوز نقطه قیمت واحدی نیست.",
+    "add": "افزودن نقطه قیمت واحد",
+    "headers": {
+      "unitPrice": "قیمت واحد",
+      "date": "تاریخ",
+      "notes": "یادداشت"
+    }
+  },
+  "volumeModal": {
+    "create": {
+      "title": "افزودن حجم",
+      "description": "خرید یا فروش این دارایی را ثبت کنید."
+    },
+    "edit": {
+      "title": "ویرایش حجم",
+      "description": "این خرید یا فروش را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "side": {
+        "label": "نوع",
+        "buy": "خرید",
+        "sell": "فروش"
+      },
+      "quantity": {
+        "label": "مقدار",
+        "placeholder": "۱"
+      },
+      "unitPrice": {
+        "label": "قیمت واحد",
+        "placeholder": "۰٫۰۰"
+      },
+      "recordedAt": {
+        "label": "تاریخ"
+      },
+      "notes": {
+        "label": "یادداشت",
+        "placeholder": "اختیاری"
+      }
+    },
+    "submit": {
+      "create": "افزودن حجم",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره حجم ناموفق بود."
+    }
+  },
+  "pricePointModal": {
+    "create": {
+      "title": "افزودن نقطه قیمت واحد",
+      "description": "قیمت واحد این دارایی را در یک زمان ثبت کنید."
+    },
+    "edit": {
+      "title": "ویرایش نقطه قیمت واحد",
+      "description": "این قیمت واحد را به‌روزرسانی کنید."
+    },
+    "fields": {
+      "unitPrice": {
+        "label": "قیمت واحد",
+        "placeholder": "۰٫۰۰"
+      },
+      "recordedAt": {
+        "label": "تاریخ"
+      },
+      "notes": {
+        "label": "یادداشت",
+        "placeholder": "اختیاری"
+      }
+    },
+    "submit": {
+      "create": "افزودن نقطه قیمت واحد",
+      "edit": "ذخیره تغییرات"
+    },
+    "error": {
+      "saveFailed": "ذخیره نقطه قیمت واحد ناموفق بود."
+    }
   }
 }

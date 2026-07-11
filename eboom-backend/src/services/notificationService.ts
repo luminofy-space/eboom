@@ -12,7 +12,7 @@ import {
   userSettings,
   users,
 } from "../db/schema";
-import { sendOverdueNotificationsEmail } from "./emailService";
+import { sendBudgetAlertsEmail, sendOverdueNotificationsEmail } from "./emailService";
 import {
   budgetAlertSourceKey,
   getBudgetAlertsForUser,
@@ -161,7 +161,7 @@ async function getExistingBudgetNotificationKeys(userId: number): Promise<Set<st
 
 function formatBudgetAlertMessage(alert: BudgetAlertNotification): string {
   if (alert.type === "savings_goal") {
-    return `Savings goal progress: ${alert.label} (${alert.percent}% of ${alert.limit} ${alert.currencyCode}) — ${alert.canvasName}`;
+    return `Congrats! Your balance across all wallets can cover ${alert.label}. (${alert.canvasName})`;
   }
   return `Budget alert: ${alert.label} at ${alert.percent}% (${alert.spent}/${alert.limit} ${alert.currencyCode}) — ${alert.canvasName}`;
 }
@@ -169,14 +169,26 @@ function formatBudgetAlertMessage(alert: BudgetAlertNotification): string {
 export async function deliverBudgetAlertNotificationsForUser(
   userId: number
 ): Promise<number> {
-  if (!(await userWantsNotificationEmails(userId))) return 0;
-
   const alerts = await getBudgetAlertsForUser(userId);
   if (alerts.length === 0) return 0;
 
   const existingKeys = await getExistingBudgetNotificationKeys(userId);
   const newAlerts = alerts.filter((alert) => !existingKeys.has(budgetAlertSourceKey(alert)));
   if (newAlerts.length === 0) return 0;
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      emailVerified: users.emailVerified,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (user?.emailVerified && (await userWantsNotificationEmails(userId))) {
+    await sendBudgetAlertsEmail(user.email, user.firstName, newAlerts);
+  }
 
   await db.insert(notifications).values(
     newAlerts.map((alert) => ({

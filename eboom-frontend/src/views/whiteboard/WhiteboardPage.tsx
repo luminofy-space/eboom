@@ -47,7 +47,7 @@ import type {
   WhiteboardContextMenuState,
   WhiteboardCreatedEntity,
   WhiteboardSpawnPosition,
-} from "./types";
+} from "@/src/types/whiteboard";
 import { layoutWhiteboardGraph } from "./utils/autoLayout";
 import { getConnectionIntent } from "./utils/connectionValidator";
 import {
@@ -227,6 +227,18 @@ export default function WhiteboardPage() {
     dispatch(openExpenseCreateModal());
   }, [dispatch, storeSpawnAtCenter]);
 
+  const handleAddEntry = useCallback(() => {
+    setEntryModal({ open: true });
+  }, []);
+
+  const handleAddPayment = useCallback(() => {
+    setPaymentModal({ open: true });
+  }, []);
+
+  const handleAddTransfer = useCallback(() => {
+    setTransferModal({ open: true });
+  }, []);
+
   const handleEditNode = useCallback(
     (nodeId: string) => {
       const parsed = parseEntityNodeId(nodeId);
@@ -402,6 +414,9 @@ export default function WhiteboardPage() {
             onAddWallet={handleAddWallet}
             onAddIncome={handleAddIncome}
             onAddExpense={handleAddExpense}
+              onAddEntry={handleAddEntry}
+              onAddPayment={handleAddPayment}
+              onAddTransfer={handleAddTransfer}
             onAutoLayout={onAutoLayout}
             onFitView={onFitView}
           />
@@ -517,6 +532,9 @@ export default function WhiteboardPage() {
             onAddWallet={handleAddWallet}
             onAddIncome={handleAddIncome}
             onAddExpense={handleAddExpense}
+              onAddEntry={handleAddEntry}
+              onAddPayment={handleAddPayment}
+              onAddTransfer={handleAddTransfer}
             onEditNode={handleEditNode}
             onDeleteNode={setDeleteNodeId}
             onOpenDetail={handleOpenDetail}
