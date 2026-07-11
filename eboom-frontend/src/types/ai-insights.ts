@@ -3,14 +3,14 @@ export type AiInsightProfileStatus = "draft" | "completed";
 export type FinancialKnowledgeLevel = "beginner" | "intermediate" | "advanced";
 
 export type RiskProfileData = {
-  riskTolerance: number;
-  investmentTimeHorizon: "under_3" | "3_7" | "7_15" | "15_plus";
-  acceptShortTermLoss: 1 | 2 | 3 | 4 | 5;
-  portfolioDropReaction: "sell" | "hold" | "buy_more";
+  riskTolerance?: number;
+  investmentTimeHorizon?: "under_3" | "3_7" | "7_15" | "15_plus";
+  acceptShortTermLoss?: 1 | 2 | 3 | 4 | 5;
+  portfolioDropReaction?: "sell" | "hold" | "buy_more";
 };
 
 export type InvestmentGoalsData = {
-  primaryGoal:
+  primaryGoal?:
     | "emergency_fund"
     | "debt_payoff"
     | "home"
@@ -21,15 +21,15 @@ export type InvestmentGoalsData = {
   secondaryGoals: string[];
   targetAmount?: number | null;
   targetCurrencyId?: number | null;
-  targetTimeframe: "under_1" | "1_3" | "3_10" | "10_plus";
+  targetTimeframe?: "under_1" | "1_3" | "3_10" | "10_plus";
   goalPriorityNote?: string | null;
 };
 
 export type EsgPreferencesData = {
-  esgImportance: "not_important" | "somewhat" | "very_important" | "deal_breaker";
+  esgImportance?: "not_important" | "somewhat" | "very_important" | "deal_breaker";
   avoidSectors: string[];
-  acceptLowerReturnsForEsg: "yes" | "no" | "slightly_lower";
-  preferSustainableInvestments: "yes" | "no" | "unsure";
+  acceptLowerReturnsForEsg?: "yes" | "no" | "slightly_lower";
+  preferSustainableInvestments?: "yes" | "no" | "unsure";
 };
 
 export type FinancialKnowledgeData = {
@@ -39,13 +39,13 @@ export type FinancialKnowledgeData = {
 };
 
 export type FinancialPictureData = {
-  hasMajorLongTermLiabilities: boolean;
+  hasMajorLongTermLiabilities?: boolean | null;
   majorLongTermLiabilitiesAmount?: number | null;
-  hasShortTermLiabilities: boolean;
+  hasShortTermLiabilities?: boolean | null;
   shortTermLiabilitiesAmount?: number | null;
-  expectedMonthlyCashflow: "deficit" | "break_even" | "small_surplus" | "large_surplus";
-  emergencyFundCoverage: "none" | "under_1" | "1_3" | "3_6" | "6_plus";
-  dependentsCount: number;
+  expectedMonthlyCashflow?: "deficit" | "break_even" | "small_surplus" | "large_surplus";
+  emergencyFundCoverage?: "none" | "under_1" | "1_3" | "3_6" | "6_plus";
+  dependentsCount?: number | null;
   additionalNotes?: string | null;
 };
 

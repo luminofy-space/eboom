@@ -43,6 +43,9 @@
     "financialKnowledge": "دانش مالی",
     "financialPicture": "تصویر کلی مالی"
   },
+  "form": {
+    "selectPlaceholder": "یک گزینه انتخاب کنید"
+  },
   "riskProfile": {
     "title": "چقدر ریسک می‌پذیرید؟",
     "description": "پاسخ‌های شما به ما کمک می‌کند پیشنهادها را با سطح راحتی شما هماهنگ کنیم.",
@@ -212,15 +215,21 @@
     "no": "خیر"
   },
   "validation": {
+    "riskToleranceRequired": "لطفاً تحمل ریسک خود را انتخاب کنید.",
     "timeHorizonRequired": "لطفاً افق سرمایه‌گذاری را انتخاب کنید.",
+    "acceptShortTermLossRequired": "لطفاً به سؤال پذیرش زیان کوتاه‌مدت پاسخ دهید.",
     "dropReactionRequired": "لطفاً واکنش خود به افت پرتfolio را انتخاب کنید.",
     "primaryGoalRequired": "لطفاً هدف اصلی را انتخاب کنید.",
     "timeframeRequired": "لطفاً بازه زمانی هدف را انتخاب کنید.",
     "esgImportanceRequired": "لطفاً اهمیت ESG را انتخاب کنید.",
     "esgReturnsRequired": "لطفاً سؤال بازده ESG را پاسخ دهید.",
+    "preferSustainableRequired": "لطفاً به سؤال سرمایه‌گذاری پایدار پاسخ دهید.",
     "quizIncomplete": "لطفاً هر پنج سؤال را پاسخ دهید.",
+    "longTermLiabilitiesRequired": "لطفاً به سؤال بدهی‌های بلندمدت پاسخ دهید.",
+    "shortTermLiabilitiesRequired": "لطفاً به سؤال بدهی‌های کوتاه‌مدت پاسخ دهید.",
     "cashflowRequired": "لطفاً جریان نقدی ماهانه مورد انتظار را انتخاب کنید.",
     "emergencyFundRequired": "لطفاً پوشش صندوق اضطراری را انتخاب کنید.",
+    "dependentsRequired": "لطفاً تعداد افراد تحت تکفل را وارد کنید.",
     "dependentsInvalid": "تعداد افراد تحت تکفل باید صفر یا بیشتر باشد."
   },
   "empty": {

@@ -20,6 +20,12 @@ interface FinancialPictureStepProps {
   control: Control<WizardFormData>;
 }
 
+function booleanSelectValue(value: boolean | null | undefined): string {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  return "";
+}
+
 export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
   const { t } = useTranslation("ai-insights");
   const hasLongTerm = useWatch({ control, name: "financialPicture.hasMajorLongTermLiabilities" });
@@ -41,11 +47,11 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
           <Field>
             <FieldLabel>{t("financialPicture.hasMajorLongTermLiabilities")}</FieldLabel>
             <Select
-              value={field.value ? "yes" : "no"}
+              value={booleanSelectValue(field.value)}
               onValueChange={(v) => field.onChange(v === "yes")}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="yes">{t("financialPicture.yes")}</SelectItem>
@@ -56,7 +62,7 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
         )}
       />
 
-      {hasLongTerm && (
+      {hasLongTerm === true && (
         <Controller
           name="financialPicture.majorLongTermLiabilitiesAmount"
           control={control}
@@ -84,11 +90,11 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
           <Field>
             <FieldLabel>{t("financialPicture.hasShortTermLiabilities")}</FieldLabel>
             <Select
-              value={field.value ? "yes" : "no"}
+              value={booleanSelectValue(field.value)}
               onValueChange={(v) => field.onChange(v === "yes")}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="yes">{t("financialPicture.yes")}</SelectItem>
@@ -99,7 +105,7 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
         )}
       />
 
-      {hasShortTerm && (
+      {hasShortTerm === true && (
         <Controller
           name="financialPicture.shortTermLiabilitiesAmount"
           control={control}
@@ -126,9 +132,12 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("financialPicture.expectedMonthlyCashflow")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["deficit", "break_even", "small_surplus", "large_surplus"] as const).map(
@@ -150,9 +159,12 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("financialPicture.emergencyFundCoverage")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["none", "under_1", "1_3", "3_6", "6_plus"] as const).map((value) => (
@@ -175,10 +187,10 @@ export function FinancialPictureStep({ control }: FinancialPictureStepProps) {
             <NumberInput
               min={0}
               max={10}
-              value={field.value}
+              value={field.value ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                field.onChange(val === "" ? 0 : Number(val));
+                field.onChange(val === "" ? null : Number(val));
               }}
             />
           </Field>

@@ -37,9 +37,12 @@ export function EsgPreferenceStep({ control }: EsgPreferenceStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("esgPreferences.esgImportance")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["not_important", "somewhat", "very_important", "deal_breaker"] as const).map(
@@ -99,9 +102,12 @@ export function EsgPreferenceStep({ control }: EsgPreferenceStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("esgPreferences.acceptLowerReturnsForEsg")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["yes", "no", "slightly_lower"] as const).map((value) => (
@@ -121,9 +127,12 @@ export function EsgPreferenceStep({ control }: EsgPreferenceStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("esgPreferences.preferSustainableInvestments")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["yes", "no", "unsure"] as const).map((value) => (

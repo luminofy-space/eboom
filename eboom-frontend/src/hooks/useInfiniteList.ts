@@ -35,7 +35,7 @@ export function useInfiniteList<T>(
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const query = useInfiniteQuery<PaginatedResponse<T>>({
-    queryKey: [...queryKey, search, filters],
+    queryKey: [...queryKey, "infinite", limit, search, filters],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const url = buildUrlWithParams(baseUrl, {

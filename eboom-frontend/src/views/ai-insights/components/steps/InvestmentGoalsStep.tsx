@@ -40,9 +40,12 @@ export function InvestmentGoalsStep({ control }: InvestmentGoalsStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("investmentGoals.primaryGoal")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {GOAL_OPTIONS.map((value) => (
@@ -128,9 +131,12 @@ export function InvestmentGoalsStep({ control }: InvestmentGoalsStepProps) {
         render={({ field }) => (
           <Field>
             <FieldLabel>{t("investmentGoals.targetTimeframe")}</FieldLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t("form.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {(["under_1", "1_3", "3_10", "10_plus"] as const).map((value) => (
