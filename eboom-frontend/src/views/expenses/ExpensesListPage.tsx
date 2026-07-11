@@ -36,6 +36,7 @@ import {
   EntityListTable,
   ListFiltersBar,
   ListPagination,
+  ListInfiniteScrollSentinel,
   ListTableSkeleton,
 } from "@/src/components/list";
 import { useTranslation } from "react-i18next";
@@ -63,6 +64,8 @@ export default function ExpensesListPage() {
     pageSize,
     totalPages,
     setPage,
+    sentinelRef,
+    isFetchingNextPage,
   } = useEntityList<ExpenseItem>(
     canvas ? API_ROUTES.CANVASES_EXPENSES_LIST(canvas) : "",
     {
@@ -165,22 +168,29 @@ export default function ExpensesListPage() {
             onDelete={canEdit ? (expense) => setDeleteId(expense.id) : undefined}
           />
         ) : (
-          <Grid variant="cards" gap={4}>
-            {items.map((expense) => (
-              <GridCard
-                key={expense.id}
-                href={`/expense/${expense.id}`}
-                imageUrl={expense.photoUrl}
-                title={expense.name}
-                updatedAt={expense.lastModifiedAt}
-                onEdit={canEdit ? () => dispatch(openExpenseEditModal(expense)) : undefined}
-                onDelete={canEdit ? () => setDeleteId(expense.id) : undefined}
-              />
-            ))}
-          </Grid>
+          <>
+            <Grid variant="cards" gap={4}>
+              {items.map((expense) => (
+                <GridCard
+                  key={expense.id}
+                  href={`/expense/${expense.id}`}
+                  imageUrl={expense.photoUrl}
+                  title={expense.name}
+                  updatedAt={expense.lastModifiedAt}
+                  onEdit={canEdit ? () => dispatch(openExpenseEditModal(expense)) : undefined}
+                  onDelete={canEdit ? () => setDeleteId(expense.id) : undefined}
+                />
+              ))}
+              {isFetchingNextPage &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <GridCardSkeleton key={`loading-${i}`} />
+                ))}
+            </Grid>
+            {sentinelRef && <ListInfiniteScrollSentinel sentinelRef={sentinelRef} />}
+          </>
         )}
 
-        {pagination}
+        {viewMode === "table" && pagination}
       </Container>
 
       {canEdit && <FloatingAddButton onClick={() => dispatch(openExpenseCreateModal())} />}

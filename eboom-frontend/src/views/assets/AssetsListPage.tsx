@@ -35,6 +35,7 @@ import {
   EntityListTable,
   ListFiltersBar,
   ListPagination,
+  ListInfiniteScrollSentinel,
   ListTableSkeleton,
 } from "@/src/components/list";
 import { useTranslation } from "react-i18next";
@@ -63,6 +64,8 @@ export default function AssetsListPage() {
     pageSize,
     totalPages,
     setPage,
+    sentinelRef,
+    isFetchingNextPage,
   } = useEntityList<AssetItem>(
     canvas ? API_ROUTES.CANVASES_ASSETS_LIST(canvas) : "",
     {
@@ -168,26 +171,33 @@ export default function AssetsListPage() {
             onDelete={canEdit ? (asset) => setDeleteId(asset.id) : undefined}
           />
         ) : (
-          <Grid variant="cards" gap={4}>
-            {items.map((asset) => (
-              <GridCard
-                key={asset.id}
-                imageUrl={asset.photoUrl}
-                title={asset.name}
-                subtitle={formatMoney(
-                  asset.currentHoldingValue ?? asset.costBasis ?? "0",
-                  asset.currency?.symbol
-                )}
-                updatedAt={asset.lastModifiedAt}
-                onClick={canEdit ? () => openEdit(asset) : undefined}
-                onEdit={canEdit ? () => openEdit(asset) : undefined}
-                onDelete={canEdit ? () => setDeleteId(asset.id) : undefined}
-              />
-            ))}
-          </Grid>
+          <>
+            <Grid variant="cards" gap={4}>
+              {items.map((asset) => (
+                <GridCard
+                  key={asset.id}
+                  imageUrl={asset.photoUrl}
+                  title={asset.name}
+                  subtitle={formatMoney(
+                    asset.currentHoldingValue ?? asset.costBasis ?? "0",
+                    asset.currency?.symbol
+                  )}
+                  updatedAt={asset.lastModifiedAt}
+                  onClick={canEdit ? () => openEdit(asset) : undefined}
+                  onEdit={canEdit ? () => openEdit(asset) : undefined}
+                  onDelete={canEdit ? () => setDeleteId(asset.id) : undefined}
+                />
+              ))}
+              {isFetchingNextPage &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <GridCardSkeleton key={`loading-${i}`} />
+                ))}
+            </Grid>
+            {sentinelRef && <ListInfiniteScrollSentinel sentinelRef={sentinelRef} />}
+          </>
         )}
 
-        {pagination}
+        {viewMode === "table" && pagination}
       </Container>
 
       {canEdit && <FloatingAddButton onClick={() => dispatch(openAssetCreateModal())} />}
