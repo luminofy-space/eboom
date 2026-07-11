@@ -30,6 +30,7 @@ import {
   EntityListTable,
   ListFiltersBar,
   ListPagination,
+  ListInfiniteScrollSentinel,
   ListTableSkeleton,
 } from "@/src/components/list";
 import { Container } from "@/components/ui/container";
@@ -61,6 +62,8 @@ export default function IncomesListPage() {
     pageSize,
     totalPages,
     setPage,
+    sentinelRef,
+    isFetchingNextPage,
   } = useEntityList<IncomeItem>(
     canvas ? API_ROUTES.CANVASES_INCOMES_LIST(canvas) : "",
     {
@@ -110,7 +113,6 @@ export default function IncomesListPage() {
     return (
       <>
         {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
-        <Container>{pagination}</Container>
         <NewIncomeModal />
       </>
     );
@@ -124,7 +126,6 @@ export default function IncomesListPage() {
           <Stack className="flex-1 py-12" align="center" justify="center">
             <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
           </Stack>
-          {pagination}
         </Container>
         <NewIncomeModal />
       </>
@@ -146,22 +147,29 @@ export default function IncomesListPage() {
             onDelete={canEdit ? (income) => setDeleteId(income.id) : undefined}
           />
         ) : (
-          <Grid variant="cards" gap={4}>
-            {items.map((income) => (
-              <GridCard
-                key={income.id}
-                href={`/income/${income.id}`}
-                imageUrl={income.photoUrl}
-                title={income.name}
-                updatedAt={income.lastModifiedAt}
-                onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
-                onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
-              />
-            ))}
-          </Grid>
+          <>
+            <Grid variant="cards" gap={4}>
+              {items.map((income) => (
+                <GridCard
+                  key={income.id}
+                  href={`/income/${income.id}`}
+                  imageUrl={income.photoUrl}
+                  title={income.name}
+                  updatedAt={income.lastModifiedAt}
+                  onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
+                  onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
+                />
+              ))}
+              {isFetchingNextPage &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <GridCardSkeleton key={`loading-${i}`} />
+                ))}
+            </Grid>
+            {sentinelRef && <ListInfiniteScrollSentinel sentinelRef={sentinelRef} />}
+          </>
         )}
 
-        {pagination}
+        {viewMode === "table" && pagination}
       </Container>
 
       {canEdit && <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />}

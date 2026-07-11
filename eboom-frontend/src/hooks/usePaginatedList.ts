@@ -1,12 +1,9 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import axios from "@/src/api/axiosTypes";
-import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "@/src/components/AuthProvider";
-import { snakeToCamel } from "@/src/api/utils";
+import { keepPreviousData } from "@tanstack/react-query";
+import useQueryApi from "@/src/api/useQuery";
+import { useMemo, useState } from "react";
 import { buildUrlWithParams } from "@/src/api/buildUrlWithParams";
-import { resolveApiUrl } from "@/src/api/resolveApiUrl";
 import type { PaginatedResponse } from "@/src/types/pagination";
 import type { ListQueryFilters } from "@/src/hooks/useInfiniteList";
 
@@ -18,23 +15,45 @@ interface UsePaginatedListOptions {
   filters?: ListQueryFilters;
 }
 
+function buildResetKey(
+  search: string,
+  filters: ListQueryFilters,
+  limit: number
+): string {
+  return [
+    search,
+    filters.categoryId ?? "",
+    filters.currencyId ?? "",
+    filters.isRecurring ?? "",
+    limit,
+  ].join("|");
+}
+
 export function usePaginatedList<T>(
   baseUrl: string,
   options: UsePaginatedListOptions
 ) {
   const { queryKey, enabled = true, limit = 20, search = "", filters = {} } = options;
-  const authContext = useContext(AuthContext);
-  const accessToken = authContext?.accessToken ?? null;
-  const [page, setPage] = useState(1);
+  const resetKey = buildResetKey(search, filters, limit);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, filters.categoryId, filters.currencyId, filters.isRecurring, limit]);
+  const [pageState, setPageState] = useState({ resetKey, page: 1 });
 
-  const query = useQuery<PaginatedResponse<T>>({
-    queryKey: [...queryKey, "paginated", page, limit, search, filters],
-    queryFn: async () => {
-      const url = buildUrlWithParams(baseUrl, {
+  if (pageState.resetKey !== resetKey) {
+    setPageState({ resetKey, page: 1 });
+  }
+
+  const setPage = (next: number | ((prev: number) => number)) => {
+    setPageState((prev) => ({
+      resetKey: prev.resetKey,
+      page: typeof next === "function" ? next(prev.page) : next,
+    }));
+  };
+
+  const page = pageState.page;
+
+  const url = useMemo(
+    () =>
+      buildUrlWithParams(baseUrl, {
         page,
         limit,
         search,
@@ -42,26 +61,13 @@ export function usePaginatedList<T>(
         currencyId: filters.currencyId,
         isRecurring:
           filters.isRecurring !== undefined ? String(filters.isRecurring) : undefined,
-      });
+      }),
+    [baseUrl, page, limit, search, filters.categoryId, filters.currencyId, filters.isRecurring]
+  );
 
-      const headers: Record<string, string> = {};
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-      }
-
-      try {
-        const res = await axios.get(resolveApiUrl(url), { headers });
-        return snakeToCamel(res.data) as PaginatedResponse<T>;
-      } catch (err: unknown) {
-        const axiosErr = err as { response?: { status?: number } };
-        if (axiosErr.response?.status === 401 || axiosErr.response?.status === 403) {
-          authContext?.signOut();
-        }
-        throw err;
-      }
-    },
+  const query = useQueryApi<PaginatedResponse<T>>(url, {
+    queryKey: [...queryKey, "paginated", page, limit, search, filters],
     enabled: enabled && !!baseUrl,
-    staleTime: 0,
     refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
@@ -70,11 +76,9 @@ export function usePaginatedList<T>(
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  useEffect(() => {
-    if (page > totalPages && total > 0) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages, total]);
+  if (total > 0 && pageState.page > totalPages) {
+    setPageState({ resetKey: pageState.resetKey, page: totalPages });
+  }
 
   return {
     items: data?.items ?? [],
@@ -85,6 +89,7 @@ export function usePaginatedList<T>(
     setPage,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
     refetch: query.refetch,
   };
 }

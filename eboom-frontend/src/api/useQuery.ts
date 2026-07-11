@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import axios, { type AxiosError, type AxiosRequestConfig } from "@/src/types/axios";
 import { useContext } from "react";
 import { AuthContext } from "@/src/components/AuthProvider";
@@ -25,6 +25,7 @@ const useQueryApi = <T>(
     enabled?: boolean;
     retry?: number;
     refetchOnWindowFocus?: boolean;
+    placeholderData?: UseQueryOptions<T, Error, T, readonly unknown[]>["placeholderData"];
     auth?: AuthOptions;
   },
   axiosProp?: Partial<AxiosRequestConfig>
@@ -41,6 +42,7 @@ const useQueryApi = <T>(
     enabled = true,
     retry = 1,
     refetchOnWindowFocus = false,
+    placeholderData,
     auth: optionsAuth,
   } = options || {};
 
@@ -120,6 +122,7 @@ const useQueryApi = <T>(
     enabled: enabled && hasAccess,
     retry,
     refetchOnWindowFocus,
+    ...(placeholderData !== undefined ? { placeholderData } : {}),
   });
 };
 
