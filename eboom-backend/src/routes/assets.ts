@@ -10,6 +10,7 @@ import {
 } from "../db/schema";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { parseListQueryParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 import {
@@ -104,11 +105,24 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId, currencyId } = parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false), ilike(assets.name, `%${search}%`))
-      : and(eq(assets.canvasId, canvasId), eq(assets.isArchived, false));
+    const conditions = [
+      eq(assets.canvasId, canvasId),
+      eq(assets.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(assets.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(assets.assetCategoryId, categoryId));
+    }
+    if (currencyId !== undefined) {
+      conditions.push(eq(assets.currencyId, currencyId));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })

@@ -25,10 +25,11 @@ import {
   toggleSearch,
   hideSearch,
 } from "@/src/redux/searchSlice";
+import { ListViewToggle } from "@/src/components/list/ListViewToggle";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
-const LIST_PAGES = ["/incomes", "/wallets", "/expenses"];
+const LIST_PAGES = ["/incomes", "/wallets", "/expenses", "/assets"];
 
 const ROUTE_KEYS: Record<string, { labelKey: string; listUrl: string }> = {
   incomes: { labelKey: "routes.incomes", listUrl: "/incomes" },
@@ -37,6 +38,8 @@ const ROUTE_KEYS: Record<string, { labelKey: string; listUrl: string }> = {
   wallet: { labelKey: "routes.wallets", listUrl: "/wallets" },
   expenses: { labelKey: "routes.expenses", listUrl: "/expenses" },
   expense: { labelKey: "routes.expenses", listUrl: "/expenses" },
+  assets: { labelKey: "routes.assets", listUrl: "/assets" },
+  asset: { labelKey: "routes.assets", listUrl: "/assets" },
   whiteboard: { labelKey: "routes.whiteboard", listUrl: "/whiteboard" },
   "budget-planning": { labelKey: "routes.budgetPlanning", listUrl: "/budget-planning" },
   transactions: { labelKey: "routes.transactions", listUrl: "/transactions" },
@@ -146,6 +149,7 @@ export function SiteHeader() {
 
       {isListPage && (
         <div className="flex items-center gap-2 px-4">
+          <ListViewToggle />
           <div
             className={cn(
               "overflow-hidden transition-all duration-300 ease-in-out",

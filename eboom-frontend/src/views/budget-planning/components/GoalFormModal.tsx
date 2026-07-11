@@ -37,6 +37,7 @@ interface GoalFormModalProps {
   onOpenChange: (open: boolean) => void;
   canvasId: number;
   defaultCurrencyId?: number;
+  defaultTargetDate?: string;
   editGoal?: SavingsGoalListItem | null;
   goalId?: number | null;
   canEdit?: boolean;
@@ -57,6 +58,7 @@ export function GoalFormModal({
   onOpenChange,
   canvasId,
   defaultCurrencyId,
+  defaultTargetDate,
   editGoal,
   goalId,
   canEdit = true,
@@ -133,13 +135,13 @@ export function GoalFormModal({
     } else {
       setName("");
       setTargetAmount("");
-      setTargetDate("");
+      setTargetDate(toDateInputValue(defaultTargetDate));
       setCurrencyId(defaultCurrencyId ? String(defaultCurrencyId) : "");
       setStatus("active");
       setExistingPhotoUrl(null);
       setPhoto(null);
     }
-  }, [open, resolvedGoal, goalId, editGoal, goalsLoading, defaultCurrencyId]);
+  }, [open, resolvedGoal, goalId, editGoal, goalsLoading, defaultCurrencyId, defaultTargetDate]);
 
   useEffect(() => {
     if (!open || isEdit || currencyId || allCurrencies.length === 0) return;

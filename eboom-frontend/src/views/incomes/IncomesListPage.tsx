@@ -3,9 +3,14 @@
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
-import { useInfiniteList } from "@/src/hooks/useInfiniteList";
+import { useEntityList } from "@/src/hooks/useEntityList";
+import { useListQueryFilters } from "@/src/hooks/useListQueryFilters";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
-import { selectSearchQuery } from "@/src/redux/searchSlice";
+import {
+  selectHasActiveFilters,
+  selectSearchQuery,
+  selectViewMode,
+} from "@/src/redux/searchSlice";
 import {
   openIncomeCreateModal,
   openIncomeEditModal,
@@ -13,6 +18,7 @@ import {
 } from "@/src/redux/incomeSlice";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useMutationApi } from "@/src/api/useMutation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { NewIncomeModal } from "./component/NewIncomeModal";
 import AddIncomeButton from "./component/AddIncomeButton";
@@ -20,10 +26,15 @@ import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
 import { FloatingAddButton } from "@/src/components/FloatingAddButton";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import {
+  EntityListTable,
+  ListFiltersBar,
+  ListPagination,
+  ListTableSkeleton,
+} from "@/src/components/list";
 import { Container } from "@/components/ui/container";
 import { Grid } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
-import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { useTranslation } from "react-i18next";
 
@@ -33,7 +44,11 @@ export default function IncomesListPage() {
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const searchQuery = useAppSelector(selectSearchQuery);
+  const hasActiveFilters = useAppSelector(selectHasActiveFilters);
+  const viewMode = useAppSelector(selectViewMode);
+  const listFilters = useListQueryFilters();
   const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -41,14 +56,18 @@ export default function IncomesListPage() {
     items,
     isLoading,
     isFetching,
-    isFetchingNextPage,
-    sentinelRef,
-  } = useInfiniteList<IncomeItem>(
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+  } = useEntityList<IncomeItem>(
     canvas ? API_ROUTES.CANVASES_INCOMES_LIST(canvas) : "",
     {
       queryKey: ["incomes", canvas],
       enabled: !!canvas,
       search: debouncedSearch,
+      filters: listFilters,
     }
   );
 
@@ -57,62 +76,93 @@ export default function IncomesListPage() {
     { method: "delete", successKey: "success.income.deleted", onSuccess: () => setDeleteId(null) }
   );
 
+  const pagination = (
+    <ListPagination
+      page={page}
+      totalPages={totalPages}
+      total={total}
+      pageSize={pageSize}
+      onPageChange={setPage}
+      isFetching={isFetching}
+    />
+  );
+
   const showLoading = isLoading || (isFetching && items.length === 0);
+  const showFiltersBar = items.length > 0 || hasActiveFilters;
 
   if (showLoading) {
     return (
       <Container>
-        <Grid variant="cards" gap={4}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <GridCardSkeleton key={i} />
-          ))}
-        </Grid>
+        {viewMode === "table" ? (
+          <ListTableSkeleton columns={6} />
+        ) : (
+          <Grid variant="cards" gap={4}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <GridCardSkeleton key={i} />
+            ))}
+          </Grid>
+        )}
       </Container>
     );
   }
 
-  if (items.length === 0 && !searchQuery) {
+  if (items.length === 0 && !hasActiveFilters) {
     return (
       <>
         {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
+        <Container>{pagination}</Container>
         <NewIncomeModal />
       </>
     );
   }
 
-  if (items.length === 0 && searchQuery) {
+  if (items.length === 0 && hasActiveFilters) {
     return (
-      <Stack className="flex-1" align="center" justify="center">
-        <Typography variant="muted">{tc("empty.noResults", { query: searchQuery })}</Typography>
-      </Stack>
+      <>
+        <Container>
+          <ListFiltersBar entityType="incomes" />
+          <Stack className="flex-1 py-12" align="center" justify="center">
+            <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
+          </Stack>
+          {pagination}
+        </Container>
+        <NewIncomeModal />
+      </>
     );
   }
 
   return (
     <>
       <Container>
-        <Grid variant="cards" gap={4}>
-          {items.map((income) => (
-            <GridCard
-              key={income.id}
-              href={`/income/${income.id}`}
-              imageUrl={income.photoUrl}
-              title={income.name}
-              updatedAt={income.lastModifiedAt}
-              onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
-              onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
-            />
-          ))}
-        </Grid>
+        {showFiltersBar && <ListFiltersBar entityType="incomes" />}
+
+        {viewMode === "table" ? (
+          <EntityListTable
+            entityType="incomes"
+            items={items}
+            canEdit={canEdit}
+            onRowClick={(income) => router.push(`/income/${income.id}`)}
+            onEdit={canEdit ? (income) => dispatch(openIncomeEditModal(income)) : undefined}
+            onDelete={canEdit ? (income) => setDeleteId(income.id) : undefined}
+          />
+        ) : (
+          <Grid variant="cards" gap={4}>
+            {items.map((income) => (
+              <GridCard
+                key={income.id}
+                href={`/income/${income.id}`}
+                imageUrl={income.photoUrl}
+                title={income.name}
+                updatedAt={income.lastModifiedAt}
+                onEdit={canEdit ? () => dispatch(openIncomeEditModal(income)) : undefined}
+                onDelete={canEdit ? () => setDeleteId(income.id) : undefined}
+              />
+            ))}
+          </Grid>
+        )}
+
+        {pagination}
       </Container>
-
-      <div ref={sentinelRef} className="h-1" />
-
-      {isFetchingNextPage && (
-        <Stack direction="row" justify="center" className="py-4">
-          <Spinner className="size-6 text-muted-foreground" />
-        </Stack>
-      )}
 
       {canEdit && <FloatingAddButton onClick={() => dispatch(openIncomeCreateModal())} />}
       <NewIncomeModal />

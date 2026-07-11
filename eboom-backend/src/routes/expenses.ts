@@ -13,18 +13,11 @@ import { creditWalletBalance, debitWalletBalance } from "../services/ledgerServi
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
 import { parseRouteParam } from "./routeParams";
+import { parseListQueryParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
-
-function parsePaginationParams(req: Request) {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const search = (req.query.search as string) || "";
-  const offset = (page - 1) * limit;
-  return { page, limit, search, offset };
-}
 
 function parseOptionalDate(value: unknown): Date | null {
   if (!value) return null;
@@ -291,15 +284,28 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId, currencyId, isRecurring } =
+      parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(
-          eq(expenses.canvasId, canvasId),
-          eq(expenses.isArchived, false),
-          ilike(expenses.name, `%${search}%`)
-        )
-      : and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false));
+    const conditions = [
+      eq(expenses.canvasId, canvasId),
+      eq(expenses.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(expenses.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(expenses.expenseCategoryId, categoryId));
+    }
+    if (currencyId !== undefined) {
+      conditions.push(eq(expenses.currencyId, currencyId));
+    }
+    if (isRecurring !== undefined) {
+      conditions.push(eq(expenses.isRecurring, isRecurring));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })

@@ -17,18 +17,11 @@ import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/wh
 import { listTransfersForWallet } from "../services/transferService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
+import { parseListQueryParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 
 const router = express.Router({ mergeParams: true });
-
-function parsePaginationParams(req: Request) {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const search = (req.query.search as string) || "";
-  const offset = (page - 1) * limit;
-  return { page, limit, search, offset };
-}
 
 router.get(
   "/:walletId/income-entries",
@@ -300,11 +293,21 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
   const canvasId = req.canvasId!;
 
   try {
-    const { page, limit, search, offset } = parsePaginationParams(req);
+    const { page, limit, search, offset, categoryId } = parseListQueryParams(req);
 
-    const whereCondition = search
-      ? and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false), ilike(wallets.name, `%${search}%`))
-      : and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false));
+    const conditions = [
+      eq(wallets.canvasId, canvasId),
+      eq(wallets.isArchived, false),
+    ];
+
+    if (search) {
+      conditions.push(ilike(wallets.name, `%${search}%`));
+    }
+    if (categoryId !== undefined) {
+      conditions.push(eq(wallets.walletCategoryId, categoryId));
+    }
+
+    const whereCondition = and(...conditions);
 
     const [{ total }] = await db
       .select({ total: count() })

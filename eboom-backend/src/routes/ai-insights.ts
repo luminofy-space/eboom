@@ -1,8 +1,9 @@
 import express, { Request, Response } from "express";
 import { buildFinancialContext } from "../services/aiInsightContextService";
 import {
-  generateAiFinancialInsights,
   getAiFinancialInsightByCanvas,
+  getInsightGenerationState,
+  startAiFinancialInsightsGeneration,
 } from "../services/aiInsightGenerationService";
 import { getAiInsightProfileByCanvas } from "../services/aiInsightProfileService";
 import { isLlmConfigured } from "../services/llmClient";
@@ -16,7 +17,12 @@ async function buildInsightsResponse(canvasId: number) {
     getAiFinancialInsightByCanvas(canvasId),
   ]);
   const { completeness } = await buildFinancialContext(canvasId, profile);
-  return { insight: insight ?? null, profile: profile ?? null, completeness };
+  return {
+    insight: insight ?? null,
+    profile: profile ?? null,
+    completeness,
+    generation: getInsightGenerationState(canvasId),
+  };
 }
 
 router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
@@ -41,9 +47,16 @@ router.post("/generate", requireCanvasAccess("edit"), async (req: Request, res: 
 
   try {
     const profile = await getAiInsightProfileByCanvas(canvasId);
-    await generateAiFinancialInsights(canvasId, user.id, profile);
+    const { alreadyRunning } = startAiFinancialInsightsGeneration(
+      canvasId,
+      user.id,
+      profile
+    );
     const payload = await buildInsightsResponse(canvasId);
-    res.json(payload);
+    res.status(202).json({
+      ...payload,
+      status: alreadyRunning ? "already_running" : "started",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message === "RATE_LIMITED") {

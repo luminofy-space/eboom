@@ -38,7 +38,42 @@
     "noCategoriesFound": "Keine Kategorien gefunden.",
     "noItemsFound": "Keine Einträge gefunden.",
     "noWalletsFound": "Keine Wallets gefunden.",
-    "noResults": "Keine Ergebnisse für \"{{query}}\" gefunden"
+    "noResults": "Keine Ergebnisse für \"{{query}}\" gefunden",
+    "noFilteredResults": "Keine Ergebnisse für Ihre Suche oder Filter"
+  },
+  "list": {
+    "view": {
+      "grid": "Rasteransicht",
+      "table": "Tabellenansicht"
+    },
+    "filters": {
+      "category": "Kategorie",
+      "currency": "Währung",
+      "recurring": "Wiederkehrend",
+      "allCategories": "Alle Kategorien",
+      "allCurrencies": "Alle Währungen",
+      "allRecurring": "Alle",
+      "recurringYes": "Ja",
+      "recurringNo": "Nein",
+      "clear": "Filter zurücksetzen"
+    },
+    "table": {
+      "name": "Name",
+      "category": "Kategorie",
+      "currency": "Währung",
+      "recurring": "Wiederkehrend",
+      "wallet": "Wallet",
+      "value": "Wert",
+      "lastModified": "Zuletzt geändert"
+    },
+    "pagination": {
+      "previous": "Vorherige Seite",
+      "next": "Nächste Seite",
+      "pageIndicator": "{{current}} / {{total}}",
+      "showing": "{{start}}–{{end}} von {{total}} angezeigt",
+      "showingEmpty": "Keine Einträge",
+      "pageSize": "Zeilen pro Seite"
+    }
   },
   "loading": {
     "wallets": "Wallets werden geladen..."

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -31,10 +31,13 @@ import { EventModal } from "@/src/components/EventModal";
 import { CalendarCreateChoiceModal } from "@/src/components/CalendarCreateChoiceModal";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
+import { NewTransferModal } from "@/src/views/wallets/components/NewTransferModal";
+import { GoalFormModal } from "@/src/views/budget-planning/components/GoalFormModal";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatNumber } from "@/src/i18n/formatters";
 import styles from "@/app/(dashboard)/calendar/calendar.module.css";
 import { CalendarSkeleton } from "@/src/views/calendar/components/CalendarSkeleton";
+import { useSidebar } from "@/components/ui/sidebar";
 
 type CalendarEventHoverArg = {
   event: {
@@ -111,6 +114,8 @@ export default function CalendarView() {
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const calendarRef = useRef<FullCalendar>(null);
+  const calendarHostRef = useRef<HTMLDivElement>(null);
+  const { state: sidebarState, openMobile } = useSidebar();
   const initialRange = useMemo(() => monthRange(new Date()), []);
   const [range, setRange] = useState(initialRange);
   const [calendarView, setCalendarView] = useState<CalendarViewType>("dayGridMonth");
@@ -122,13 +127,43 @@ export default function CalendarView() {
   const [choiceModalOpen, setChoiceModalOpen] = useState(false);
   const [createEntryOpen, setCreateEntryOpen] = useState(false);
   const [createPaymentOpen, setCreatePaymentOpen] = useState(false);
+  const [createGoalOpen, setCreateGoalOpen] = useState(false);
+  const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [createEntryDate, setCreateEntryDate] = useState<string | null>(null);
   const [createPaymentDate, setCreatePaymentDate] = useState<string | null>(null);
+  const [createGoalDate, setCreateGoalDate] = useState<string | null>(null);
+  const [createTransferDate, setCreateTransferDate] = useState<string | null>(null);
 
   const monthDayMaxEvents = 1 ;
   const dayMaxEvents = calendarView === "dayGridMonth" ? monthDayMaxEvents : false;
 
   const { events, isLoading, error } = useCalendarData(canvas, range.start, range.end);
+
+  const refreshCalendarLayout = useCallback(() => {
+    calendarRef.current?.getApi().updateSize();
+  }, []);
+
+  useEffect(() => {
+    const host = calendarHostRef.current;
+    if (!host) return;
+
+    const observer = new ResizeObserver(() => {
+      refreshCalendarLayout();
+    });
+    observer.observe(host);
+
+    return () => observer.disconnect();
+  }, [refreshCalendarLayout]);
+
+  useEffect(() => {
+    refreshCalendarLayout();
+    const timeoutId = window.setTimeout(refreshCalendarLayout, 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [sidebarState, openMobile, refreshCalendarLayout]);
+
+  useEffect(() => {
+    if (!isLoading) refreshCalendarLayout();
+  }, [isLoading, refreshCalendarLayout]);
 
   const calendarEvents = useMemo(
     () =>
@@ -166,7 +201,8 @@ export default function CalendarView() {
     const nextView = value as CalendarViewType;
     setCalendarView(nextView);
     calendarRef.current?.getApi().changeView(nextView);
-  }, []);
+    window.requestAnimationFrame(refreshCalendarLayout);
+  }, [refreshCalendarLayout]);
 
   const handleEventClick = useCallback(
     (info: EventClickArg) => {
@@ -201,6 +237,22 @@ export default function CalendarView() {
     setChoiceModalOpen(false);
     setSelectedDate(null);
     setCreatePaymentOpen(true);
+  }, [selectedDate]);
+
+  const handleChooseGoal = useCallback(() => {
+    if (!selectedDate) return;
+    setCreateGoalDate(selectedDate);
+    setChoiceModalOpen(false);
+    setSelectedDate(null);
+    setCreateGoalOpen(true);
+  }, [selectedDate]);
+
+  const handleChooseTransfer = useCallback(() => {
+    if (!selectedDate) return;
+    setCreateTransferDate(selectedDate);
+    setChoiceModalOpen(false);
+    setSelectedDate(null);
+    setCreateTransferOpen(true);
   }, [selectedDate]);
 
   const handleChoiceModalOpenChange = useCallback((open: boolean) => {
@@ -273,7 +325,7 @@ export default function CalendarView() {
           </Typography>
         )}
 
-        <div className={styles.calendarHost}>
+        <div ref={calendarHostRef} className={styles.calendarHost}>
           <Stack
             direction="row"
             align="center"
@@ -504,6 +556,8 @@ export default function CalendarView() {
           dateLabel={selectedDateLabel}
           onChooseIncomeEntry={handleChooseIncomeEntry}
           onChooseExpensePayment={handleChooseExpensePayment}
+          onChooseGoal={handleChooseGoal}
+          onChooseTransfer={handleChooseTransfer}
         />
       )}
 
@@ -525,6 +579,25 @@ export default function CalendarView() {
               if (!open) setCreatePaymentDate(null);
             }}
             defaultPaidDate={createPaymentDate ?? undefined}
+            extraInvalidateKeys={[["calendar"]]}
+          />
+          <GoalFormModal
+            open={createGoalOpen}
+            onOpenChange={(open) => {
+              setCreateGoalOpen(open);
+              if (!open) setCreateGoalDate(null);
+            }}
+            canvasId={canvas}
+            defaultTargetDate={createGoalDate ?? undefined}
+            extraInvalidateKeys={[["calendar"]]}
+          />
+          <NewTransferModal
+            open={createTransferOpen}
+            onOpenChange={(open) => {
+              setCreateTransferOpen(open);
+              if (!open) setCreateTransferDate(null);
+            }}
+            defaultTransferDate={createTransferDate ?? undefined}
             extraInvalidateKeys={[["calendar"]]}
           />
         </>
