@@ -134,7 +134,6 @@ export default function AssetsListPage() {
             </Stack>
           </Card>
         </Stack>
-        <Container>{pagination}</Container>
         <NewAssetModal />
       </>
     );
@@ -148,7 +147,6 @@ export default function AssetsListPage() {
           <Stack className="flex-1 py-12" align="center" justify="center">
             <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
           </Stack>
-          {pagination}
         </Container>
         <NewAssetModal />
       </>

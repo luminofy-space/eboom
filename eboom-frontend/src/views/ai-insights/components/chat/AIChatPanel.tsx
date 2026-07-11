@@ -115,29 +115,29 @@ export function AIChatPanel({ canEdit, isActive = true }: AIChatPanelProps) {
           <div className="flex items-center justify-between">
             <Typography variant="caption">{t("disclaimer")}</Typography>
             {canEdit && messages.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isClearing || isSending}>
-                <Trash2 className="size-4" />
-                {t("chat.clearHistory")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("chat.clearConfirmTitle")}</AlertDialogTitle>
-                <AlertDialogDescription>{t("chat.clearConfirmDescription")}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("chat.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void clearHistory()}>
-                  {t("chat.clearHistory")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={isClearing || isSending}>
+                    <Trash2 className="size-4" />
+                    {t("chat.clearHistory")}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("chat.clearConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("chat.clearConfirmDescription")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("chat.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => void clearHistory()}>
+                      {t("chat.clearHistory")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
-          
+
           {sendError && (
             <Typography variant="muted-sm" className="mt-2 text-destructive">
               {sendError}

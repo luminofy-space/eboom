@@ -43,6 +43,9 @@
     "financialKnowledge": "Finanzwissen",
     "financialPicture": "Finanzübersicht"
   },
+  "form": {
+    "selectPlaceholder": "Option auswählen"
+  },
   "riskProfile": {
     "title": "Wie viel Risiko sind Sie bereit einzugehen?",
     "description": "Ihre Antworten helfen uns, Vorschläge an Ihr Komfortniveau anzupassen.",
@@ -212,15 +215,21 @@
     "no": "Nein"
   },
   "validation": {
+    "riskToleranceRequired": "Bitte wählen Sie Ihre Risikotoleranz.",
     "timeHorizonRequired": "Bitte wählen Sie einen Anlagehorizont.",
+    "acceptShortTermLossRequired": "Bitte beantworten Sie die Frage zu kurzfristigen Verlusten.",
     "dropReactionRequired": "Bitte wählen Sie Ihre Reaktion auf einen Portfolio-Rückgang.",
     "primaryGoalRequired": "Bitte wählen Sie ein primäres Ziel.",
     "timeframeRequired": "Bitte wählen Sie einen Zielzeitraum.",
     "esgImportanceRequired": "Bitte wählen Sie, wie wichtig ESG ist.",
     "esgReturnsRequired": "Bitte beantworten Sie die ESG-Renditefrage.",
+    "preferSustainableRequired": "Bitte beantworten Sie die Frage zu nachhaltigen Anlagen.",
     "quizIncomplete": "Bitte beantworten Sie alle fünf Fragen.",
+    "longTermLiabilitiesRequired": "Bitte beantworten Sie die Frage zu langfristigen Verbindlichkeiten.",
+    "shortTermLiabilitiesRequired": "Bitte beantworten Sie die Frage zu kurzfristigen Verbindlichkeiten.",
     "cashflowRequired": "Bitte wählen Sie Ihren erwarteten monatlichen Cashflow.",
     "emergencyFundRequired": "Bitte wählen Sie Ihre Notfallfonds-Abdeckung.",
+    "dependentsRequired": "Bitte geben Sie die Anzahl der Unterhaltsberechtigten ein.",
     "dependentsInvalid": "Unterhaltsberechtigte müssen null oder mehr sein."
   },
   "empty": {

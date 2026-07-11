@@ -110,7 +110,6 @@ export default function IncomesListPage() {
     return (
       <>
         {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
-        <Container>{pagination}</Container>
         <NewIncomeModal />
       </>
     );
@@ -124,7 +123,6 @@ export default function IncomesListPage() {
           <Stack className="flex-1 py-12" align="center" justify="center">
             <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
           </Stack>
-          {pagination}
         </Container>
         <NewIncomeModal />
       </>

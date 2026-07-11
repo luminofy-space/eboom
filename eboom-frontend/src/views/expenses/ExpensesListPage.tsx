@@ -131,7 +131,6 @@ export default function ExpensesListPage() {
             </Stack>
           </Card>
         </Stack>
-        <Container>{pagination}</Container>
         <NewExpenseModal />
       </>
     );
@@ -145,7 +144,6 @@ export default function ExpensesListPage() {
           <Stack className="flex-1 py-12" align="center" justify="center">
             <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
           </Stack>
-          {pagination}
         </Container>
         <NewExpenseModal />
       </>
