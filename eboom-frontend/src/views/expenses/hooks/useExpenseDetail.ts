@@ -15,6 +15,7 @@ export interface ExpenseDetail {
   description?: unknown;
   isRecurring?: boolean;
   recurrencePattern?: unknown;
+  photoUrl?: string | null;
   defaultWallet?: { id: number; name: string } | null;
   currency?: { id: number; symbol: string; code?: string; name?: string } | null;
   category?: { id: number; name: string } | null;

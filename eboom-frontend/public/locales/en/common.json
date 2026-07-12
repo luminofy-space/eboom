@@ -119,6 +119,12 @@
   "comingSoon": {
     "imageAlt": "Coming Soon"
   },
+  "imageUpload": {
+    "dropzone": "Drag and drop an image, or click to browse",
+    "hint": "JPEG, PNG, WebP — max 5 MB",
+    "remove": "Remove",
+    "previewAlt": "Image preview"
+  },
   "validation": {
     "required": "This field is required",
     "nameRequired": "Name is required",

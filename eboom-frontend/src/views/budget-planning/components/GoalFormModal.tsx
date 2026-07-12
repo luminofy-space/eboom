@@ -28,6 +28,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
+import { ImageUploadField } from "@/src/components/ImageUploadField";
 import { fileToDataUrl, getApiErrorMessage, validateOptionalImage } from "@/src/utils/formUtils";
 import { SystemCurrencySelect } from "./SystemCurrencySelect";
 import type { SavingsGoalListItem, SavingsGoalStatus } from "@/src/types/budget-planning";
@@ -78,7 +79,6 @@ export function GoalFormModal({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedSession = useRef<number | "new" | null>(null);
 
   const { data: goalsRes, isLoading: goalsLoading } = useQueryApi<{
@@ -112,7 +112,6 @@ export function GoalFormModal({
       setSubmitError(null);
       setPhotoError(null);
       setPhoto(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -198,7 +197,6 @@ export function GoalFormModal({
     if (validationError !== true) {
       setPhoto(null);
       setPhotoError(validationError);
-      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -219,7 +217,6 @@ export function GoalFormModal({
     saveMutation.mutate({ photoUrl });
   };
 
-  const photoPreviewUrl = photo ? URL.createObjectURL(photo) : existingPhotoUrl;
   const canSubmit = canEdit && name.trim() && targetAmount && currencyId && !photoError;
   const isPending = saveMutation.isPending;
 
@@ -274,24 +271,15 @@ export function GoalFormModal({
               </Field>
               <Field data-invalid={!!photoError}>
                 <FieldLabel htmlFor="goal-photo">{t("goals.photo")}</FieldLabel>
-                <Input
-                  ref={fileInputRef}
+                <ImageUploadField
                   id="goal-photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                  value={photo}
+                  onChange={handlePhotoChange}
+                  existingImageUrl={existingPhotoUrl}
+                  invalid={!!photoError}
+                  disabled={isPending}
                 />
                 {photoError && <FieldError>{photoError}</FieldError>}
-                {photoPreviewUrl && (
-                  <div className="mt-2 overflow-hidden rounded-lg border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoPreviewUrl}
-                      alt=""
-                      className="aspect-video w-full object-cover"
-                    />
-                  </div>
-                )}
               </Field>
               {isEdit && (
                 <Field>

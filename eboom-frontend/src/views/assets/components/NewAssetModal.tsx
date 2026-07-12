@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
+import { ImageUploadField } from "@/src/components/ImageUploadField";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -37,7 +38,7 @@ import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectAssetModal, closeAssetModal } from "@/src/redux/assetSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface AssetFormData {
@@ -69,7 +70,6 @@ export function NewAssetModal() {
   const isEdit = mode === "edit";
   const { canvas } = useCanvas();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -193,9 +193,6 @@ export function NewAssetModal() {
 
       reset(defaultValues);
       setSubmitError(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
       dispatch(closeAssetModal());
     } catch (error) {
       setSubmitError(translateSubmitError(error, t("modal.error.saveFailed"), tv));
@@ -377,17 +374,14 @@ export function NewAssetModal() {
                       tooLarge: tv("imageTooLarge"),
                     }),
                 }}
-                render={({ field }) => (
-                  <Input
-                    ref={fileInputRef}
+                render={({ field, fieldState }) => (
+                  <ImageUploadField
                     id="asset-photo"
-                    type="file"
-                    accept="image/*"
-                    aria-invalid={!!errors.photo}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      field.onChange(file);
-                    }}
+                    value={field.value}
+                    onChange={field.onChange}
+                    existingImageUrl={isEdit ? editingItem?.photoUrl : undefined}
+                    invalid={!!fieldState.error}
+                    disabled={isSaving}
                   />
                 )}
               />

@@ -119,6 +119,12 @@
   "comingSoon": {
     "imageAlt": "Demnächst verfügbar"
   },
+  "imageUpload": {
+    "dropzone": "Bild per Drag-and-drop ablegen oder zum Durchsuchen klicken",
+    "hint": "JPEG, PNG, WebP — max. 5 MB",
+    "remove": "Entfernen",
+    "previewAlt": "Bildvorschau"
+  },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
     "nameRequired": "Name ist erforderlich",

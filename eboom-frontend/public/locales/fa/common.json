@@ -119,6 +119,12 @@
   "comingSoon": {
     "imageAlt": "به‌زودی"
   },
+  "imageUpload": {
+    "dropzone": "تصویر را بکشید و رها کنید، یا برای انتخاب کلیک کنید",
+    "hint": "JPEG، PNG، WebP — حداکثر ۵ مگابایت",
+    "remove": "حذف",
+    "previewAlt": "پیش‌نمایش تصویر"
+  },
   "validation": {
     "required": "این فیلد الزامی است",
     "nameRequired": "نام الزامی است",
