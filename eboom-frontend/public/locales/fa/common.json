@@ -119,6 +119,32 @@
   "comingSoon": {
     "imageAlt": "به‌زودی"
   },
+  "canvasGate": {
+    "title": "هنوز بومی وجود ندارد",
+    "description": "برای سازماندهی امور مالی خود یک بوم ایجاد کنید.",
+    "action": "ایجاد بوم"
+  },
+  "status": {
+    "notFound": {
+      "title": "صفحه پیدا نشد",
+      "description": "صفحه‌ای که دنبال آن هستید وجود ندارد یا جابه‌جا شده است.",
+      "action": "بازگشت به داشبورد"
+    },
+    "serverError": {
+      "title": "مشکلی پیش آمد",
+      "description": "در ارتباط با سرور مشکل داریم. لطفاً لحظه‌ای دیگر دوباره تلاش کنید.",
+      "action": "تلاش مجدد"
+    }
+  },
+  "illustrations": {
+    "emptyAlt": "تصویر حالت خالی",
+    "notFoundAlt": "تصویر صفحه پیدا نشد",
+    "serverDownAlt": "تصویر سرور در دسترس نیست",
+    "noWalletsAlt": "تصویر بدون کیف پول",
+    "noCanvasAlt": "تصویر بدون بوم",
+    "noNotificationsAlt": "تصویر بدون اعلان",
+    "upcomingAlt": "تصویر به‌زودی"
+  },
   "imageUpload": {
     "dropzone": "تصویر را بکشید و رها کنید، یا برای انتخاب کلیک کنید",
     "hint": "JPEG، PNG، WebP — حداکثر ۵ مگابایت",

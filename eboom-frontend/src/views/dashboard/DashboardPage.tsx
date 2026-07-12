@@ -11,7 +11,6 @@ import { DashboardHoldingsSection } from "./components/DashboardHoldingsSection"
 import { DashboardBudgetSection } from "./components/DashboardBudgetSection";
 import { DashboardGoalsSection } from "./components/DashboardGoalsSection";
 import { DashboardCashFlowChart } from "./components/DashboardCashFlowChart";
-import { DashboardEmptyState } from "./components/DashboardEmptyState";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardRecentActivity } from "./components/DashboardRecentActivity";
 import { DashboardYearlyHeatmap } from "./components/DashboardYearlyHeatmap";
@@ -22,9 +21,7 @@ export default function DashboardPage() {
   const { canvas, activeCanvas } = useCanvas();
   const { data: summary, isLoading, isError, refetch } = useDashboardSummary(canvas);
 
-  if (!canvas) {
-    return <DashboardEmptyState />;
-  }
+  if (!canvas) return null;
 
   if (isError) {
     return (

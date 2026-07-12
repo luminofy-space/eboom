@@ -393,14 +393,6 @@ export default function WhiteboardPage() {
     data.incomes.length === 0 &&
     data.expenses.length === 0;
 
-  if (!canvas) {
-    return (
-      <Container className="py-8">
-        <Typography variant="muted">{t("noCanvas")}</Typography>
-      </Container>
-    );
-  }
-
   return (
     <div className="relative h-[calc(100vh-4rem)] w-full">
       {isLoading ? (

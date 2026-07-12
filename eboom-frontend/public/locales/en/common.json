@@ -119,6 +119,32 @@
   "comingSoon": {
     "imageAlt": "Coming Soon"
   },
+  "canvasGate": {
+    "title": "No canvas yet",
+    "description": "Create a canvas to start organizing your finances.",
+    "action": "Create canvas"
+  },
+  "status": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or may have been moved.",
+      "action": "Back to dashboard"
+    },
+    "serverError": {
+      "title": "Something went wrong",
+      "description": "We're having trouble reaching the server. Please try again in a moment.",
+      "action": "Try again"
+    }
+  },
+  "illustrations": {
+    "emptyAlt": "Empty state illustration",
+    "notFoundAlt": "Page not found illustration",
+    "serverDownAlt": "Server unavailable illustration",
+    "noWalletsAlt": "No wallets illustration",
+    "noCanvasAlt": "No canvas illustration",
+    "noNotificationsAlt": "No notifications illustration",
+    "upcomingAlt": "Coming soon illustration"
+  },
   "imageUpload": {
     "dropzone": "Drag and drop an image, or click to browse",
     "hint": "JPEG, PNG, WebP — max 5 MB",
