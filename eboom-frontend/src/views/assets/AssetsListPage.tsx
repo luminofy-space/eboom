@@ -18,6 +18,7 @@ import {
 } from "@/src/redux/assetSlice";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useMutationApi } from "@/src/api/useMutation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,6 +49,7 @@ export default function AssetsListPage() {
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const searchQuery = useAppSelector(selectSearchQuery);
   const hasActiveFilters = useAppSelector(selectHasActiveFilters);
   const viewMode = useAppSelector(selectViewMode);
@@ -96,6 +98,7 @@ export default function AssetsListPage() {
   const showFiltersBar = items.length > 0 || hasActiveFilters;
 
   const openEdit = (asset: AssetItem) => dispatch(openAssetEditModal(asset));
+  const openDetail = (asset: AssetItem) => router.push(`/asset/${asset.id}`);
 
   if (showLoading) {
     return (
@@ -166,7 +169,7 @@ export default function AssetsListPage() {
             entityType="assets"
             items={items}
             canEdit={canEdit}
-            onRowClick={openEdit}
+            onRowClick={openDetail}
             onEdit={canEdit ? openEdit : undefined}
             onDelete={canEdit ? (asset) => setDeleteId(asset.id) : undefined}
           />
@@ -176,6 +179,7 @@ export default function AssetsListPage() {
               {items.map((asset) => (
                 <GridCard
                   key={asset.id}
+                  href={`/asset/${asset.id}`}
                   imageUrl={asset.photoUrl}
                   title={asset.name}
                   subtitle={formatMoney(
@@ -183,7 +187,6 @@ export default function AssetsListPage() {
                     asset.currency?.symbol
                   )}
                   updatedAt={asset.lastModifiedAt}
-                  onClick={canEdit ? () => openEdit(asset) : undefined}
                   onEdit={canEdit ? () => openEdit(asset) : undefined}
                   onDelete={canEdit ? () => setDeleteId(asset.id) : undefined}
                 />

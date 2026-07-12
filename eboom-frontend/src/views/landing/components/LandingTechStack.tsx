@@ -27,18 +27,18 @@ export function LandingTechStack() {
             </Typography>
           </Stack>
 
-          <div className="relative rounded-2xl border border-white/5 bg-black/20 py-6 backdrop-blur-sm">
-            <LogoLoop
-              logos={TECH_LOGOS}
-              speed={80}
-              logoHeight={32}
-              gap={40}
-              pauseOnHover
-              fadeOut
-              fadeOutColor="#000000"
-              scaleOnHover
-              ariaLabel={t("tech.title")}
-            />
+          <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-black/20 py-6 backdrop-blur-sm">
+            <div className="[mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+              <LogoLoop
+                logos={TECH_LOGOS}
+                speed={80}
+                logoHeight={32}
+                gap={40}
+                pauseOnHover
+                scaleOnHover
+                ariaLabel={t("tech.title")}
+              />
+            </div>
           </div>
         </Stack>
       </Container>

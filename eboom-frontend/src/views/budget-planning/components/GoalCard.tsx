@@ -37,6 +37,7 @@ export function GoalCard({ progress, canEdit, onEdit, onStatusChange }: GoalCard
   const { t: tc } = useTranslation("common");
   const status = progress.status ?? "active";
   const percent = Math.min(progress.percent, 100);
+  const isInactive = status === "achieved" || status === "dropped";
 
   return (
     <div className="relative rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted/30">
@@ -78,12 +79,6 @@ export function GoalCard({ progress, canEdit, onEdit, onStatusChange }: GoalCard
                   </DropdownMenuItem>
                 </>
               )}
-              {status !== "active" && (
-                <DropdownMenuItem onClick={() => onStatusChange?.("active")}>
-                  <RotateCcw className="size-4" />
-                  {t("goals.actions.reactivate")}
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -120,27 +115,41 @@ export function GoalCard({ progress, canEdit, onEdit, onStatusChange }: GoalCard
           })}
         </Typography>
 
-        <BudgetProgressBar
-          percent={percent}
-          variant="goal"
-          showPercent
-        />
+        {isInactive ? (
+          canEdit && (
+            <Button
+              className="w-full"
+              onClick={() => onStatusChange?.("active")}
+            >
+              <RotateCcw className="size-4" />
+              {t("goals.actions.reactivate")}
+            </Button>
+          )
+        ) : (
+          <>
+            <BudgetProgressBar
+              percent={percent}
+              variant="goal"
+              showPercent
+            />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Typography variant="muted-sm" className="w-fit cursor-default">
-              {t("goals.availableInWallets", {
-                amount: formatCurrency(progress.availableBalance, progress.currencySymbol, {
-                  preset: "compact",
-                }),
-                count: progress.walletCount ?? 0,
-              })}
-            </Typography>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-xs">
-            <p>{t("goals.shadowDisclaimer")}</p>
-          </TooltipContent>
-        </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Typography variant="muted-sm" className="w-fit cursor-default">
+                  {t("goals.availableInWallets", {
+                    amount: formatCurrency(progress.availableBalance, progress.currencySymbol, {
+                      preset: "compact",
+                    }),
+                    count: progress.walletCount ?? 0,
+                  })}
+                </Typography>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p>{t("goals.shadowDisclaimer")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
+        )}
       </div>
     </div>
   );
