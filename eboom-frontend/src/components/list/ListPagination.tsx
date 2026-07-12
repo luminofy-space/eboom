@@ -39,22 +39,24 @@ export function ListPagination({
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = total === 0 ? 0 : Math.min(page * pageSize, total);
 
+  if (total === 0) {
+    return null;
+  }
+
   return (
     <Stack
       direction="row"
       align="center"
       justify="between"
-      className="border-t pt-4"
+      className="mt-4 border-t pt-4"
       gap={3}
     >
       <Typography variant="muted-sm">
-        {total === 0
-          ? t("list.pagination.showingEmpty")
-          : t("list.pagination.showing", {
-              start: rangeStart,
-              end: rangeEnd,
-              total,
-            })}
+        {t("list.pagination.showing", {
+          start: rangeStart,
+          end: rangeEnd,
+          total,
+        })}
       </Typography>
 
       <Stack direction="row" align="center" gap={2}>

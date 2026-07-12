@@ -43,6 +43,9 @@
     "financialKnowledge": "Financial knowledge",
     "financialPicture": "Financial picture"
   },
+  "form": {
+    "selectPlaceholder": "Select an option"
+  },
   "riskProfile": {
     "title": "How much risk are you willing to take?",
     "description": "Your answers help us align suggestions with your comfort level.",
@@ -212,15 +215,21 @@
     "no": "No"
   },
   "validation": {
+    "riskToleranceRequired": "Please select your risk tolerance.",
     "timeHorizonRequired": "Please select an investment time horizon.",
+    "acceptShortTermLossRequired": "Please answer whether you accept short-term losses.",
     "dropReactionRequired": "Please select how you would react to a portfolio drop.",
     "primaryGoalRequired": "Please select a primary goal.",
     "timeframeRequired": "Please select a target timeframe.",
     "esgImportanceRequired": "Please select how important ESG is to you.",
     "esgReturnsRequired": "Please answer whether you'd accept lower returns for ESG.",
+    "preferSustainableRequired": "Please answer whether you prefer sustainable investments.",
     "quizIncomplete": "Please answer all five questions.",
+    "longTermLiabilitiesRequired": "Please answer whether you have major long-term liabilities.",
+    "shortTermLiabilitiesRequired": "Please answer whether you have short-term liabilities.",
     "cashflowRequired": "Please select your expected monthly cashflow.",
     "emergencyFundRequired": "Please select your emergency fund coverage.",
+    "dependentsRequired": "Please enter the number of dependents.",
     "dependentsInvalid": "Dependents must be zero or more."
   },
   "empty": {

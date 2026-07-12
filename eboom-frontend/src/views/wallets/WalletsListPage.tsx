@@ -36,6 +36,7 @@ import {
   EntityListTable,
   ListFiltersBar,
   ListPagination,
+  ListInfiniteScrollSentinel,
   ListTableSkeleton,
 } from "@/src/components/list";
 import { useTranslation } from "react-i18next";
@@ -64,6 +65,8 @@ export default function WalletsListPage() {
     pageSize,
     totalPages,
     setPage,
+    sentinelRef,
+    isFetchingNextPage,
   } = useEntityList<WalletItem>(
     canvas ? API_ROUTES.CANVASES_WALLETS_LIST(canvas) : "",
     {
@@ -128,7 +131,6 @@ export default function WalletsListPage() {
             </Stack>
           </Card>
         </Stack>
-        <Container>{pagination}</Container>
         <NewWalletModal />
       </>
     );
@@ -142,7 +144,6 @@ export default function WalletsListPage() {
           <Stack className="flex-1 py-12" align="center" justify="center">
             <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
           </Stack>
-          {pagination}
         </Container>
         <NewWalletModal />
       </>
@@ -164,22 +165,29 @@ export default function WalletsListPage() {
             onDelete={canEdit ? (wallet) => setDeleteId(wallet.id) : undefined}
           />
         ) : (
-          <Grid variant="cards" gap={4}>
-            {items.map((wallet) => (
-              <GridCard
-                key={wallet.id}
-                href={`/wallet/${wallet.id}`}
-                imageUrl={wallet.photoUrl}
-                title={wallet.name}
-                updatedAt={wallet.lastModifiedAt}
-                onEdit={canEdit ? () => dispatch(openWalletEditModal(wallet)) : undefined}
-                onDelete={canEdit ? () => setDeleteId(wallet.id) : undefined}
-              />
-            ))}
-          </Grid>
+          <>
+            <Grid variant="cards" gap={4}>
+              {items.map((wallet) => (
+                <GridCard
+                  key={wallet.id}
+                  href={`/wallet/${wallet.id}`}
+                  imageUrl={wallet.photoUrl}
+                  title={wallet.name}
+                  updatedAt={wallet.lastModifiedAt}
+                  onEdit={canEdit ? () => dispatch(openWalletEditModal(wallet)) : undefined}
+                  onDelete={canEdit ? () => setDeleteId(wallet.id) : undefined}
+                />
+              ))}
+              {isFetchingNextPage &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <GridCardSkeleton key={`loading-${i}`} />
+                ))}
+            </Grid>
+            {sentinelRef && <ListInfiniteScrollSentinel sentinelRef={sentinelRef} />}
+          </>
         )}
 
-        {pagination}
+        {viewMode === "table" && pagination}
       </Container>
 
       {canEdit && <FloatingAddButton onClick={() => dispatch(openWalletCreateModal())} />}

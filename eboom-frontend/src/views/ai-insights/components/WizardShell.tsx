@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { AlertCircle } from "lucide-react";
@@ -10,7 +10,7 @@ import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { Spinner } from "@/components/ui/spinner";
 import type { AiInsightProfile, WizardFormData } from "@/src/types/ai-insights";
-import { defaultWizardFormData, profileToFormData, validateStep } from "../schemas";
+import { profileToFormData, validateStep } from "../schemas";
 import { WizardStepper } from "./WizardStepper";
 import { RiskProfileStep } from "./steps/RiskProfileStep";
 import { InvestmentGoalsStep } from "./steps/InvestmentGoalsStep";
@@ -32,6 +32,19 @@ interface WizardShellProps {
 }
 
 const TOTAL_STEPS = 5;
+
+function buildStepSyncKey(profile: AiInsightProfile | null, initialStep?: number): string {
+  return [
+    profile?.id ?? "none",
+    profile?.lastModifiedAt ?? "none",
+    initialStep ?? "none",
+    profile?.currentStep ?? "none",
+  ].join("|");
+}
+
+function resolveExternalStep(profile: AiInsightProfile | null, initialStep?: number): number {
+  return initialStep ?? profile?.currentStep ?? 1;
+}
 
 function stepPayload(step: number, data: WizardFormData) {
   switch (step) {
@@ -59,9 +72,27 @@ export function WizardShell({
   canEdit,
 }: WizardShellProps) {
   const { t } = useTranslation("ai-insights");
-  const [currentStep, setCurrentStep] = useState(initialStep ?? profile?.currentStep ?? 1);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const hasSyncedInitialStep = useRef(false);
+
+  const stepSyncKey = buildStepSyncKey(profile, initialStep);
+  const externalStep = resolveExternalStep(profile, initialStep);
+
+  const [stepState, setStepState] = useState({
+    syncKey: stepSyncKey,
+    step: externalStep,
+  });
+
+  if (stepState.syncKey !== stepSyncKey) {
+    setStepState({ syncKey: stepSyncKey, step: externalStep });
+  }
+
+  const currentStep = stepState.step;
+  const setCurrentStep = (next: number | ((prev: number) => number)) => {
+    setStepState((prev) => ({
+      syncKey: prev.syncKey,
+      step: typeof next === "function" ? next(prev.step) : next,
+    }));
+  };
 
   const form = useForm<WizardFormData>({
     defaultValues: profileToFormData(profile),
@@ -70,19 +101,7 @@ export function WizardShell({
 
   useEffect(() => {
     form.reset(profileToFormData(profile));
-
-    if (!hasSyncedInitialStep.current) {
-      hasSyncedInitialStep.current = true;
-      if (initialStep != null) {
-        setCurrentStep(initialStep);
-        return;
-      }
-    }
-
-    if (profile?.currentStep != null) {
-      setCurrentStep(profile.currentStep);
-    }
-  }, [profile, initialStep, form]);
+  }, [profile, form]);
 
   const handleSave = async (options: { complete?: boolean; advance?: boolean }) => {
     const data = form.getValues();
