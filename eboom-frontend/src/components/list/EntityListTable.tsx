@@ -90,7 +90,7 @@ export function EntityListTable<T extends EntityItem>({
             const asset = row as AssetItem;
             return (
               <CellMuted>
-                {formatMoney(asset.estimatedValue ?? "0", asset.currency?.symbol)}
+                {formatMoney(asset.currentHoldingValue ?? "0", asset.currency?.symbol)}
               </CellMuted>
             );
           },
