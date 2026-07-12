@@ -60,6 +60,19 @@ export function getWalletCurrencyOptions(
     .sort((a, b) => a.code.localeCompare(b.code));
 }
 
+/** Prefer the sub-wallet with the largest balance (not alphabetical order). */
+export function getDefaultWalletCurrencyCode(
+  options: WalletCurrencyOption[]
+): string {
+  if (!options.length) return "";
+  return options.reduce((best, option) =>
+    Math.abs(parseFloat(option.balance) || 0) >
+    Math.abs(parseFloat(best.balance) || 0)
+      ? option
+      : best
+  ).code;
+}
+
 export function getCurrencySymbolForCode(
   code: string,
   options: WalletCurrencyOption[],

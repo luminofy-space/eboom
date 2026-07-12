@@ -23,6 +23,7 @@ import {
   filterEntriesByCurrency,
   filterPaymentsByCurrency,
   filterTransfersByCurrency,
+  getDefaultWalletCurrencyCode,
 } from "./utils/currencyFilter";
 import { useTranslation } from "react-i18next";
 
@@ -51,7 +52,7 @@ export default function WalletDetailPage({ id }: Props) {
       return;
     }
     if (!selectedCurrency || !currencyOptions.some((o) => o.code === selectedCurrency)) {
-      setSelectedCurrency(currencyOptions[0].code);
+      setSelectedCurrency(getDefaultWalletCurrencyCode(currencyOptions));
     }
   }, [currencyOptions, selectedCurrency]);
 
