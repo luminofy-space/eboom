@@ -19,14 +19,17 @@ export default function Error({
   }, [error]);
 
   return (
-    <IllustratedState
-      illustration="serverDown"
-      title={t("status.serverError.title")}
-      description={t("status.serverError.description")}
-      size="lg"
-      action={
-        <Button onClick={reset}>{t("status.serverError.action")}</Button>
-      }
-    />
+    <div className="flex min-h-svh w-full items-center justify-center">
+      <IllustratedState
+        illustration="serverDown"
+        title={t("status.serverError.title")}
+        description={t("status.serverError.description")}
+        size="lg"
+        fill={false}
+        action={
+          <Button onClick={reset}>{t("status.serverError.action")}</Button>
+        }
+      />
+    </div>
   );
 }

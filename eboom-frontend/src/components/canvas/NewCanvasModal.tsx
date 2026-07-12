@@ -30,10 +30,10 @@ import API_ROUTES from "@/src/api/urls";
 import useQueryApi from "@/src/api/useQuery";
 import GroupSelect, { TItem } from "@/src/components/groupe-select/GroupeSelect";
 import { useEffect } from "react";
+import { CanvasColorSelect } from "./CanvasColorSelect";
+import { CanvasIconSelect } from "./CanvasIconSelect";
 import {
   DEFAULT_CANVAS_ICON,
-  PRESET_COLORS,
-  PRESET_EMOJIS,
   parseCanvasIcon,
   serializeCanvasIcon,
 } from "./canvasUtils";
@@ -62,8 +62,6 @@ const defaultValues: CanvasFormData = {
   selectedColor: DEFAULT_CANVAS_ICON.color,
   baseCurrencyCode: "",
 };
-
-const hasWindow = typeof window !== "undefined";
 
 export function NewCanvasModal() {
   const dispatch = useAppDispatch();
@@ -202,6 +200,49 @@ export function NewCanvasModal() {
               />
             </Field>
 
+            <Stack direction="row" align="end" gap={3}>
+              {!isEdit && (
+                <Field className="min-w-0 flex-1">
+                  <FieldLabel>{t("modal.fields.baseCurrency.label")}</FieldLabel>
+                  <Combobox
+                    items={currencies.map((c) => c.code)}
+                    value={effectiveCode}
+                    disabled={isLoadingCurr}
+                    onValueChange={(val: string | null) => setValue("baseCurrencyCode", val ?? "")}
+                  >
+                    <ComboboxInput className="w-full" placeholder={tc("placeholders.selectCurrency")} />
+                    <ComboboxContent>
+                      <ComboboxEmpty>{t("modal.empty.noCurrencies")}</ComboboxEmpty>
+                      <ComboboxCollection>
+                        {(code: string) => {
+                          const c = currencies.find((c) => c.code === code);
+                          return (
+                            <ComboboxItem key={code} value={code}>
+                              {c ? `${c.code} – ${c.name}` : code}
+                            </ComboboxItem>
+                          );
+                        }}
+                      </ComboboxCollection>
+                    </ComboboxContent>
+                  </Combobox>
+                </Field>
+              )}
+              <Field className="w-[68px] shrink-0">
+                <FieldLabel>{t("modal.fields.backgroundColor.label")}</FieldLabel>
+                <CanvasColorSelect
+                  value={selectedColor}
+                  onValueChange={(color) => setValue("selectedColor", color)}
+                />
+              </Field>
+              <Field className="w-[68px] shrink-0">
+                <FieldLabel>{t("modal.fields.icon.label")}</FieldLabel>
+                <CanvasIconSelect
+                  value={selectedEmoji}
+                  onValueChange={(emoji) => setValue("selectedEmoji", emoji)}
+                />
+              </Field>
+            </Stack>
+
             <Field>
               <FieldLabel>{t("modal.fields.type.label")}</FieldLabel>
               <GroupSelect
@@ -209,74 +250,6 @@ export function NewCanvasModal() {
                 handleSelect={(item) => setValue("canvasType", item.key)}
                 value={canvasType}
               />
-            </Field>
-
-            {!isEdit && (
-              <Field>
-                <FieldLabel>{t("modal.fields.baseCurrency.label")}</FieldLabel>
-                <Combobox
-                  items={currencies.map((c) => c.code)}
-                  value={effectiveCode}
-                  disabled={isLoadingCurr}
-                  onValueChange={(val: string | null) => setValue("baseCurrencyCode", val ?? "")}
-                >
-                  <ComboboxInput placeholder={tc("placeholders.selectCurrency")} />
-                  <ComboboxContent>
-                    <ComboboxEmpty>{t("modal.empty.noCurrencies")}</ComboboxEmpty>
-                    <ComboboxCollection>
-                      {(code: string) => {
-                        const c = currencies.find((c) => c.code === code);
-                        return (
-                          <ComboboxItem key={code} value={code}>
-                            {c ? `${c.code} – ${c.name}` : code}
-                          </ComboboxItem>
-                        );
-                      }}
-                    </ComboboxCollection>
-                  </ComboboxContent>
-                </Combobox>
-              </Field>
-            )}
-
-            <Field className="gap-2">
-              <FieldLabel>{t("modal.fields.backgroundColor.label")}</FieldLabel>
-              <div className="flex flex-row flex-wrap gap-2">
-                {PRESET_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setValue("selectedColor", color)}
-                    className="size-7 rounded-lg transition-transform hover:scale-110 focus:outline-none"
-                    style={{ backgroundColor: color }}
-                    aria-label={color}
-                  >
-                    {selectedColor === color && (
-                      <span className="flex items-center justify-center text-white text-xs font-bold">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
-            <Field className="gap-2">
-              <FieldLabel>{t("modal.fields.icon.label")}</FieldLabel>
-              <div className="flex flex-row flex-wrap gap-1">
-                {PRESET_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setValue("selectedEmoji", emoji)}
-                    className={`size-9 flex items-center justify-center rounded-lg text-lg transition-colors hover:bg-muted ${
-                      selectedEmoji === emoji ? "bg-muted ring-2 ring-primary" : ""
-                    }`}
-                    aria-label={emoji}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
             </Field>
 
           <DialogFooter>
