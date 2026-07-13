@@ -35,8 +35,7 @@ import {
 } from "@/src/components/list";
 import { Container } from "@/components/ui/container";
 import { Grid } from "@/components/ui/grid";
-import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
+import { IllustratedState } from "@/src/components/IllustratedState";
 import { useTranslation } from "react-i18next";
 
 
@@ -112,7 +111,10 @@ export default function IncomesListPage() {
   if (items.length === 0 && !hasActiveFilters) {
     return (
       <>
-        {canEdit && <AddIncomeButton onClick={() => dispatch(openIncomeCreateModal())} />}
+        <AddIncomeButton
+          canEdit={canEdit}
+          onClick={() => dispatch(openIncomeCreateModal())}
+        />
         <NewIncomeModal />
       </>
     );
@@ -123,9 +125,13 @@ export default function IncomesListPage() {
       <>
         <Container>
           <ListFiltersBar entityType="incomes" />
-          <Stack className="flex-1 py-12" align="center" justify="center">
-            <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
-          </Stack>
+          <IllustratedState
+            illustration="empty"
+            size="sm"
+            fill={false}
+            title={tc("empty.noFilteredResults")}
+            className="py-12"
+          />
         </Container>
         <NewIncomeModal />
       </>

@@ -178,7 +178,11 @@ export function NavUser({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-      <ImageUploader open={imageModal} setOpen={setImageModal} />
+      <ImageUploader
+        open={imageModal}
+        setOpen={setImageModal}
+        existingImageUrl={user.avatar || null}
+      />
     </SidebarMenu>
   );
 }

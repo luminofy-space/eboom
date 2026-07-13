@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,28 +11,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Field, FieldError } from "@/components/ui/field";
+import { ImageUploadField } from "@/src/components/ImageUploadField";
 import { useMutationApi } from "@/src/api/useMutation";
 import API_ROUTES from "@/src/api/urls";
-import { Loader2, Image as ImageIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/src/hooks/useToast";
 import { useTranslation } from "react-i18next";
-import { fileToDataUrl } from "@/src/utils/formUtils";
+import { fileToDataUrl, validateOptionalImage } from "@/src/utils/formUtils";
 
 interface ImageUploaderProps {
   open: boolean;
   setOpen: (open: boolean) => void;
+  existingImageUrl?: string | null;
   onSuccess?: () => void;
 }
 
-const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
+const ImageUploader = ({ open, setOpen, existingImageUrl, onSuccess }: ImageUploaderProps) => {
   const { t } = useTranslation("profile");
   const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { mutate, isPending, fieldError, generalError } = useMutationApi(
     API_ROUTES.USERS_UPDATE_PROFILE_IMAGE,
@@ -42,44 +43,32 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
     }
   );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast({
-          title: t("imageUploader.toast.invalidFileType.title"),
-          description: t("imageUploader.toast.invalidFileType.description"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: t("imageUploader.toast.fileTooLarge.title"),
-          description: t("imageUploader.toast.fileTooLarge.description"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSelectedFile(file);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  function handleFileChange(file: File | null) {
+    if (!file) {
+      setSelectedFile(null);
+      setValidationError(null);
+      return;
     }
-  };
 
-  const handleRemoveImage = () => {
+    const error = validateOptionalImage(file, {
+      invalidType: tv("imageInvalidType"),
+      tooLarge: tv("imageTooLarge"),
+    });
+
+    if (error !== true) {
+      setSelectedFile(null);
+      setValidationError(error);
+      return;
+    }
+
+    setSelectedFile(file);
+    setValidationError(null);
+  }
+
+  function handleRemoveImage() {
     setSelectedFile(null);
-    setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+    setValidationError(null);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,56 +123,18 @@ const ImageUploader = ({ open, setOpen, onSuccess }: ImageUploaderProps) => {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            {previewUrl && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200">
-                  <img
-                    src={previewUrl}
-                    alt={t("imageUploader.preview.alt")}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRemoveImage}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  {t("imageUploader.preview.remove")}
-                </Button>
-              </div>
-            )}
-
-            <div className="grid gap-3">
-              <Label htmlFor="profile-image">
-                {t("imageUploader.fields.selectImage.label")}
-              </Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  ref={fileInputRef}
-                  id="profile-image"
-                  name="profile_image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="cursor-pointer"
-                  disabled={isPending}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isPending}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500">
-                {t("imageUploader.fields.selectImage.hint")}
-              </p>
-            </div>
+            <Field data-invalid={!!validationError}>
+              <ImageUploadField
+                id="profile-image"
+                value={selectedFile}
+                onChange={handleFileChange}
+                existingImageUrl={existingImageUrl}
+                invalid={!!validationError}
+                disabled={isPending}
+                variant="avatar"
+              />
+              {validationError && <FieldError>{validationError}</FieldError>}
+            </Field>
 
             {fieldError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">

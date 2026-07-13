@@ -6,6 +6,7 @@ import { BanknoteArrowDown, BanknoteArrowUp, PartyPopper, PiggyBank } from "luci
 import { Spinner } from "@/components/ui/spinner";
 import { Typography } from "@/components/ui/typography";
 import { Stack } from "@/components/ui/stack";
+import { IllustratedState } from "@/src/components/IllustratedState";
 import { cn } from "@/lib/utils";
 import type { OverdueNotification } from "@/src/hooks/useNotifications";
 import type { BudgetAlertNotification } from "@/src/types/budget-planning";
@@ -184,9 +185,14 @@ export function NotificationsPanel({
 
   if (notifications.length === 0 && budgetAlerts.length === 0) {
     return (
-      <Typography variant="muted-sm" className="py-4 text-center">
-        {t("notifications.empty")}
-      </Typography>
+      <IllustratedState
+        illustration="noNotifications"
+        density="compact"
+        size="xs"
+        fill={false}
+        title={t("notifications.empty")}
+        className="py-3"
+      />
     );
   }
 

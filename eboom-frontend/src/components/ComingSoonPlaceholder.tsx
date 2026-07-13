@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { Typography } from "@/components/ui/typography";
-import { useTranslation } from "react-i18next";
+import { IllustratedState } from "@/src/components/IllustratedState";
 
 interface ComingSoonPlaceholderProps {
   title: string;
@@ -13,21 +11,13 @@ export function ComingSoonPlaceholder({
   title,
   description,
 }: ComingSoonPlaceholderProps) {
-  const { t } = useTranslation("common");
-
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4">
-      <Image
-        src="/upcomming.svg"
-        alt={t("comingSoon.imageAlt")}
-        width={300}
-        height={300}
-        priority
-      />
-      <div className="text-center max-w-md">
-        <Typography variant="title" as="h1" className="mb-2">{title}</Typography>
-        <Typography variant="muted-sm">{description}</Typography>
-      </div>
-    </div>
+    <IllustratedState
+      illustration="upcoming"
+      title={title}
+      description={description}
+      size="lg"
+      priority
+    />
   );
 }
