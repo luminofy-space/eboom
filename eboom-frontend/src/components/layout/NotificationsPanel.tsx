@@ -197,7 +197,7 @@ export function NotificationsPanel({
   }
 
   return (
-    <Stack gap={3} className="max-h-80 overflow-y-auto">
+    <Stack gap={3}>
       {notifications.length > 0 && (
         <Stack gap={1}>
           {hasMultipleSections && (

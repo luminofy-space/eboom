@@ -98,9 +98,11 @@ export default function DarkVeil({
   useEffect(() => {
     const canvas = ref.current as HTMLCanvasElement;
     const parent = canvas.parentElement as HTMLElement;
+    if (!parent) return;
 
+    const maxDpr = window.innerWidth < 768 ? 1 : 1.5;
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio, 2),
+      dpr: Math.min(window.devicePixelRatio || 1, maxDpr),
       canvas
     });
 
@@ -135,6 +137,8 @@ export default function DarkVeil({
 
     const start = performance.now();
     let frame = 0;
+    let isVisible = true;
+    let isPageVisible = !document.hidden;
 
     const loop = () => {
       program.uniforms.uTime.value = ((performance.now() - start) / 1000) * speed;
@@ -147,13 +151,41 @@ export default function DarkVeil({
       frame = requestAnimationFrame(loop);
     };
 
-    loop();
+    const tryStart = () => {
+      if (isVisible && isPageVisible && frame === 0) {
+        frame = requestAnimationFrame(loop);
+      }
+    };
+    const tryStop = () => {
+      if (frame !== 0) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      }
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry?.isIntersecting ?? false;
+        isVisible ? tryStart() : tryStop();
+      },
+      { threshold: 0 }
+    );
+    io.observe(parent);
+
+    const onVisibility = () => {
+      isPageVisible = !document.hidden;
+      isPageVisible ? tryStart() : tryStop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    tryStart();
 
     return () => {
-      cancelAnimationFrame(frame);
+      tryStop();
+      io.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', resize);
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
   return <canvas ref={ref} className="w-full h-full block" />;
 }
-
