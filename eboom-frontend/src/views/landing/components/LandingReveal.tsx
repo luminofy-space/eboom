@@ -1,7 +1,7 @@
 "use client";
 
 import ScrollReveal from "@/components/ScrollReveal/ScrollReveal";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { useLandingLightEffects } from "@/hooks/use-landing-light-effects";
 import { cn } from "@/lib/utils";
 
 type LandingRevealProps = {
@@ -10,9 +10,9 @@ type LandingRevealProps = {
 };
 
 export function LandingReveal({ children, className }: LandingRevealProps) {
-  const prefersReducedMotion = usePrefersReducedMotion();
+  const useLightEffects = useLandingLightEffects();
 
-  if (prefersReducedMotion) {
+  if (useLightEffects) {
     return <span className={className}>{children}</span>;
   }
 
