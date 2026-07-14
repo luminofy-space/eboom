@@ -71,7 +71,7 @@ export function CanvasInvitationsPanel({ onClose: _onClose }: CanvasInvitationsP
             className="py-3"
           />
         ) : (
-          <Stack gap={3} className="max-h-80 overflow-y-auto pt-2">
+          <Stack gap={3} className="pt-2">
             {received.map((invitation) => (
               <InvitationCard
                 key={invitation.id}
@@ -109,7 +109,7 @@ export function CanvasInvitationsPanel({ onClose: _onClose }: CanvasInvitationsP
             className="py-3"
           />
         ) : (
-          <Stack gap={3} className="max-h-80 overflow-y-auto pt-2">
+          <Stack gap={3} className="pt-2">
             {sent.map((invitation) => (
               <InvitationCard
                 key={invitation.id}

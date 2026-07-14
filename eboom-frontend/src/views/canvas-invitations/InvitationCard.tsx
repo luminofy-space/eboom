@@ -50,20 +50,24 @@ export function InvitationCard({
   const isPending = invitation.status === "pending";
 
   return (
-    <Card className="p-4">
-      <Stack direction="row" gap={4} align="start">
-        <CanvasIcon photoUrl={invitation.canvas.photoUrl ?? undefined} size="md" />
-        <Stack className="flex-1" gap={2}>
+    <Card className="p-3">
+      <Stack direction="row" gap={3} align="start">
+        <CanvasIcon photoUrl={invitation.canvas.photoUrl ?? undefined} size="sm" />
+        <Stack className="flex-1 min-w-0" gap={1}>
           <Stack direction="row" align="center" justify="between" gap={2}>
-            <Typography variant="title">{invitation.canvas.name}</Typography>
+            <Typography variant="body-sm" className="truncate font-medium">
+              {invitation.canvas.name}
+            </Typography>
             <Badge variant={isPending ? "default" : "secondary"}>{statusLabel}</Badge>
           </Stack>
 
           {invitation.canvas.description && (
-            <Typography variant="muted-sm">{invitation.canvas.description}</Typography>
+            <Typography variant="caption" className="line-clamp-2">
+              {invitation.canvas.description}
+            </Typography>
           )}
 
-          <Typography variant="muted-sm">
+          <Typography variant="caption">
             {variant === "sent"
               ? t("invitations.to", { name: counterpartyName })
               : t("invitations.from", { name: counterpartyName })}
@@ -72,7 +76,7 @@ export function InvitationCard({
           <RoleChip roleName={invitation.roleName} label={roleLabel} />
 
           {isPending && variant === "received" && (
-            <Stack direction="row" gap={2}>
+            <Stack direction="row" gap={2} className="pt-1">
               <Button size="sm" onClick={onAccept} disabled={isLoading}>
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t("invitations.actions.accept")}
@@ -84,7 +88,7 @@ export function InvitationCard({
           )}
 
           {isPending && variant === "sent" && (
-            <Button size="sm" variant="outline" onClick={onCancel} disabled={isLoading}>
+            <Button size="sm" variant="outline" className="mt-1" onClick={onCancel} disabled={isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {t("invitations.actions.cancel")}
             </Button>

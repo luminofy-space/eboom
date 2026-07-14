@@ -8,6 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuBadge,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,7 @@ export function NavUpcoming({
   const pathname = usePathname();
   const { t } = useTranslation("navigation");
   const { navigate } = useNavigationProgress();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const isActive = (url: string) => {
     return pathname === url || pathname.startsWith(url);
@@ -40,7 +42,10 @@ export function NavUpcoming({
             <SidebarMenuButton
               isActive={isActive(item.url)}
               tooltip={item.title}
-              onClick={() => navigate(item.url)}
+              onClick={() => {
+                navigate(item.url);
+                if (isMobile) setOpenMobile(false);
+              }}
             >
               {item.icon && <item.icon />}
               <span>{item.title}</span>

@@ -13,7 +13,7 @@ export function LandingHeader() {
   const { t } = useTranslation("landing");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/20 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-black/10">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 backdrop-blur-md md:bg-black/20 md:backdrop-blur-2xl md:backdrop-saturate-150 supports-[backdrop-filter]:bg-black/20 md:supports-[backdrop-filter]:bg-black/10">
       <Container className="mx-auto flex h-16 max-w-6xl items-center justify-between">
         <Link href="/">
           <Typography variant="heading" className="text-foreground">

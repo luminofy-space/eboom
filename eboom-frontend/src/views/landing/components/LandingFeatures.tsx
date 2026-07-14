@@ -14,7 +14,7 @@ export function LandingFeatures() {
 
   return (
     <section data-landing-panel className={LANDING_PANEL_CLASS}>
-      <Container className="relative mx-auto max-h-[calc(100svh-4rem-2rem)] w-full max-w-6xl overflow-y-auto" data-panel-scroll>
+      <Container className="relative mx-auto w-full max-w-6xl">
         <Stack gap={8}>
           <Stack gap={3} className="max-w-2xl">
             <Typography variant="title" asChild>

@@ -53,7 +53,7 @@ function CanvasIcon({ photoUrl, size = "md" }: { photoUrl?: string; size?: "sm" 
 export function CanvasSwitcher() {
   const { t } = useTranslation("canvas");
   const { t: tm } = useTranslation("canvas-members");
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { dropdownSide } = useTextDirection();
   const dispatch = useAppDispatch();
   const { navigate } = useNavigationProgress();
@@ -86,6 +86,7 @@ export function CanvasSwitcher() {
           if (canvas === c.id) return;
           selectCanvas(c.id);
           navigate("/dashboard");
+          if (isMobile) setOpenMobile(false);
         }}
         className="gap-2 p-2 group/canvas-item"
       >
