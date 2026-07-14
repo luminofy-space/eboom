@@ -8,34 +8,28 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import { TableCell, TableRow } from "@/components/ui/table";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
+import { NewTransferModal } from "./NewTransferModal";
+import type { WalletTransfer } from "../utils/utils";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { ArrowLeftRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useWalletDetail } from "../hooks/useWalletDetail";
-import type { WalletTransfer } from "../utils/utils";
-import { filterTransfersByCurrency } from "../utils/currencyFilter";
-import { NewTransferModal } from "./NewTransferModal";
+import type { PaginatedTransfersResponse } from "@/src/types/pagination";
 
 interface WalletTransfersTableProps {
   walletId: number;
   walletName?: string;
   currencyCode?: string;
-}
-
-function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
-  return [...transfers].sort(
-    (a, b) => dayjs(b.transferDate).valueOf() - dayjs(a.transferDate).valueOf()
-  );
 }
 
 export function WalletTransfersTable({
@@ -47,43 +41,39 @@ export function WalletTransfersTable({
   const { t: tc } = useTranslation("common");
   const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
-  const emDash = tc("empty.emDash");
   const queryClient = useQueryClient();
+  const emDash = tc("empty.emDash");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<WalletTransfer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WalletTransfer | null>(null);
 
-  const { transfers: transfersRes, isLoading, isError } = useWalletDetail(walletId);
-
-  const transfers = useMemo(
-    () => sortTransfers(filterTransfersByCurrency(transfersRes ?? [], walletId, currencyCode)),
-    [transfersRes, walletId, currencyCode]
+  const extraParams = useMemo(
+    () => (currencyCode ? { currencyCode } : undefined),
+    [currencyCode]
   );
 
-  const totalOut = useMemo(
-    () =>
-      transfers
-        .filter(
-          (tr) =>
-            tr.sourceWalletId === walletId &&
-            (!currencyCode || tr.sourceCurrencyCode === currencyCode)
-        )
-        .reduce((sum, tr) => sum + parseFloat(tr.sourceAmount), 0),
-    [transfers, walletId, currencyCode]
-  );
+  const {
+    items: transfers,
+    data: transfersData,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = usePaginatedTransactionQuery<PaginatedTransfersResponse<WalletTransfer>, WalletTransfer>({
+    baseUrl: canvas ? API_ROUTES.WALLET_TRANSFERS(canvas, walletId) : "",
+    queryKey: ["wallet-transfers", canvas, walletId, currencyCode],
+    enabled: !!canvas && !!walletId,
+    itemsKey: "transfers",
+    extraParams,
+  });
 
-  const totalIn = useMemo(
-    () =>
-      transfers
-        .filter(
-          (tr) =>
-            tr.destinationWalletId === walletId &&
-            (!currencyCode || tr.destinationCurrencyCode === currencyCode)
-        )
-        .reduce((sum, tr) => sum + parseFloat(tr.destinationAmount), 0),
-    [transfers, walletId, currencyCode]
-  );
+  const totalIn = parseFloat(transfersData?.totalIn ?? "0");
+  const totalOut = parseFloat(transfersData?.totalOut ?? "0");
 
   const { mutateAsync: deleteTransfer, isPending: isDeleting } = useMutationApi(
     (transferId: number) => API_ROUTES.TRANSFERS_DELETE(canvas!, transferId),
@@ -94,8 +84,6 @@ export function WalletTransfersTable({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["wallet-transfers", canvas, walletId] });
         await queryClient.invalidateQueries({ queryKey: ["wallet", canvas, walletId] });
-        await queryClient.invalidateQueries({ queryKey: ["wallet-entries", canvas, walletId] });
-        await queryClient.invalidateQueries({ queryKey: ["wallet-payments", canvas, walletId] });
       },
     }
   );
@@ -188,11 +176,7 @@ export function WalletTransfersTable({
       <DataTableSection
         title={t("transfersTable.title")}
         subtitle={t("transfersTable.subtitle")}
-        count={
-          transfers.length > 0
-            ? t("transfersTable.count", { count: transfers.length })
-            : undefined
-        }
+        count={total > 0 ? t("transfersTable.count", { count: total }) : undefined}
         headerAction={
           canEdit ? (
             <Button
@@ -232,6 +216,16 @@ export function WalletTransfersTable({
               {t("transfersTable.footer.netOut")}
             </TableCell>
           </TableRow>
+        }
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
         }
       />
 

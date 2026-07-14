@@ -8,10 +8,13 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
+import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import { NewIncomeEntryModal } from "@/src/views/incomes/component/NewIncomeEntryModal";
 import dayjs from "dayjs";
@@ -20,11 +23,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import type { PaginatedCanvasIncomeEntriesResponse } from "@/src/types/pagination";
 import type { CanvasTransactionsIncomeEntry } from "@/src/types/transactions";
-
-interface TransactionsEntriesTableProps {
-  entries: CanvasTransactionsIncomeEntry[];
-}
 
 function getEntryStatus(entry: CanvasTransactionsIncomeEntry, t: TFunction<"wallets">): {
   label: string;
@@ -39,15 +39,7 @@ function getEntryStatus(entry: CanvasTransactionsIncomeEntry, t: TFunction<"wall
   return { label: t("status.pending"), status: "pending" };
 }
 
-function sortEntries(entries: CanvasTransactionsIncomeEntry[]): CanvasTransactionsIncomeEntry[] {
-  return [...entries].sort((a, b) => {
-    const dateA = a.receivedDate ?? a.expectedDate ?? a.createdAt;
-    const dateB = b.receivedDate ?? b.expectedDate ?? b.createdAt;
-    return dayjs(dateB).valueOf() - dayjs(dateA).valueOf();
-  });
-}
-
-export function TransactionsEntriesTable({ entries: entriesProp }: TransactionsEntriesTableProps) {
+export function TransactionsEntriesTable() {
   const { t } = useTranslation("transactions");
   const { t: tw } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
@@ -58,13 +50,32 @@ export function TransactionsEntriesTable({ entries: entriesProp }: TransactionsE
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CanvasTransactionsIncomeEntry | null>(null);
 
-  const entries = useMemo(() => sortEntries(entriesProp), [entriesProp]);
+  const {
+    items: entries,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = usePaginatedTransactionQuery<
+    PaginatedCanvasIncomeEntriesResponse<CanvasTransactionsIncomeEntry>,
+    CanvasTransactionsIncomeEntry
+  >({
+    baseUrl: canvas ? API_ROUTES.CANVAS_TRANSACTIONS(canvas) : "",
+    queryKey: ["canvas-transactions", canvas, "incomeEntries"],
+    enabled: !!canvas,
+    itemsKey: "incomeEntries",
+    extraParams: { type: "incomeEntries" },
+  });
 
   const invalidateKeys = useMemo(
     () =>
       canvas
         ? [
-            ["canvas-transactions", canvas],
+            ["canvas-transactions", canvas, "incomeEntries"],
             ["canvas-summary", canvas],
           ]
         : [],
@@ -142,10 +153,10 @@ export function TransactionsEntriesTable({ entries: entriesProp }: TransactionsE
         title={t("entries.title")}
         subtitle={t("entries.subtitle")}
         count={
-          entries.length > 0
+          total > 0
             ? t("entries.count", {
-                count: entries.length,
-                unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
+                count: total,
+                unit: total === 1 ? tc("plurals.entry") : tc("plurals.entries"),
               })
             : undefined
         }
@@ -163,6 +174,9 @@ export function TransactionsEntriesTable({ entries: entriesProp }: TransactionsE
             </Button>
           ) : undefined
         }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("entries.loadError")}
         columns={columns}
         data={entries}
         getRowKey={(entry) => entry.id}
@@ -177,6 +191,16 @@ export function TransactionsEntriesTable({ entries: entriesProp }: TransactionsE
           onDelete: () => undefined,
           deleteDisabled: true,
         }}
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
+        }
       />
 
       <NewIncomeEntryModal

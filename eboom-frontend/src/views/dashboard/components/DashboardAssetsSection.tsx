@@ -48,7 +48,7 @@ function AssetCard({ stats }: { stats: CurrencyDashboardStats }) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-xl border bg-card p-4 text-start shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Stack gap={3}>
                 <Badge variant="outline" className="w-fit">
@@ -168,7 +168,7 @@ export function DashboardAssetsSection({
                     disabled={page === 0}
                     aria-label={t("walletsBalance.previousPage")}
                   >
-                    <IconChevronLeft className="size-4" />
+                    <IconChevronLeft className="size-4 rtl:rotate-180" />
                   </Button>
                   <Typography variant="muted-sm">
                     {t("walletsBalance.pageIndicator", {
@@ -183,7 +183,7 @@ export function DashboardAssetsSection({
                     disabled={page >= totalPages - 1}
                     aria-label={t("walletsBalance.nextPage")}
                   >
-                    <IconChevronRight className="size-4" />
+                    <IconChevronRight className="size-4 rtl:rotate-180" />
                   </Button>
                 </>
               )}

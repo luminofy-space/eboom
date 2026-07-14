@@ -113,7 +113,7 @@ export function InsightLanding({
 
       <Typography variant="caption">{t("disclaimer")}</Typography>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <Badge variant={status.kind === "completed" ? "default" : "secondary"}>
           {statusLabel}
         </Badge>

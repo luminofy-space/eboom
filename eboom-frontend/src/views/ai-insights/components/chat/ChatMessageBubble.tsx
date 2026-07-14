@@ -5,6 +5,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/src/components/AuthProvider";
+import { useTextDirection } from "@/src/i18n/useTextDirection";
 import type { AiChatMessage } from "@/src/types/ai-insights";
 
 interface ChatMessageBubbleProps {
@@ -19,13 +20,20 @@ function getUserInitials(firstName?: string | null, lastName?: string | null) {
 
 export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const { user } = useAuthContext();
+  const { isRtl } = useTextDirection();
   const isUser = message.role === "user";
 
   return (
     <div
       className={cn(
         "flex w-full gap-3",
-        isUser ? "flex-row-reverse" : "flex-row"
+        isUser
+          ? isRtl
+            ? "flex-row"
+            : "flex-row-reverse"
+          : isRtl
+            ? "flex-row-reverse"
+            : "flex-row"
       )}
     >
       <Avatar size="sm" className="mt-0.5 shrink-0">
@@ -47,8 +55,12 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         className={cn(
           "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm",
           isUser
-            ? "rounded-tr-sm bg-primary text-primary-foreground"
-            : "rounded-tl-sm border bg-muted/60 text-foreground"
+            ? isRtl
+              ? "rounded-tl-sm bg-primary text-primary-foreground"
+              : "rounded-tr-sm bg-primary text-primary-foreground"
+            : isRtl
+              ? "rounded-tr-sm border bg-muted/60 text-foreground"
+              : "rounded-tl-sm border bg-muted/60 text-foreground"
         )}
       >
         {isUser ? (

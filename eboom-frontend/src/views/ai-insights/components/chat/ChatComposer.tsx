@@ -55,7 +55,7 @@ export function ChatComposer({ onSend, isSending, disabled }: ChatComposerProps)
         }}
       >
         <PromptInputTextarea
-          className="min-h-10 resize-none py-2 pl-3"
+          className="min-h-10 resize-none py-2 ps-3"
           placeholder={t("chat.placeholder")}
           disabled={disabled || isSending}
           aria-label={t("chat.placeholder")}
@@ -65,7 +65,7 @@ export function ChatComposer({ onSend, isSending, disabled }: ChatComposerProps)
             adjustTextareaHeight(event.currentTarget);
           }}
         />
-        <InputGroupAddon align="inline-end" className="pb-1.5 pr-4">
+        <InputGroupAddon align="inline-end" className="pb-1.5 pe-4">
           <PromptInputSubmit
             status={isSending ? "submitted" : undefined}
             disabled={isSending || disabled}

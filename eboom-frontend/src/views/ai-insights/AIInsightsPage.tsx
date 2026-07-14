@@ -20,6 +20,12 @@ import type { WizardFormData } from "@/src/types/ai-insights";
 type ViewMode = "landing" | "wizard";
 type MainTab = "insights" | "chat";
 
+type GenerateErrorKey =
+  | "errors.noApiKey"
+  | "errors.rateLimited"
+  | "errors.generationTimeout"
+  | "errors.generationFailed";
+
 const TAB_PARAM = "tab";
 const DEFAULT_TAB: MainTab = "insights";
 
@@ -46,12 +52,14 @@ export default function AIInsightsPage() {
   const { saveProfile, isSaving, refetch: refetchProfile } = useAIInsightProfile();
   const [view, setView] = useState<ViewMode>("landing");
   const [wizardStartStep, setWizardStartStep] = useState<number | undefined>();
-  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [generateErrorKey, setGenerateErrorKey] = useState<GenerateErrorKey | null>(null);
 
   const mainTab = useMemo(
     () => parseMainTab(searchParams.get(TAB_PARAM)),
     [searchParams]
   );
+
+  const isChatTab = mainTab === "chat";
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -94,20 +102,20 @@ export default function AIInsightsPage() {
   };
 
   const handleRefreshInsights = async () => {
-    setGenerateError(null);
+    setGenerateErrorKey(null);
     try {
       await generateInsights();
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       const code = (err as { code?: string })?.code;
       if (status === 503) {
-        setGenerateError(t("errors.noApiKey"));
+        setGenerateErrorKey("errors.noApiKey");
       } else if (status === 429) {
-        setGenerateError(t("errors.rateLimited"));
+        setGenerateErrorKey("errors.rateLimited");
       } else if (code === "GENERATION_TIMEOUT") {
-        setGenerateError(t("errors.generationTimeout"));
+        setGenerateErrorKey("errors.generationTimeout");
       } else {
-        setGenerateError(t("errors.generationFailed"));
+        setGenerateErrorKey("errors.generationFailed");
       }
     }
   };
@@ -118,7 +126,7 @@ export default function AIInsightsPage() {
 
   if (insightsError) {
     return (
-      <Container className="py-6">
+      <Container className="pb-6">
         <Typography variant="title">{t("title")}</Typography>
         <Typography variant="muted" className="mt-2">
           {t("errors.loadFailed")}
@@ -131,19 +139,18 @@ export default function AIInsightsPage() {
   }
 
   return (
-    <Container className="py-6">
-      {generateError && (
+    <Container className="pb-6">
+      {generateErrorKey && (
         <Typography variant="muted-sm" className="mb-4 text-destructive">
-          {generateError}
+          {t(generateErrorKey)}
         </Typography>
       )}
       {view === "landing" ? (
         <Tabs
           value={mainTab}
           onValueChange={handleTabChange}
-          className={mainTab === "chat" ? "flex min-h-0 flex-col" : undefined}
         >
-          <TabsList className="shrink-0">
+          <TabsList className="mt-2 shrink-0">
             <TabsTrigger value="insights">
               <BrainCircuit className="size-4" />
               {t("tabs.insights")}
@@ -164,8 +171,11 @@ export default function AIInsightsPage() {
               canEdit={canEdit}
             />
           </TabsContent>
-          <TabsContent value="chat" className="mt-6">
-            <AIChatPanel canEdit={canEdit} isActive={mainTab === "chat"} />
+          <TabsContent
+            value="chat"
+            className="mt-6 data-[state=inactive]:hidden"
+          >
+            <AIChatPanel canEdit={canEdit} isActive={isChatTab} />
           </TabsContent>
         </Tabs>
       ) : (
