@@ -86,7 +86,7 @@ function GoalsCurrencyCard({ summary }: GoalsCurrencyCardProps) {
   return (
     <Link
       href="/budget-planning"
-      className="block w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="block w-full rounded-xl border bg-card p-4 text-start shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Stack gap={3}>
         <Badge variant="outline" className="w-fit">

@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNotNull, sql, sum } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   currencies,
@@ -13,7 +13,7 @@ import { creditWalletBalance, debitWalletBalance } from "../services/ledgerServi
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
-import { parseListQueryParams } from "./listQueryParams";
+import { parseListQueryParams, parsePaginationParams, hasPaginationParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 
@@ -155,18 +155,65 @@ router.get("/:incomeId/entries", requireCanvasAccess("view"), async (req: Reques
       return sendError(res, ErrorKeys.income.notFound, 404);
     }
 
+    const whereCondition = eq(incomeEntries.incomeId, incomeId);
+    const orderByDate = desc(
+      sql`COALESCE(${incomeEntries.receivedDate}, ${incomeEntries.expectedDate}, ${incomeEntries.createdAt})`
+    );
+
+    const mapEntry = (e: {
+      entry: typeof incomeEntries.$inferSelect;
+      wallet: typeof wallets.$inferSelect | null;
+      walletCategory: typeof walletCategories.$inferSelect | null;
+    }) => ({
+      ...e.entry,
+      destinationWallet: e.wallet ? { ...e.wallet, category: e.walletCategory } : null,
+    });
+
+    if (!hasPaginationParams(req)) {
+      const entries = await db
+        .select({ entry: incomeEntries, wallet: wallets, walletCategory: walletCategories })
+        .from(incomeEntries)
+        .leftJoin(wallets, eq(incomeEntries.destinationWalletId, wallets.id))
+        .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
+        .where(whereCondition)
+        .orderBy(orderByDate);
+
+      return res.json({
+        entries: entries.map(mapEntry),
+      });
+    }
+
+    const { page, limit, offset } = parsePaginationParams(req);
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(incomeEntries)
+      .where(whereCondition);
+
+    const [{ totalReceived }] = await db
+      .select({ totalReceived: sum(incomeEntries.amount) })
+      .from(incomeEntries)
+      .where(and(whereCondition, isNotNull(incomeEntries.receivedDate)));
+
     const entries = await db
       .select({ entry: incomeEntries, wallet: wallets, walletCategory: walletCategories })
       .from(incomeEntries)
       .leftJoin(wallets, eq(incomeEntries.destinationWalletId, wallets.id))
       .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
-      .where(eq(incomeEntries.incomeId, incomeId));
+      .where(whereCondition)
+      .orderBy(orderByDate)
+      .limit(limit)
+      .offset(offset);
+
+    const formatted = entries.map(mapEntry);
 
     res.json({
-      entries: entries.map((e) => ({
-        ...e.entry,
-        destinationWallet: e.wallet ? { ...e.wallet, category: e.walletCategory } : null,
-      })),
+      entries: formatted,
+      items: formatted,
+      total,
+      page,
+      limit,
+      totalReceived: String(totalReceived ?? 0),
     });
   } catch (err) {
     console.error("Error fetching income entries:", err);

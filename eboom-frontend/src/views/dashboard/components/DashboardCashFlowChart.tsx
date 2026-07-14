@@ -187,7 +187,7 @@ export function DashboardCashFlowChart({
           <span className="@[540px]/card:hidden">{timeRangeLabel}</span>
         </CardDescription>
         <CardAction>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="ms-auto flex flex-wrap items-center gap-2">
             <ToggleGroup
               type="single"
               value={scaleMode}

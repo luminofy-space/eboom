@@ -23,6 +23,12 @@ import { useAIChat } from "../../hooks/useAIChat";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessageList } from "./ChatMessageList";
 
+type SendErrorKey =
+  | "chat.errors.noApiKey"
+  | "chat.errors.rateLimited"
+  | "chat.errors.invalidMessage"
+  | "chat.errors.sendFailed";
+
 interface AIChatPanelProps {
   canEdit: boolean;
   isActive?: boolean;
@@ -40,22 +46,22 @@ export function AIChatPanel({ canEdit, isActive = true }: AIChatPanelProps) {
     clearHistory,
     isClearing,
   } = useAIChat();
-  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendErrorKey, setSendErrorKey] = useState<SendErrorKey | null>(null);
 
   const handleSend = async (content: string) => {
-    setSendError(null);
+    setSendErrorKey(null);
     try {
       await sendMessage(content);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 503) {
-        setSendError(t("chat.errors.noApiKey"));
+        setSendErrorKey("chat.errors.noApiKey");
       } else if (status === 429) {
-        setSendError(t("chat.errors.rateLimited"));
+        setSendErrorKey("chat.errors.rateLimited");
       } else if (status === 400) {
-        setSendError(t("chat.errors.invalidMessage"));
+        setSendErrorKey("chat.errors.invalidMessage");
       } else {
-        setSendError(t("chat.errors.sendFailed"));
+        setSendErrorKey("chat.errors.sendFailed");
       }
     }
   };
@@ -76,41 +82,8 @@ export function AIChatPanel({ canEdit, isActive = true }: AIChatPanelProps) {
   }
 
   return (
-    <Card className="flex flex-col gap-0 overflow-hidden py-0">
-      {/* <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4 border-b px-6 py-4">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-primary/10 p-2">
-            <MessageSquare className="size-5 text-primary" />
-          </div>
-          <div>
-            <CardTitle className="text-lg">{t("chat.title")}</CardTitle>
-          </div>
-        </div>
-        {canEdit && messages.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isClearing || isSending}>
-                <Trash2 className="size-4" />
-                {t("chat.clearHistory")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("chat.clearConfirmTitle")}</AlertDialogTitle>
-                <AlertDialogDescription>{t("chat.clearConfirmDescription")}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("chat.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void clearHistory()}>
-                  {t("chat.clearHistory")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </CardHeader> */}
-
-      <CardContent className="flex flex-col overflow-hidden px-0 pb-0 pt-0">
+    <Card className="flex min-h-[min(32rem,calc(100dvh-12rem))] flex-1 flex-col gap-0 overflow-hidden py-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-0 pb-0 pt-0">
         <div className="shrink-0 px-6 pt-4">
           <div className="flex items-center justify-between">
             <Typography variant="caption">{t("disclaimer")}</Typography>
@@ -138,14 +111,14 @@ export function AIChatPanel({ canEdit, isActive = true }: AIChatPanelProps) {
             )}
           </div>
 
-          {sendError && (
+          {sendErrorKey && (
             <Typography variant="muted-sm" className="mt-2 text-destructive">
-              {sendError}
+              {t(sendErrorKey)}
             </Typography>
           )}
         </div>
 
-        <div className="mt-3">
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
           <ChatMessageList
             messages={messages}
             isSending={isSending}

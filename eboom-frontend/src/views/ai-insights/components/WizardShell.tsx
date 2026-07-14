@@ -72,7 +72,7 @@ export function WizardShell({
   canEdit,
 }: WizardShellProps) {
   const { t } = useTranslation("ai-insights");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationErrorKey, setValidationErrorKey] = useState<string | null>(null);
 
   const stepSyncKey = buildStepSyncKey(profile, initialStep);
   const externalStep = resolveExternalStep(profile, initialStep);
@@ -107,10 +107,10 @@ export function WizardShell({
     const data = form.getValues();
     const errorKey = validateStep(currentStep, data);
     if (errorKey) {
-      setValidationError(t(errorKey));
+      setValidationErrorKey(errorKey);
       return;
     }
-    setValidationError(null);
+    setValidationErrorKey(null);
     await onSave(currentStep, data, options);
     if (options.complete) {
       onExit();
@@ -132,7 +132,7 @@ export function WizardShell({
   };
 
   const handleSaveAndExit = async () => {
-    setValidationError(null);
+    setValidationErrorKey(null);
     await onSave(currentStep, form.getValues(), {});
     onExit();
   };
@@ -175,10 +175,10 @@ export function WizardShell({
         </CardHeader>
         <CardContent>
           {renderStep()}
-          {validationError && (
+          {validationErrorKey && (
             <div className="mt-4 flex items-center gap-2 text-sm text-destructive">
               <AlertCircle className="size-4 shrink-0" />
-              {validationError}
+              {t(validationErrorKey)}
             </div>
           )}
         </CardContent>

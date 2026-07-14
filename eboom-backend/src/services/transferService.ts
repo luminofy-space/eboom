@@ -455,6 +455,62 @@ export async function listTransfersForCanvas(
   return enriched;
 }
 
+export async function listTransfersForCanvasPaginated(
+  canvasId: number,
+  page: number,
+  limit: number,
+  options?: { walletId?: number; currencyCode?: string }
+): Promise<{
+  items: EnrichedTransfer[];
+  total: number;
+  page: number;
+  limit: number;
+  totalIn?: string;
+  totalOut?: string;
+}> {
+  let all = await listTransfersForCanvas(canvasId, options?.walletId);
+
+  if (options?.currencyCode) {
+    const code = options.currencyCode;
+    all = all.filter(
+      (tr) =>
+        tr.sourceCurrencyCode === code || tr.destinationCurrencyCode === code
+    );
+  }
+
+  const total = all.length;
+  const offset = (page - 1) * limit;
+  const items = all.slice(offset, offset + limit);
+
+  let totalIn: string | undefined;
+  let totalOut: string | undefined;
+
+  if (options?.walletId) {
+    const walletId = options.walletId;
+    const code = options.currencyCode;
+    totalOut = String(
+      all
+        .filter(
+          (tr) =>
+            tr.sourceWalletId === walletId &&
+            (!code || tr.sourceCurrencyCode === code)
+        )
+        .reduce((sum, tr) => sum + parseFloat(tr.sourceAmount), 0)
+    );
+    totalIn = String(
+      all
+        .filter(
+          (tr) =>
+            tr.destinationWalletId === walletId &&
+            (!code || tr.destinationCurrencyCode === code)
+        )
+        .reduce((sum, tr) => sum + parseFloat(tr.destinationAmount), 0)
+    );
+  }
+
+  return { items, total, page, limit, totalIn, totalOut };
+}
+
 export async function listTransfersForWallet(walletId: number): Promise<EnrichedTransfer[]> {
   const [wallet] = await db.select().from(wallets).where(eq(wallets.id, walletId));
   if (!wallet) return [];

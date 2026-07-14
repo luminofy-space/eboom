@@ -61,7 +61,7 @@ export function FinancialKnowledgeStep({ control }: FinancialKnowledgeStepProps)
                       type="button"
                       onClick={() => field.onChange(optionKey)}
                       className={cn(
-                        "rounded-md border px-4 py-3 text-left text-sm transition-colors",
+                        "rounded-md border px-4 py-3 text-start text-sm transition-colors",
                         selected
                           ? "border-primary bg-primary/5"
                           : "hover:border-muted-foreground/40"

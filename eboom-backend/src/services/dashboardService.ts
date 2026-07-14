@@ -399,6 +399,147 @@ export async function getCanvasTransactions(canvasId: number): Promise<CanvasTra
   };
 }
 
+export type CanvasTransactionType = "incomeEntries" | "expensePayments" | "transfers";
+
+const canvasIncomeWhere = (canvasId: number) =>
+  and(eq(incomes.canvasId, canvasId), eq(incomes.isArchived, false));
+
+const canvasExpenseWhere = (canvasId: number) =>
+  and(eq(expenses.canvasId, canvasId), eq(expenses.isArchived, false));
+
+export async function getPaginatedCanvasTransactions(
+  canvasId: number,
+  type: CanvasTransactionType,
+  page: number,
+  limit: number
+) {
+  const offset = (page - 1) * limit;
+
+  if (type === "incomeEntries") {
+    const whereCondition = canvasIncomeWhere(canvasId);
+    const orderByDate = desc(
+      sql`COALESCE(${incomeEntriesTable.receivedDate}, ${incomeEntriesTable.expectedDate}, ${incomeEntriesTable.createdAt})`
+    );
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(incomeEntriesTable)
+      .innerJoin(incomes, eq(incomeEntriesTable.incomeId, incomes.id))
+      .where(whereCondition);
+
+    const rows = await db
+      .select({
+        id: incomeEntriesTable.id,
+        incomeId: incomeEntriesTable.incomeId,
+        incomeName: incomes.name,
+        categoryName: incomeCategories.name,
+        destinationWalletId: incomeEntriesTable.destinationWalletId,
+        destinationWalletName: txDestWallet.name,
+        amount: incomeEntriesTable.amount,
+        expectedDate: incomeEntriesTable.expectedDate,
+        receivedDate: incomeEntriesTable.receivedDate,
+        notes: incomeEntriesTable.notes,
+        createdAt: incomeEntriesTable.createdAt,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+      })
+      .from(incomeEntriesTable)
+      .innerJoin(incomes, eq(incomeEntriesTable.incomeId, incomes.id))
+      .leftJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+      .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+      .innerJoin(txDestWallet, eq(incomeEntriesTable.destinationWalletId, txDestWallet.id))
+      .where(whereCondition)
+      .orderBy(orderByDate)
+      .limit(limit)
+      .offset(offset);
+
+    const items = rows.map((row) => ({
+      id: row.id,
+      incomeId: row.incomeId,
+      incomeName: row.incomeName,
+      categoryName: row.categoryName,
+      destinationWalletId: row.destinationWalletId,
+      destinationWalletName: row.destinationWalletName,
+      amount: String(row.amount),
+      expectedDate: toIsoString(row.expectedDate),
+      receivedDate: toIsoString(row.receivedDate),
+      notes: row.notes,
+      createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+      currencyCode: row.currencyCode,
+      currencySymbol: row.currencySymbol,
+    }));
+
+    return { incomeEntries: items, items, total, page, limit };
+  }
+
+  if (type === "expensePayments") {
+    const whereCondition = canvasExpenseWhere(canvasId);
+    const orderByDate = desc(
+      sql`COALESCE(${expensePaymentsTable.paidDate}, ${expensePaymentsTable.dueDate}, ${expensePaymentsTable.createdAt})`
+    );
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(expensePaymentsTable)
+      .innerJoin(expenses, eq(expensePaymentsTable.expenseId, expenses.id))
+      .where(whereCondition);
+
+    const rows = await db
+      .select({
+        id: expensePaymentsTable.id,
+        expenseId: expensePaymentsTable.expenseId,
+        expenseName: expenses.name,
+        categoryName: expenseCategories.name,
+        sourceWalletId: expensePaymentsTable.sourceWalletId,
+        sourceWalletName: txSourceWallet.name,
+        amount: expensePaymentsTable.amount,
+        dueDate: expensePaymentsTable.dueDate,
+        paidDate: expensePaymentsTable.paidDate,
+        notes: expensePaymentsTable.notes,
+        createdAt: expensePaymentsTable.createdAt,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+      })
+      .from(expensePaymentsTable)
+      .innerJoin(expenses, eq(expensePaymentsTable.expenseId, expenses.id))
+      .leftJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+      .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+      .innerJoin(txSourceWallet, eq(expensePaymentsTable.sourceWalletId, txSourceWallet.id))
+      .where(whereCondition)
+      .orderBy(orderByDate)
+      .limit(limit)
+      .offset(offset);
+
+    const items = rows.map((row) => ({
+      id: row.id,
+      expenseId: row.expenseId,
+      expenseName: row.expenseName,
+      categoryName: row.categoryName,
+      sourceWalletId: row.sourceWalletId,
+      sourceWalletName: row.sourceWalletName,
+      amount: String(row.amount),
+      dueDate: toIsoString(row.dueDate),
+      paidDate: toIsoString(row.paidDate),
+      notes: row.notes,
+      createdAt: toIsoString(row.createdAt) ?? new Date().toISOString(),
+      currencyCode: row.currencyCode,
+      currencySymbol: row.currencySymbol,
+    }));
+
+    return { expensePayments: items, items, total, page, limit };
+  }
+
+  const { listTransfersForCanvasPaginated } = await import("./transferService");
+  const result = await listTransfersForCanvasPaginated(canvasId, page, limit);
+  return {
+    transfers: result.items,
+    items: result.items,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+  };
+}
+
 export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary> {
   const [
     walletCountRow,

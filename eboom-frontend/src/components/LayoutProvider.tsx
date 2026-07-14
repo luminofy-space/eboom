@@ -30,10 +30,8 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
           <SiteHeader />
           <NavigationProgressBar />
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <div className="flex h-full flex-col gap-4 md:gap-6">
-                <CanvasRequiredGate>{children}</CanvasRequiredGate>
-              </div>
+            <div className="@container/main flex flex-col gap-4 px-0 pt-4 pb-4 md:gap-6 md:pt-6 md:pb-6">
+              <CanvasRequiredGate>{children}</CanvasRequiredGate>
             </div>
           </div>
         </SidebarInset>

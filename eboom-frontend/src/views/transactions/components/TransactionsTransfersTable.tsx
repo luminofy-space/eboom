@@ -9,32 +9,24 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { Button } from "@/components/ui/button";
 import { Stack } from "@/components/ui/stack";
 import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import { NewTransferModal } from "@/src/views/wallets/components/NewTransferModal";
 import type { WalletTransfer } from "@/src/views/wallets/utils/utils";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { ArrowLeftRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { PaginatedTransfersResponse } from "@/src/types/pagination";
 
-interface TransactionsTransfersTableProps {
-  transfers: WalletTransfer[];
-}
-
-function sortTransfers(transfers: WalletTransfer[]): WalletTransfer[] {
-  return [...transfers].sort(
-    (a, b) => dayjs(b.transferDate).valueOf() - dayjs(a.transferDate).valueOf()
-  );
-}
-
-export function TransactionsTransfersTable({ transfers: transfersProp }: TransactionsTransfersTableProps) {
+export function TransactionsTransfersTable() {
   const { t } = useTranslation("transactions");
   const { t: tw } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
@@ -47,13 +39,29 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
   const [editingTransfer, setEditingTransfer] = useState<WalletTransfer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WalletTransfer | null>(null);
 
-  const transfers = useMemo(() => sortTransfers(transfersProp), [transfersProp]);
+  const {
+    items: transfers,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = usePaginatedTransactionQuery<PaginatedTransfersResponse<WalletTransfer>, WalletTransfer>({
+    baseUrl: canvas ? API_ROUTES.CANVAS_TRANSACTIONS(canvas) : "",
+    queryKey: ["canvas-transactions", canvas, "transfers"],
+    enabled: !!canvas,
+    itemsKey: "transfers",
+    extraParams: { type: "transfers" },
+  });
 
   const invalidateKeys = useMemo(
     () =>
       canvas
         ? [
-            ["canvas-transactions", canvas],
+            ["canvas-transactions", canvas, "transfers"],
             ["canvas-summary", canvas],
           ]
         : [],
@@ -157,11 +165,7 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
       <DataTableSection
         title={t("transfers.title")}
         subtitle={t("transfers.subtitle")}
-        count={
-          transfers.length > 0
-            ? t("transfers.count", { count: transfers.length })
-            : undefined
-        }
+        count={total > 0 ? t("transfers.count", { count: total }) : undefined}
         headerAction={
           canEdit ? (
             <Button
@@ -176,6 +180,9 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
             </Button>
           ) : undefined
         }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("transfers.loadError")}
         columns={columns}
         data={transfers}
         getRowKey={(transfer) => transfer.id}
@@ -188,6 +195,16 @@ export function TransactionsTransfersTable({ transfers: transfersProp }: Transac
           },
           onDelete: (transfer) => setDeleteTarget(transfer),
         }}
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
+        }
       />
 
       <NewTransferModal

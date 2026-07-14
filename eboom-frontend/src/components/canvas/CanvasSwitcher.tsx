@@ -21,7 +21,6 @@ import { NewCanvasModal } from "./NewCanvasModal";
 import { ConfirmLeaveCanvasDialog } from "./ConfirmLeaveCanvasDialog";
 import { parseCanvasIcon } from "./canvasUtils";
 import { useMemo, useState } from "react";
-import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
 import { useCanvasMembers } from "@/src/hooks/useCanvasMembers";
@@ -56,7 +55,6 @@ export function CanvasSwitcher() {
   const { isMobile, setOpenMobile } = useSidebar();
   const { dropdownSide } = useTextDirection();
   const dispatch = useAppDispatch();
-  const { navigate } = useNavigationProgress();
 
   const { canvases, canvas, isQueryLoading, selectCanvas, refetch } = useCanvas();
   const { isOwner } = useCanvasPermissions();
@@ -85,7 +83,6 @@ export function CanvasSwitcher() {
         onClick={() => {
           if (canvas === c.id) return;
           selectCanvas(c.id);
-          navigate("/dashboard");
           if (isMobile) setOpenMobile(false);
         }}
         className="gap-2 p-2 group/canvas-item"
