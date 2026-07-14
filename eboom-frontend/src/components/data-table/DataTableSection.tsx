@@ -11,6 +11,7 @@ export interface DataTableSectionProps<T> extends DataTableProps<T> {
   subtitle?: string;
   count?: string;
   headerAction?: React.ReactNode;
+  pagination?: React.ReactNode;
   containerClassName?: string;
   isLoading?: boolean;
   isError?: boolean;
@@ -23,6 +24,7 @@ export function DataTableSection<T>({
   subtitle,
   count,
   headerAction,
+  pagination,
   containerClassName,
   isLoading = false,
   isError = false,
@@ -76,6 +78,7 @@ export function DataTableSection<T>({
         </Stack>
 
         <DataTable {...tableProps} />
+        {pagination}
       </Stack>
     </Container>
   );

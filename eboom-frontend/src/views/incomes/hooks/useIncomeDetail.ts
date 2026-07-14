@@ -15,6 +15,7 @@ export type IncomeDetail = Income & {
 
 interface UseIncomeDetailOptions {
   enabled?: boolean;
+  skipEntries?: boolean;
 }
 
 export function useIncomeDetail(
@@ -23,6 +24,7 @@ export function useIncomeDetail(
 ) {
   const { canvas } = useCanvas();
   const enabled = (options?.enabled ?? true) && !!canvas && !!incomeId;
+  const skipEntries = options?.skipEntries ?? false;
 
   const { data: incomeRes, isLoading: isLoadingIncome, isError: isIncomeError } =
     useQueryApi<{
@@ -40,7 +42,7 @@ export function useIncomeDetail(
     canvas ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, incomeId) : "",
     {
       queryKey: ["income-entries", canvas, incomeId],
-      enabled,
+      enabled: enabled && !skipEntries,
     }
   );
 
@@ -60,7 +62,7 @@ export function useIncomeDetail(
     income: incomeRes?.income,
     entries: entriesRes?.entries ?? [],
     currencySymbol,
-    isLoading: isLoadingIncome || isLoadingEntries,
-    isError: isIncomeError || isEntriesError,
+    isLoading: isLoadingIncome || (!skipEntries && isLoadingEntries),
+    isError: isIncomeError || (!skipEntries && isEntriesError),
   };
 }

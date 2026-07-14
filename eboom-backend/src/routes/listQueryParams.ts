@@ -1,5 +1,9 @@
 import type { Request } from "express";
 
+export function hasPaginationParams(req: Request): boolean {
+  return req.query.page !== undefined || req.query.limit !== undefined;
+}
+
 export function parsePaginationParams(req: Request) {
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));

@@ -10,6 +10,7 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { useIncomeDetail } from "../hooks/useIncomeDetail";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import { NewIncomeEntryModal } from "./NewIncomeEntryModal";
 import { useTranslation } from "react-i18next";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
+import type { PaginatedEntriesResponse } from "@/src/types/pagination";
 import type { TFunction } from "i18next";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
@@ -65,14 +68,6 @@ function getEntryStatus(entry: IncomeEntry, t: TFunction<"incomes">): {
   return { label: t("status.pending"), status: "pending" };
 }
 
-function sortEntries(entries: IncomeEntry[]): IncomeEntry[] {
-  return [...entries].sort((a, b) => {
-    const dateA = a.receivedDate ?? a.expectedDate ?? a.createdAt;
-    const dateB = b.receivedDate ?? b.expectedDate ?? b.createdAt;
-    return dayjs(dateB).valueOf() - dayjs(dateA).valueOf();
-  });
-}
-
 export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
   const { t } = useTranslation("incomes");
   const { t: tc } = useTranslation("common");
@@ -86,11 +81,32 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
 
   const {
     income,
-    entries: rawEntries,
     currencySymbol,
-    isLoading,
-    isError,
-  } = useIncomeDetail(incomeId);
+    isLoading: isLoadingIncome,
+    isError: isIncomeError,
+  } = useIncomeDetail(incomeId, { skipEntries: true });
+
+  const {
+    items: entries,
+    data: entriesData,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading: isLoadingEntries,
+    isFetching,
+    isError: isEntriesError,
+  } = usePaginatedTransactionQuery<PaginatedEntriesResponse<IncomeEntry>, IncomeEntry>({
+    baseUrl: canvas ? API_ROUTES.INCOME_ENTRIES_LIST(canvas, incomeId) : "",
+    queryKey: ["income-entries", canvas, incomeId],
+    enabled: !!canvas && !!incomeId,
+    itemsKey: "entries",
+  });
+
+  const isLoading = isLoadingIncome || isLoadingEntries;
+  const isError = isIncomeError || isEntriesError;
+  const totalReceived = parseFloat(entriesData?.totalReceived ?? "0");
 
   const { mutate: deleteEntry, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.INCOME_ENTRIES_DELETE(canvas!, id),
@@ -104,16 +120,6 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
         queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
       },
     }
-  );
-
-  const entries = useMemo(() => sortEntries(rawEntries), [rawEntries]);
-
-  const totalReceived = useMemo(
-    () =>
-      entries
-        .filter((e) => e.receivedDate)
-        .reduce((sum, e) => sum + parseFloat(e.amount), 0),
-    [entries]
   );
 
   const columns: DataTableColumn<IncomeEntry>[] = useMemo(
@@ -172,10 +178,10 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
         title={t("entriesTable.title")}
         subtitle={income?.name ? t("entriesTable.subtitle", { incomeName: income.name }) : undefined}
         count={
-          entries.length > 0
+          total > 0
             ? t("entriesTable.count", {
-                count: entries.length,
-                unit: entries.length === 1 ? tc("plurals.entry") : tc("plurals.entries"),
+                count: total,
+                unit: total === 1 ? tc("plurals.entry") : tc("plurals.entries"),
               })
             : undefined
         }
@@ -217,6 +223,16 @@ export function IncomeEntriesTable({ incomeId }: IncomeEntriesTableProps) {
               {t("entriesTable.footer.totalReceived")}
             </TableCell>
           </TableRow>
+        }
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
         }
       />
 

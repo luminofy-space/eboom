@@ -3,6 +3,7 @@
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import { ConfirmDeleteDialog } from "@/src/components/ConfirmDeleteDialog";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import {
   DataTableSection,
   TableEntityCell,
@@ -10,6 +11,8 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
+import type { PaginatedPaymentsResponse } from "@/src/types/pagination";
 import { useExpenseDetail } from "../hooks/useExpenseDetail";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
@@ -65,14 +68,6 @@ function getPaymentStatus(payment: ExpensePayment, t: TFunction<"expenses">): {
   return { label: t("status.unpaid"), status: "unpaid" };
 }
 
-function sortPayments(payments: ExpensePayment[]): ExpensePayment[] {
-  return [...payments].sort((a, b) => {
-    const dateA = a.paidDate ?? a.dueDate ?? a.createdAt;
-    const dateB = b.paidDate ?? b.dueDate ?? b.createdAt;
-    return dayjs(dateB).valueOf() - dayjs(dateA).valueOf();
-  });
-}
-
 export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
   const { t } = useTranslation("expenses");
   const { t: tc } = useTranslation("common");
@@ -86,11 +81,32 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
 
   const {
     expense,
-    payments: rawPayments,
     currencySymbol,
-    isLoading,
-    isError,
-  } = useExpenseDetail(expenseId);
+    isLoading: isLoadingExpense,
+    isError: isExpenseError,
+  } = useExpenseDetail(expenseId, { skipPayments: true });
+
+  const {
+    items: payments,
+    data: paymentsData,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading: isLoadingPayments,
+    isFetching,
+    isError: isPaymentsError,
+  } = usePaginatedTransactionQuery<PaginatedPaymentsResponse<ExpensePayment>, ExpensePayment>({
+    baseUrl: canvas ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, expenseId) : "",
+    queryKey: ["expense-payments", canvas, expenseId],
+    enabled: !!canvas && !!expenseId,
+    itemsKey: "payments",
+  });
+
+  const isLoading = isLoadingExpense || isLoadingPayments;
+  const isError = isExpenseError || isPaymentsError;
+  const totalPaid = parseFloat(paymentsData?.totalPaid ?? "0");
 
   const { mutate: deletePayment, isPending: isDeleting } = useMutationApi(
     (id: number) => API_ROUTES.EXPENSE_PAYMENTS_DELETE(canvas!, id),
@@ -104,16 +120,6 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
         queryClient.invalidateQueries({ queryKey: ["notifications", "overdue"] });
       },
     }
-  );
-
-  const payments = useMemo(() => sortPayments(rawPayments), [rawPayments]);
-
-  const totalPaid = useMemo(
-    () =>
-      payments
-        .filter((p) => p.paidDate)
-        .reduce((sum, p) => sum + parseFloat(p.amount), 0),
-    [payments]
   );
 
   const columns: DataTableColumn<ExpensePayment>[] = useMemo(
@@ -172,10 +178,10 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
         title={t("paymentsTable.title")}
         subtitle={expense?.name ? t("paymentsTable.subtitle", { expenseName: expense.name }) : undefined}
         count={
-          payments.length > 0
+          total > 0
             ? t("paymentsTable.count", {
-                count: payments.length,
-                unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+                count: total,
+                unit: total === 1 ? tc("plurals.payment") : tc("plurals.payments"),
               })
             : undefined
         }
@@ -217,6 +223,16 @@ export function ExpensePaymentsTable({ expenseId }: ExpensePaymentsTableProps) {
               {t("paymentsTable.footer.totalPaid")}
             </TableCell>
           </TableRow>
+        }
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
         }
       />
 

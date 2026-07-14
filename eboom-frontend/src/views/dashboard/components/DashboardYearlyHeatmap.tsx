@@ -275,7 +275,7 @@ export function DashboardYearlyHeatmap({
         ) : (
           <TooltipProvider>
             <div className="inline-block min-w-max">
-            <div className="mb-2 flex items-center gap-1 pl-8">
+            <div className="mb-2 flex items-center gap-1 ps-8">
               {weekColumns.map((_, weekIndex) => (
                 <div
                   key={`month-${weekIndex}`}
@@ -335,7 +335,7 @@ export function DashboardYearlyHeatmap({
           </TooltipProvider>
         )}
 
-        <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+        <div className="ms-auto flex items-center gap-2 text-xs text-muted-foreground">
           <span>{t("heatmap.legend.less")}</span>
           <div className={`${CELL_SIZE_CLASS} bg-muted/60`} />
           <div className={`${CELL_SIZE_CLASS} bg-rose-300`} />

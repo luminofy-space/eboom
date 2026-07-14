@@ -8,10 +8,13 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
+import API_ROUTES from "@/src/api/urls";
 import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
 import dayjs from "dayjs";
@@ -20,11 +23,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import type { PaginatedCanvasExpensePaymentsResponse } from "@/src/types/pagination";
 import type { CanvasTransactionsExpensePayment } from "@/src/types/transactions";
-
-interface TransactionsPaymentsTableProps {
-  payments: CanvasTransactionsExpensePayment[];
-}
 
 function getPaymentStatus(payment: CanvasTransactionsExpensePayment, t: TFunction<"wallets">): {
   label: string;
@@ -42,17 +42,7 @@ function getPaymentStatus(payment: CanvasTransactionsExpensePayment, t: TFunctio
   return { label: t("status.pending"), status: "pending" };
 }
 
-function sortPayments(
-  payments: CanvasTransactionsExpensePayment[]
-): CanvasTransactionsExpensePayment[] {
-  return [...payments].sort((a, b) => {
-    const dateA = a.paidDate ?? a.dueDate ?? a.createdAt;
-    const dateB = b.paidDate ?? b.dueDate ?? b.createdAt;
-    return dayjs(dateB).valueOf() - dayjs(dateA).valueOf();
-  });
-}
-
-export function TransactionsPaymentsTable({ payments: paymentsProp }: TransactionsPaymentsTableProps) {
+export function TransactionsPaymentsTable() {
   const { t } = useTranslation("transactions");
   const { t: tw } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
@@ -63,13 +53,32 @@ export function TransactionsPaymentsTable({ payments: paymentsProp }: Transactio
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<CanvasTransactionsExpensePayment | null>(null);
 
-  const payments = useMemo(() => sortPayments(paymentsProp), [paymentsProp]);
+  const {
+    items: payments,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = usePaginatedTransactionQuery<
+    PaginatedCanvasExpensePaymentsResponse<CanvasTransactionsExpensePayment>,
+    CanvasTransactionsExpensePayment
+  >({
+    baseUrl: canvas ? API_ROUTES.CANVAS_TRANSACTIONS(canvas) : "",
+    queryKey: ["canvas-transactions", canvas, "expensePayments"],
+    enabled: !!canvas,
+    itemsKey: "expensePayments",
+    extraParams: { type: "expensePayments" },
+  });
 
   const invalidateKeys = useMemo(
     () =>
       canvas
         ? [
-            ["canvas-transactions", canvas],
+            ["canvas-transactions", canvas, "expensePayments"],
             ["canvas-summary", canvas],
           ]
         : [],
@@ -149,10 +158,10 @@ export function TransactionsPaymentsTable({ payments: paymentsProp }: Transactio
         subtitle={t("payments.subtitle")}
         containerClassName="pb-6"
         count={
-          payments.length > 0
+          total > 0
             ? t("payments.count", {
-                count: payments.length,
-                unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+                count: total,
+                unit: total === 1 ? tc("plurals.payment") : tc("plurals.payments"),
               })
             : undefined
         }
@@ -170,6 +179,9 @@ export function TransactionsPaymentsTable({ payments: paymentsProp }: Transactio
             </Button>
           ) : undefined
         }
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("payments.loadError")}
         columns={columns}
         data={payments}
         getRowKey={(payment) => payment.id}
@@ -184,6 +196,16 @@ export function TransactionsPaymentsTable({ payments: paymentsProp }: Transactio
           onDelete: () => undefined,
           deleteDisabled: true,
         }}
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
+        }
       />
 
       <NewExpensePaymentModal
