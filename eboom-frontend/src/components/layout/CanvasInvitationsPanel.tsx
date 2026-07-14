@@ -6,7 +6,7 @@ import { Stack } from "@/components/ui/stack";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Typography } from "@/components/ui/typography";
+import { IllustratedState } from "@/src/components/IllustratedState";
 import { useCanvasInvitations } from "@/src/hooks/useCanvasInvitations";
 import { InvitationCard } from "@/src/views/canvas-invitations/InvitationCard";
 
@@ -62,9 +62,14 @@ export function CanvasInvitationsPanel({ onClose: _onClose }: CanvasInvitationsP
             <Spinner />
           </Stack>
         ) : received.length === 0 ? (
-          <Typography variant="muted-sm" className="py-4 text-center">
-            {t("invitations.empty.received")}
-          </Typography>
+          <IllustratedState
+            illustration="noNotifications"
+            density="compact"
+            size="xs"
+            fill={false}
+            title={t("invitations.empty.received")}
+            className="py-3"
+          />
         ) : (
           <Stack gap={3} className="max-h-80 overflow-y-auto pt-2">
             {received.map((invitation) => (
@@ -95,9 +100,14 @@ export function CanvasInvitationsPanel({ onClose: _onClose }: CanvasInvitationsP
             <Spinner />
           </Stack>
         ) : sent.length === 0 ? (
-          <Typography variant="muted-sm" className="py-4 text-center">
-            {t("invitations.empty.sent")}
-          </Typography>
+          <IllustratedState
+            illustration="noNotifications"
+            density="compact"
+            size="xs"
+            fill={false}
+            title={t("invitations.empty.sent")}
+            className="py-3"
+          />
         ) : (
           <Stack gap={3} className="max-h-80 overflow-y-auto pt-2">
             {sent.map((invitation) => (

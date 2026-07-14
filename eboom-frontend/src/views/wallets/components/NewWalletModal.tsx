@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
+import { ImageUploadField } from "@/src/components/ImageUploadField";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -37,7 +38,7 @@ import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectWalletModal, closeWalletModal } from "@/src/redux/walletSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface WalletFormData {
@@ -67,7 +68,6 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
     const isEdit = mode === "edit";
     const { canvas } = useCanvas();
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { wallet: fetchedWallet } = useWalletDetail(editingItem?.id ?? 0, {
         enabled: open && isEdit && !!editingItem?.id,
@@ -169,9 +169,6 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
 
             reset(defaultValues);
             setSubmitError(null);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
             dispatch(closeWalletModal());
         } catch (error) {
             setSubmitError(translateSubmitError(error, tv("walletSaveFailed"), tv));
@@ -276,17 +273,16 @@ export function NewWalletModal({ onCreateSuccess }: NewWalletModalProps) {
                                         tooLarge: tv("imageTooLarge"),
                                     }),
                             }}
-                            render={({ field }) => (
-                                <Input
-                                    ref={fileInputRef}
+                            render={({ field, fieldState }) => (
+                                <ImageUploadField
                                     id="wallet-photo"
-                                    type="file"
-                                    accept="image/*"
-                                    aria-invalid={!!errors.photo}
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0] ?? null;
-                                        field.onChange(file);
-                                    }}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    existingImageUrl={
+                                        isEdit ? (fetchedWallet ?? editingItem)?.photoUrl : undefined
+                                    }
+                                    invalid={!!fieldState.error}
+                                    disabled={isSaving}
                                 />
                             )}
                         />

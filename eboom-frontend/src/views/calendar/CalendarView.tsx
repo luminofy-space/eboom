@@ -305,15 +305,7 @@ export default function CalendarView() {
     [t]
   );
 
-  if (!canvas) {
-    return (
-      <Container>
-        <Stack className="h-96" align="center" justify="center">
-          <Typography variant="muted-sm">{t("noCanvas")}</Typography>
-        </Stack>
-      </Container>
-    );
-  }
+  if (!canvas) return null;
 
   return (
     <Stack className="pb-2">

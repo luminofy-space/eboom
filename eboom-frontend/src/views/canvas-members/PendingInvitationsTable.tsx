@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { DataTable, type DataTableColumn } from "@/src/components/data-table";
 import { Button } from "@/components/ui/button";
-import { Typography } from "@/components/ui/typography";
+import { IllustratedState } from "@/src/components/IllustratedState";
 import type { CanvasPendingInvitation } from "@/src/hooks/useCanvasMembers";
 import { RoleChip } from "./RoleChip";
 import { roleNameToValue } from "./MemberRoleSelect";
@@ -78,7 +78,16 @@ export function PendingInvitationsTable({
   );
 
   if (invitations.length === 0) {
-    return <Typography variant="muted-sm">{t("members.noPendingInvitations")}</Typography>;
+    return (
+      <IllustratedState
+        illustration="noNotifications"
+        density="compact"
+        size="sm"
+        fill={false}
+        title={t("members.noPendingInvitations")}
+        className="py-4"
+      />
+    );
   }
 
   return (

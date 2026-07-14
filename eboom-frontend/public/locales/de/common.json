@@ -119,6 +119,38 @@
   "comingSoon": {
     "imageAlt": "Demnächst verfügbar"
   },
+  "canvasGate": {
+    "title": "Noch kein Canvas",
+    "description": "Erstellen Sie einen Canvas, um Ihre Finanzen zu organisieren.",
+    "action": "Canvas erstellen"
+  },
+  "status": {
+    "notFound": {
+      "title": "Seite nicht gefunden",
+      "description": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+      "action": "Zurück zum Dashboard"
+    },
+    "serverError": {
+      "title": "Etwas ist schiefgelaufen",
+      "description": "Der Server ist momentan nicht erreichbar. Bitte versuchen Sie es gleich erneut.",
+      "action": "Erneut versuchen"
+    }
+  },
+  "illustrations": {
+    "emptyAlt": "Leerzustand-Illustration",
+    "notFoundAlt": "Seite nicht gefunden Illustration",
+    "serverDownAlt": "Server nicht verfügbar Illustration",
+    "noWalletsAlt": "Keine Wallets Illustration",
+    "noCanvasAlt": "Kein Canvas Illustration",
+    "noNotificationsAlt": "Keine Benachrichtigungen Illustration",
+    "upcomingAlt": "Demnächst verfügbar Illustration"
+  },
+  "imageUpload": {
+    "dropzone": "Bild per Drag-and-drop ablegen oder zum Durchsuchen klicken",
+    "hint": "JPEG, PNG, WebP — max. 5 MB",
+    "remove": "Entfernen",
+    "previewAlt": "Bildvorschau"
+  },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
     "nameRequired": "Name ist erforderlich",

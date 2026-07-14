@@ -21,12 +21,11 @@ import { useMutationApi } from "@/src/api/useMutation";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Grid } from "@/components/ui/grid";
 import { Stack } from "@/components/ui/stack";
-import { Typography } from "@/components/ui/typography";
 import { Plus } from "lucide-react";
+import { IllustratedState } from "@/src/components/IllustratedState";
 import { NewWalletModal } from "./components/NewWalletModal";
 import { GridCard } from "@/src/components/GridCard";
 import { GridCardSkeleton } from "@/src/components/GridCardSkeleton";
@@ -116,20 +115,20 @@ export default function WalletsListPage() {
     return (
       <>
         <Stack className="flex-1" align="center" justify="center">
-          <Card className="w-[375px] py-8">
-            <Stack align="center" gap={3}>
-              <Typography variant="title" className="text-center">{t("list.empty.title")}</Typography>
-              <Typography variant="muted-sm" className="text-center">
-                {t("list.empty.description")}
-              </Typography>
-              {canEdit && (
-              <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openWalletCreateModal())}>
-                <Plus className="mr-2 h-4 w-4" />
-                {tc("actions.add")}
-              </Button>
-              )}
-            </Stack>
-          </Card>
+          <IllustratedState
+            illustration="noWallets"
+            layout="card"
+            title={t("list.empty.title")}
+            description={t("list.empty.description")}
+            action={
+              canEdit ? (
+                <Button className="w-[80%] min-h-[40px]" onClick={() => dispatch(openWalletCreateModal())}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {tc("actions.add")}
+                </Button>
+              ) : undefined
+            }
+          />
         </Stack>
         <NewWalletModal />
       </>
@@ -141,9 +140,13 @@ export default function WalletsListPage() {
       <>
         <Container>
           <ListFiltersBar entityType="wallets" />
-          <Stack className="flex-1 py-12" align="center" justify="center">
-            <Typography variant="muted">{tc("empty.noFilteredResults")}</Typography>
-          </Stack>
+          <IllustratedState
+            illustration="empty"
+            size="sm"
+            fill={false}
+            title={tc("empty.noFilteredResults")}
+            className="py-12"
+          />
         </Container>
         <NewWalletModal />
       </>

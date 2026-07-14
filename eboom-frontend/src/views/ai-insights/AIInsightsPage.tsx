@@ -42,7 +42,6 @@ export default function AIInsightsPage() {
     generateInsights,
     isGenerating,
     refetch: refetchInsights,
-    canvasId,
   } = useAIInsights();
   const { saveProfile, isSaving, refetch: refetchProfile } = useAIInsightProfile();
   const [view, setView] = useState<ViewMode>("landing");
@@ -112,14 +111,6 @@ export default function AIInsightsPage() {
       }
     }
   };
-
-  if (!canvasId) {
-    return (
-      <Container>
-        <Typography variant="muted">{t("empty.noCanvas")}</Typography>
-      </Container>
-    );
-  }
 
   if (insightsLoading) {
     return <PageLoader />;

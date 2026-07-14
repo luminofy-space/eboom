@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Stack } from "@/components/ui/stack";
 import { FormSubmitError } from "@/src/components/FormSubmitError";
+import { ImageUploadField } from "@/src/components/ImageUploadField";
 import API_ROUTES from "@/src/api/urls";
 import { useMutationApi } from "@/src/api/useMutation";
 import useQueryApi from "@/src/api/useQuery";
@@ -37,7 +38,7 @@ import { useExpenseDetail } from "../hooks/useExpenseDetail";
 import { useAppDispatch, useAppSelector } from "@/src/redux/store";
 import { selectExpenseModal, closeExpenseModal } from "@/src/redux/expenseSlice";
 import { fileToDataUrl, translateSubmitError, validateOptionalImage } from "@/src/utils/formUtils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   RecurrencePatternPicker,
   DEFAULT_RECURRENCE_PATTERN,
@@ -96,7 +97,6 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
   });
 
   const isRecurring = watch("isRecurring");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { expense: fetchedExpense } = useExpenseDetail(editingItem?.id ?? 0, {
     enabled: open && isEdit && !!editingItem?.id,
@@ -212,9 +212,6 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
       dispatch(closeExpenseModal());
       reset(defaultValues);
       setSubmitError(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
   };
 
@@ -252,9 +249,6 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
 
       reset(defaultValues);
       setSubmitError(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
       dispatch(closeExpenseModal());
     } catch (error) {
       setSubmitError(translateSubmitError(error, tv("expenseSaveFailed"), tv));
@@ -418,18 +412,16 @@ export function NewExpenseModal({ onCreateSuccess }: NewExpenseModalProps) {
                     tooLarge: tv("imageTooLarge"),
                   }),
               }}
-              render={({ field }) => (
-                <Input
-                  ref={fileInputRef}
+              render={({ field, fieldState }) => (
+                <ImageUploadField
                   id="expense-photo"
-                  type="file"
-                  accept="image/*"
-                  aria-invalid={!!errors.photo}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    field.onChange(file);
-                  }}
-                  className="cursor-pointer"
+                  value={field.value}
+                  onChange={field.onChange}
+                  existingImageUrl={
+                    isEdit ? (fetchedExpense ?? editingItem)?.photoUrl : undefined
+                  }
+                  invalid={!!fieldState.error}
+                  disabled={isSaving}
                 />
               )}
             />
