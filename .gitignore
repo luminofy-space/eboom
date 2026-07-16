@@ -41,3 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /dist
+
+# VitePress docs site
+docs/node_modules
+docs/.vitepress/dist
+docs/.vitepress/cache
