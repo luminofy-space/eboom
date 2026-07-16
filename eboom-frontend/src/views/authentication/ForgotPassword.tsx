@@ -38,6 +38,7 @@ export function ForgotPasswordForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const { t } = useTranslation("auth");
 
   const {
@@ -57,7 +58,17 @@ export function ForgotPasswordForm({
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       await mutateAsync({ email: data.email });
+      setSubmittedEmail(data.email);
       setSubmitted(true);
+    } catch {
+      // API failures are shown via the global notistack snackbar.
+    }
+  };
+
+  const handleResend = async () => {
+    if (!submittedEmail) return;
+    try {
+      await mutateAsync({ email: submittedEmail });
     } catch {
       // API failures are shown via the global notistack snackbar.
     }
@@ -74,9 +85,21 @@ export function ForgotPasswordForm({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => router.push("/login")}>
-              {t("forgotPassword.success.backToLogin")}
-            </Button>
+            <Stack gap={3}>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleResend}
+                disabled={isPending}
+              >
+                {isPending
+                  ? t("forgotPassword.success.resending")
+                  : t("forgotPassword.success.resend")}
+              </Button>
+              <Button className="w-full" onClick={() => router.push("/login")}>
+                {t("forgotPassword.success.backToLogin")}
+              </Button>
+            </Stack>
           </CardContent>
         </AuthCard>
       </Stack>

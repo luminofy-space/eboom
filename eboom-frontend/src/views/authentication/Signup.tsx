@@ -54,7 +54,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof AuthCard>) 
         password: data.password,
       });
       router.replace(
-        res?.user?.emailVerified ? "/dashboard" : "/confirm-email"
+        res?.user?.emailVerified
+          ? "/dashboard"
+          : `/confirm-email?email=${encodeURIComponent(data.email)}`
       );
     } catch {
       // API failures are shown via the global notistack snackbar.

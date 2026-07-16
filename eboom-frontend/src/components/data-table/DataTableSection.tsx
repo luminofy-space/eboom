@@ -4,6 +4,8 @@ import { Container } from "@/components/ui/container";
 import { Stack } from "@/components/ui/stack";
 import { Typography } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ListPagination } from "@/src/components/list";
+import { useTablePagination } from "@/src/hooks/useTablePagination";
 import { DataTable, type DataTableProps } from "./DataTable";
 
 export interface DataTableSectionProps<T> extends DataTableProps<T> {
@@ -17,6 +19,7 @@ export interface DataTableSectionProps<T> extends DataTableProps<T> {
   isError?: boolean;
   errorMessage?: string;
   skeletonRows?: number;
+  paginate?: boolean;
 }
 
 export function DataTableSection<T>({
@@ -30,8 +33,12 @@ export function DataTableSection<T>({
   isError = false,
   errorMessage,
   skeletonRows = 4,
+  paginate = true,
+  data,
   ...tableProps
 }: DataTableSectionProps<T>) {
+  const { page, setPage, pageSize, total, totalPages, paginatedData } = useTablePagination(data);
+  const tableData = pagination || !paginate ? data : paginatedData;
   if (isLoading) {
     return (
       <Container className={containerClassName}>
@@ -77,8 +84,18 @@ export function DataTableSection<T>({
           )}
         </Stack>
 
-        <DataTable {...tableProps} />
-        {pagination}
+        <DataTable {...tableProps} data={tableData} />
+
+        {pagination ??
+          (paginate && (
+            <ListPagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          ))}
       </Stack>
     </Container>
   );
