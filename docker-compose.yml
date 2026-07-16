@@ -52,5 +52,15 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
 
+  docs:
+    build:
+      context: ./docs
+      args:
+        NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-https://github.com}
+        VITEPRESS_BASE: /
+    restart: unless-stopped
+    ports:
+      - "${DOCS_PORT:-4173}:80"
+
 volumes:
   postgres_data:

@@ -26,6 +26,13 @@ function pagesBaseFromGithubUrl(url: string): string {
   return '/'
 }
 
+/** Docker / preview can override (e.g. `VITEPRESS_BASE=/`); else derive from repo URL. */
+const siteBase = (
+  env.VITEPRESS_BASE ||
+  process.env.VITEPRESS_BASE ||
+  pagesBaseFromGithubUrl(githubUrl)
+).replace(/\/?$/, '/')
+
 /**
  * Rewrite out-of-tree `../` relative links (source files, root meta docs)
  * to GitHub blob URLs so they work on the static docs site.
@@ -64,7 +71,7 @@ export default withMermaid(
     title: 'eBoom Docs',
     description:
       'Module-by-module onboarding documentation for the eBoom codebase.',
-    base: pagesBaseFromGithubUrl(githubUrl),
+    base: siteBase,
 
     ignoreDeadLinks: [
       /^https?:\/\//,
