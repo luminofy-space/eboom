@@ -1,5 +1,6 @@
 "use client";
 
+import API_ROUTES from "@/src/api/urls";
 import {
   DataTableSection,
   TableEntityCell,
@@ -7,6 +8,7 @@ import {
   tableNotesCellClassName,
   type DataTableColumn,
 } from "@/src/components/data-table";
+import { ListPagination } from "@/src/components/list/ListPagination";
 import { TransactionStatusChip, type TransactionStatus } from "@/src/components/TransactionStatusChip";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -14,11 +16,12 @@ import dayjs from "dayjs";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NewExpensePaymentModal } from "@/src/views/expenses/components/NewExpensePaymentModal";
-import { useWalletDetail } from "../hooks/useWalletDetail";
 import type { WalletPayment } from "../utils/utils";
-import { filterPaymentsByCurrency } from "../utils/currencyFilter";
 import { useTranslation } from "react-i18next";
+import { useCanvas } from "@/src/hooks/useCanvas";
 import { useCanvasPermissions } from "@/src/hooks/useCanvasPermissions";
+import { usePaginatedTransactionQuery } from "@/src/hooks/usePaginatedTransactionQuery";
+import type { PaginatedWalletPaymentsResponse } from "@/src/types/pagination";
 import type { TFunction } from "i18next";
 import { formatAmount, formatDate } from "@/src/i18n/formatters";
 
@@ -45,14 +48,6 @@ function getPaymentStatus(payment: WalletPayment, t: TFunction<"wallets">): {
   return { label: t("status.pending"), status: "pending" };
 }
 
-function sortPayments(payments: WalletPayment[]): WalletPayment[] {
-  return [...payments].sort((a, b) => {
-    const dateA = a.paidDate ?? a.dueDate ?? a.createdAt;
-    const dateB = b.paidDate ?? b.dueDate ?? b.createdAt;
-    return dayjs(dateB).valueOf() - dayjs(dateA).valueOf();
-  });
-}
-
 export function WalletPaymentsTable({
   walletId,
   walletName,
@@ -61,24 +56,37 @@ export function WalletPaymentsTable({
 }: WalletPaymentsTableProps) {
   const { t } = useTranslation("wallets");
   const { t: tc } = useTranslation("common");
+  const { canvas } = useCanvas();
   const { canEdit } = useCanvasPermissions();
   const emDash = tc("empty.emDash");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<WalletPayment | null>(null);
-  const { payments: paymentsRes, isLoading, isError } = useWalletDetail(walletId);
 
-  const payments = useMemo(
-    () => sortPayments(filterPaymentsByCurrency(paymentsRes ?? [], currencyCode)),
-    [paymentsRes, currencyCode]
+  const extraParams = useMemo(
+    () => (currencyCode ? { currencyCode } : undefined),
+    [currencyCode]
   );
 
-  const totalPaid = useMemo(
-    () =>
-      payments
-        .filter((p) => p.paidDate)
-        .reduce((sum, p) => sum + parseFloat(p.amount), 0),
-    [payments]
-  );
+  const {
+    items: payments,
+    data: paymentsData,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = usePaginatedTransactionQuery<PaginatedWalletPaymentsResponse<WalletPayment>, WalletPayment>({
+    baseUrl: canvas ? API_ROUTES.WALLET_PAYMENTS(canvas, walletId) : "",
+    queryKey: ["wallet-payments", canvas, walletId, currencyCode],
+    enabled: !!canvas && !!walletId,
+    itemsKey: "expensePayments",
+    extraParams,
+  });
+
+  const totalPaid = parseFloat(paymentsData?.totalPaid ?? "0");
 
   const columns: DataTableColumn<WalletPayment>[] = useMemo(
     () => [
@@ -141,10 +149,10 @@ export function WalletPaymentsTable({
         subtitle={t("paymentsTable.subtitle")}
         containerClassName="pb-6"
         count={
-          payments.length > 0
+          total > 0
             ? t("paymentsTable.count", {
-                count: payments.length,
-                unit: payments.length === 1 ? tc("plurals.payment") : tc("plurals.payments"),
+                count: total,
+                unit: total === 1 ? tc("plurals.payment") : tc("plurals.payments"),
               })
             : undefined
         }
@@ -188,6 +196,16 @@ export function WalletPaymentsTable({
             </TableCell>
           </TableRow>
         }
+        pagination={
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            isFetching={isFetching}
+          />
+        }
       />
 
       <NewExpensePaymentModal
@@ -200,7 +218,10 @@ export function WalletPaymentsTable({
         }}
         fixedSourceWalletId={walletId}
         walletName={walletName}
-        extraInvalidateKeys={[["wallet-payments", walletId], ["wallet", walletId]]}
+        extraInvalidateKeys={[
+          ["wallet-payments", canvas, walletId],
+          ["wallet", canvas, walletId],
+        ]}
       />
     </>
   );

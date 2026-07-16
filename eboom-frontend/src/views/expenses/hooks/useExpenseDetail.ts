@@ -23,6 +23,7 @@ export interface ExpenseDetail {
 
 interface UseExpenseDetailOptions {
   enabled?: boolean;
+  skipPayments?: boolean;
 }
 
 export function useExpenseDetail(
@@ -31,6 +32,7 @@ export function useExpenseDetail(
 ) {
   const { canvas } = useCanvas();
   const enabled = (options?.enabled ?? true) && !!canvas && !!expenseId;
+  const skipPayments = options?.skipPayments ?? false;
 
   const {
     data: expenseRes,
@@ -52,7 +54,7 @@ export function useExpenseDetail(
     canvas ? API_ROUTES.EXPENSE_PAYMENTS_LIST(canvas, expenseId) : "",
     {
       queryKey: ["expense-payments", canvas, expenseId],
-      enabled,
+      enabled: enabled && !skipPayments,
     }
   );
 
@@ -79,7 +81,7 @@ export function useExpenseDetail(
     expense: expenseRes?.expense,
     payments: paymentsRes?.payments ?? [],
     currencySymbol,
-    isLoading: isLoadingExpense || isLoadingPayments,
-    isError: isExpenseError || isPaymentsError,
+    isLoading: isLoadingExpense || (!skipPayments && isLoadingPayments),
+    isError: isExpenseError || (!skipPayments && isPaymentsError),
   };
 }

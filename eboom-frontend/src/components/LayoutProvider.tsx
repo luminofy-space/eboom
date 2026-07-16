@@ -17,6 +17,7 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
   return (
     <NavigationProgressProvider>
       <SidebarProvider
+        className="h-svh"
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -25,14 +26,12 @@ export default function LayoutProvider({ children }: { children: React.ReactNode
         }
       >
         <AppSidebar variant="inset" side={sidebarSide} />
-        <SidebarInset>
+        <SidebarInset className="min-h-0 overflow-hidden">
           <SiteHeader />
           <NavigationProgressBar />
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <div className="flex flex-col gap-4 md:gap-6 h-full">
-                <CanvasRequiredGate>{children}</CanvasRequiredGate>
-              </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="@container/main flex flex-col gap-4 px-0 pt-4 pb-4 md:gap-6 md:pt-6 md:pb-6">
+              <CanvasRequiredGate>{children}</CanvasRequiredGate>
             </div>
           </div>
         </SidebarInset>

@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNotNull, sql, sum } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   currencies,
@@ -13,7 +13,7 @@ import { creditWalletBalance, debitWalletBalance } from "../services/ledgerServi
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
 import { parseRouteParam } from "./routeParams";
-import { parseListQueryParams } from "./listQueryParams";
+import { parseListQueryParams, parsePaginationParams, hasPaginationParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 
@@ -180,18 +180,65 @@ router.get(
         return sendError(res, ErrorKeys.expense.notFound, 404);
       }
 
+      const whereCondition = eq(expensePayments.expenseId, expenseId);
+      const orderByDate = desc(
+        sql`COALESCE(${expensePayments.paidDate}, ${expensePayments.dueDate}, ${expensePayments.createdAt})`
+      );
+
+      const mapPayment = (p: {
+        payment: typeof expensePayments.$inferSelect;
+        wallet: typeof wallets.$inferSelect | null;
+        walletCategory: typeof walletCategories.$inferSelect | null;
+      }) => ({
+        ...p.payment,
+        sourceWallet: p.wallet ? { ...p.wallet, category: p.walletCategory } : null,
+      });
+
+      if (!hasPaginationParams(req)) {
+        const payments = await db
+          .select({ payment: expensePayments, wallet: wallets, walletCategory: walletCategories })
+          .from(expensePayments)
+          .leftJoin(wallets, eq(expensePayments.sourceWalletId, wallets.id))
+          .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
+          .where(whereCondition)
+          .orderBy(orderByDate);
+
+        return res.json({
+          payments: payments.map(mapPayment),
+        });
+      }
+
+      const { page, limit, offset } = parsePaginationParams(req);
+
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(expensePayments)
+        .where(whereCondition);
+
+      const [{ totalPaid }] = await db
+        .select({ totalPaid: sum(expensePayments.amount) })
+        .from(expensePayments)
+        .where(and(whereCondition, isNotNull(expensePayments.paidDate)));
+
       const payments = await db
         .select({ payment: expensePayments, wallet: wallets, walletCategory: walletCategories })
         .from(expensePayments)
         .leftJoin(wallets, eq(expensePayments.sourceWalletId, wallets.id))
         .leftJoin(walletCategories, eq(wallets.walletCategoryId, walletCategories.id))
-        .where(eq(expensePayments.expenseId, expenseId));
+        .where(whereCondition)
+        .orderBy(orderByDate)
+        .limit(limit)
+        .offset(offset);
+
+      const formatted = payments.map(mapPayment);
 
       res.json({
-        payments: payments.map((p) => ({
-          ...p.payment,
-          sourceWallet: p.wallet ? { ...p.wallet, category: p.walletCategory } : null,
-        })),
+        payments: formatted,
+        items: formatted,
+        total,
+        page,
+        limit,
+        totalPaid: String(totalPaid ?? 0),
       });
     } catch (err) {
       console.error("Error fetching expense payments:", err);

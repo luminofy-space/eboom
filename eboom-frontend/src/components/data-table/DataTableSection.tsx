@@ -13,6 +13,7 @@ export interface DataTableSectionProps<T> extends DataTableProps<T> {
   subtitle?: string;
   count?: string;
   headerAction?: React.ReactNode;
+  pagination?: React.ReactNode;
   containerClassName?: string;
   isLoading?: boolean;
   isError?: boolean;
@@ -26,6 +27,7 @@ export function DataTableSection<T>({
   subtitle,
   count,
   headerAction,
+  pagination,
   containerClassName,
   isLoading = false,
   isError = false,
@@ -36,7 +38,7 @@ export function DataTableSection<T>({
   ...tableProps
 }: DataTableSectionProps<T>) {
   const { page, setPage, pageSize, total, totalPages, paginatedData } = useTablePagination(data);
-  const tableData = paginate ? paginatedData : data;
+  const tableData = pagination || !paginate ? data : paginatedData;
   if (isLoading) {
     return (
       <Container className={containerClassName}>
@@ -84,15 +86,16 @@ export function DataTableSection<T>({
 
         <DataTable {...tableProps} data={tableData} />
 
-        {paginate && (
-          <ListPagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            pageSize={pageSize}
-            onPageChange={setPage}
-          />
-        )}
+        {pagination ??
+          (paginate && (
+            <ListPagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
+          ))}
       </Stack>
     </Container>
   );

@@ -64,5 +64,6 @@ export const {
 } = canvasSlice.actions;
 
 export const selectCanvasModal = (state: RootState) => state.canvas.modal;
+export const selectCanvasId = (state: RootState): number | undefined => state.canvas.canvasId;
 
 export default canvasSlice.reducer;

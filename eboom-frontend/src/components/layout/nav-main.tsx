@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuBadge,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
 import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
@@ -27,11 +28,16 @@ export type NavGroup = {
 export function NavGroups({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
   const { navigate } = useNavigationProgress();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const isActive = (url: string) => {
     if (url === "/dashboard") return pathname === "/dashboard";
     const base = url.replace(/s$/, "");
     return pathname === url || pathname.startsWith(base);
+  };
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
   };
 
   return (
@@ -48,10 +54,12 @@ export function NavGroups({ groups }: { groups: NavGroup[] }) {
                 onClick={() => {
                   if (item.onClick) {
                     item.onClick();
+                    closeMobileSidebar();
                     return;
                   }
                   if (item.url) {
                     navigate(item.url);
+                    closeMobileSidebar();
                   }
                 }}
               >

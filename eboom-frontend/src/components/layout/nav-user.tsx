@@ -62,7 +62,7 @@ export function NavUser({ user }: { user: UserIdentityFields }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+        <Popover modal={false} open={notificationsOpen} onOpenChange={setNotificationsOpen}>
           <PopoverTrigger asChild>
             <SidebarMenuButton size="lg" className="relative">
               <Bell className="size-4" />
@@ -75,25 +75,29 @@ export function NavUser({ user }: { user: UserIdentityFields }) {
             </SidebarMenuButton>
           </PopoverTrigger>
           <PopoverContent
-            className="w-80 p-3"
+            className="flex max-h-[min(20rem,70dvh)] w-80 flex-col overflow-hidden p-3"
             side={isMobile ? "bottom" : dropdownSide}
             align="end"
             sideOffset={4}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
           >
-            <PopoverHeader className="mb-2 px-1">
+            <PopoverHeader className="mb-2 shrink-0 px-1">
               <PopoverTitle>{t("notifications.title")}</PopoverTitle>
             </PopoverHeader>
-            <NotificationsPanel
-              notifications={notifications}
-              budgetAlerts={budgetAlerts}
-              isLoading={isLoadingNotifications}
-              onClose={() => setNotificationsOpen(false)}
-            />
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <NotificationsPanel
+                notifications={notifications}
+                budgetAlerts={budgetAlerts}
+                isLoading={isLoadingNotifications}
+                onClose={() => setNotificationsOpen(false)}
+              />
+            </div>
           </PopoverContent>
         </Popover>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <Popover open={invitationsOpen} onOpenChange={setInvitationsOpen}>
+        <Popover modal={false} open={invitationsOpen} onOpenChange={setInvitationsOpen}>
           <PopoverTrigger asChild>
             <SidebarMenuButton size="lg" className="relative">
               <Mail className="size-4" />
@@ -106,15 +110,19 @@ export function NavUser({ user }: { user: UserIdentityFields }) {
             </SidebarMenuButton>
           </PopoverTrigger>
           <PopoverContent
-            className="w-96 p-3"
+            className="flex max-h-[min(24rem,70dvh)] w-96 flex-col overflow-hidden p-3"
             side={isMobile ? "bottom" : dropdownSide}
             align="end"
             sideOffset={4}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
           >
-            <PopoverHeader className="mb-2 px-1">
+            <PopoverHeader className="mb-2 shrink-0 px-1">
               <PopoverTitle>{t("account.canvasInvitations")}</PopoverTitle>
             </PopoverHeader>
-            <CanvasInvitationsPanel onClose={() => setInvitationsOpen(false)} />
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <CanvasInvitationsPanel onClose={() => setInvitationsOpen(false)} />
+            </div>
           </PopoverContent>
         </Popover>
       </SidebarMenuItem>

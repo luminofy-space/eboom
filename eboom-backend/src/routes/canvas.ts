@@ -12,10 +12,11 @@ import {
   computePermissions,
   formatMembershipForResponse,
 } from "../services/canvasAccessService";
-import { getCanvasSummary, getCanvasTransactions } from "../services/dashboardService";
+import { getCanvasSummary, getCanvasTransactions, getPaginatedCanvasTransactions, type CanvasTransactionType } from "../services/dashboardService";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
+import { hasPaginationParams, parsePaginationParams } from "./listQueryParams";
 
 const router = express.Router();
 
@@ -137,6 +138,16 @@ router.get("/:canvasId/transactions", requireCanvasAccess("view"), async (req: R
   const canvasId = req.canvasId!;
 
   try {
+    if (hasPaginationParams(req)) {
+      const type = req.query.type as CanvasTransactionType | undefined;
+      if (!type || !["incomeEntries", "expensePayments", "transfers"].includes(type)) {
+        return sendError(res, ErrorKeys.validation.failed, 400);
+      }
+      const { page, limit } = parsePaginationParams(req);
+      const result = await getPaginatedCanvasTransactions(canvasId, type, page, limit);
+      return res.json(result);
+    }
+
     const transactions = await getCanvasTransactions(canvasId);
     res.json(transactions);
   } catch (err) {

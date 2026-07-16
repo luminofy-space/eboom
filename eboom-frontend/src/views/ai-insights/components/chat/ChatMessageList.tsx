@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Bot } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { Suggestion } from "@/components/ai-elements/suggestion";
+import { Stack } from "@/components/ui/stack";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import type { AiChatMessage } from "@/src/types/ai-insights";
@@ -64,7 +65,7 @@ export function ChatMessageList({
   return (
     <div
       ref={scrollRef}
-      className="max-h-[min(29rem,calc(100dvh-5rem))] overflow-y-auto overscroll-contain"
+      className="flex min-h-[20rem] flex-1 flex-col overflow-y-auto overscroll-contain"
     >
       <div className="flex min-h-full flex-col gap-4 p-4">
         {isEmpty ? (
@@ -72,15 +73,16 @@ export function ChatMessageList({
             <Bot className="size-8 text-muted-foreground" />
             <p className="font-medium text-sm">{t("chat.empty")}</p>
             {onSuggestionClick && (
-              <Suggestions className="mt-2 justify-center">
+              <Stack gap={2} align="stretch" className="mt-2 w-full max-w-md px-2">
                 {SUGGESTION_KEYS.map((key) => (
                   <Suggestion
                     key={key}
                     suggestion={t(`chat.suggestions.${key}`)}
                     onClick={onSuggestionClick}
+                    className="h-auto w-full whitespace-normal px-4 py-2.5 text-center"
                   />
                 ))}
-              </Suggestions>
+              </Stack>
             )}
           </div>
         ) : (

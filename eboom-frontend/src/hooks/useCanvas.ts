@@ -1,22 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import API_ROUTES from "../api/urls";
 import { useMutationApi } from "../api/useMutation";
 import useQueryApi from "../api/useQuery";
 import { Canvas } from "@/src/types/common";
-import { useDispatch } from "react-redux";
-import { updateCanvas } from "../redux/canvasSlice";
+import { useAppDispatch, useAppSelector } from "../redux/store";
+import { selectCanvasId, updateCanvas } from "../redux/canvasSlice";
 
 const hasWindow = typeof window !== "undefined";
 
-const getStoredToken = (key: string) => {
+const getStoredCanvasId = (): number | null => {
     if (!hasWindow) {
         return null;
     }
 
-    return window.localStorage.getItem(key);
+    const stored = window.localStorage.getItem("canvasId");
+    if (!stored) return null;
+    const parsed = Number(stored);
+    return Number.isNaN(parsed) ? null : parsed;
 };
 
 export const useCanvas = () => {
@@ -28,12 +31,9 @@ export const useCanvas = () => {
         }
     );
 
-    const [canvas, setCanvas] = useState<number | null>(() => {
-        const stored = getStoredToken("canvasId");
-        if (!stored) return null;
-        const parsed = Number(stored);
-        return Number.isNaN(parsed) ? null : parsed;
-    });
+    const dispatch = useAppDispatch();
+    const canvasId = useAppSelector(selectCanvasId);
+    const canvas = canvasId ?? null;
 
     const { mutateAsync, isPending } = useMutationApi(API_ROUTES.CANVASES_CREATE, {
         method: "post",
@@ -41,16 +41,14 @@ export const useCanvas = () => {
         hasToken: true,
     });
 
-    const dispatch = useDispatch();
     const queryClient = useQueryClient();
 
-    const selectCanvas = useCallback((canvasId: number) => {
-        setCanvas(canvasId);
-        dispatch(updateCanvas(canvasId));
+    const selectCanvas = useCallback((nextCanvasId: number) => {
+        dispatch(updateCanvas(nextCanvasId));
         if (hasWindow) {
-            window.localStorage.setItem("canvasId", canvasId.toString());
+            window.localStorage.setItem("canvasId", nextCanvasId.toString());
         }
-        queryClient.removeQueries({
+        queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] !== "canvases",
         });
     }, [dispatch, queryClient]);
@@ -63,20 +61,27 @@ export const useCanvas = () => {
             photoUrl,
             baseCurrencyId,
         });
-        const canvasId = (response as { canvas?: { id: number } })?.canvas?.id;
-        if (typeof canvasId === "number") {
-            selectCanvas(canvasId);
+        const newCanvasId = (response as { canvas?: { id: number } })?.canvas?.id;
+        if (typeof newCanvasId === "number") {
+            selectCanvas(newCanvasId);
         }
         await refetch();
     };
 
     useEffect(() => {
-        if (canvas) return;
+        if (canvasId !== undefined) return;
+
+        const stored = getStoredCanvasId();
+        if (stored !== null) {
+            dispatch(updateCanvas(stored));
+            return;
+        }
+
         const firstId = data?.canvases?.[0]?.id;
         if (typeof firstId === "number") {
-            setTimeout(() => selectCanvas(firstId), 0);
+            selectCanvas(firstId);
         }
-    }, [canvas, data?.canvases, selectCanvas]);
+    }, [canvasId, data?.canvases, dispatch, selectCanvas]);
 
     return {
         canvases: data?.canvases ?? [],

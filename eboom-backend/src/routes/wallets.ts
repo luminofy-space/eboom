@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNotNull, sql, sum } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   wallets,
@@ -14,10 +14,10 @@ import {
   currencies,
 } from "../db/schema";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
-import { listTransfersForWallet } from "../services/transferService";
+import { listTransfersForCanvasPaginated, listTransfersForWallet } from "../services/transferService";
 import { parseRouteParam } from "./routeParams";
 import { requireCanvasAccess } from "../middleware/canvasAccess";
-import { parseListQueryParams } from "./listQueryParams";
+import { parseListQueryParams, parsePaginationParams, hasPaginationParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
 
@@ -39,32 +39,76 @@ router.get(
         return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
-      const entries = await db
-        .select({
-          id: incomeEntries.id,
-          incomeId: incomeEntries.incomeId,
-          incomeName: incomes.name,
-          categoryName: incomeCategories.name,
-          destinationWalletId: incomeEntries.destinationWalletId,
-          amount: incomeEntries.amount,
-          expectedDate: incomeEntries.expectedDate,
-          receivedDate: incomeEntries.receivedDate,
-          notes: incomeEntries.notes,
-          createdAt: incomeEntries.createdAt,
-          currencyId: currencies.id,
-          currencyCode: currencies.code,
-          currencySymbol: currencies.symbol,
-        })
+      const currencyCode = (req.query.currencyCode as string) || undefined;
+      const conditions = [eq(incomeEntries.destinationWalletId, walletId)];
+      if (currencyCode) {
+        conditions.push(eq(currencies.code, currencyCode));
+      }
+      const whereCondition = and(...conditions);
+      const orderByDate = desc(
+        sql`COALESCE(${incomeEntries.receivedDate}, ${incomeEntries.expectedDate}, ${incomeEntries.createdAt})`
+      );
+
+      const entrySelect = {
+        id: incomeEntries.id,
+        incomeId: incomeEntries.incomeId,
+        incomeName: incomes.name,
+        categoryName: incomeCategories.name,
+        destinationWalletId: incomeEntries.destinationWalletId,
+        amount: incomeEntries.amount,
+        expectedDate: incomeEntries.expectedDate,
+        receivedDate: incomeEntries.receivedDate,
+        notes: incomeEntries.notes,
+        createdAt: incomeEntries.createdAt,
+        currencyId: currencies.id,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+      };
+
+      const baseQuery = () =>
+        db
+          .select(entrySelect)
+          .from(incomeEntries)
+          .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
+          .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
+          .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+          .where(whereCondition);
+
+      if (!hasPaginationParams(req)) {
+        const entries = await baseQuery().orderBy(orderByDate);
+        return res.json({
+          walletId,
+          incomeEntries: entries,
+          total: entries.length,
+        });
+      }
+
+      const { page, limit, offset } = parsePaginationParams(req);
+
+      const [{ total }] = await db
+        .select({ total: count() })
         .from(incomeEntries)
         .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
-        .innerJoin(incomeCategories, eq(incomes.incomeCategoryId, incomeCategories.id))
         .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
-        .where(eq(incomeEntries.destinationWalletId, walletId));
+        .where(whereCondition);
+
+      const [{ totalReceived }] = await db
+        .select({ totalReceived: sum(incomeEntries.amount) })
+        .from(incomeEntries)
+        .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
+        .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+        .where(and(whereCondition, isNotNull(incomeEntries.receivedDate)));
+
+      const entries = await baseQuery().orderBy(orderByDate).limit(limit).offset(offset);
 
       res.json({
         walletId,
         incomeEntries: entries,
-        total: entries.length,
+        items: entries,
+        total,
+        page,
+        limit,
+        totalReceived: String(totalReceived ?? 0),
       });
     } catch (err) {
       console.error("Error fetching income entries:", err);
@@ -89,32 +133,76 @@ router.get(
         return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
-      const payments = await db
-        .select({
-          id: expensePayments.id,
-          expenseId: expensePayments.expenseId,
-          expenseName: expenses.name,
-          categoryName: expenseCategories.name,
-          sourceWalletId: expensePayments.sourceWalletId,
-          amount: expensePayments.amount,
-          dueDate: expensePayments.dueDate,
-          paidDate: expensePayments.paidDate,
-          notes: expensePayments.notes,
-          createdAt: expensePayments.createdAt,
-          currencyId: currencies.id,
-          currencyCode: currencies.code,
-          currencySymbol: currencies.symbol,
-        })
+      const currencyCode = (req.query.currencyCode as string) || undefined;
+      const conditions = [eq(expensePayments.sourceWalletId, walletId)];
+      if (currencyCode) {
+        conditions.push(eq(currencies.code, currencyCode));
+      }
+      const whereCondition = and(...conditions);
+      const orderByDate = desc(
+        sql`COALESCE(${expensePayments.paidDate}, ${expensePayments.dueDate}, ${expensePayments.createdAt})`
+      );
+
+      const paymentSelect = {
+        id: expensePayments.id,
+        expenseId: expensePayments.expenseId,
+        expenseName: expenses.name,
+        categoryName: expenseCategories.name,
+        sourceWalletId: expensePayments.sourceWalletId,
+        amount: expensePayments.amount,
+        dueDate: expensePayments.dueDate,
+        paidDate: expensePayments.paidDate,
+        notes: expensePayments.notes,
+        createdAt: expensePayments.createdAt,
+        currencyId: currencies.id,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+      };
+
+      const baseQuery = () =>
+        db
+          .select(paymentSelect)
+          .from(expensePayments)
+          .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
+          .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
+          .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+          .where(whereCondition);
+
+      if (!hasPaginationParams(req)) {
+        const payments = await baseQuery().orderBy(orderByDate);
+        return res.json({
+          walletId,
+          expensePayments: payments,
+          total: payments.length,
+        });
+      }
+
+      const { page, limit, offset } = parsePaginationParams(req);
+
+      const [{ total }] = await db
+        .select({ total: count() })
         .from(expensePayments)
         .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
-        .innerJoin(expenseCategories, eq(expenses.expenseCategoryId, expenseCategories.id))
         .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
-        .where(eq(expensePayments.sourceWalletId, walletId));
+        .where(whereCondition);
+
+      const [{ totalPaid }] = await db
+        .select({ totalPaid: sum(expensePayments.amount) })
+        .from(expensePayments)
+        .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
+        .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+        .where(and(whereCondition, isNotNull(expensePayments.paidDate)));
+
+      const payments = await baseQuery().orderBy(orderByDate).limit(limit).offset(offset);
 
       res.json({
         walletId,
         expensePayments: payments,
-        total: payments.length,
+        items: payments,
+        total,
+        page,
+        limit,
+        totalPaid: String(totalPaid ?? 0),
       });
     } catch (err) {
       console.error("Error fetching expense payments:", err);
@@ -139,11 +227,39 @@ router.get(
         return sendError(res, ErrorKeys.wallet.notFound, 404);
       }
 
-      const transfersList = await listTransfersForWallet(walletId);
+      const currencyCode = (req.query.currencyCode as string) || undefined;
+
+      if (!hasPaginationParams(req)) {
+        const transfersList = await listTransfersForWallet(walletId);
+        const filtered = currencyCode
+          ? transfersList.filter(
+              (tr) =>
+                tr.sourceCurrencyCode === currencyCode ||
+                tr.destinationCurrencyCode === currencyCode
+            )
+          : transfersList;
+        return res.json({
+          walletId,
+          transfers: filtered,
+          total: filtered.length,
+        });
+      }
+
+      const { page, limit } = parsePaginationParams(req);
+      const result = await listTransfersForCanvasPaginated(canvasId, page, limit, {
+        walletId,
+        currencyCode,
+      });
+
       res.json({
         walletId,
-        transfers: transfersList,
-        total: transfersList.length,
+        transfers: result.items,
+        items: result.items,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalIn: result.totalIn,
+        totalOut: result.totalOut,
       });
     } catch (err) {
       console.error("Error fetching wallet transfers:", err);
