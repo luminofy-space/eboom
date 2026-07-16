@@ -2,12 +2,34 @@
 
 This document describes patterns already used in the eBoom codebase. Follow these conventions when adding or changing code so new work matches existing style.
 
-For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.md). For product reference and money-flow internals, read [DOC.md](DOC.md).
+For project overview and setup, see [README.md](README.md) and [Setup.md](Setup.md). For product status and money-flow rules, read [`docs/00-overview.md`](docs/00-overview.md). For module-by-module engineering docs, see [`docs/`](docs/README.md).
+
+## Documentation Criteria
+
+> **Any major change that impacts the system must be documented.** Update the related sections under [`docs/`](docs/) in the same change set as the code. Do not leave engineering docs describing outdated behavior, APIs, file paths, or mental models.
+
+**Treat a change as major (docs required) when it does any of the following:**
+
+- Alters architecture, request lifecycle, tenancy, auth, or cross-cutting middleware/services
+- Changes schema, API contracts, money-flow / ledger rules, or how modules cooperate
+- Adds, removes, or substantially reshapes a feature module (routes, views, services, data model)
+- Introduces a new pattern that future work should follow (or retires an existing one)
+- Invalidates file references, diagrams, or “why / where / how” explanations already in `docs/`
+
+**When docs are required:**
+
+1. Identify the affected docs via the index in [`docs/README.md`](docs/README.md) (overview `00`, core `01`–`03`, feature docs `04`–`15`).
+2. Edit those sections so they match the code **as it exists after the change** — why it exists, where the code lives, and how frontend and backend cooperate.
+3. If you add a new major module, create a new numbered doc under `docs/` and register it in `docs/README.md`.
+4. Keep concerns split: [`CONVENTIONS.md`](CONVENTIONS.md) for contribution patterns; [`docs/`](docs/) for how the system works (including [`docs/00-overview.md`](docs/00-overview.md) for status and money-flow rules).
+
+Minor local fixes (typos, styling, isolated refactors with no behavioral or structural impact) do not require doc updates unless they change paths or examples cited in `docs/`.
 
 ## Repository Layout
 
 | Location | Purpose |
 |----------|---------|
+| `docs/` | Module-by-module engineering docs — keep in sync with major system changes |
 | `eboom-frontend/app/` | Thin Next.js route files — delegate to views |
 | `eboom-frontend/src/views/{feature}/` | Feature pages, detail views, modals |
 | `eboom-frontend/src/components/` | App-specific shared components |
@@ -201,7 +223,7 @@ Prefer throwing `AppError` inside `asyncHandler` when a whole handler can be wra
 ### Money movement rule
 
 - All balance mutations must use `ledgerService` (`creditWalletBalance` / `debitWalletBalance`)
-- Route handlers must not directly update `wallet_balances`
+- Route handlers must not directly update `sub_wallets`
 - Model movements as `income_entries`, `expense_payments`, and `transfers`
 
 ### File uploads
@@ -240,6 +262,7 @@ The frontend imports database types from the backend via the `@backend/db/schema
 6. Add a thin page in `app/(dashboard)/`
 7. Add a Redux slice if modal or search UI state is needed
 8. Add a sidebar entry in [`src/components/layout/app-sidebar.tsx`](eboom-frontend/src/components/layout/app-sidebar.tsx)
+9. Document the feature under [`docs/`](docs/) (new numbered doc and/or updates to related core/feature sections) — see [Documentation Criteria](#documentation-criteria)
 
 For placeholder features not yet implemented, use `ComingSoonPlaceholder`.
 

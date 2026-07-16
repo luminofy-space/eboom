@@ -5,7 +5,7 @@ Planned features grouped by impact and how well they fit what we already have.
 **Related documentation:**
 
 - [README.md](README.md) — project overview, current features, and quick start
-- [DOC.md](DOC.md) — feature catalog and ledger invariants for money movement
+- [`docs/00-overview.md`](docs/00-overview.md) — feature map and ledger invariants for money movement
 
 ## Tier 1 — Finish What We Started (high ROI, low risk)
 
@@ -77,14 +77,15 @@ Already a standout feature — extend it.
 
 ## Tier 3 — Platform & Growth (longer term)
 
-### 9. AI Insights (make the placeholder real)
+### 9. AI Insights (enhancements)
 
-Start narrow, not generic "financial advisor."
+Profile wizard, LLM insight generation, and chat are live when an LLM API key is configured. Remaining work:
 
-- "Unusual spending this month" anomaly detection from expense history
+- Stronger anomaly detection from expense history
 - Recurring bill detection from payment patterns
-- Natural language Q&A over canvas summary data
-- Budget recommendations from historical averages
+- Richer natural-language Q&A over canvas summary data
+- Tighter budget recommendations from historical averages
+- Re-enable chat length/history guardrails before scale
 
 ### 10. Multi-Currency Conversions
 

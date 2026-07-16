@@ -8,7 +8,7 @@ eBoom is a web-based platform backed by PostgreSQL. Authentication is handled in
 
 eBoom helps people track income, wallet balances, expenses, debts, budgets, and financial plans across multiple currencies. Users can be individuals, families, or small businesses managing their finances in one place.
 
-For the canvas model, module status, feature catalog, and transaction logic, see [DOC.md](DOC.md).
+For the canvas model, module status, feature map, and transaction logic, see [`docs/00-overview.md`](docs/00-overview.md).
 
 ## Architecture
 
@@ -37,9 +37,9 @@ Docker Compose is available for production-style deployments. There is no CI pip
 eboom/
 ├── README.md           # Project overview (this file)
 ├── ROADMAP.md          # Planned features and build order
-├── DOC.md              # Canvas, features, module status, transaction logic
 ├── CONVENTIONS.md      # Coding standards for contributors
 ├── Setup.md            # Detailed installation and troubleshooting guide
+├── docs/               # Engineering docs (00 overview + module guides)
 ├── docker-compose.yml  # Production stack (PostgreSQL + backend + frontend)
 ├── .env.example        # Optional overrides for Docker / production
 ├── eboom-backend/      # Express API + database layer (package name: pfm-backend)
@@ -128,7 +128,7 @@ docker compose exec backend node dist/db/seed/seed.js
 
 ## Related Documentation
 
-- [DOC.md](DOC.md) — canvas model, feature catalog, module status, and transaction logic
+- [`docs/`](docs/README.md) — engineering docs; start with [`docs/00-overview.md`](docs/00-overview.md) for canvas model, module status, and transaction logic
 - [ROADMAP.md](ROADMAP.md) — planned features, tiers, and recommended build order
 - [Setup.md](Setup.md) — full installation, database configuration, seeding, test mode, and troubleshooting
 - [CONVENTIONS.md](CONVENTIONS.md) — repository layout, naming, frontend/backend patterns, and feature checklist
