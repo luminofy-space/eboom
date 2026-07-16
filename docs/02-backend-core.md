@@ -393,7 +393,7 @@ Services hold logic that is shared across routes or too involved to inline. They
 | [`notificationService.ts`](../eboom-backend/src/services/notificationService.ts) | Overdue detection, feeds the email job. |
 | `ai*Service.ts` / `llmClient.ts` | AI Insights + chat (feature module). |
 
-The **money-movement invariant** is the single most important service rule: route handlers must **never** update `sub_wallets` directly — all balance changes go through `ledgerService` (and `transferService` for transfers). The precise contract, with worked examples, is in [`DOC.md` → Transaction Logic](../DOC.md#transaction-logic).
+The **money-movement invariant** is the single most important service rule: route handlers must **never** update `sub_wallets` directly — all balance changes go through `ledgerService` (and `transferService` for transfers). The precise contract, with worked examples, is in [Overview → Transaction Logic](./00-overview.md#transaction-logic).
 
 ---
 

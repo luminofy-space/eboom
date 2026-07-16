@@ -2,7 +2,7 @@
 
 Module-by-module onboarding documentation for the eBoom codebase. Read these in order if you are new. Each doc explains **why** something exists, **where** the code lives, and **how** the frontend and backend cooperate — with precise file references you can jump to.
 
-> These docs describe the code as it exists today. For product-level feature status and money-flow rules, see the root [`DOC.md`](../DOC.md). For contribution patterns, see [`CONVENTIONS.md`](../CONVENTIONS.md). For install/run, see [`README.md`](../README.md) and [`Setup.md`](../Setup.md).
+> These docs describe the code as it exists today. Start with [00 — Overview](./00-overview.md) for product status and money-flow rules. For contribution patterns, see [`CONVENTIONS.md`](../CONVENTIONS.md). For install/run, see [`README.md`](../README.md) and [`Setup.md`](../Setup.md).
 
 ## What is eBoom?
 
@@ -15,9 +15,15 @@ The system is a two-service monorepo:
 
 ## How the docs are organized
 
-Docs are split into **core infrastructure** (the plumbing every feature depends on) and **feature modules** (built on top of that plumbing). Start at the top.
+Docs are split into a **quick overview**, **core infrastructure** (the plumbing every feature depends on), and **feature modules** (built on top of that plumbing). Start at the top.
 
-### Core (read first)
+### Start here
+
+| # | Doc | What it covers |
+|---|-----|----------------|
+| 00 | [Overview](./00-overview.md) | Canvas mental model, module status, feature map, schema snapshot, and money-flow / ledger invariants. |
+
+### Core (read next)
 
 | # | Doc | What it covers |
 |---|-----|----------------|

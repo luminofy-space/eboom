@@ -5,7 +5,7 @@ This guide will walk you through setting up the eBoom Personal Finance Managemen
 **Related documentation:**
 
 - [README.md](README.md) — project overview, architecture, feature status, and quick start
-- [DOC.md](DOC.md) — canvas model, feature catalog, and transaction logic
+- [`docs/00-overview.md`](docs/00-overview.md) — canvas model, module status, and transaction logic
 - [CONVENTIONS.md](CONVENTIONS.md) — coding standards and patterns for contributors
 
 ## Table of Contents

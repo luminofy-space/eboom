@@ -13,9 +13,8 @@ eboom/
 ├── eboom-backend/     # Express REST API + PostgreSQL/Drizzle  (package name: pfm-backend)
 ├── eboom-frontend/    # Next.js 15 App Router web client       (package name: eboom-frontend)
 ├── docker-compose.yml # Full stack: postgres + backend + frontend
-├── DOC.md             # Product/feature reference & money-flow rules
 ├── CONVENTIONS.md     # Coding standards
-└── docs/              # <-- you are here (engineering onboarding docs)
+└── docs/              # <-- you are here (00 overview + module docs)
 ```
 
 The only compile-time coupling between the two: the **frontend imports database types from the backend** via a TypeScript path alias (`@backend/*` → `../eboom-backend/src/*`). There is no shared npm package; the backend is the single source of truth for entity types, and the frontend reads them directly.
@@ -110,7 +109,7 @@ erDiagram
 
 - A **Canvas** is the isolation boundary. Almost every financial table has a `canvas_id` foreign key.
 - A **Wallet** is a container (bank account, crypto wallet, safe). Its actual balances live in **`sub_wallets`** — one row per currency, so a single wallet can hold USD, EUR, and BTC balances simultaneously.
-- **Money movements** are modeled as three record types that mutate `sub_wallets`: `income_entries` (credit), `expense_payments` (debit), and `transfers` (debit source + credit destination). The rules for these live in [`DOC.md` → Transaction Logic](../DOC.md#transaction-logic).
+- **Money movements** are modeled as three record types that mutate `sub_wallets`: `income_entries` (credit), `expense_payments` (debit), and `transfers` (debit source + credit destination). The rules for these live in [Overview → Transaction Logic](./00-overview.md#transaction-logic).
 
 The full schema (25+ tables including budgets, savings goals, whiteboard positions, AI insight profiles, attachments, notifications) is defined in one file: [`eboom-backend/src/db/schema/schema.ts`](../eboom-backend/src/db/schema/schema.ts). Inferred TypeScript types are exported from [`models.ts`](../eboom-backend/src/db/schema/models.ts). See [Backend Core §Data layer](./02-backend-core.md#5-data-layer) for details.
 
