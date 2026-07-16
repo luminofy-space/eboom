@@ -12,7 +12,7 @@ export type UserIdentityFields = {
   email: string;
 };
 
-function getInitials({
+export function getInitials({
   firstName,
   lastName,
   email,
@@ -30,6 +30,7 @@ export function displayName(user: UserIdentityFields) {
 interface UserAvatarProps extends UserIdentityFields {
   size?: "sm" | "default" | "lg";
   className?: string;
+  square?: boolean;
 }
 
 export function UserAvatar({
@@ -39,13 +40,15 @@ export function UserAvatar({
   email,
   size = "default",
   className,
+  square = false,
 }: UserAvatarProps) {
   const initials = getInitials({ firstName, lastName, email });
+  const rounding = square ? "rounded-lg" : "rounded-full";
 
   return (
-    <Avatar size={size} className={className}>
+    <Avatar size={size} className={cn(rounding, className)}>
       {photoUrl ? <AvatarImage src={photoUrl} alt={displayName({ firstName, lastName, email })} /> : null}
-      <AvatarFallback>{initials}</AvatarFallback>
+      <AvatarFallback className={rounding}>{initials}</AvatarFallback>
     </Avatar>
   );
 }
