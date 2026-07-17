@@ -23,6 +23,8 @@ COPY --from=builder /app/dist ./dist
 COPY drizzle.config.js ./
 COPY src/db/schema ./src/db/schema
 COPY src/db/seed ./src/db/seed
+# Seed scripts resolve SQL via __dirname (dist/db/seed/sql)
+COPY src/db/seed/sql ./dist/db/seed/sql
 
 EXPOSE 4000
 
