@@ -1,0 +1,28 @@
+# Caddy reverse proxy for the eboom production stack.
+#
+# Domains come from the .env file (see .env.example). Caddy provisions and
+# renews Let's Encrypt certificates automatically for each site block, so
+# ports 80 and 443 must be reachable from the internet and the DNS A records
+# must already point at this server before the stack starts.
+
+{
+	email {$ACME_EMAIL}
+}
+
+# --- App (Next.js frontend) --------------------------------------------------
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}
+
+# --- API (backend) -----------------------------------------------------------
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy backend:4000
+}
+
+# --- Docs (VitePress static site) --------------------------------------------
+{$DOCS_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy docs:80
+}

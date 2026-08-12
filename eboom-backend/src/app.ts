@@ -9,7 +9,21 @@ import morgan from 'morgan';
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+// Allow the public app URL; in non-production also allow any localhost/127.0.0.1
+// port so local dev works regardless of which port the frontend runs on.
+const isProd = process.env.NODE_ENV === 'production';
+const appUrl = process.env.APP_URL;
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (appUrl && origin === appUrl) return callback(null, true);
+    if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(morgan('dev'));
 app.use(express.json({ limit: "10mb" }));
 

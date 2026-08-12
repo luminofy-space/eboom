@@ -40,8 +40,10 @@ eboom/
 ├── CONVENTIONS.md      # Coding standards for contributors
 ├── Setup.md            # Detailed installation and troubleshooting guide
 ├── docs/               # Engineering docs (00 overview + module guides)
-├── docker-compose.yml  # Production stack (PostgreSQL + backend + frontend)
-├── .env.example        # Optional overrides for Docker / production
+├── docker-compose.yml      # Base stack (PostgreSQL + backend + frontend + docs)
+├── docker-compose.prod.yml # Production overlay (Caddy reverse proxy + TLS)
+├── deploy/Caddyfile        # Reverse proxy / TLS configuration
+├── .env.example            # Single configuration file for the whole stack
 ├── eboom-backend/      # Express API + database layer (package name: pfm-backend)
 └── eboom-frontend/     # Next.js web application
 ```
@@ -70,37 +72,34 @@ For PostgreSQL setup, seeding options, test mode, and troubleshooting, see [Setu
 
 For coding patterns when adding features, see [CONVENTIONS.md](CONVENTIONS.md).
 
-## Environment Variables
+## Configuration
 
-### Backend (`eboom-backend/.env`)
+**Running with Docker (recommended):** everything is configured by **one file** — the root `.env`, created from [`.env.example`](.env.example). It feeds `docker-compose.yml`, `docker-compose.prod.yml`, `deploy/Caddyfile`, the backend container, and the frontend/docs build args. There is nothing else to edit.
 
-Copy from [`.env.sample`](eboom-backend/.env.sample).
+```bash
+cp .env.example .env
+```
 
-| Variable | Purpose |
-|----------|---------|
-| `PORT` | API port (default `4000`) |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Secret for signing access and refresh tokens |
-| `JWT_ACCESS_EXPIRES_IN` | Access token lifetime (default `1h`) |
-| `JWT_REFRESH_EXPIRES_IN` | Refresh token lifetime (default `7d`) |
-| `APP_URL` | Frontend URL (used in email links) |
-| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP for verification and password reset |
-| `DEFAULT_GUEST_USER_ID` | User ID for public wishlist routes (when implemented) |
-| `TEST_USER_ID` | **Dev only** — bypasses auth when set |
-| `SKIP_EMAIL_VERIFICATION` | **Dev only** — set to `1` to skip email verification on signup/login |
-| `NOTIFICATION_EMAIL_ENABLED` | Set to `0` to disable overdue email job |
-| `NOTIFICATION_EMAIL_INTERVAL_MS` | Job interval (default 1h) |
-| `OPENAI_API_KEY` | OpenAI API key for AI Insights generation |
-| `OPENAI_MODEL` | OpenAI model (default `gpt-4o-mini`) |
+The file is grouped so the required settings come first:
 
-### Frontend (`eboom-frontend/.env`)
+| Section | Variables | Notes |
+|---------|-----------|-------|
+| 1. Must change | `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_URL`, `NEXT_PUBLIC_BASE_URL` | Required for any real deployment |
+| 2. Production | `APP_DOMAIN`, `API_DOMAIN`, `DOCS_DOMAIN`, `ACME_EMAIL` | Used only by the prod overlay |
+| 3. Database | `POSTGRES_USER`, `POSTGRES_DB`, optional `DATABASE_URL` | `DATABASE_URL` is derived unless you set it (external DB) |
+| 4. Ports | `FRONTEND_PORT`, `BACKEND_PORT`, `DOCS_PORT` | Local development only |
+| 5. Auth | `JWT_*_EXPIRES_IN`, `SKIP_EMAIL_VERIFICATION`, `TEST_USER_ID` | `TEST_USER_ID` bypasses auth — never in production |
+| 6. SMTP | `EMAIL_*`, `NOTIFICATION_EMAIL_*` | Required unless `SKIP_EMAIL_VERIFICATION=1` |
+| 7. AI | `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Optional; AI endpoints error cleanly when unset |
+| 8. Misc | `NEXT_PUBLIC_GITHUB_URL` | Landing page link |
 
-Copy from [`.env.example`](eboom-frontend/.env.example).
+Two things worth knowing:
 
-| Variable | Purpose |
-|----------|---------|
-| `NEXT_PUBLIC_BASE_URL` | Backend API base URL (e.g. `http://localhost:4000`) |
-| `NEXT_PUBLIC_TEST_MODE` | **Dev only** — set to `true` to bypass frontend auth (requires backend `TEST_USER_ID`) |
+- **`NEXT_PUBLIC_*` are build args**, baked into the frontend bundle. Changing them requires `docker compose up -d --build`, not just a restart.
+- **`APP_URL` is the API's only allowed CORS origin in production.** It must match the browser's origin exactly — right scheme, no trailing slash.
+
+**Running without Docker (`npm run dev`):** each app reads its own file instead — [`eboom-backend/.env.sample`](eboom-backend/.env.sample) and [`eboom-frontend/.env.example`](eboom-frontend/.env.example). The root `.env` is not used in that mode.
+
 ## Docker
 
 Run the full stack (PostgreSQL, backend, frontend) with one command:
@@ -116,15 +115,116 @@ Then open http://localhost:3000.
 
 On startup, the backend waits for PostgreSQL (via compose healthcheck), applies the database schema (`drizzle-kit push`), then starts the API.
 
-**Production:** copy [`.env.example`](.env.example) to `.env` and set a strong `JWT_SECRET`, `POSTGRES_PASSWORD`, `NEXT_PUBLIC_BASE_URL`, and `APP_URL`, then rebuild. Configure SMTP in `.env` if you need email verification or password reset.
+## Running in Production
 
-### Seed (Optional)
+`docker-compose.prod.yml` overlays the base stack with a [Caddy](https://caddyserver.com/) reverse proxy: it terminates TLS on ports 80/443, fetches and renews Let's Encrypt certificates automatically, and stops the backend/frontend/docs containers from publishing any host ports.
 
-Load demo data after the stack is running:
+```
+Internet ──▶ Caddy :80/:443 ──┬─▶ frontend:3000   (APP_DOMAIN)
+                              ├─▶ backend:4000    (API_DOMAIN)
+                              └─▶ docs:80         (DOCS_DOMAIN)
+                                  postgres:5432   (internal only)
+```
+
+**Prerequisites:** a Linux server with Docker Engine and the Compose v2 plugin, and three DNS records you control.
+
+### 1. Point DNS at the server
+
+Create A records for `APP_DOMAIN`, `API_DOMAIN`, and `DOCS_DOMAIN`, all pointing at the server's public IP. Do this **before** starting the stack — Caddy validates the domains over HTTP on first boot and will fail if they don't resolve yet.
 
 ```bash
-docker compose exec backend node dist/db/seed/seed.js
+dig +short eboom.example.com api.eboom.example.com docs.eboom.example.com
 ```
+
+### 2. Open the firewall
+
+Allow SSH **before** enabling `ufw` — enabling it without an SSH rule locks you out of the server:
+
+```bash
+sudo ufw allow 22/tcp    # SSH — do this first
+sudo ufw allow 80/tcp    # HTTP (ACME challenge + redirect to HTTPS)
+sudo ufw allow 443/tcp   # HTTPS
+sudo ufw allow 443/udp   # HTTP/3 (QUIC), which Caddy also serves on 443
+sudo ufw enable
+sudo ufw status verbose  # confirm the rules above are active
+```
+
+Postgres never publishes a port, and under the prod overlay neither do the app containers — only Caddy binds 80/443. Docker's iptables rules can bypass `ufw` for any port that *is* published, so don't add published ports back to the app services in the overlay.
+
+### 3. Configure `.env`
+
+```bash
+git clone <repo-url> eboom && cd eboom
+cp .env.example .env
+```
+
+Edit `.env` and set, at minimum:
+
+```bash
+JWT_SECRET=<openssl rand -base64 48>
+POSTGRES_PASSWORD=<strong random password>
+
+APP_DOMAIN=eboom.example.com
+API_DOMAIN=api.eboom.example.com
+DOCS_DOMAIN=docs.eboom.example.com
+ACME_EMAIL=you@example.com
+
+# These must match the domains above, with https://
+APP_URL=https://eboom.example.com
+NEXT_PUBLIC_BASE_URL=https://api.eboom.example.com
+
+SKIP_EMAIL_VERIFICATION=0
+# ...and the EMAIL_* block, otherwise nobody can verify their signup
+```
+
+Make sure `TEST_USER_ID` stays commented out — it bypasses authentication entirely.
+
+```bash
+chmod 600 .env
+```
+
+### 4. Build and start
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+The backend applies the database schema on startup, then serves the API. Caddy requests certificates for all three domains on first boot; that can take up to a minute.
+
+### 5. Verify
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps       # all services Up
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f caddy   # certificate issuance
+
+curl -I https://eboom.example.com            # 200, valid certificate
+curl    https://api.eboom.example.com/health # backend health check
+curl -I https://docs.eboom.example.com       # 200
+```
+
+Then sign up in the browser and confirm the verification email arrives.
+
+### Day-2 operations
+
+Because the compose commands are long, export the flags once per shell:
+
+```bash
+alias dcp='docker compose -f docker-compose.yml -f docker-compose.prod.yml'
+```
+
+| Task | Command |
+|------|---------|
+| Deploy an update | `git pull && dcp up -d --build` |
+| Tail logs | `dcp logs -f backend` |
+| Restart one service | `dcp restart backend` |
+| Stop the stack | `dcp down` (add `-v` to also delete the database volume) |
+| Back up the database | `dcp exec -T postgres pg_dump -U eboom eboom \| gzip > backup-$(date +%F).sql.gz` |
+| Restore a backup | `gunzip -c backup.sql.gz \| dcp exec -T postgres psql -U eboom eboom` |
+| Load demo data | `dcp exec backend node dist/db/seed/seed.js` |
+
+Application data lives in the `postgres_data` volume and certificates in `caddy_data`; both survive `down`/`up`. Only `down -v` destroys them.
+
+After changing any `NEXT_PUBLIC_*` value in `.env`, redeploy with `--build` — a plain restart will keep serving the old bundle.
 
 ## Related Documentation
 

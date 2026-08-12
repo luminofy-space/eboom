@@ -1,3 +1,6 @@
+# Base stack: PostgreSQL + backend + frontend + docs.
+# Configuration comes from a single .env file — `cp .env.example .env` first.
+# For production, add the overlay: -f docker-compose.yml -f docker-compose.prod.yml
 services:
   postgres:
     image: postgres:16-alpine
@@ -22,17 +25,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # All backend settings come straight from .env (see .env.example).
     env_file:
-      - path: .env
-        required: false
+      - .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-eboom}:${POSTGRES_PASSWORD:-eboom}@postgres:5432/${POSTGRES_DB:-eboom}
+      # Derived/fixed values only — everything else lives in .env.
       PORT: 4000
-      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-minimum-32-characters-long}
-      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-1h}
-      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
-      APP_URL: ${APP_URL:-http://localhost:3000}
-      SKIP_EMAIL_VERIFICATION: ${SKIP_EMAIL_VERIFICATION:-0}
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-eboom}:${POSTGRES_PASSWORD:-eboom}@postgres:5432/${POSTGRES_DB:-eboom}}
     ports:
       - "${BACKEND_PORT:-4000}:4000"
 
