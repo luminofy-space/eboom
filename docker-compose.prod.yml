@@ -1,0 +1,45 @@
+# Production overlay: puts Caddy in front of the stack and stops the app
+# containers from publishing ports directly on the host.
+#
+# Usage on the server:
+#   cp .env.example .env      # then fill in the production values
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Note: NEXT_PUBLIC_BASE_URL is a build arg baked into the frontend bundle, so
+# it must hold the real https://api.<domain> value BEFORE the build runs.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+      - docs
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      DOCS_DOMAIN: ${DOCS_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Only Caddy is exposed to the host; the rest talk over the compose network.
+  backend:
+    ports: !override []
+
+  frontend:
+    ports: !override []
+
+  docs:
+    ports: !override []
+
+volumes:
+  caddy_data:
+  caddy_config:
