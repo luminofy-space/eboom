@@ -5,6 +5,7 @@ import auth from '../middleware/auth';
 import canvas from './canvas';
 import authRoutes from './auth';
 import currency from './currency';
+import exchangeRates from './exchange-rates';
 import income from './income';
 import incomeCategories from "./income-categories";
 import wallets from './wallets';
@@ -52,6 +53,7 @@ router.use('/roles/canvas', auth, canvasRolesRouter);
 
 // Currency routes
 router.use('/currency', auth, currency);
+router.use('/exchange-rates', auth, exchangeRates);
 
 // Income categories (not canvas-scoped)
 router.use("/income/categories", auth, incomeCategories);

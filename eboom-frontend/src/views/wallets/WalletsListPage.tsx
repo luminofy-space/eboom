@@ -14,8 +14,10 @@ import {
 import {
   openWalletCreateModal,
   openWalletEditModal,
+  getPrimaryWalletFinancial,
   type WalletItem,
 } from "@/src/redux/walletSlice";
+import { formatMoney } from "@/src/i18n/formatters";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useMutationApi } from "@/src/api/useMutation";
 import { useRouter } from "next/navigation";
@@ -99,7 +101,7 @@ export default function WalletsListPage() {
     return (
       <Container>
         {viewMode === "table" ? (
-          <ListTableSkeleton columns={3} />
+          <ListTableSkeleton columns={6} />
         ) : (
           <Grid variant="cards" gap={4}>
             {Array.from({ length: 8 }).map((_, i) => (
@@ -170,17 +172,25 @@ export default function WalletsListPage() {
         ) : (
           <>
             <Grid variant="cards" gap={4}>
-              {items.map((wallet) => (
-                <GridCard
-                  key={wallet.id}
-                  href={`/wallet/${wallet.id}`}
-                  imageUrl={wallet.photoUrl}
-                  title={wallet.name}
-                  updatedAt={wallet.lastModifiedAt}
-                  onEdit={canEdit ? () => dispatch(openWalletEditModal(wallet)) : undefined}
-                  onDelete={canEdit ? () => setDeleteId(wallet.id) : undefined}
-                />
-              ))}
+              {items.map((wallet) => {
+                const financial = getPrimaryWalletFinancial(wallet.financials);
+                return (
+                  <GridCard
+                    key={wallet.id}
+                    href={`/wallet/${wallet.id}`}
+                    imageUrl={wallet.photoUrl}
+                    title={wallet.name}
+                    subtitle={
+                      financial
+                        ? formatMoney(financial.balance, financial.currencySymbol)
+                        : undefined
+                    }
+                    updatedAt={wallet.lastModifiedAt}
+                    onEdit={canEdit ? () => dispatch(openWalletEditModal(wallet)) : undefined}
+                    onDelete={canEdit ? () => setDeleteId(wallet.id) : undefined}
+                  />
+                );
+              })}
               {isFetchingNextPage &&
                 Array.from({ length: 4 }).map((_, i) => (
                   <GridCardSkeleton key={`loading-${i}`} />

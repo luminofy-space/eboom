@@ -11,6 +11,18 @@ const LOCALE_MAP: Record<string, string> = {
   cs: "cs-CZ",
 };
 
+const LANGUAGE_TO_CURRENCY: Record<string, string> = {
+  en: "USD",
+  de: "EUR",
+  fa: "IRR",
+  cs: "CZK",
+};
+
+export function getCurrencyForLanguage(language = i18n.language): string {
+  const base = language.split("-")[0];
+  return LANGUAGE_TO_CURRENCY[language] ?? LANGUAGE_TO_CURRENCY[base] ?? LANGUAGE_TO_CURRENCY.en;
+}
+
 export type NumberFormatPreset = "money" | "amount" | "compact";
 export type DateFormatPreset = "short" | "monthDay" | "monthShort";
 

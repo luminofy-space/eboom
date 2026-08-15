@@ -6,6 +6,11 @@
     "noCanvasTitle": "No canvas selected",
     "noCanvasDescription": "Select or create a canvas from the sidebar to view your financial overview."
   },
+  "totalBalance": {
+    "title": "Total balance",
+    "noBaseCurrency": "Set a base currency for this canvas to see a combined total.",
+    "missingRates": "Some balances couldn't be converted, missing exchange rate for: {{currencies}}."
+  },
   "walletsBalance": {
     "title": "Overall Wallets Balance",
     "totalBalance": "Total balance",

@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { and, count, desc, eq, ilike, isNotNull, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNotNull, sql, sum } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   wallets,
@@ -12,6 +12,8 @@ import {
   walletCategories,
   subWallets,
   currencies,
+  canvases,
+  exchangeRates,
 } from "../db/schema";
 import { registerWhiteboardNode, unregisterWhiteboardNode } from "../services/whiteboardService";
 import { listTransfersForCanvasPaginated, listTransfersForWallet } from "../services/transferService";
@@ -20,6 +22,8 @@ import { requireCanvasAccess } from "../middleware/canvasAccess";
 import { parseListQueryParams, parsePaginationParams, hasPaginationParams } from "./listQueryParams";
 import { ErrorKeys } from "../errors/errorKeys";
 import { sendError } from "../errors/sendError";
+import { formatMoneyNumber } from "../utils/assetValuation";
+import { buildRateGraph, convertAmount } from "../utils/exchangeRate";
 
 const router = express.Router({ mergeParams: true });
 
@@ -405,6 +409,186 @@ router.get(
   }
 );
 
+interface WalletCurrencyFinancial {
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  balance: string;
+  totalIncome: string;
+  totalExpense: string;
+}
+
+interface WalletFinancials {
+  // One entry per currency this wallet actually holds/has moved money in.
+  byCurrency: WalletCurrencyFinancial[];
+  // Same figures converted to the canvas base currency and summed, so
+  // wallets can be compared on one scale. Null when the canvas has no base
+  // currency, or when any of this wallet's currencies has no rate path to it.
+  base: (WalletCurrencyFinancial & { convertedFromMultipleCurrencies: boolean }) | null;
+}
+
+async function computeWalletFinancials(
+  canvasId: number,
+  walletIds: number[]
+): Promise<Map<number, WalletFinancials>> {
+  const result = new Map<number, WalletFinancials>();
+  if (walletIds.length === 0) {
+    return result;
+  }
+
+  const [balanceRows, incomeRows, expenseRows, [canvasRow], rateRows] = await Promise.all([
+    db
+      .select({
+        walletId: subWallets.walletId,
+        currencyId: subWallets.currencyId,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        balance: subWallets.amount,
+      })
+      .from(subWallets)
+      .innerJoin(currencies, eq(subWallets.currencyId, currencies.id))
+      .where(inArray(subWallets.walletId, walletIds)),
+    db
+      .select({
+        walletId: incomeEntries.destinationWalletId,
+        currencyId: incomes.currencyId,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        total: sum(incomeEntries.amount),
+      })
+      .from(incomeEntries)
+      .innerJoin(incomes, eq(incomeEntries.incomeId, incomes.id))
+      .innerJoin(currencies, eq(incomes.currencyId, currencies.id))
+      .where(inArray(incomeEntries.destinationWalletId, walletIds))
+      .groupBy(incomeEntries.destinationWalletId, incomes.currencyId, currencies.code, currencies.symbol),
+    db
+      .select({
+        walletId: expensePayments.sourceWalletId,
+        currencyId: expenses.currencyId,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        total: sum(expensePayments.amount),
+      })
+      .from(expensePayments)
+      .innerJoin(expenses, eq(expensePayments.expenseId, expenses.id))
+      .innerJoin(currencies, eq(expenses.currencyId, currencies.id))
+      .where(inArray(expensePayments.sourceWalletId, walletIds))
+      .groupBy(expensePayments.sourceWalletId, expenses.currencyId, currencies.code, currencies.symbol),
+    db
+      .select({
+        baseCurrencyId: canvases.baseCurrencyId,
+        baseCurrencyCode: currencies.code,
+        baseCurrencySymbol: currencies.symbol,
+      })
+      .from(canvases)
+      .leftJoin(currencies, eq(canvases.baseCurrencyId, currencies.id))
+      .where(eq(canvases.id, canvasId)),
+    db.select().from(exchangeRates),
+  ]);
+
+  type Bucket = {
+    currencyId: number;
+    currencyCode: string;
+    currencySymbol: string;
+    balance: number;
+    totalIncome: number;
+    totalExpense: number;
+  };
+  const byWallet = new Map<number, Map<number, Bucket>>();
+
+  const ensureBucket = (
+    walletId: number,
+    currencyId: number,
+    currencyCode: string,
+    currencySymbol: string
+  ): Bucket => {
+    const walletMap = byWallet.get(walletId) ?? new Map<number, Bucket>();
+    byWallet.set(walletId, walletMap);
+    const existing = walletMap.get(currencyId);
+    if (existing) return existing;
+    const created: Bucket = {
+      currencyId,
+      currencyCode,
+      currencySymbol,
+      balance: 0,
+      totalIncome: 0,
+      totalExpense: 0,
+    };
+    walletMap.set(currencyId, created);
+    return created;
+  };
+
+  for (const row of balanceRows) {
+    ensureBucket(row.walletId, row.currencyId, row.currencyCode, row.currencySymbol).balance +=
+      Number(row.balance);
+  }
+  for (const row of incomeRows) {
+    ensureBucket(row.walletId, row.currencyId, row.currencyCode, row.currencySymbol).totalIncome +=
+      Number(row.total ?? 0);
+  }
+  for (const row of expenseRows) {
+    ensureBucket(row.walletId, row.currencyId, row.currencyCode, row.currencySymbol).totalExpense +=
+      Number(row.total ?? 0);
+  }
+
+  const graph = buildRateGraph(rateRows);
+  const baseCurrencyId = canvasRow?.baseCurrencyId ?? null;
+
+  for (const walletId of walletIds) {
+    const walletMap = byWallet.get(walletId);
+    if (!walletMap || walletMap.size === 0) {
+      result.set(walletId, { byCurrency: [], base: null });
+      continue;
+    }
+
+    const byCurrency = Array.from(walletMap.values()).map((bucket) => ({
+      currencyId: bucket.currencyId,
+      currencyCode: bucket.currencyCode,
+      currencySymbol: bucket.currencySymbol,
+      balance: formatMoneyNumber(bucket.balance),
+      totalIncome: formatMoneyNumber(bucket.totalIncome),
+      totalExpense: formatMoneyNumber(bucket.totalExpense),
+    }));
+
+    let base: WalletFinancials["base"] = null;
+    if (baseCurrencyId && canvasRow?.baseCurrencyCode && canvasRow?.baseCurrencySymbol) {
+      let balanceTotal = 0;
+      let incomeTotal = 0;
+      let expenseTotal = 0;
+      let convertible = true;
+
+      for (const bucket of walletMap.values()) {
+        const convertedBalance = convertAmount(graph, bucket.balance, bucket.currencyId, baseCurrencyId);
+        const convertedIncome = convertAmount(graph, bucket.totalIncome, bucket.currencyId, baseCurrencyId);
+        const convertedExpense = convertAmount(graph, bucket.totalExpense, bucket.currencyId, baseCurrencyId);
+        if (convertedBalance === null || convertedIncome === null || convertedExpense === null) {
+          convertible = false;
+          break;
+        }
+        balanceTotal += convertedBalance;
+        incomeTotal += convertedIncome;
+        expenseTotal += convertedExpense;
+      }
+
+      if (convertible) {
+        base = {
+          currencyId: baseCurrencyId,
+          currencyCode: canvasRow.baseCurrencyCode,
+          currencySymbol: canvasRow.baseCurrencySymbol,
+          balance: formatMoneyNumber(balanceTotal),
+          totalIncome: formatMoneyNumber(incomeTotal),
+          totalExpense: formatMoneyNumber(expenseTotal),
+          convertedFromMultipleCurrencies: walletMap.size > 1,
+        };
+      }
+    }
+
+    result.set(walletId, { byCurrency, base });
+  }
+
+  return result;
+}
+
 router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response) => {
   const canvasId = req.canvasId!;
 
@@ -442,9 +626,15 @@ router.get("/", requireCanvasAccess("view"), async (req: Request, res: Response)
       .limit(limit)
       .offset(offset);
 
+    const financialsByWallet = await computeWalletFinancials(
+      canvasId,
+      walletsList.map((w) => w.wallet.id)
+    );
+
     const formattedWallets = walletsList.map((w) => ({
       ...w.wallet,
       category: w.category,
+      financials: financialsByWallet.get(w.wallet.id) ?? { byCurrency: [], base: null },
     }));
 
     res.json({ wallets: formattedWallets, items: formattedWallets, total, page, limit });

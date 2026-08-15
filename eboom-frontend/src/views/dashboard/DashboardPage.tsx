@@ -38,7 +38,11 @@ export default function DashboardPage() {
 
   return (
     <Stack gap={6} className="pb-8">
-      <DashboardHeader canvas={activeCanvas} />
+      <DashboardHeader
+        canvas={activeCanvas}
+        totalBalance={summary?.totalBalance}
+        isLoading={isLoading}
+      />
 
       <Container>
         <Stack gap={4}>

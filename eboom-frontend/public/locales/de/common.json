@@ -64,6 +64,9 @@
       "recurring": "Wiederkehrend",
       "wallet": "Wallet",
       "value": "Wert",
+      "balance": "Kontostand",
+      "totalIncome": "Gesamteinnahmen",
+      "totalExpense": "Gesamtausgaben",
       "lastModified": "Zuletzt geändert"
     },
     "pagination": {

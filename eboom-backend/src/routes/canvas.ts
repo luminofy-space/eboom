@@ -69,6 +69,8 @@ router.post("/", async (req: Request, res: Response) => {
   }
 
   try {
+    let selectedCurrencyId: number | null = null;
+
     if (baseCurrencyId) {
       const [selectedCurrency] = await db
         .select({ id: currencies.id })
@@ -78,6 +80,7 @@ router.post("/", async (req: Request, res: Response) => {
       if (!selectedCurrency) {
         return sendError(res, ErrorKeys.validation.currencyRequired, 400);
       }
+      selectedCurrencyId = selectedCurrency.id;
 
       const [existingSettings] = await db
         .select()
@@ -104,6 +107,7 @@ router.post("/", async (req: Request, res: Response) => {
         description: description || null,
         canvasType: canvasType || null,
         photoUrl: photoUrl || null,
+        baseCurrencyId: selectedCurrencyId,
         createdBy: user.id,
         lastModifiedBy: user.id,
       })
@@ -186,9 +190,20 @@ router.put("/:canvasId", requireCanvasAccess("manage_canvas"), async (req: Reque
   const canvasId = req.canvasId!;
   const user = req.appUser!;
 
-  const { name, description, canvasType, photoUrl, isArchived } = req.body;
+  const { name, description, canvasType, photoUrl, isArchived, baseCurrencyId } = req.body;
 
   try {
+    if (baseCurrencyId !== undefined && baseCurrencyId !== null) {
+      const [selectedCurrency] = await db
+        .select({ id: currencies.id })
+        .from(currencies)
+        .where(eq(currencies.id, Number(baseCurrencyId)));
+
+      if (!selectedCurrency) {
+        return sendError(res, ErrorKeys.validation.currencyRequired, 400);
+      }
+    }
+
     const [updatedCanvas] = await db
       .update(canvases)
       .set({
@@ -197,6 +212,7 @@ router.put("/:canvasId", requireCanvasAccess("manage_canvas"), async (req: Reque
         ...(canvasType !== undefined && { canvasType }),
         ...(photoUrl !== undefined && { photoUrl }),
         ...(isArchived !== undefined && { isArchived }),
+        ...(baseCurrencyId !== undefined && { baseCurrencyId: baseCurrencyId === null ? null : Number(baseCurrencyId) }),
         lastModifiedBy: user.id,
         lastModifiedAt: new Date(),
       })
