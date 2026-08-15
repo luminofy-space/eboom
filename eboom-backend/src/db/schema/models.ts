@@ -6,6 +6,7 @@ import {
   canvasMembers,
   canvasInvitations,
   currencies,
+  exchangeRates,
   walletCategories,
   wallets,
   subWallets,
@@ -45,6 +46,7 @@ export type CanvasInvitation = typeof canvasInvitations.$inferSelect;
 export type CanvasInvitationStatus =
   (typeof canvasInvitations.$inferSelect)["status"];
 export type Currency = typeof currencies.$inferSelect;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
 export type WalletCategory = typeof walletCategories.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type SubWallet = typeof subWallets.$inferSelect;
@@ -84,6 +86,7 @@ export type NewRole = typeof roles.$inferInsert;
 export type NewCanvasMember = typeof canvasMembers.$inferInsert;
 export type NewCanvasInvitation = typeof canvasInvitations.$inferInsert;
 export type NewCurrency = typeof currencies.$inferInsert;
+export type NewExchangeRate = typeof exchangeRates.$inferInsert;
 export type NewWalletCategory = typeof walletCategories.$inferInsert;
 export type NewWallet = typeof wallets.$inferInsert;
 export type NewSubWallet = typeof subWallets.$inferInsert;

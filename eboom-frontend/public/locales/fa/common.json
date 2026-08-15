@@ -64,6 +64,9 @@
       "recurring": "تکرارشونده",
       "wallet": "کیف پول",
       "value": "ارزش",
+      "balance": "موجودی",
+      "totalIncome": "مجموع درآمد",
+      "totalExpense": "مجموع هزینه",
       "lastModified": "آخرین تغییر"
     },
     "pagination": {

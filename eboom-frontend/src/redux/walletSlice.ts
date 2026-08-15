@@ -1,6 +1,23 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "./store";
 
+export interface WalletCurrencyFinancial {
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  balance: string;
+  totalIncome: string;
+  totalExpense: string;
+}
+
+export interface WalletFinancials {
+  // One entry per currency this wallet actually holds/has moved money in.
+  byCurrency: WalletCurrencyFinancial[];
+  // Same figures converted to the canvas base currency and summed, so
+  // wallets can be compared on one scale. Null when unavailable.
+  base: (WalletCurrencyFinancial & { convertedFromMultipleCurrencies: boolean }) | null;
+}
+
 export interface WalletItem {
   id: number;
   name: string;
@@ -13,6 +30,17 @@ export interface WalletItem {
     id: number;
     name: string;
   } | null;
+  financials?: WalletFinancials;
+}
+
+// Prefer the base-currency-converted total (comparable across wallets);
+// fall back to the wallet's first held currency when no base currency is
+// configured or it couldn't be converted.
+export function getPrimaryWalletFinancial(
+  financials: WalletFinancials | undefined
+): WalletCurrencyFinancial | null {
+  if (!financials) return null;
+  return financials.base ?? financials.byCurrency[0] ?? null;
 }
 
 interface WalletModalState {

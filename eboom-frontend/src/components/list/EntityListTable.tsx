@@ -8,7 +8,7 @@ import { formatRelativeTime, formatMoney } from "@/src/i18n/formatters";
 import type { ListEntityType } from "@/src/hooks/useListFilterOptions";
 import type { IncomeItem } from "@/src/redux/incomeSlice";
 import type { ExpenseItem } from "@/src/redux/expenseSlice";
-import type { WalletItem } from "@/src/redux/walletSlice";
+import { getPrimaryWalletFinancial, type WalletItem } from "@/src/redux/walletSlice";
 import type { AssetItem } from "@/src/redux/assetSlice";
 
 type EntityItem = IncomeItem | ExpenseItem | WalletItem | AssetItem;
@@ -76,7 +76,52 @@ export function EntityListTable<T extends EntityItem>({
     };
 
     if (entityType === "wallets") {
-      return [nameColumn, categoryColumn, lastModifiedColumn];
+      const balanceColumn: DataTableColumn<T> = {
+        id: "balance",
+        header: t("list.table.balance"),
+        cell: (row) => {
+          const financial = getPrimaryWalletFinancial((row as WalletItem).financials);
+          return (
+            <CellText>
+              {financial
+                ? formatMoney(financial.balance, financial.currencySymbol)
+                : t("empty.emDash")}
+            </CellText>
+          );
+        },
+      };
+
+      const incomeColumn: DataTableColumn<T> = {
+        id: "totalIncome",
+        header: t("list.table.totalIncome"),
+        cell: (row) => {
+          const financial = getPrimaryWalletFinancial((row as WalletItem).financials);
+          return (
+            <CellMuted>
+              {financial
+                ? formatMoney(financial.totalIncome, financial.currencySymbol)
+                : t("empty.emDash")}
+            </CellMuted>
+          );
+        },
+      };
+
+      const expenseColumn: DataTableColumn<T> = {
+        id: "totalExpense",
+        header: t("list.table.totalExpense"),
+        cell: (row) => {
+          const financial = getPrimaryWalletFinancial((row as WalletItem).financials);
+          return (
+            <CellMuted>
+              {financial
+                ? formatMoney(financial.totalExpense, financial.currencySymbol)
+                : t("empty.emDash")}
+            </CellMuted>
+          );
+        },
+      };
+
+      return [nameColumn, categoryColumn, balanceColumn, incomeColumn, expenseColumn, lastModifiedColumn];
     }
 
     if (entityType === "assets") {

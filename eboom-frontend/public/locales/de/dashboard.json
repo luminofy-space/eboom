@@ -6,6 +6,11 @@
     "noCanvasTitle": "Kein Canvas ausgewählt",
     "noCanvasDescription": "Wählen Sie einen Canvas in der Seitenleiste aus oder erstellen Sie einen, um Ihre Finanzübersicht zu sehen."
   },
+  "totalBalance": {
+    "title": "Gesamtguthaben",
+    "noBaseCurrency": "Legen Sie eine Basiswährung für diesen Canvas fest, um eine Gesamtsumme zu sehen.",
+    "missingRates": "Einige Salden konnten nicht umgerechnet werden, fehlender Wechselkurs für: {{currencies}}."
+  },
   "walletsBalance": {
     "title": "Gesamtsaldo der Wallets",
     "totalBalance": "Gesamtsaldo",
