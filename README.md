@@ -80,23 +80,7 @@ For coding patterns when adding features, see [CONVENTIONS.md](CONVENTIONS.md).
 cp .env.example .env
 ```
 
-The file is grouped so the required settings come first:
-
-| Section | Variables | Notes |
-|---------|-----------|-------|
-| 1. Must change | `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_URL`, `NEXT_PUBLIC_BASE_URL` | Required for any real deployment |
-| 2. Production | `APP_DOMAIN`, `API_DOMAIN`, `DOCS_DOMAIN`, `ACME_EMAIL` | Used only by the prod overlay |
-| 3. Database | `POSTGRES_USER`, `POSTGRES_DB`, optional `DATABASE_URL` | `DATABASE_URL` is derived unless you set it (external DB) |
-| 4. Ports | `FRONTEND_PORT`, `BACKEND_PORT`, `DOCS_PORT` | Local development only |
-| 5. Auth | `JWT_*_EXPIRES_IN`, `SKIP_EMAIL_VERIFICATION`, `TEST_USER_ID` | `TEST_USER_ID` bypasses auth — never in production |
-| 6. SMTP | `EMAIL_*`, `NOTIFICATION_EMAIL_*` | Required unless `SKIP_EMAIL_VERIFICATION=1` |
-| 7. AI | `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Optional; AI endpoints error cleanly when unset |
-| 8. Misc | `NEXT_PUBLIC_GITHUB_URL` | Landing page link |
-
-Two things worth knowing:
-
-- **`NEXT_PUBLIC_*` are build args**, baked into the frontend bundle. Changing them requires `docker compose up -d --build`, not just a restart.
-- **`APP_URL` is the API's only allowed CORS origin in production.** It must match the browser's origin exactly — right scheme, no trailing slash.
+Every variable is documented inline in [`.env.example`](.env.example) — sections, defaults, and notes on what each one affects.
 
 **Running without Docker (`npm run dev`):** each app reads its own file instead — [`eboom-backend/.env.sample`](eboom-backend/.env.sample) and [`eboom-frontend/.env.example`](eboom-frontend/.env.example). The root `.env` is not used in that mode.
 
