@@ -1,3 +1,16 @@
+FROM node:22-slim AS dev
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+# Source is bind-mounted by Compose (compose.yaml) — nothing to COPY here.
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev"]
+
 FROM node:22-slim AS builder
 
 WORKDIR /app

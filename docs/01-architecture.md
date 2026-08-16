@@ -12,7 +12,7 @@ eBoom is a monorepo with two independently-deployable Node apps. There is **no s
 eboom/
 ├── eboom-backend/     # Express REST API + PostgreSQL/Drizzle  (package name: pfm-backend)
 ├── eboom-frontend/    # Next.js 15 App Router web client       (package name: eboom-frontend)
-├── docker-compose.yml # Full stack: postgres + backend + frontend
+├── compose.yaml       # Full stack: postgres + backend + frontend
 ├── CONVENTIONS.md     # Coding standards
 └── docs/              # <-- you are here (00 overview + module docs)
 ```

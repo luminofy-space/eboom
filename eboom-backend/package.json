@@ -17,7 +17,8 @@
         "db:studio": "drizzle-kit studio",
         "db:push": "drizzle-kit push",
         "db:drop": "drizzle-kit drop",
-        "db:reset": "tsx src/db/reset.ts"
+        "db:reset": "tsx src/db/reset.ts",
+        "db:check-schema": "tsx src/db/checkSchema.ts"
     },
     "dependencies": {
         "@types/cors": "^2.8.19",
