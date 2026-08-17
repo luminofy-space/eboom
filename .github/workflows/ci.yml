@@ -1,0 +1,203 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: eboom-backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: eboom-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test --if-present
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: eboom-frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: eboom-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: eboom-frontend/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('eboom-frontend/package-lock.json') }}-${{ hashFiles('eboom-frontend/**/*.[jt]s', 'eboom-frontend/**/*.[jt]sx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('eboom-frontend/package-lock.json') }}-
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_URL: http://localhost:4000
+          NEXT_PUBLIC_GITHUB_URL: https://github.com/${{ github.repository }}
+          NEXT_PUBLIC_TEST_MODE: "false"
+          GENERATE_SOURCEMAP: "false"
+          NODE_ENV: production
+
+      - name: Test
+        run: npm test --if-present
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      # Also asserts package.json and package-lock.json are in sync.
+      - name: Install dependencies
+        run: npm ci
+
+      # `ignoreDeadLinks` is a pattern allowlist, not `true`, so the build
+      # fails on dead internal links. withMermaid renders diagrams at build
+      # time, so malformed mermaid fails here too.
+      - name: Build
+        env:
+          NEXT_PUBLIC_GITHUB_URL: https://github.com/${{ github.repository }}
+        run: npm run build
+
+  db-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: eboom-backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: eboom-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for committed migrations
+        id: journal
+        run: |
+          if [ -f "src/db/migrations/meta/_journal.json" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Drizzle schema-drift check skipped"
+              echo ""
+              echo "No drizzle migrations are committed yet under \`eboom-backend/src/db/migrations/\`."
+              echo "This project currently applies schema changes with \`drizzle-kit push\`, so there is no migration journal to validate against."
+              echo ""
+              echo "Run \`npx drizzle-kit generate\` once in \`eboom-backend\` to commit a baseline \`0000\` migration, then this gate will turn on automatically."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Validate migration journal
+        if: steps.journal.outputs.exists == 'true'
+        run: npx drizzle-kit check
+
+      - name: Generate migrations from current schema
+        if: steps.journal.outputs.exists == 'true'
+        timeout-minutes: 5
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+        run: npx drizzle-kit generate < /dev/null
+
+      - name: Assert no schema drift
+        if: steps.journal.outputs.exists == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          if [ -n "$(git status --porcelain -- eboom-backend/src/db/migrations)" ]; then
+            echo "### Schema drift detected" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            git status --porcelain -- eboom-backend/src/db/migrations >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '```diff' >> "$GITHUB_STEP_SUMMARY"
+            git diff -- eboom-backend/src/db/migrations >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "Schema drift detected: the drizzle schema changed but no migration was generated."
+            echo "Run 'npm run db:generate' in eboom-backend and commit the new files in src/db/migrations/."
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: [backend, frontend, docs, db-schema]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require all jobs to succeed
+        run: |
+          if [ "${{ needs.backend.result }}" != "success" ] || \
+             [ "${{ needs.frontend.result }}" != "success" ] || \
+             [ "${{ needs.docs.result }}" != "success" ] || \
+             [ "${{ needs['db-schema'].result }}" != "success" ]; then
+            echo "One or more required jobs did not succeed."
+            exit 1
+          fi
