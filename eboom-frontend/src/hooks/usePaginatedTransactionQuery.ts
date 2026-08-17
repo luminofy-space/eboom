@@ -3,7 +3,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import useQueryApi from "@/src/api/useQuery";
 import { buildUrlWithParams } from "@/src/api/buildUrlWithParams";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppSelector } from "@/src/redux/store";
 import { selectListPageSize } from "@/src/redux/searchSlice";
 
@@ -20,7 +20,16 @@ export function usePaginatedTransactionQuery<
   TItem,
 >(options: UsePaginatedTransactionQueryOptions<TResponse>) {
   const pageSize = useAppSelector(selectListPageSize);
-  const [page, setPage] = useState(1);
+  const [requestedPage, setRequestedPage] = useState(1);
+
+  // knownTotal is the total from the last resolved fetch. We use it (rather
+  // than this render's own query.data, which doesn't exist yet since the
+  // query below is what produces it) to clamp the page we're about to
+  // request, mirroring the previous effect's behavior without the extra
+  // unbatched render.
+  const [knownTotal, setKnownTotal] = useState(0);
+  const knownTotalPages = Math.max(1, Math.ceil(knownTotal / pageSize));
+  const page = knownTotal > 0 ? Math.min(requestedPage, knownTotalPages) : requestedPage;
 
   const extraParamsKey = useMemo(
     () => JSON.stringify(options.extraParams ?? {}),
@@ -47,12 +56,12 @@ export function usePaginatedTransactionQuery<
 
   const total = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  useEffect(() => {
-    if (total > 0 && page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [total, page, totalPages]);
+  // Adjust state during render (React-sanctioned pattern) rather than in an
+  // effect: once the fresh total is known, keep it in sync for the next
+  // render's clamp calculation above.
+  if (total !== knownTotal) {
+    setKnownTotal(total);
+  }
 
   const rawItems = query.data?.[options.itemsKey];
   const items = (Array.isArray(rawItems) ? rawItems : []) as TItem[];
@@ -64,7 +73,7 @@ export function usePaginatedTransactionQuery<
     page,
     pageSize,
     totalPages,
-    setPage,
+    setPage: setRequestedPage,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

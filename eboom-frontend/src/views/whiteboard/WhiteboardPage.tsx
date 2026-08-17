@@ -121,6 +121,7 @@ export default function WhiteboardPage() {
     if (!data) return;
 
     const graph = buildWhiteboardGraph(data);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- React Flow owns node/edge state; this effect syncs the fetched graph into it.
     setNodes(graph.nodes);
     setEdges(graph.edges);
 
@@ -158,6 +159,7 @@ export default function WhiteboardPage() {
             );
 
     if (!flowStillExists) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- React Flow owns edge state; clears local selection when the selected edge's underlying flow no longer exists in the fetched graph.
       setSelectedEdge(null);
     }
   }, [data, selectedEdge]);

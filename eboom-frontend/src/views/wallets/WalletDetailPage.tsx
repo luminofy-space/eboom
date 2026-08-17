@@ -47,13 +47,15 @@ export default function WalletDetailPage({ id }: Props) {
   const [selectedCurrency, setSelectedCurrency] = useState("");
 
   useEffect(() => {
-    if (!currencyOptions.length) {
-      setSelectedCurrency("");
-      return;
-    }
-    if (!selectedCurrency || !currencyOptions.some((o) => o.code === selectedCurrency)) {
-      setSelectedCurrency(getDefaultWalletCurrencyCode(currencyOptions));
-    }
+    queueMicrotask(() => {
+      if (!currencyOptions.length) {
+        setSelectedCurrency("");
+        return;
+      }
+      if (!selectedCurrency || !currencyOptions.some((o) => o.code === selectedCurrency)) {
+        setSelectedCurrency(getDefaultWalletCurrencyCode(currencyOptions));
+      }
+    });
   }, [currencyOptions, selectedCurrency]);
 
   const currencySymbol = selectedCurrency
