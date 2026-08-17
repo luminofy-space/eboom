@@ -4,7 +4,9 @@ import {
   assets,
   assetCategories,
   assetVolumes,
+  canvases,
   currencies,
+  exchangeRates,
   expenseCategories,
   expensePayments as expensePaymentsTable,
   expenses,
@@ -24,6 +26,7 @@ import {
   type PricePointInput,
   type VolumeInput,
 } from "../utils/assetValuation";
+import { buildRateGraph, convertAmount, type RateGraph } from "../utils/exchangeRate";
 
 export interface CanvasSummaryWalletBalance {
   walletId: number;
@@ -108,8 +111,19 @@ export interface CanvasSummaryAssetsByCurrency {
   count: number;
 }
 
+export interface CanvasSummaryTotalBalance {
+  currencyCode: string | null;
+  currencySymbol: string | null;
+  amount: string | null;
+  // Wallet balances and asset holding values whose currency has no
+  // exchange-rate path to the base currency, so they couldn't be folded into
+  // `amount`.
+  unconvertedCurrencyCodes: string[];
+}
+
 export interface CanvasSummary {
   counts: { wallets: number; incomes: number; expenses: number; assets: number };
+  totalBalance: CanvasSummaryTotalBalance;
   currencyBreakdown: CanvasSummaryCurrencyBreakdown[];
   walletBalances: CanvasSummaryWalletBalance[];
   incomeEntries: CanvasSummaryIncomeEntry[];
@@ -185,6 +199,60 @@ function mergeCurrencyBreakdown(
   return Array.from(map.values()).sort((a, b) =>
     a.currencyCode.localeCompare(b.currencyCode)
   );
+}
+
+type CanvasBase = {
+  baseCurrencyId: number | null;
+  baseCurrencyCode: string | null;
+  baseCurrencySymbol: string | null;
+};
+
+function computeTotalBalance(
+  canvasBase: CanvasBase | null,
+  graph: RateGraph,
+  walletBalanceRows: Array<{ currencyId: number; currencyCode: string; balance: string | number }>,
+  assetValueRows: Array<{ currencyId: number; currencyCode: string; value: number }>
+): CanvasSummaryTotalBalance {
+  if (!canvasBase?.baseCurrencyId) {
+    return {
+      currencyCode: null,
+      currencySymbol: null,
+      amount: null,
+      unconvertedCurrencyCodes: [],
+    };
+  }
+
+  const unconvertedCurrencyCodes = new Set<string>();
+  let total = 0;
+
+  const amountRows = [
+    ...walletBalanceRows.map((row) => ({
+      currencyId: row.currencyId,
+      currencyCode: row.currencyCode,
+      amount: Number(row.balance),
+    })),
+    ...assetValueRows.map((row) => ({
+      currencyId: row.currencyId,
+      currencyCode: row.currencyCode,
+      amount: row.value,
+    })),
+  ];
+
+  for (const row of amountRows) {
+    const converted = convertAmount(graph, row.amount, row.currencyId, canvasBase.baseCurrencyId);
+    if (converted === null) {
+      unconvertedCurrencyCodes.add(row.currencyCode);
+      continue;
+    }
+    total += converted;
+  }
+
+  return {
+    currencyCode: canvasBase.baseCurrencyCode,
+    currencySymbol: canvasBase.baseCurrencySymbol,
+    amount: formatMoneyNumber(total),
+    unconvertedCurrencyCodes: Array.from(unconvertedCurrencyCodes),
+  };
 }
 
 const dashSourceSubWallet = alias(subWallets, "dash_source_sub_wallet");
@@ -634,19 +702,32 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
     }))
   );
 
-  const walletBalanceRows = await db
+  const [walletBalanceRows, [canvasRow], rateRows] = await Promise.all([
     // One row per sub_wallet; total liquid balance per currency is summed client-side
-    .select({
-      walletId: wallets.id,
-      walletName: wallets.name,
-      currencyCode: currencies.code,
-      currencySymbol: currencies.symbol,
-      balance: subWallets.amount,
-    })
-    .from(subWallets)
-    .innerJoin(wallets, eq(subWallets.walletId, wallets.id))
-    .innerJoin(currencies, eq(subWallets.currencyId, currencies.id))
-    .where(and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false)));
+    db
+      .select({
+        walletId: wallets.id,
+        walletName: wallets.name,
+        currencyId: subWallets.currencyId,
+        currencyCode: currencies.code,
+        currencySymbol: currencies.symbol,
+        balance: subWallets.amount,
+      })
+      .from(subWallets)
+      .innerJoin(wallets, eq(subWallets.walletId, wallets.id))
+      .innerJoin(currencies, eq(subWallets.currencyId, currencies.id))
+      .where(and(eq(wallets.canvasId, canvasId), eq(wallets.isArchived, false))),
+    db
+      .select({
+        baseCurrencyId: canvases.baseCurrencyId,
+        baseCurrencyCode: currencies.code,
+        baseCurrencySymbol: currencies.symbol,
+      })
+      .from(canvases)
+      .leftJoin(currencies, eq(canvases.baseCurrencyId, currencies.id))
+      .where(eq(canvases.id, canvasId)),
+    db.select().from(exchangeRates),
+  ]);
 
   const [incomeEntries, expensePayments] = await Promise.all([
     fetchCanvasIncomeEntries(canvasId),
@@ -696,6 +777,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
   const allCanvasAssets = await db
     .select({
       id: assets.id,
+      currencyId: assets.currencyId,
       currencyCode: currencies.code,
       currencySymbol: currencies.symbol,
     })
@@ -743,6 +825,20 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       id,
       deriveAssetValuation(volumesByAsset.get(id) ?? [], pointsByAsset.get(id) ?? []),
     ])
+  );
+
+  const rateGraph = buildRateGraph(rateRows);
+
+  const assetValueRows = allCanvasAssets.map((asset) => ({
+    currencyId: asset.currencyId,
+    currencyCode: asset.currencyCode,
+    value: valuationByAsset.get(asset.id)?.currentHoldingValue ?? 0,
+  }));
+  const totalBalance = computeTotalBalance(
+    canvasRow ?? null,
+    rateGraph,
+    walletBalanceRows,
+    assetValueRows
   );
 
   const assetsByCurrencyMap = new Map<
@@ -842,6 +938,7 @@ export async function getCanvasSummary(canvasId: number): Promise<CanvasSummary>
       expenses: expenseCountRow[0]?.total ?? 0,
       assets: assetCountRow[0]?.total ?? 0,
     },
+    totalBalance,
     currencyBreakdown,
     walletBalances: walletBalanceRows.map((row) => ({
       walletId: row.walletId,

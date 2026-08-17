@@ -157,6 +157,16 @@ export const ErrorKeys = {
     leaveFailed: "errors.member.leaveFailed",
     insufficientPermissions: "errors.member.insufficientPermissions",
   },
+  exchangeRate: {
+    notFound: "errors.exchangeRate.notFound",
+    createFailed: "errors.exchangeRate.createFailed",
+    updateFailed: "errors.exchangeRate.updateFailed",
+    deleteFailed: "errors.exchangeRate.deleteFailed",
+    fetchFailed: "errors.exchangeRate.fetchFailed",
+    sameCurrency: "errors.exchangeRate.sameCurrency",
+    rateRequired: "errors.exchangeRate.rateRequired",
+    invalidCurrency: "errors.exchangeRate.invalidCurrency",
+  },
 } as const;
 
 export type ErrorKey =
@@ -172,4 +182,5 @@ export type ErrorKey =
   | (typeof ErrorKeys.canvas)[keyof typeof ErrorKeys.canvas]
   | (typeof ErrorKeys.invitation)[keyof typeof ErrorKeys.invitation]
   | (typeof ErrorKeys.member)[keyof typeof ErrorKeys.member]
+  | (typeof ErrorKeys.exchangeRate)[keyof typeof ErrorKeys.exchangeRate]
   | string;

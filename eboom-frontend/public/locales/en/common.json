@@ -64,6 +64,9 @@
       "recurring": "Recurring",
       "wallet": "Wallet",
       "value": "Value",
+      "balance": "Balance",
+      "totalIncome": "Total income",
+      "totalExpense": "Total expense",
       "lastModified": "Last modified"
     },
     "pagination": {

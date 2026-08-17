@@ -44,6 +44,7 @@ import { useMutationApi } from "@/src/api/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigationProgress } from "@/src/components/navigation/NavigationProgress";
 import { useTranslation } from "react-i18next";
+import { getCurrencyForLanguage } from "@/src/i18n/formatters";
 
 interface CanvasFormData {
   name: string;
@@ -65,7 +66,7 @@ const defaultValues: CanvasFormData = {
 
 export function NewCanvasModal() {
   const dispatch = useAppDispatch();
-  const { t } = useTranslation("canvas");
+  const { t, i18n } = useTranslation("canvas");
   const { t: tc } = useTranslation("common");
   const { open, mode, editingItem } = useAppSelector(selectCanvasModal);
   const isEdit = mode === "edit";
@@ -98,7 +99,11 @@ export function NewCanvasModal() {
   });
 
   const currencies = currenciesRes?.currencies ?? [];
-  const effectiveCode = baseCurrencyCode || currencies[0]?.code || "";
+  const preferredCurrencyCode = getCurrencyForLanguage(i18n.language);
+  const defaultCurrencyCode = currencies.some((c) => c.code === preferredCurrencyCode)
+    ? preferredCurrencyCode
+    : currencies[0]?.code;
+  const effectiveCode = baseCurrencyCode || defaultCurrencyCode || "";
 
   const { createCanvas, isCreating } = useCanvas();
 

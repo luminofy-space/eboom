@@ -81,8 +81,19 @@ export interface CanvasSummaryAssetsByCurrency {
   count: number;
 }
 
+export interface CanvasSummaryTotalBalance {
+  currencyCode: string | null;
+  currencySymbol: string | null;
+  amount: string | null;
+  // Wallet balances and asset holding values whose currency has no
+  // exchange-rate path to the base currency, so they couldn't be folded into
+  // `amount`.
+  unconvertedCurrencyCodes: string[];
+}
+
 export interface CanvasSummary {
   counts: { wallets: number; incomes: number; expenses: number; assets: number };
+  totalBalance: CanvasSummaryTotalBalance;
   currencyBreakdown: CanvasSummaryCurrencyBreakdown[];
   walletBalances: CanvasSummaryWalletBalance[];
   incomeEntries: CanvasSummaryIncomeEntry[];

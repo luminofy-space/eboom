@@ -83,6 +83,7 @@ export const canvases = pgTable("canvases", {
   description: text("description"),
   photoUrl: text("photo_url"),
   canvasType: varchar("canvas_type", { length: 50 }),
+  baseCurrencyId: integer("base_currency_id").references((): AnyPgColumn => currencies.id),
   isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
@@ -111,6 +112,21 @@ export const currencies = pgTable("currencies", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).defaultNow(),
 });
+
+// 1 unit of fromCurrency = `rate` units of toCurrency.
+export const exchangeRates = pgTable(
+  "exchange_rates",
+  {
+    id: serial("id").primaryKey(),
+    fromCurrencyId: integer("from_currency_id").notNull().references(() => currencies.id),
+    toCurrencyId: integer("to_currency_id").notNull().references(() => currencies.id),
+    rate: numeric("rate", { precision: 20, scale: 8 }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    uniqueCurrencyPair: unique().on(table.fromCurrencyId, table.toCurrencyId),
+  })
+);
 
 export const userSettings = pgTable("user_settings", {
   id: serial("id").primaryKey(),
