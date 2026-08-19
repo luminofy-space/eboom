@@ -152,3 +152,10 @@ Match nearby code rather than "fixing" these globally:
 
 Keep responses short and direct. Prefer editing existing files over creating new ones, and
 do not create documentation files unless asked.
+
+## Updating agent guidance
+
+When a session surfaces a learning worth persisting for future agents (a convention, a
+gotcha, a corrected assumption), update this `AGENTS.md` file in place. Do not create or
+edit a `CLAUDE.md` or any other agent context file for this purpose — this file is the
+single source of truth for agent guidance in this repo.
