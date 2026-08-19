@@ -1,1 +1,1 @@
-answer to the question simple and short. 
+AGENTS.md
