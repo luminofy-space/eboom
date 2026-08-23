@@ -19,7 +19,7 @@ async function executeSqlFile(filePath: string) {
       .split(/;\s*\n/)
       .map(s => s.trim())
       .filter(s => s.length > 0)
-      .map(s => /^INSERT\s+INTO/i.test(s) ? s + '\nON CONFLICT DO NOTHING' : s)
+      .map(s => /^INSERT\s+INTO/i.test(s) && !/\bON\s+CONFLICT\b/i.test(s) ? s + '\nON CONFLICT DO NOTHING' : s)
       .join(';\n\n') + ';';
 
     await pgSql.begin(tx => tx.unsafe(statements));

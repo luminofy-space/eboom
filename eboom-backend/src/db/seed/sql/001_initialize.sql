@@ -9,7 +9,7 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- currencies
-INSERT INTO currencies (code, name, symbol, decimals, is_active, created_at)
+INSERT INTO currencies (id, code, name, symbol, decimals, is_active, created_at)
 VALUES
   (1, 'USD', 'US Dollar', '$', 2, true, NOW()),
   (2, 'EUR', 'Euro', '€', 2, true, NOW()),
@@ -116,7 +116,7 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- asset categories
-INSERT INTO asset_categories (name, is_systematic, created_at)
+INSERT INTO asset_categories (id, name, is_systematic, created_at)
 VALUES
   (1, 'Vehicle', true, NOW()),
   (2, 'Real Estate', true, NOW()),
@@ -133,7 +133,7 @@ VALUES
   (13, 'ETFs', true, NOW()),
   (14, 'Collectibles', true, NOW()),
   (15, 'Intellectual Property', true, NOW()),
-  (16, 'Cash', true, NOW()),
+  (16, 'Cash', true, NOW())
 ON CONFLICT DO NOTHING;
 
 COMMIT;
