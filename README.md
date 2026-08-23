@@ -107,20 +107,13 @@ docker compose up --build
 | backend | http://localhost:4000 | hot reload (`nodemon`); `/health` |
 | postgres | localhost:5432 | for TablePlus/DBeaver/psql |
 | mailpit | http://localhost:8025 | captures dev email (SMTP on :1025) |
-| docs | http://localhost:5173 | `--profile docs` |
-| drizzle studio | https://local.drizzle.studio | `--profile studio` |
+| docs | http://localhost:5173 | VitePress dev server |
+| drizzle studio | https://local.drizzle.studio | served on :4983 |
 
 Backend and frontend source directories are bind-mounted into their containers, so edits on the host are picked up immediately — no rebuild needed. `node_modules` (and the frontend's `.next` cache) live in named volumes instead of the bind mount, so the container never sees the host's `node_modules` (which contains macOS/arm64 native binaries incompatible with the Linux container). Adding or updating a dependency does require a rebuild:
 
 ```bash
 docker compose up --build backend    # or frontend / docs
-```
-
-Docs and Drizzle Studio are off by default — opt in with `--profile`:
-
-```bash
-docker compose --profile docs up      # docs site at :5173
-docker compose --profile studio up    # Drizzle Studio at :4983
 ```
 
 **Schema changes are never automatic in dev.** The dev backend runs only `nodemon`, not the production migration command. Apply/seed/reset the database with:

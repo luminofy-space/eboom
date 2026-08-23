@@ -20,13 +20,11 @@ eBoom is a personal finance management app. Three independent npm packages, no m
 
 ## Setup commands
 
-Docker is the default dev path (Postgres, backend, frontend, Mailpit):
+Docker is the default dev path (Postgres, backend, frontend, Mailpit, docs, Drizzle Studio):
 
 ```bash
 cp .env.example .env
-docker compose up --build           # frontend :3000, backend :4000, mailpit UI :8025
-docker compose --profile docs up    # docs site :5173
-docker compose --profile studio up  # Drizzle Studio :4983
+docker compose up --build   # frontend :3000, backend :4000, mailpit UI :8025, docs :5173, studio :4983
 docker compose exec backend npm run db:push   # apply schema
 docker compose exec backend npm run db:seed   # seed data
 ```

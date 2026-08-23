@@ -77,7 +77,6 @@ services:
     command: npm run dev -- -H 0.0.0.0
 
   docs:
-    profiles: ["docs"]
     build:
       context: ./docs
       target: dev
@@ -104,7 +103,6 @@ services:
       - "${MAILPIT_UI_PORT:-8025}:8025"
 
   drizzle-studio:
-    profiles: ["studio"]
     build:
       context: ./eboom-backend
       target: dev
