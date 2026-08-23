@@ -56,10 +56,6 @@ if (EMAIL_USER && EMAIL_PASS) {
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    if (!EMAIL_USER || !EMAIL_PASS) {
-      throw new Error("Email credentials are not configured");
-    }
-
     const mailOptions = {
       from: EMAIL_FROM,
       to: options.to,
