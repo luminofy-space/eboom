@@ -1,3 +1,4 @@
+// Warns loudly in dev logs when the database has no tables yet.
 import 'dotenv/config';
 import postgres from 'postgres';
 

@@ -1,5 +1,4 @@
-// eboom-backend/src/db/seed-specific.ts
-
+// Runs a single named SQL seed file, chosen by matching its filename.
 import { sql as pgSql } from '../client';
 import fs from 'fs';
 import path from 'path';

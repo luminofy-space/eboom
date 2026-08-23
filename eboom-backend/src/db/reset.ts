@@ -1,5 +1,4 @@
-// eboom-backend/src/db/reset.ts
-
+// Resets the database and re-runs the SQL seed files.
 import { execSync } from 'child_process';
 import path from 'path';
 import { sql as pgSql } from './client';

@@ -1,5 +1,4 @@
-// eboom-backend/src/db/seed-hybrid.ts
-
+// Runs SQL seed files then validates the seeded data via Drizzle queries.
 import { db, sql as pgSql } from '../client';
 import { currencies, roles } from '../schema';
 import { eq } from 'drizzle-orm';

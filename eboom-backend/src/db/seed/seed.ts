@@ -1,5 +1,4 @@
-// eboom-backend/src/db/seed.ts
-
+// Runs SQL seed files, rewriting INSERTs to no-op on conflict.
 import { sql as pgSql } from '../client';
 import fs from 'fs';
 import path from 'path';

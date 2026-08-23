@@ -1,5 +1,4 @@
-// eboom-backend/src/db/seed-safe.ts
-
+// Runs each SQL seed file in its own transaction, rolling back failures individually.
 import { sql as pgSql } from '../client';
 import fs from 'fs';
 import path from 'path';
