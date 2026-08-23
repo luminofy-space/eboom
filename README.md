@@ -103,6 +103,7 @@ docker compose up --build
 
 | Service | URL | Notes |
 |---|---|---|
+| **dev portal** | **http://localhost:3001** | **links to every app below** |
 | frontend | http://localhost:3000 | hot reload (`next dev`) |
 | backend | http://localhost:4000 | hot reload (`nodemon`); `/health` |
 | postgres | localhost:5432 | for TablePlus/DBeaver/psql |

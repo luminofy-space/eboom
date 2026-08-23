@@ -121,6 +121,27 @@ services:
       - "${STUDIO_PORT:-4983}:4983"
     command: npx drizzle-kit studio --host 0.0.0.0 --port 4983
 
+  portal:
+    image: nginx:alpine
+    restart: unless-stopped
+    environment:
+      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+      BACKEND_PORT: ${BACKEND_PORT:-4000}
+      MAILPIT_UI_PORT: ${MAILPIT_UI_PORT:-8025}
+      DOCS_DEV_PORT: ${DOCS_DEV_PORT:-5173}
+      STUDIO_PORT: ${STUDIO_PORT:-4983}
+    volumes:
+      - ./dev-portal/index.html.template:/usr/share/nginx/html/index.html.template:ro
+    ports:
+      - "${PORTAL_PORT:-3001}:80"
+    # envsubst ships in nginx:alpine; restricting the variable list keeps it
+    # from touching unrelated `$`-looking text elsewhere in the page.
+    command: >
+      sh -c "envsubst '$$FRONTEND_PORT,$$BACKEND_PORT,$$MAILPIT_UI_PORT,$$DOCS_DEV_PORT,$$STUDIO_PORT'
+      < /usr/share/nginx/html/index.html.template
+      > /usr/share/nginx/html/index.html
+      && nginx -g 'daemon off;'"
+
 volumes:
   postgres_data:
   backend_node_modules:
