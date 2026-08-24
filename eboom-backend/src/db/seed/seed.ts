@@ -38,7 +38,7 @@ async function seed() {
     // Get all SQL files in seeds directory
     const sqlFiles = fs
       .readdirSync(seedsDir)
-      .filter(file => file.endsWith('.sql'))
+      .filter(file => file.endsWith('.sql') && !file.endsWith('.demo.sql'))
       .sort(); // Ensures they run in order (001, 002, etc.)
 
     console.log(`Found ${sqlFiles.length} seed files\n`);

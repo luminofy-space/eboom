@@ -42,7 +42,7 @@ async function seedSafe() {
   try {
     const sqlFiles = fs
       .readdirSync(seedsDir)
-      .filter(file => file.endsWith('.sql'))
+      .filter(file => file.endsWith('.sql') && !file.endsWith('.demo.sql'))
       .sort();
 
     console.log(`Found ${sqlFiles.length} seed files\n`);

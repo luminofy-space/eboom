@@ -37,7 +37,7 @@ async function seedWithValidation() {
   try {
     const sqlFiles = fs
       .readdirSync(seedsDir)
-      .filter(file => file.endsWith('.sql'))
+      .filter(file => file.endsWith('.sql') && !file.endsWith('.demo.sql'))
       .sort();
 
     for (const file of sqlFiles) {

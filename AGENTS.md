@@ -25,7 +25,7 @@ Docker is the default dev path (Postgres, backend, frontend, Mailpit, docs, Driz
 ```bash
 cp .env.example .env
 docker compose up --build   # portal :3001 lists every app: frontend :3000, backend :4000, mailpit :8025, docs :5173, studio :4983
-docker compose exec backend npm run db:push   # apply schema
+docker compose exec backend npm run db:push --force   # apply schema
 docker compose exec backend npm run db:seed   # seed data
 ```
 

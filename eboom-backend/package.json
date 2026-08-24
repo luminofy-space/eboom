@@ -13,6 +13,7 @@
         "db:migrate": "tsx src/db/migrate.ts",
         "db:seed": "tsx src/db/seed/seed.ts",
         "db:seed:safe": "tsx src/db/seed/seed-safe.ts",
+        "db:seed:demo": "tsx src/db/seed/seed-demo.ts",
         "db:seed:hybrid": "tsx src/db/seed/seed-hybrid.ts",
         "db:seed:specific": "tsx src/db/seed/seed-specific.ts",
         "db:studio": "drizzle-kit studio",
