@@ -89,7 +89,7 @@ These are correctness and security invariants, not style preferences.
 | `eboom-frontend/components/ui/` | shadcn/ui primitives — no feature logic |
 | `eboom-backend/src/routes/` | Route handlers inline; no controller layer |
 | `eboom-backend/src/services/` | Shared services (ledger, email, AI, canvas access) |
-| `eboom-backend/src/db/schema/` | Drizzle schema + inferred types |
+| `eboom-backend/src/db/schema/` | Drizzle schema, one file per domain schema, + inferred types |
 
 Naming: camelCase TS identifiers, PascalCase React components, kebab-case backend route
 files (`expense-categories.ts`), `{feature}Slice.ts` for Redux slices.
@@ -105,12 +105,38 @@ UI: shadcn/ui + Tailwind 4. Use the `Stack` / `Grid` / `Container` / `Typography
 primitives from `components/ui/` instead of repeating utility classes. Snackbars go
 through notistack helpers in `src/lib/notify.ts` — do not add new `sonner` usage.
 
+## Database schemas
+
+**No table lives in `public`.** Every table and enum belongs to one of five Postgres
+schemas — `reference`, `identity`, `finance`, `workspace`, `ai` — one file per schema
+under `eboom-backend/src/db/schema/`. The full map (which tables live where, who writes
+them, column conventions) is in [`docs/02-backend-core.md`](docs/02-backend-core.md).
+
+- **Declare new tables in the domain file that owns them**, as `<domain>Schema.table(...)`
+  — never bare `pgTable(...)`. Same for enums: `financeSchema.enum(...)`, not `pgEnum(...)`,
+  in the file whose tables use it. `schema.ts` is a barrel; add nothing to it.
+- **Use the shared column builders** from `db/schema/columns.ts` — `pk()`, `createdAt()`,
+  `lastModifiedAt()`, `updatedAt()` — instead of respelling `serial("id").primaryKey()` or
+  `timestamp("created_at", { withTimezone: true }).defaultNow()`. They are functions
+  because Drizzle column builders are mutable and cannot be shared as constants, and the
+  file imports nothing but `drizzle-orm/pg-core`, so keep audit FKs (`created_by`,
+  `last_modified_by`) in the domain files — they reference `identity.users`.
+- **Dependencies point one way:** `reference ← identity ← {finance, workspace, ai}`. If a
+  new table would make `reference` or `identity` depend on `finance`, the placement is wrong.
+- **Raw SQL must qualify every table name** (`INSERT INTO reference.currencies`). There is
+  deliberately no `search_path` on the connection, so an unqualified name fails rather than
+  resolving by luck. Drizzle query code needs no changes — it emits qualified SQL itself.
+
 ## Schema changes
 
-1. Edit `eboom-backend/src/db/schema/schema.ts` (never `schema_old.ts` — legacy, unused).
+1. Edit the domain file under `eboom-backend/src/db/schema/` (never `schema_old.ts` —
+   legacy, unused).
 2. Run `npm run db:generate` in `eboom-backend` and **commit** the generated files under
    `src/db/migrations/`. CI has a drift gate that fails the build if the schema changed
    without a matching migration.
+   - **Moving a table between schemas is a hand-written migration** — drizzle-kit emits
+     `DROP TABLE` + `CREATE TABLE` and destroys the data. Follow the procedure in
+     [`docs/02-backend-core.md`](docs/02-backend-core.md).
 3. Apply with `npm run db:migrate` — in every environment. No container applies the
    schema on boot. `db:push` bypasses the migration journal and `--force` drops columns
    to match the schema, so use it only against a local database you can throw away.

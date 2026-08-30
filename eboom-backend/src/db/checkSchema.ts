@@ -6,7 +6,7 @@ import postgres from 'postgres';
 // compose.yaml), so a fresh/reset postgres volume boots with
 // no tables. This just makes that state loud in the logs instead of letting
 // devs discover it via a wall of query-failed stack traces.
-const CORE_TABLE = 'users';
+const CORE_TABLE = 'identity.users';
 
 const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
@@ -38,7 +38,7 @@ async function checkSchema() {
   const sql = postgres(connectionString, { max: 1, connect_timeout: 5 });
 
   try {
-    const [row] = await sql`select to_regclass(${'public.' + CORE_TABLE}) as reg`;
+    const [row] = await sql`select to_regclass(${CORE_TABLE}) as reg`;
     if (!row?.reg) printMissingSchemaBanner();
   } catch (err) {
     console.warn(`[db:check-schema] skipped — could not reach the database: ${(err as Error).message}`);

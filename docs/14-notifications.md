@@ -95,8 +95,8 @@ Budget alerts come straight from `getBudgetAlertNotifications` → `getBudgetAle
 
 The problem: the panel refetches every 5 minutes and on window focus. If every fetch emailed the user (or created a persistent row), it'd be spam. The solution is the `notifications` table used as a **delivery ledger**, keyed by a **stable source key stored in `title`**:
 
-```440:447:eboom-backend/src/db/schema/schema.ts
-export const notifications = pgTable("notifications", {
+```109:116:eboom-backend/src/db/schema/identity.ts
+export const notifications = identitySchema.table("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   title: varchar("title", { length: 255 }).notNull(),

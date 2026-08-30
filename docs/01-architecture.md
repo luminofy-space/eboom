@@ -111,7 +111,7 @@ erDiagram
 - A **Wallet** is a container (bank account, crypto wallet, safe). Its actual balances live in **`sub_wallets`** — one row per currency, so a single wallet can hold USD, EUR, and BTC balances simultaneously.
 - **Money movements** are modeled as three record types that mutate `sub_wallets`: `income_entries` (credit), `expense_payments` (debit), and `transfers` (debit source + credit destination). The rules for these live in [Overview → Transaction Logic](./00-overview.md#transaction-logic).
 
-The full schema (25+ tables including budgets, savings goals, whiteboard positions, AI insight profiles, attachments, notifications) is defined in one file: [`eboom-backend/src/db/schema/schema.ts`](../eboom-backend/src/db/schema/schema.ts). Inferred TypeScript types are exported from [`models.ts`](../eboom-backend/src/db/schema/models.ts). See [Backend Core §Data layer](./02-backend-core.md#5-data-layer) for details.
+The full schema (35 tables including budgets, savings goals, whiteboard positions, AI insight profiles, attachments, notifications) is namespaced across five Postgres schemas rather than `public`, which holds none of them — `reference` (seeded lookups), `identity` (accounts + tenancy), `finance` (the money core), `workspace` (canvas presentation state) and `ai` (derived AI data). Each gets its own file under [`eboom-backend/src/db/schema/`](../eboom-backend/src/db/schema/), re-exported through `schema.ts`. Inferred TypeScript types come from [`models.ts`](../eboom-backend/src/db/schema/models.ts). See [Backend Core §Data layer](./02-backend-core.md#5-data-layer) for the full mapping.
 
 ---
 

@@ -33,10 +33,16 @@ async function reset() {
   console.log('⏳ Resetting database...\n');
 
   try {
-    // Drop all tables (cascade)
+    // Tables live in domain schemas now, not public. Dropping public alone
+    // would leave every table standing.
     await pgSql.unsafe(`
-      DROP SCHEMA public CASCADE;
+      DROP SCHEMA IF EXISTS reference CASCADE;
+      DROP SCHEMA IF EXISTS identity CASCADE;
+      DROP SCHEMA IF EXISTS finance CASCADE;
+      DROP SCHEMA IF EXISTS workspace CASCADE;
+      DROP SCHEMA IF EXISTS ai CASCADE;
       DROP SCHEMA IF EXISTS drizzle CASCADE;
+      DROP SCHEMA public CASCADE;
       CREATE SCHEMA public;
       GRANT ALL ON SCHEMA public TO postgres;
       GRANT ALL ON SCHEMA public TO public;

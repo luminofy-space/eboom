@@ -1,7 +1,7 @@
 BEGIN;
 
 -- roles
-INSERT INTO roles (id, name, is_system_role, permissions, created_at)
+INSERT INTO reference.roles (id, name, is_system_role, permissions, created_at)
 VALUES
   (1, 'Collaborator', true, '{"view": true, "edit": true, "manage_members": true}'::jsonb, NOW()),
   (2, 'Modifier', true, '{"view": true, "edit": true}'::jsonb, NOW()),
@@ -9,7 +9,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- currencies
-INSERT INTO currencies (id, code, name, symbol, decimals, is_active, created_at)
+INSERT INTO reference.currencies (id, code, name, symbol, decimals, is_active, created_at)
 VALUES
   (1, 'USD', 'US Dollar', '$', 2, true, NOW()),
   (2, 'EUR', 'Euro', '€', 2, true, NOW()),
@@ -54,7 +54,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- wallet categories
-INSERT INTO wallet_categories (id, name, created_at)
+INSERT INTO reference.wallet_categories (id, name, created_at)
 VALUES
   (1, 'Bank Account', NOW()),
   (2, 'Checking Account', NOW()),
@@ -70,7 +70,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- income categories
-INSERT INTO income_categories (id, name, created_at)
+INSERT INTO reference.income_categories (id, name, created_at)
 VALUES
   (1, 'Salary', NOW()),
   (2, 'Freelance', NOW()),
@@ -89,7 +89,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- expense categories
-INSERT INTO expense_categories (id, name, created_at)
+INSERT INTO reference.expense_categories (id, name, created_at)
 VALUES
   (1, 'Housing', NOW()),
   (2, 'Food & Dining', NOW()),
@@ -116,7 +116,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- asset categories
-INSERT INTO asset_categories (id, name, is_systematic, created_at)
+INSERT INTO reference.asset_categories (id, name, is_systematic, created_at)
 VALUES
   (1, 'Vehicle', true, NOW()),
   (2, 'Real Estate', true, NOW()),
@@ -137,11 +137,11 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- keep sequences in sync with the explicit ids inserted above
-SELECT setval(pg_get_serial_sequence('roles', 'id'), (SELECT MAX(id) FROM roles));
-SELECT setval(pg_get_serial_sequence('currencies', 'id'), (SELECT MAX(id) FROM currencies));
-SELECT setval(pg_get_serial_sequence('wallet_categories', 'id'), (SELECT MAX(id) FROM wallet_categories));
-SELECT setval(pg_get_serial_sequence('income_categories', 'id'), (SELECT MAX(id) FROM income_categories));
-SELECT setval(pg_get_serial_sequence('expense_categories', 'id'), (SELECT MAX(id) FROM expense_categories));
-SELECT setval(pg_get_serial_sequence('asset_categories', 'id'), (SELECT MAX(id) FROM asset_categories));
+SELECT setval(pg_get_serial_sequence('reference.roles', 'id'), (SELECT MAX(id) FROM reference.roles));
+SELECT setval(pg_get_serial_sequence('reference.currencies', 'id'), (SELECT MAX(id) FROM reference.currencies));
+SELECT setval(pg_get_serial_sequence('reference.wallet_categories', 'id'), (SELECT MAX(id) FROM reference.wallet_categories));
+SELECT setval(pg_get_serial_sequence('reference.income_categories', 'id'), (SELECT MAX(id) FROM reference.income_categories));
+SELECT setval(pg_get_serial_sequence('reference.expense_categories', 'id'), (SELECT MAX(id) FROM reference.expense_categories));
+SELECT setval(pg_get_serial_sequence('reference.asset_categories', 'id'), (SELECT MAX(id) FROM reference.asset_categories));
 
 COMMIT;

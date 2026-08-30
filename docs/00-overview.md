@@ -77,7 +77,7 @@ Architecture and stack: [01 — Architecture](./01-architecture.md). Backend/fro
 
 **Dormant or roadmap-only (limited/no product surface):** `wishlists`, `to_buy_items`, and asset-related tables (`assets`, `asset_volumes`, `price_points`, `asset_categories`) without a full product UI.
 
-Canonical definition: [`eboom-backend/src/db/schema/schema.ts`](../eboom-backend/src/db/schema/schema.ts).
+Canonical definition: [`eboom-backend/src/db/schema/`](../eboom-backend/src/db/schema/) — one file per domain schema.
 
 ---
 

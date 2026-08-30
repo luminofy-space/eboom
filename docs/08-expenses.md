@@ -25,7 +25,7 @@ flowchart LR
   P2 -. debits .-> W
 ```
 
-### The tables ([`schema.ts`](../eboom-backend/src/db/schema/schema.ts))
+### The tables ([`finance.ts`](../eboom-backend/src/db/schema/finance.ts))
 
 - **`expenses`** — `canvasId`, `name`, `currencyId`, `expenseCategoryId`, `defaultWalletId` (nullable), `isRecurring` + `recurrencePattern` (JSON), `status` (`transactionStatusEnum`), `description`, `photoUrl`, `isArchived`, audit columns.
 - **`expense_payments`** — `expenseId`, `sourceWalletId`, `amount` (`numeric(20,8)`), `dueDate`, `paidDate`, `notes`, audit columns; DB `check` enforces `amount >= 0`.
