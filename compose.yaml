@@ -40,10 +40,10 @@ services:
       - backend_node_modules:/app/node_modules
     ports:
       - "${BACKEND_PORT:-4000}:4000"
-    # Overrides the Dockerfile's CMD, which is what removes the automatic
-    # `drizzle-kit push --force` on every boot. Migrations become a manual,
-    # deliberate step (see README). `db:check-schema` just looks for the
-    # `users` table and prints a loud reminder if it's missing (fresh/reset
+    # Overrides the Dockerfile's CMD to get nodemon's watch/restart loop. No
+    # stage applies the schema on boot — migrations are a manual, deliberate
+    # step in every environment (see README). `db:check-schema` just looks for
+    # the `users` table and prints a loud reminder if it's missing (fresh/reset
     # postgres volume) — it never runs migrations itself. --legacy-watch
     # polls instead of relying on inotify, which Docker Desktop on macOS
     # does not reliably deliver across bind mounts.

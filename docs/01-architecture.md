@@ -123,7 +123,7 @@ The full schema (25+ tables including budgets, savings goals, whiteboard positio
 |------------|------|---------------|
 | `express` ^4 | HTTP framework | Minimal, well-understood; routes are plain handlers (no controller layer). |
 | `drizzle-orm` + `postgres` | Data access | Type-safe SQL with inferred types shared to the frontend. `postgres` (postgres-js) is the driver, pooled at `max: 10`. |
-| `drizzle-kit` | Migrations / studio | `db:migrate`, `db:push`, `db:studio`. |
+| `drizzle-kit` | Migrations / studio | `db:generate` + `db:migrate` apply schema everywhere; `db:push` is for throwaway local databases only. `db:studio`. |
 | `jsonwebtoken` | Auth tokens | Signs/verifies access + refresh JWTs. See [Auth](./04-authentication.md). |
 | `bcryptjs` | Password hashing | 12 salt rounds in [`jwtService`](../eboom-backend/src/services/jwtService.ts). |
 | `nodemailer` | Email | Verification, password reset, overdue/budget digests. |

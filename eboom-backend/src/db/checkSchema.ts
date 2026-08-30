@@ -23,7 +23,7 @@ function printMissingSchemaBanner() {
     '',
     `${BOLD}  Run this to create the schema:${RESET}`,
     '',
-    `    ${BOLD}docker compose exec backend npm run db:push -- --force${RESET}`,
+    `    ${BOLD}docker compose exec backend npm run db:migrate${RESET}`,
     '',
     `${RED}  ────────────────────────────────────────────────${RESET}`,
     '',

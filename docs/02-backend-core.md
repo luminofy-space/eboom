@@ -366,8 +366,9 @@ These are re-exported from [`db/schema/index.ts`](../eboom-backend/src/db/schema
 
 | Command | What it does |
 |---------|--------------|
-| `npm run db:migrate` | Apply SQL migrations from `db/migrations/`. |
-| `npm run db:push` / `db:generate` | `drizzle-kit push` — sync schema directly (used by Docker startup). |
+| `npm run db:generate` | Generate a new SQL migration from schema changes. Commit the output — CI fails on drift. |
+| `npm run db:migrate` | Apply SQL migrations from `db/migrations/`. The only way schema reaches a database. |
+| `npm run db:push` | `drizzle-kit push` — sync schema directly, bypassing migrations. Local throwaway databases only; it writes no history and `--force` drops columns to match. |
 | `npm run db:studio` | Open Drizzle Studio. |
 | `npm run db:seed` (+ `:safe`, `:hybrid`, `:specific`) | Seed demo data from `db/seed/`. |
 | `npm run db:reset` | Reset the database. |
@@ -405,7 +406,7 @@ The **money-movement invariant** is the single most important service rule: rout
 
 ## 8. Conventions cheat-sheet for adding a backend route
 
-1. Add/adjust tables in [`schema.ts`](../eboom-backend/src/db/schema/schema.ts); run `npm run db:migrate`.
+1. Add/adjust tables in [`schema.ts`](../eboom-backend/src/db/schema/schema.ts); run `npm run db:generate`, commit the migration, then `npm run db:migrate`.
 2. Create the router in `src/routes/<name>.ts`. Wrap async handlers or use `try/catch`.
 3. Guard with `auth` (in `routes/index.ts`) and `requireCanvasAccess(permission)` (in the handler) for canvas data.
 4. Return data as-is (snake_case JSON) on success; use `sendError(res, ErrorKeys.<...>, status)` on failure — **no English strings**.

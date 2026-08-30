@@ -117,10 +117,10 @@ Backend and frontend source directories are bind-mounted into their containers, 
 docker compose up --build backend    # or frontend / docs
 ```
 
-**Schema changes are never automatic in dev.** The dev backend runs only `nodemon`, not the production migration command. Apply/seed/reset the database with:
+**Schema changes are never automatic.** No container applies the schema on boot, in dev or in production. Apply/seed/reset the database with:
 
 ```bash
-docker compose exec backend npm run db:push    # apply src/db/schema to the running database
+docker compose exec backend npm run db:migrate # apply committed migrations from src/db/migrations
 docker compose exec backend npm run db:seed    # seed data (also: db:seed:safe, db:seed:hybrid, db:seed:specific)
 docker compose exec backend npm run db:reset   # drop and recreate
 ```
@@ -210,7 +210,15 @@ chmod 600 .env .env.prod
 docker compose -f compose.prod.yaml up -d --build
 ```
 
-The backend applies the database schema on startup, then serves the API. Caddy requests certificates for all three domains on first boot; that can take up to a minute.
+Caddy requests certificates for all three domains on first boot; that can take up to a minute.
+
+The backend serves the API but **does not create or update the database schema** — nothing touches your data on boot. On a fresh stack, apply the migrations once the containers are up:
+
+```bash
+docker compose -f compose.prod.yaml exec backend node dist/db/migrate.js
+```
+
+(The `db:migrate` npm script runs through `tsx`, a dev dependency the production image does not install — hence `node dist/db/migrate.js` here.)
 
 ### 5. Verify
 
@@ -239,6 +247,7 @@ alias dcp='docker compose -f compose.prod.yaml'
 | Tail logs | `dcp logs -f backend` |
 | Restart one service | `dcp restart backend` |
 | Stop the stack | `dcp down` (add `-v` to also delete the database volume) |
+| Apply new migrations | `dcp exec backend node dist/db/migrate.js` (back up first) |
 | Back up the database | `dcp exec -T postgres pg_dump -U eboom eboom \| gzip > backup-$(date +%F).sql.gz` |
 | Restore a backup | `gunzip -c backup.sql.gz \| dcp exec -T postgres psql -U eboom eboom` |
 | Load demo data | `dcp exec backend node dist/db/seed/seed.js` |

@@ -1,7 +1,7 @@
 // Resets the database and re-runs the SQL seed files.
-import { execSync } from 'child_process';
 import path from 'path';
-import { sql as pgSql } from './client';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { db, sql as pgSql } from './client';
 import fs from 'fs';
 
 async function executeSqlFileInTransaction(filePath: string) {
@@ -32,8 +32,6 @@ async function reset() {
   console.log('⚠️  WARNING: This will delete ALL data!');
   console.log('⏳ Resetting database...\n');
 
-  const backendRoot = path.join(__dirname, '..', '..');
-
   try {
     // Drop all tables (cascade)
     await pgSql.unsafe(`
@@ -46,12 +44,12 @@ async function reset() {
 
     console.log('✅ All tables dropped');
 
-    // Apply schema from Drizzle (migrations folder is not populated in this repo)
-    console.log('\n⏳ Applying schema (drizzle-kit push)...');
-    execSync('npx drizzle-kit push --force', {
-      cwd: backendRoot,
-      stdio: 'inherit',
-    });
+    // Rebuild from the committed migrations, not `drizzle-kit push`. Dropping
+    // the `drizzle` schema above wiped the migration journal, so replaying the
+    // migrations leaves it repopulated — a later `db:migrate` then sees an
+    // up-to-date database instead of trying to re-apply 0000 and failing.
+    console.log('\n⏳ Applying migrations...');
+    await migrate(db, { migrationsFolder: path.join(__dirname, 'migrations') });
     console.log('✅ Schema applied');
 
     // Re-seed

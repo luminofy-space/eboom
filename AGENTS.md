@@ -25,7 +25,7 @@ Docker is the default dev path (Postgres, backend, frontend, Mailpit, docs, Driz
 ```bash
 cp .env.example .env
 docker compose up --build   # portal :3001 lists every app: frontend :3000, backend :4000, mailpit :8025, docs :5173, studio :4983
-docker compose exec backend npm run db:push --force   # apply schema
+docker compose exec backend npm run db:migrate   # apply schema
 docker compose exec backend npm run db:seed   # seed data
 ```
 
@@ -111,7 +111,9 @@ through notistack helpers in `src/lib/notify.ts` — do not add new `sonner` usa
 2. Run `npm run db:generate` in `eboom-backend` and **commit** the generated files under
    `src/db/migrations/`. CI has a drift gate that fails the build if the schema changed
    without a matching migration.
-3. Apply with `npm run db:migrate` (or `db:push` in the Docker dev stack).
+3. Apply with `npm run db:migrate` — in every environment. No container applies the
+   schema on boot. `db:push` bypasses the migration journal and `--force` drops columns
+   to match the schema, so use it only against a local database you can throw away.
 
 ## Adding a feature
 
