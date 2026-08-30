@@ -241,7 +241,8 @@ Prefer throwing `AppError` inside `asyncHandler` when a whole handler can be wra
    the `db-schema` CI job fails if the schema changed without a matching migration
 3. Apply with `npm run db:migrate` (in Docker: `docker compose exec backend npm run db:migrate`).
    No container applies the schema on boot, so this is always a manual step
-4. Seed if needed: `npm run db:seed` (or `db:seed:safe`, `db:seed:hybrid`, `db:seed:specific`)
+4. Seed if needed: `npm run db:seed` (reference data) or `npm run db:seed:demo` (demo data).
+   Both are idempotent — rerun them to pick up new seed rows
 
 Do not edit `schema_old.ts` — it is legacy and unused.
 

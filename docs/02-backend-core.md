@@ -435,8 +435,9 @@ These are re-exported from [`db/schema/index.ts`](../eboom-backend/src/db/schema
 | `npm run db:migrate` | Apply SQL migrations from `db/migrations/`. The only way schema reaches a database. |
 | `npm run db:push` | `drizzle-kit push` — sync schema directly, bypassing migrations. Local throwaway databases only; it writes no history and `--force` drops columns to match. |
 | `npm run db:studio` | Open Drizzle Studio. |
-| `npm run db:seed` (+ `:safe`, `:hybrid`, `:specific`) | Seed demo data from `db/seed/`. |
-| `npm run db:reset` | Reset the database. |
+| `npm run db:seed` | Run the base seeds in `db/seed/sql/` (reference data). Each file runs in its own transaction; idempotent, so rerun it to pick up new rows. `-- --only <name>` runs a single file. |
+| `npm run db:seed:demo` | Run the `*.demo.sql` seeds (demo users, canvases, wallets, transactions). |
+| `npm run db:reset` | Drop every schema, replay the migrations, then run the **base** seeds. Demo data is not included — run `db:seed:demo` after it if you want it. Local databases only. |
 
 Migrations live in [`db/migrations/`](../eboom-backend/src/db/migrations/); seeds (including raw SQL for currencies/roles) in [`db/seed/`](../eboom-backend/src/db/seed/). `schema_old.ts` is legacy — do not touch it.
 

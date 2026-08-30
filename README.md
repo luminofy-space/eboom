@@ -121,8 +121,9 @@ docker compose up --build backend    # or frontend / docs
 
 ```bash
 docker compose exec backend npm run db:migrate # apply committed migrations from src/db/migrations
-docker compose exec backend npm run db:seed    # seed data (also: db:seed:safe, db:seed:hybrid, db:seed:specific)
-docker compose exec backend npm run db:reset   # drop and recreate
+docker compose exec backend npm run db:seed    # seed reference data (add `-- --only <name>` for one file)
+docker compose exec backend npm run db:seed:demo # seed demo users, canvases and transactions
+docker compose exec backend npm run db:reset   # drop, re-migrate, re-seed reference data (no demo data)
 ```
 
 ## Running in Production

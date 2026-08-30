@@ -1,32 +1,8 @@
-// Resets the database and re-runs the SQL seed files.
+// Resets the database and re-runs the base SQL seed files.
 import path from 'path';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { db, sql as pgSql } from './client';
-import fs from 'fs';
-
-async function executeSqlFileInTransaction(filePath: string) {
-  const fileName = path.basename(filePath);
-  console.log(`📄 Processing: ${fileName}`);
-
-  await pgSql.begin(async (tx) => {
-    const sqlContent = fs.readFileSync(filePath, 'utf-8');
-    await tx.unsafe(sqlContent);
-  });
-
-  console.log(`✅ Committed: ${fileName}`);
-}
-
-async function seedSafe() {
-  const seedsDir = path.join(__dirname, 'seed', 'sql');
-  const sqlFiles = fs
-    .readdirSync(seedsDir)
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
-
-  for (const file of sqlFiles) {
-    await executeSqlFileInTransaction(path.join(seedsDir, file));
-  }
-}
+import { seed } from './seed/seed';
 
 async function reset() {
   console.log('⚠️  WARNING: This will delete ALL data!');
@@ -35,16 +11,22 @@ async function reset() {
   try {
     // Tables live in domain schemas now, not public. Dropping public alone
     // would leave every table standing.
+    // `client_min_messages` mutes the "drop cascades to ..." NOTICE storm the
+    // CASCADE drops emit — expected here, and it buries the real output.
+    // The grant goes to CURRENT_USER: the connection role comes from
+    // DATABASE_URL (`eboom` in Docker), and hardcoding `postgres` fails with
+    // `role "postgres" does not exist`.
     await pgSql.unsafe(`
+      SET client_min_messages = warning;
       DROP SCHEMA IF EXISTS reference CASCADE;
       DROP SCHEMA IF EXISTS identity CASCADE;
       DROP SCHEMA IF EXISTS finance CASCADE;
       DROP SCHEMA IF EXISTS workspace CASCADE;
       DROP SCHEMA IF EXISTS ai CASCADE;
       DROP SCHEMA IF EXISTS drizzle CASCADE;
-      DROP SCHEMA public CASCADE;
+      DROP SCHEMA IF EXISTS public CASCADE;
       CREATE SCHEMA public;
-      GRANT ALL ON SCHEMA public TO postgres;
+      GRANT ALL ON SCHEMA public TO CURRENT_USER;
       GRANT ALL ON SCHEMA public TO public;
     `);
 
@@ -59,8 +41,10 @@ async function reset() {
     console.log('✅ Schema applied');
 
     // Re-seed
+    // Base seeds only — the reference rows the app needs to boot. Demo users
+    // and their data are opt-in via `npm run db:seed:demo`.
     console.log('\n⏳ Re-seeding database...');
-    await seedSafe();
+    await seed();
 
     console.log('\n✅ Database reset complete');
   } catch (error) {
