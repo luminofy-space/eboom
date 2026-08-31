@@ -5,7 +5,9 @@ export type TProcessEnv = {
 };
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace -- required to augment the global NodeJS.ProcessEnv interface
   namespace NodeJS {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- interface merging is used purely to extend NodeJS.ProcessEnv
     interface ProcessEnv extends TProcessEnv {}
   }
 }

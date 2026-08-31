@@ -28,7 +28,7 @@ flowchart LR
 - An **income** never moves money by itself. It's a template describing what/where/how much you expect.
 - An **income entry** is the ledger event. Creating one **credits** the destination wallet's sub-wallet for the income's currency.
 
-### The tables ([`schema.ts`](../eboom-backend/src/db/schema/schema.ts))
+### The tables ([`finance.ts`](../eboom-backend/src/db/schema/finance.ts))
 
 - **`incomes`** — `canvasId`, `name`, `currencyId`, `incomeCategoryId`, `defaultWalletId` (nullable convenience default), `amount` (an **integer** nominal/expected figure), `isRecurring` + `recurrencePattern` (JSON), `status` (`transactionStatusEnum`: pending/completed/failed/cancelled), `description`, `photoUrl`, `isArchived`, audit columns.
 - **`income_entries`** — `incomeId`, `destinationWalletId`, `amount` (`numeric(20,8)` — the real, precise money), `expectedDate`, `receivedDate`, `notes`, audit columns. A DB `check` enforces `amount >= 0`.

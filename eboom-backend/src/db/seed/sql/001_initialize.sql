@@ -1,15 +1,15 @@
 BEGIN;
 
 -- roles
-INSERT INTO roles (name, is_system_role, permissions, created_at)
+INSERT INTO reference.roles (id, name, is_system_role, permissions, created_at)
 VALUES
-  ('Collaborator', true, '{"view": true, "edit": true, "manage_members": true}'::jsonb, NOW()),
-  ('Modifier', true, '{"view": true, "edit": true}'::jsonb, NOW()),
-  ('Visitor', true, '{"view": true}'::jsonb, NOW())
-ON CONFLICT (name) DO NOTHING;
+  (1, 'Collaborator', true, '{"view": true, "edit": true, "manage_members": true}'::jsonb, NOW()),
+  (2, 'Modifier', true, '{"view": true, "edit": true}'::jsonb, NOW()),
+  (3, 'Visitor', true, '{"view": true}'::jsonb, NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- currencies
-INSERT INTO currencies (code, name, symbol, decimals, is_active, created_at)
+INSERT INTO reference.currencies (id, code, name, symbol, decimals, is_active, created_at)
 VALUES
   (1, 'USD', 'US Dollar', '$', 2, true, NOW()),
   (2, 'EUR', 'Euro', '€', 2, true, NOW()),
@@ -51,72 +51,72 @@ VALUES
   (38, 'TRX', 'Tron', 'TRX', 8, true, NOW()),
   (39, 'FIL', 'Filecoin', 'FIL', 8, true, NOW()),
   (40, 'SXP', 'Solar', 'SXP', 8, true, NOW())
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- wallet categories
-INSERT INTO wallet_categories (name, created_at)
+INSERT INTO reference.wallet_categories (id, name, created_at)
 VALUES
-  ('Bank Account', NOW()),
-  ('Checking Account', NOW()),
-  ('Savings Account', NOW()),
-  ('Cash on Hand', NOW()),
-  ('Credit Card', NOW()),
-  ('Digital Wallet', NOW()),
-  ('Mobile Payment', NOW()),
-  ('Investment Account', NOW()),
-  ('Crypto Wallet', NOW()),
-  ('Prepaid Card', NOW()),
-  ('Loan Account', NOW())
-ON CONFLICT DO NOTHING;
+  (1, 'Bank Account', NOW()),
+  (2, 'Checking Account', NOW()),
+  (3, 'Savings Account', NOW()),
+  (4, 'Cash on Hand', NOW()),
+  (5, 'Credit Card', NOW()),
+  (6, 'Digital Wallet', NOW()),
+  (7, 'Mobile Payment', NOW()),
+  (8, 'Investment Account', NOW()),
+  (9, 'Crypto Wallet', NOW()),
+  (10, 'Prepaid Card', NOW()),
+  (11, 'Loan Account', NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- income categories
-INSERT INTO income_categories (name, created_at)
+INSERT INTO reference.income_categories (id, name, created_at)
 VALUES
-  ('Salary', NOW()),
-  ('Freelance', NOW()),
-  ('Business Income', NOW()),
-  ('Side Hustle', NOW()),
-  ('Bonuses', NOW()),
-  ('Interest & Dividends', NOW()),
-  ('Investment Returns', NOW()),
-  ('Rental Income', NOW()),
-  ('Sales & Royalties', NOW()),
-  ('Pension', NOW()),
-  ('Government Benefits', NOW()),
-  ('Gifts', NOW()),
-  ('Refunds & Reimbursements', NOW()),
-  ('Other Income', NOW())
-ON CONFLICT DO NOTHING;
+  (1, 'Salary', NOW()),
+  (2, 'Freelance', NOW()),
+  (3, 'Business Income', NOW()),
+  (4, 'Side Hustle', NOW()),
+  (5, 'Bonuses', NOW()),
+  (6, 'Interest & Dividends', NOW()),
+  (7, 'Investment Returns', NOW()),
+  (8, 'Rental Income', NOW()),
+  (9, 'Sales & Royalties', NOW()),
+  (10, 'Pension', NOW()),
+  (11, 'Government Benefits', NOW()),
+  (12, 'Gifts', NOW()),
+  (13, 'Refunds & Reimbursements', NOW()),
+  (14, 'Other Income', NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- expense categories
-INSERT INTO expense_categories (name, created_at)
+INSERT INTO reference.expense_categories (id, name, created_at)
 VALUES
-  ('Housing', NOW()),
-  ('Food & Dining', NOW()),
-  ('Groceries', NOW()),
-  ('Transportation', NOW()),
-  ('Utilities', NOW()),
-  ('Healthcare & Medical', NOW()),
-  ('Insurance', NOW()),
-  ('Education', NOW()),
-  ('Entertainment', NOW()),
-  ('Shopping & Clothing', NOW()),
-  ('Personal Care', NOW()),
-  ('Travel', NOW()),
-  ('Subscriptions', NOW()),
-  ('Communication', NOW()),
-  ('Home Maintenance', NOW()),
-  ('Childcare', NOW()),
-  ('Pets', NOW()),
-  ('Taxes', NOW()),
-  ('Debt & Loan Payments', NOW()),
-  ('Savings & Investments', NOW()),
-  ('Gifts & Donations', NOW()),
-  ('Other Expenses', NOW())
-ON CONFLICT DO NOTHING;
+  (1, 'Housing', NOW()),
+  (2, 'Food & Dining', NOW()),
+  (3, 'Groceries', NOW()),
+  (4, 'Transportation', NOW()),
+  (5, 'Utilities', NOW()),
+  (6, 'Healthcare & Medical', NOW()),
+  (7, 'Insurance', NOW()),
+  (8, 'Education', NOW()),
+  (9, 'Entertainment', NOW()),
+  (10, 'Shopping & Clothing', NOW()),
+  (11, 'Personal Care', NOW()),
+  (12, 'Travel', NOW()),
+  (13, 'Subscriptions', NOW()),
+  (14, 'Communication', NOW()),
+  (15, 'Home Maintenance', NOW()),
+  (16, 'Childcare', NOW()),
+  (17, 'Pets', NOW()),
+  (18, 'Taxes', NOW()),
+  (19, 'Debt & Loan Payments', NOW()),
+  (20, 'Savings & Investments', NOW()),
+  (21, 'Gifts & Donations', NOW()),
+  (22, 'Other Expenses', NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- asset categories
-INSERT INTO asset_categories (name, is_systematic, created_at)
+INSERT INTO reference.asset_categories (id, name, is_systematic, created_at)
 VALUES
   (1, 'Vehicle', true, NOW()),
   (2, 'Real Estate', true, NOW()),
@@ -133,7 +133,15 @@ VALUES
   (13, 'ETFs', true, NOW()),
   (14, 'Collectibles', true, NOW()),
   (15, 'Intellectual Property', true, NOW()),
-  (16, 'Cash', true, NOW()),
-ON CONFLICT DO NOTHING;
+  (16, 'Cash', true, NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- keep sequences in sync with the explicit ids inserted above
+SELECT setval(pg_get_serial_sequence('reference.roles', 'id'), (SELECT MAX(id) FROM reference.roles));
+SELECT setval(pg_get_serial_sequence('reference.currencies', 'id'), (SELECT MAX(id) FROM reference.currencies));
+SELECT setval(pg_get_serial_sequence('reference.wallet_categories', 'id'), (SELECT MAX(id) FROM reference.wallet_categories));
+SELECT setval(pg_get_serial_sequence('reference.income_categories', 'id'), (SELECT MAX(id) FROM reference.income_categories));
+SELECT setval(pg_get_serial_sequence('reference.expense_categories', 'id'), (SELECT MAX(id) FROM reference.expense_categories));
+SELECT setval(pg_get_serial_sequence('reference.asset_categories', 'id'), (SELECT MAX(id) FROM reference.asset_categories));
 
 COMMIT;

@@ -42,5 +42,4 @@ yarn-error.log*
 next-env.d.ts
 /dist
 
-/src/db/migrations
 /uploads

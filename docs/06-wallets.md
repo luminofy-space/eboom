@@ -23,7 +23,7 @@ flowchart TB
 
 This is why the doc is titled "Wallets **& Sub-wallets**". The design lets a single wallet hold arbitrary currencies simultaneously, and it makes every balance mutation a currency-specific operation.
 
-The two tables ([`schema.ts`](../eboom-backend/src/db/schema/schema.ts)):
+The two tables ([`finance.ts`](../eboom-backend/src/db/schema/finance.ts)):
 
 - **`wallets`** — `canvasId`, `name`, `walletCategoryId`, `photoUrl`, `description` (JSON), `isArchived`, audit columns.
 - **`sub_wallets`** — `walletId`, `currencyId`, `amount` (`numeric(20,8)`), optional `address`. **Unique on `(walletId, currencyId)`** — you can never have two USD balances in the same wallet.

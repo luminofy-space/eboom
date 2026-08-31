@@ -317,21 +317,86 @@ export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 - `DATABASE_URL` is required — the module throws on import if it's missing.
 - `DbTransaction` is the type you use when passing a transaction handle into a service (`db.transaction(async (tx) => ...)`).
 
-### Schema — [`db/schema/schema.ts`](../eboom-backend/src/db/schema/schema.ts)
+### Schema — [`db/schema/`](../eboom-backend/src/db/schema/)
 
-Every table is a Drizzle `pgTable` in this single file. Conventions you'll see throughout:
+**No table lives in `public`.** Each is namespaced into one of five domain schemas —
+`reference`, `identity`, `finance`, `workspace`, `ai` — and the directory above holds one
+file per schema, named after it. Three files sit outside that pattern: `schemas.ts`
+declares the five `pgSchema` objects, `columns.ts` holds the column builders every table
+file repeats, and `schema.ts` is a barrel re-exporting the table files, so `db/schema`
+stays a single import surface.
+
+| Schema | Holds | Who writes it |
+|--------|-------|---------------|
+| `reference` | `currencies`, `exchange_rates`, `roles`, and the four `*_categories` lookups | Seeded by `001_initialize.sql`; never written by a request |
+| `identity` | `users`, `user_settings`, `canvases`, `canvas_members`, `canvas_invitations`, `notifications` | Accounts and tenancy |
+| `finance` | The money core — wallets, incomes, expenses, transfers, assets, budgets, goals | Canvas members, via `ledgerService` |
+| `workspace` | `whiteboard_viewports`, `whiteboard_node_positions` | Canvas presentation state |
+| `ai` | `ai_insight_profiles`, `ai_financial_insights`, `ai_chat_messages` | AI features; derived, safe to rebuild |
+
+Dependencies only ever point left: `reference ← identity ← {finance, workspace, ai}`.
+Cross-schema foreign keys behave exactly like same-schema ones, and Drizzle emits
+schema-qualified SQL automatically, so query code is unaffected. Raw SQL is not —
+see the seed files, which qualify every table name explicitly.
+
+#### Shared columns — [`db/schema/columns.ts`](../eboom-backend/src/db/schema/columns.ts)
+
+Four column definitions repeat verbatim across the domain files — the surrogate key and
+the three timestamps. They live in `columns.ts` and are imported by every table file:
+
+| Helper | Emits |
+|--------|-------|
+| `pk()` | `id serial PRIMARY KEY` |
+| `createdAt()` | `created_at timestamptz DEFAULT now()` |
+| `lastModifiedAt()` | `last_modified_at timestamptz DEFAULT now()` |
+| `updatedAt()` | `updated_at timestamptz DEFAULT now()` — tables that track one mutation time with no audit trail |
+
+```ts
+import { pk, createdAt, lastModifiedAt } from "./columns";
+
+export const wallets = financeSchema.table("wallets", {
+  id: pk(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdAt: createdAt(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  lastModifiedAt: lastModifiedAt(),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+});
+```
+
+Two constraints on this file:
+
+- **They are functions, not shared constants.** A Drizzle column builder is mutable —
+  `.notNull()` and `.default()` mutate it in place — so one shared `serial("id").primaryKey()`
+  instance handed to two tables would alias a single column across both. Every call
+  returns a fresh builder.
+- **It imports nothing but `drizzle-orm/pg-core`.** That is what lets any domain file
+  import it without disturbing the dependency order below. `created_by` /
+  `last_modified_by` stay in the domain files for the same reason: they reference
+  `identity.users`, and hoisting them here would put an `identity` import under every
+  schema.
+
+It is deliberately not re-exported from `schema.ts` — it holds column builders, not
+tables, and names like `pk` and `createdAt` do not belong on the `db/schema` surface.
+
+The one place the arrow bends is `reference.ts` ↔ `identity.ts`: `roles` and
+`asset_categories` carry `created_by` / `last_modified_by` FKs to `users`, so those two
+files import each other. The cycle is harmless only because every `.references()` is a
+lazy `() => table.column` thunk — the import is never dereferenced at module load. Never
+touch a cross-file table at module top level.
+
+Other conventions you'll see throughout:
 
 - **Property names are `camelCase`, SQL column names are `snake_case`**: `firstName: varchar("first_name", ...)`.
-- **Postgres enums** are defined at the top (`transactionStatusEnum`, `recurrenceFrequencyEnum`, `canvasInvitationStatusEnum`, `budgetPeriodTypeEnum`, `savingsGoalStatusEnum`, ...).
+- **Postgres enums** live in the same schema as the tables that use them (`financeSchema.enum("transaction_status", ...)`, `identitySchema.enum("canvas_invitation_status", ...)`, ...).
 - **Money is `numeric(20, 8)`** — high precision for multi-currency and crypto. Balances live in `sub_wallets.amount`.
 - **Audit columns** are near-ubiquitous: `createdAt`, `createdBy`, `lastModifiedAt`, `lastModifiedBy`.
 - **Integrity is enforced in the DB**, not just app code: `unique()` constraints (e.g. one membership per `(canvasId, userId)`, one `sub_wallet` per `(walletId, currencyId)`) and `check()` constraints (e.g. amounts `>= 0`).
 
 The two anchor tables:
 
-```60:91:eboom-backend/src/db/schema/schema.ts
-export const users = pgTable(
-  "users",
+```26:43:eboom-backend/src/db/schema/identity.ts
+export const users = identitySchema.table("users",
   {
     id: serial("id").primaryKey(),
     email: varchar("email", { length: 255 }).notNull().unique(),
@@ -366,13 +431,30 @@ These are re-exported from [`db/schema/index.ts`](../eboom-backend/src/db/schema
 
 | Command | What it does |
 |---------|--------------|
-| `npm run db:migrate` | Apply SQL migrations from `db/migrations/`. |
-| `npm run db:push` / `db:generate` | `drizzle-kit push` — sync schema directly (used by Docker startup). |
+| `npm run db:generate` | Generate a new SQL migration from schema changes. Commit the output — CI fails on drift. |
+| `npm run db:migrate` | Apply SQL migrations from `db/migrations/`. The only way schema reaches a database. |
+| `npm run db:push` | `drizzle-kit push` — sync schema directly, bypassing migrations. Local throwaway databases only; it writes no history and `--force` drops columns to match. |
 | `npm run db:studio` | Open Drizzle Studio. |
-| `npm run db:seed` (+ `:safe`, `:hybrid`, `:specific`) | Seed demo data from `db/seed/`. |
-| `npm run db:reset` | Reset the database. |
+| `npm run db:seed` | Run the base seeds in `db/seed/sql/` (reference data). Each file runs in its own transaction; idempotent, so rerun it to pick up new rows. `-- --only <name>` runs a single file. |
+| `npm run db:seed:demo` | Run the `*.demo.sql` seeds (demo users, canvases, wallets, transactions). |
+| `npm run db:reset` | Drop every schema, replay the migrations, then run the **base** seeds. Demo data is not included — run `db:seed:demo` after it if you want it. Local databases only. |
 
 Migrations live in [`db/migrations/`](../eboom-backend/src/db/migrations/); seeds (including raw SQL for currencies/roles) in [`db/seed/`](../eboom-backend/src/db/seed/). `schema_old.ts` is legacy — do not touch it.
+
+#### Moving a table between schemas
+
+drizzle-kit has no cross-schema move detection: it reads the move as a table that vanished
+from one schema and appeared in another, and emits `DROP TABLE` + `CREATE TABLE` — which
+destroys the data. Such a migration is written by hand:
+
+1. Write `ALTER TABLE "old"."t" SET SCHEMA "new";` yourself. Postgres carries indexes,
+   constraints, foreign keys and serial-owned sequences across with the table.
+2. Produce the matching snapshot with `generateDrizzleJson` from `drizzle-kit/api` rather
+   than editing `meta/*_snapshot.json` by hand.
+3. Verify by re-running `npm run db:generate` — it must report "No schema changes".
+
+`0002_split_public_into_domain_schemas.sql` is the worked example: it is how all 35 tables
+left `public`.
 
 ---
 
@@ -405,7 +487,7 @@ The **money-movement invariant** is the single most important service rule: rout
 
 ## 8. Conventions cheat-sheet for adding a backend route
 
-1. Add/adjust tables in [`schema.ts`](../eboom-backend/src/db/schema/schema.ts); run `npm run db:migrate`.
+1. Add/adjust tables in the matching domain file under [`db/schema/`](../eboom-backend/src/db/schema/); run `npm run db:generate`, commit the migration, then `npm run db:migrate`.
 2. Create the router in `src/routes/<name>.ts`. Wrap async handlers or use `try/catch`.
 3. Guard with `auth` (in `routes/index.ts`) and `requireCanvasAccess(permission)` (in the handler) for canvas data.
 4. Return data as-is (snake_case JSON) on success; use `sendError(res, ErrorKeys.<...>, status)` on failure — **no English strings**.

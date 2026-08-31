@@ -1,0 +1,150 @@
+# Local development stack: PostgreSQL + backend + frontend + docs, hot
+# reload, bind mounts. Self-contained — `docker compose up` is dev, nothing
+# merges in. For production, see compose.prod.yaml.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eboom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eboom}
+      POSTGRES_DB: ${POSTGRES_DB:-eboom}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eboom} -d ${POSTGRES_DB:-eboom}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./eboom-backend
+      target: dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # All backend settings come straight from .env (see .env.example).
+    env_file:
+      - .env
+    environment:
+      # Derived/fixed values only — everything else lives in .env.
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-eboom}:${POSTGRES_PASSWORD:-eboom}@postgres:5432/${POSTGRES_DB:-eboom}}
+    volumes:
+      - ./eboom-backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    # Overrides the Dockerfile's CMD to get nodemon's watch/restart loop. No
+    # stage applies the schema on boot — migrations are a manual, deliberate
+    # step in every environment (see README). `db:check-schema` just looks for
+    # the `users` table and prints a loud reminder if it's missing (fresh/reset
+    # postgres volume) — it never runs migrations itself. --legacy-watch
+    # polls instead of relying on inotify, which Docker Desktop on macOS
+    # does not reliably deliver across bind mounts.
+    command: sh -c "npm run db:check-schema; npx nodemon --legacy-watch"
+
+  frontend:
+    build:
+      context: ./eboom-frontend
+      target: dev
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:4000}
+        NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-https://github.com}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    # `next dev` reads NEXT_PUBLIC_* from the process environment at runtime
+    # (unlike the production standalone build, which bakes them in as build
+    # args), so env_file is required here for the dev server to pick them up.
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./eboom-frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next_cache:/app/.next
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    command: npm run dev -- -H 0.0.0.0
+
+  docs:
+    build:
+      context: ./docs
+      target: dev
+      args:
+        NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-https://github.com}
+        VITEPRESS_BASE: /
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./docs:/app
+      - docs_node_modules:/app/node_modules
+    ports:
+      - "${DOCS_DEV_PORT:-5173}:5173"
+    command: npx vitepress dev --host 0.0.0.0 --port 5173
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  drizzle-studio:
+    build:
+      context: ./eboom-backend
+      target: dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-eboom}:${POSTGRES_PASSWORD:-eboom}@postgres:5432/${POSTGRES_DB:-eboom}}
+    volumes:
+      - ./eboom-backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "${STUDIO_PORT:-4983}:4983"
+    command: npx drizzle-kit studio --host 0.0.0.0 --port 4983
+
+  portal:
+    image: nginx:alpine
+    restart: unless-stopped
+    environment:
+      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+      BACKEND_PORT: ${BACKEND_PORT:-4000}
+      MAILPIT_UI_PORT: ${MAILPIT_UI_PORT:-8025}
+      DOCS_DEV_PORT: ${DOCS_DEV_PORT:-5173}
+      STUDIO_PORT: ${STUDIO_PORT:-4983}
+    volumes:
+      - ./dev-portal/index.html.template:/usr/share/nginx/html/index.html.template:ro
+    ports:
+      - "${PORTAL_PORT:-3001}:80"
+    # envsubst ships in nginx:alpine; restricting the variable list keeps it
+    # from touching unrelated `$`-looking text elsewhere in the page.
+    command: >
+      sh -c "envsubst '$$FRONTEND_PORT,$$BACKEND_PORT,$$MAILPIT_UI_PORT,$$DOCS_DEV_PORT,$$STUDIO_PORT'
+      < /usr/share/nginx/html/index.html.template
+      > /usr/share/nginx/html/index.html
+      && nginx -g 'daemon off;'"
+
+volumes:
+  postgres_data:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_next_cache:
+  docs_node_modules:

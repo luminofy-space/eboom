@@ -237,8 +237,12 @@ Prefer throwing `AppError` inside `asyncHandler` when a whole handler can be wra
 ### Schema changes
 
 1. Edit [`src/db/schema/schema.ts`](eboom-backend/src/db/schema/schema.ts)
-2. Run `npm run db:migrate`
-3. Seed if needed: `npm run db:seed` (or `db:seed:safe`, `db:seed:hybrid`, `db:seed:specific`)
+2. Run `npm run db:generate` and **commit** the generated files in `src/db/migrations/` —
+   the `db-schema` CI job fails if the schema changed without a matching migration
+3. Apply with `npm run db:migrate` (in Docker: `docker compose exec backend npm run db:migrate`).
+   No container applies the schema on boot, so this is always a manual step
+4. Seed if needed: `npm run db:seed` (reference data) or `npm run db:seed:demo` (demo data).
+   Both are idempotent — rerun them to pick up new seed rows
 
 Do not edit `schema_old.ts` — it is legacy and unused.
 
@@ -255,7 +259,7 @@ The frontend imports database types from the backend via the `@backend/db/schema
 ## Adding a New Feature
 
 1. Add or update Drizzle tables in `schema.ts`
-2. Run migration (`npm run db:migrate`)
+2. Generate and commit the migration (`npm run db:generate`), then apply it (`npm run db:migrate`)
 3. Add Express routes in `src/routes/` and register in `routes/index.ts`
 4. Add URL constants to frontend `src/api/urls.ts`
 5. Create views in `src/views/{feature}/` (list, detail, modals)

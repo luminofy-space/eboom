@@ -30,10 +30,7 @@ export function ImageUploadField({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!value) {
-      setPreviewUrl(null);
-      return;
-    }
+    if (!value) return;
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -46,7 +43,11 @@ export function ImageUploadField({
     };
   }, [value]);
 
-  const displayUrl = previewUrl ?? (value ? null : existingImageUrl) ?? null;
+  // previewUrl only corresponds to the current `value` while it is non-null;
+  // once value goes back to null we ignore any stale previewUrl instead of
+  // clearing it in an effect, so there is no race between the reset and a
+  // fast null -> file transition.
+  const displayUrl = value ? (previewUrl ?? null) : (existingImageUrl ?? null);
   const hasPreview = !!displayUrl;
   const canRemove = !!value;
   const isAvatar = variant === "avatar";

@@ -1,63 +1,50 @@
-// eboom-backend/src/db/reset.ts
-
-import { execSync } from 'child_process';
+// Resets the database and re-runs the base SQL seed files.
 import path from 'path';
-import { sql as pgSql } from './client';
-import fs from 'fs';
-
-async function executeSqlFileInTransaction(filePath: string) {
-  const fileName = path.basename(filePath);
-  console.log(`📄 Processing: ${fileName}`);
-
-  await pgSql.begin(async (tx) => {
-    const sqlContent = fs.readFileSync(filePath, 'utf-8');
-    await tx.unsafe(sqlContent);
-  });
-
-  console.log(`✅ Committed: ${fileName}`);
-}
-
-async function seedSafe() {
-  const seedsDir = path.join(__dirname, 'seed', 'sql');
-  const sqlFiles = fs
-    .readdirSync(seedsDir)
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
-
-  for (const file of sqlFiles) {
-    await executeSqlFileInTransaction(path.join(seedsDir, file));
-  }
-}
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { db, sql as pgSql } from './client';
+import { seed } from './seed/seed';
 
 async function reset() {
   console.log('⚠️  WARNING: This will delete ALL data!');
   console.log('⏳ Resetting database...\n');
 
-  const backendRoot = path.join(__dirname, '..', '..');
-
   try {
-    // Drop all tables (cascade)
+    // Tables live in domain schemas now, not public. Dropping public alone
+    // would leave every table standing.
+    // `client_min_messages` mutes the "drop cascades to ..." NOTICE storm the
+    // CASCADE drops emit — expected here, and it buries the real output.
+    // The grant goes to CURRENT_USER: the connection role comes from
+    // DATABASE_URL (`eboom` in Docker), and hardcoding `postgres` fails with
+    // `role "postgres" does not exist`.
     await pgSql.unsafe(`
-      DROP SCHEMA public CASCADE;
+      SET client_min_messages = warning;
+      DROP SCHEMA IF EXISTS reference CASCADE;
+      DROP SCHEMA IF EXISTS identity CASCADE;
+      DROP SCHEMA IF EXISTS finance CASCADE;
+      DROP SCHEMA IF EXISTS workspace CASCADE;
+      DROP SCHEMA IF EXISTS ai CASCADE;
       DROP SCHEMA IF EXISTS drizzle CASCADE;
+      DROP SCHEMA IF EXISTS public CASCADE;
       CREATE SCHEMA public;
-      GRANT ALL ON SCHEMA public TO postgres;
+      GRANT ALL ON SCHEMA public TO CURRENT_USER;
       GRANT ALL ON SCHEMA public TO public;
     `);
 
     console.log('✅ All tables dropped');
 
-    // Apply schema from Drizzle (migrations folder is not populated in this repo)
-    console.log('\n⏳ Applying schema (drizzle-kit push)...');
-    execSync('npx drizzle-kit push --force', {
-      cwd: backendRoot,
-      stdio: 'inherit',
-    });
+    // Rebuild from the committed migrations, not `drizzle-kit push`. Dropping
+    // the `drizzle` schema above wiped the migration journal, so replaying the
+    // migrations leaves it repopulated — a later `db:migrate` then sees an
+    // up-to-date database instead of trying to re-apply 0000 and failing.
+    console.log('\n⏳ Applying migrations...');
+    await migrate(db, { migrationsFolder: path.join(__dirname, 'migrations') });
     console.log('✅ Schema applied');
 
     // Re-seed
+    // Base seeds only — the reference rows the app needs to boot. Demo users
+    // and their data are opt-in via `npm run db:seed:demo`.
     console.log('\n⏳ Re-seeding database...');
-    await seedSafe();
+    await seed();
 
     console.log('\n✅ Database reset complete');
   } catch (error) {

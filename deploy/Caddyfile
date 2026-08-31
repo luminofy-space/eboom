@@ -1,6 +1,6 @@
 # Caddy reverse proxy for the eboom production stack.
 #
-# Domains come from the .env file (see .env.example). Caddy provisions and
+# Domains come from the .env.prod file (see .env.prod.example). Caddy provisions and
 # renews Let's Encrypt certificates automatically for each site block, so
 # ports 80 and 443 must be reachable from the internet and the DNS A records
 # must already point at this server before the stack starts.

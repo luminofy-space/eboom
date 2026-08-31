@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>eBoom Dev Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    main { width: 100%; max-width: 720px; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    p.subtitle { color: var(--muted); margin-top: 0; margin-bottom: 2rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    a.card {
+      display: block;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    a.card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card .name { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.25rem; }
+    .card .desc { color: var(--muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+    .card .url { color: var(--accent); font-size: 0.8rem; font-family: ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>eBoom Dev Portal</h1>
+    <p class="subtitle">Everything running in this dev stack, one click away.</p>
+    <div class="grid">
+      <a class="card" href="http://localhost:${FRONTEND_PORT}" target="_blank" rel="noopener">
+        <div class="name">Frontend</div>
+        <div class="desc">Next.js app</div>
+        <div class="url">localhost:${FRONTEND_PORT}</div>
+      </a>
+      <a class="card" href="http://localhost:${BACKEND_PORT}/health" target="_blank" rel="noopener">
+        <div class="name">Backend health</div>
+        <div class="desc">API liveness check</div>
+        <div class="url">localhost:${BACKEND_PORT}/health</div>
+      </a>
+      <a class="card" href="http://localhost:${MAILPIT_UI_PORT}" target="_blank" rel="noopener">
+        <div class="name">Mailpit</div>
+        <div class="desc">Captured dev email</div>
+        <div class="url">localhost:${MAILPIT_UI_PORT}</div>
+      </a>
+      <a class="card" href="http://localhost:${DOCS_DEV_PORT}" target="_blank" rel="noopener">
+        <div class="name">Docs</div>
+        <div class="desc">VitePress docs site</div>
+        <div class="url">localhost:${DOCS_DEV_PORT}</div>
+      </a>
+      <a class="card" href="https://local.drizzle.studio/?port=${STUDIO_PORT}" target="_blank" rel="noopener">
+        <div class="name">Drizzle Studio</div>
+        <div class="desc">Database browser</div>
+        <div class="url">local.drizzle.studio (port ${STUDIO_PORT})</div>
+      </a>
+    </div>
+  </main>
+</body>
+</html>

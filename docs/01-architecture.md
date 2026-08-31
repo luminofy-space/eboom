@@ -12,7 +12,7 @@ eBoom is a monorepo with two independently-deployable Node apps. There is **no s
 eboom/
 ├── eboom-backend/     # Express REST API + PostgreSQL/Drizzle  (package name: pfm-backend)
 ├── eboom-frontend/    # Next.js 15 App Router web client       (package name: eboom-frontend)
-├── docker-compose.yml # Full stack: postgres + backend + frontend
+├── compose.yaml       # Full stack: postgres + backend + frontend
 ├── CONVENTIONS.md     # Coding standards
 └── docs/              # <-- you are here (00 overview + module docs)
 ```
@@ -111,7 +111,7 @@ erDiagram
 - A **Wallet** is a container (bank account, crypto wallet, safe). Its actual balances live in **`sub_wallets`** — one row per currency, so a single wallet can hold USD, EUR, and BTC balances simultaneously.
 - **Money movements** are modeled as three record types that mutate `sub_wallets`: `income_entries` (credit), `expense_payments` (debit), and `transfers` (debit source + credit destination). The rules for these live in [Overview → Transaction Logic](./00-overview.md#transaction-logic).
 
-The full schema (25+ tables including budgets, savings goals, whiteboard positions, AI insight profiles, attachments, notifications) is defined in one file: [`eboom-backend/src/db/schema/schema.ts`](../eboom-backend/src/db/schema/schema.ts). Inferred TypeScript types are exported from [`models.ts`](../eboom-backend/src/db/schema/models.ts). See [Backend Core §Data layer](./02-backend-core.md#5-data-layer) for details.
+The full schema (35 tables including budgets, savings goals, whiteboard positions, AI insight profiles, attachments, notifications) is namespaced across five Postgres schemas rather than `public`, which holds none of them — `reference` (seeded lookups), `identity` (accounts + tenancy), `finance` (the money core), `workspace` (canvas presentation state) and `ai` (derived AI data). Each gets its own file under [`eboom-backend/src/db/schema/`](../eboom-backend/src/db/schema/), re-exported through `schema.ts`. Inferred TypeScript types come from [`models.ts`](../eboom-backend/src/db/schema/models.ts). See [Backend Core §Data layer](./02-backend-core.md#5-data-layer) for the full mapping.
 
 ---
 
@@ -123,7 +123,7 @@ The full schema (25+ tables including budgets, savings goals, whiteboard positio
 |------------|------|---------------|
 | `express` ^4 | HTTP framework | Minimal, well-understood; routes are plain handlers (no controller layer). |
 | `drizzle-orm` + `postgres` | Data access | Type-safe SQL with inferred types shared to the frontend. `postgres` (postgres-js) is the driver, pooled at `max: 10`. |
-| `drizzle-kit` | Migrations / studio | `db:migrate`, `db:push`, `db:studio`. |
+| `drizzle-kit` | Migrations / studio | `db:generate` + `db:migrate` apply schema everywhere; `db:push` is for throwaway local databases only. `db:studio`. |
 | `jsonwebtoken` | Auth tokens | Signs/verifies access + refresh JWTs. See [Auth](./04-authentication.md). |
 | `bcryptjs` | Password hashing | 12 salt rounds in [`jwtService`](../eboom-backend/src/services/jwtService.ts). |
 | `nodemailer` | Email | Verification, password reset, overdue/budget digests. |

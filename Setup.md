@@ -377,21 +377,29 @@ npm run db:seed
 
 **Expected output:**
 ```
-🌱 Seeding database...
-✓ Seed data inserted successfully
+⏳ Seeding database — 1 file(s)
+
+📄 Processing: 001_initialize.sql
+✅ Committed: 001_initialize.sql
+
+🔍 Validating seeded data...
+✓ Currencies: 40 records
+✓ System roles: 3 records
+
+✅ Seeding completed successfully
 ```
 
-**Alternative seed options:**
+Each SQL file runs in its own transaction and the seeds are idempotent, so
+rerunning `db:seed` is safe — it is how you pick up new reference data.
+
+**Other seed options:**
 
 ```bash
-# Safe seed (won't duplicate data if run multiple times)
-npm run db:seed:safe
+# Demo data (users, canvases, wallets, transactions) — the *.demo.sql files
+npm run db:seed:demo
 
-# Hybrid approach
-npm run db:seed:hybrid
-
-# Seed specific tables only
-npm run db:seed:specific
+# Run only the seed files whose name contains the given text
+npm run db:seed -- --only initialize
 ```
 
 ### Step 4: Verify Data with Drizzle Studio

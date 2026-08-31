@@ -1,5 +1,4 @@
-// eboom-backend/src/db/migrate.ts
-
+// Runs pending Drizzle migrations against the database.
 import path from 'path';
 import 'dotenv/config';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';

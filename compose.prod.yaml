@@ -1,0 +1,91 @@
+# Production stack: PostgreSQL + backend + frontend + docs behind Caddy
+# (TLS + reverse proxy). Self-contained — nothing merges in.
+#   docker compose -f compose.prod.yaml up -d --build
+#
+# .env      — read by Compose for ${VAR} interpolation in this file; never
+#             injected into a container. Supplies POSTGRES_*, port defaults,
+#             and the NEXT_PUBLIC_* build args.
+# .env.prod — read by the containers via env_file. Compose never interpolates
+#             from it, so nothing in it can reach a build arg.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eboom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eboom}
+      POSTGRES_DB: ${POSTGRES_DB:-eboom}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eboom} -d ${POSTGRES_DB:-eboom}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Only Caddy is exposed to the host; the rest talk over the compose network.
+  backend:
+    build:
+      context: ./eboom-backend
+      target: runner
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      # Derived/fixed values only — everything else lives in .env.prod.
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-eboom}:${POSTGRES_PASSWORD:-eboom}@postgres:5432/${POSTGRES_DB:-eboom}}
+
+  frontend:
+    build:
+      context: ./eboom-frontend
+      target: runner
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:?set NEXT_PUBLIC_BASE_URL=https://<API_DOMAIN> in .env before building}
+        NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-https://github.com}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+
+  docs:
+    build:
+      context: ./docs
+      target: runner
+      args:
+        NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-https://github.com}
+        VITEPRESS_BASE: /
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+      - docs
+    # APP_DOMAIN / API_DOMAIN / DOCS_DOMAIN / ACME_EMAIL come from here rather
+    # than Compose interpolation (${...}) — Caddy's own {$VAR} syntax reads
+    # them straight from the container environment, so they can live in
+    # .env.prod like the rest of the production-only config.
+    env_file:
+      - .env.prod
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

@@ -136,6 +136,7 @@ function BorderGlow({
     if (!animated) return;
     const angleStart = 110;
     const angleEnd = 465;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seeds the imperative sweep animation's initial frame before animateValue starts driving it.
     setSweepActive(true);
     setCursorAngle(angleStart);
 

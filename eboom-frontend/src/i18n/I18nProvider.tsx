@@ -24,7 +24,7 @@ function syncDocumentLanguage(lng: string) {
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(i18n.isInitialized);
+  const [ready, setReady] = useState(() => i18n.isInitialized);
 
   if (typeof document !== "undefined" && i18n.isInitialized) {
     syncDocumentLanguage(i18n.language);
@@ -41,7 +41,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     };
 
     if (i18n.isInitialized) {
-      setReady(true);
+      // ready state was already derived from i18n.isInitialized during the
+      // initial lazy useState computation above; only the document-language
+      // sync (a legitimate external-system side effect) still needs to run
+      // here.
       syncDocumentLanguage(i18n.language);
     } else {
       i18n.on("initialized", handleInitialized);

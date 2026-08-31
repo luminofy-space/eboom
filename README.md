@@ -40,10 +40,11 @@ eboom/
 ├── CONVENTIONS.md      # Coding standards for contributors
 ├── Setup.md            # Detailed installation and troubleshooting guide
 ├── docs/               # Engineering docs (00 overview + module guides)
-├── docker-compose.yml      # Base stack (PostgreSQL + backend + frontend + docs)
-├── docker-compose.prod.yml # Production overlay (Caddy reverse proxy + TLS)
-├── deploy/Caddyfile        # Reverse proxy / TLS configuration
-├── .env.example            # Single configuration file for the whole stack
+├── compose.yaml             # Dev stack (PostgreSQL + backend + frontend + docs)
+├── compose.prod.yaml        # Prod stack (Caddy reverse proxy + TLS)
+├── deploy/Caddyfile         # Reverse proxy / TLS configuration
+├── .env.example             # Dev config — used by `docker compose up`
+├── .env.prod.example        # Prod config — used by `docker compose -f compose.prod.yaml`
 ├── eboom-backend/      # Express API + database layer (package name: pfm-backend)
 └── eboom-frontend/     # Next.js web application
 ```
@@ -74,34 +75,60 @@ For coding patterns when adding features, see [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Configuration
 
-**Running with Docker (recommended):** everything is configured by **one file** — the root `.env`, created from [`.env.example`](.env.example). It feeds `docker-compose.yml`, `docker-compose.prod.yml`, `deploy/Caddyfile`, the backend container, and the frontend/docs build args. There is nothing else to edit.
+**Running with Docker (recommended):** two self-contained env files, one per compose file — nothing merges, nothing layers:
+
+| File | Holds | Loaded by |
+|---|---|---|
+| [`.env.example`](.env.example) → `.env` | Dev secrets/behaviour, plus the infra Compose interpolates: DB credentials, ports, frontend build args | `compose.yaml` (env_file + `${VAR}` interpolation); `compose.prod.yaml` reads it for interpolation only |
+| [`.env.prod.example`](.env.prod.example) → `.env.prod` | Prod secrets/behaviour: JWT, SMTP, domains, ACME email | `compose.prod.yaml` (env_file) |
+
+The templates deliberately duplicate a few keys (e.g. `JWT_ACCESS_EXPIRES_IN`) since each compose file names exactly one env file — no comment/uncomment toggling, no precedence to reason about. Set up dev with:
 
 ```bash
 cp .env.example .env
 ```
 
-Every variable is documented inline in [`.env.example`](.env.example) — sections, defaults, and notes on what each one affects.
+Every variable is documented inline in each file — sections, defaults, and notes on what it affects.
 
-**Running without Docker (`npm run dev`):** each app reads its own file instead — [`eboom-backend/.env.sample`](eboom-backend/.env.sample) and [`eboom-frontend/.env.example`](eboom-frontend/.env.example). The root `.env` is not used in that mode.
+**Running without Docker (`npm run dev`):** each app reads its own file instead — [`eboom-backend/.env.sample`](eboom-backend/.env.sample) and [`eboom-frontend/.env.example`](eboom-frontend/.env.example). The root `.env` files are not used in that mode.
 
 ## Docker
 
-Run the full stack (PostgreSQL, backend, frontend) with one command:
+`compose.yaml` is auto-discovered by Compose, so the plain command below is the **local development** stack — hot reload, bind mounts, no manual installs:
 
 ```bash
-docker compose up -d --build
+cp .env.example .env
+docker compose up --build
 ```
 
-Then open http://localhost:3000.
+| Service | URL | Notes |
+|---|---|---|
+| **dev portal** | **http://localhost:3001** | **links to every app below** |
+| frontend | http://localhost:3000 | hot reload (`next dev`) |
+| backend | http://localhost:4000 | hot reload (`nodemon`); `/health` |
+| postgres | localhost:5432 | for TablePlus/DBeaver/psql |
+| mailpit | http://localhost:8025 | captures dev email (SMTP on :1025) |
+| docs | http://localhost:5173 | VitePress dev server |
+| drizzle studio | https://local.drizzle.studio | served on :4983 |
 
-- **Backend API:** http://localhost:4000
-- **Health check:** http://localhost:4000/health
+Backend and frontend source directories are bind-mounted into their containers, so edits on the host are picked up immediately — no rebuild needed. `node_modules` (and the frontend's `.next` cache) live in named volumes instead of the bind mount, so the container never sees the host's `node_modules` (which contains macOS/arm64 native binaries incompatible with the Linux container). Adding or updating a dependency does require a rebuild:
 
-On startup, the backend waits for PostgreSQL (via compose healthcheck), applies the database schema (`drizzle-kit push`), then starts the API.
+```bash
+docker compose up --build backend    # or frontend / docs
+```
+
+**Schema changes are never automatic.** No container applies the schema on boot, in dev or in production. Apply/seed/reset the database with:
+
+```bash
+docker compose exec backend npm run db:migrate # apply committed migrations from src/db/migrations
+docker compose exec backend npm run db:seed    # seed reference data (add `-- --only <name>` for one file)
+docker compose exec backend npm run db:seed:demo # seed demo users, canvases and transactions
+docker compose exec backend npm run db:reset   # drop, re-migrate, re-seed reference data (no demo data)
+```
 
 ## Running in Production
 
-`docker-compose.prod.yml` overlays the base stack with a [Caddy](https://caddyserver.com/) reverse proxy: it terminates TLS on ports 80/443, fetches and renews Let's Encrypt certificates automatically, and stops the backend/frontend/docs containers from publishing any host ports.
+`compose.prod.yaml` runs the production stack behind a [Caddy](https://caddyserver.com/) reverse proxy: it terminates TLS on ports 80/443, fetches and renews Let's Encrypt certificates automatically, and the backend/frontend/docs containers never publish any host ports.
 
 ```
 Internet ──▶ Caddy :80/:443 ──┬─▶ frontend:3000   (APP_DOMAIN)
@@ -135,51 +162,70 @@ sudo ufw status verbose  # confirm the rules above are active
 
 Postgres never publishes a port, and under the prod overlay neither do the app containers — only Caddy binds 80/443. Docker's iptables rules can bypass `ufw` for any port that *is* published, so don't add published ports back to the app services in the overlay.
 
-### 3. Configure `.env`
+### 3. Configure `.env` and `.env.prod`
 
 ```bash
 git clone <repo-url> eboom && cd eboom
 cp .env.example .env
+cp .env.prod.example .env.prod
 ```
 
-Edit `.env` and set, at minimum:
+`.env` is interpolation-only on the server — Compose reads it for `${VAR}` substitution (Postgres credentials, the frontend build arg) but never injects it into a container. Edit it and set, at minimum:
+
+```bash
+POSTGRES_PASSWORD=<strong random password>
+
+# Must match the domains you'll set below, with https://
+NEXT_PUBLIC_BASE_URL=https://api.eboom.example.com
+```
+
+`.env.prod` is the only file the containers themselves read (backend, caddy). Edit it and set, at minimum:
 
 ```bash
 JWT_SECRET=<openssl rand -base64 48>
-POSTGRES_PASSWORD=<strong random password>
+
+# Defaults (1h / 7d) are fine to leave as-is.
+JWT_ACCESS_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
 
 APP_DOMAIN=eboom.example.com
 API_DOMAIN=api.eboom.example.com
 DOCS_DOMAIN=docs.eboom.example.com
 ACME_EMAIL=you@example.com
 
-# These must match the domains above, with https://
 APP_URL=https://eboom.example.com
-NEXT_PUBLIC_BASE_URL=https://api.eboom.example.com
 
 SKIP_EMAIL_VERIFICATION=0
 # ...and the EMAIL_* block, otherwise nobody can verify their signup
 ```
 
-Make sure `TEST_USER_ID` stays commented out — it bypasses authentication entirely.
+`compose.prod.yaml`'s backend only reads `.env.prod` as its env_file — `.env` (and its `TEST_USER_ID` auth bypass) is used solely for Compose-level interpolation, never injected into a container. There's no dev value that can leak into this stack.
 
 ```bash
-chmod 600 .env
+chmod 600 .env .env.prod
 ```
 
 ### 4. Build and start
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f compose.prod.yaml up -d --build
 ```
 
-The backend applies the database schema on startup, then serves the API. Caddy requests certificates for all three domains on first boot; that can take up to a minute.
+Caddy requests certificates for all three domains on first boot; that can take up to a minute.
+
+The backend serves the API but **does not create or update the database schema** — nothing touches your data on boot. On a fresh stack, apply the migrations once the containers are up:
+
+```bash
+docker compose -f compose.prod.yaml exec backend node dist/db/migrate.js
+```
+
+(The `db:migrate` npm script runs through `tsx`, a dev dependency the production image does not install — hence `node dist/db/migrate.js` here.)
 
 ### 5. Verify
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps       # all services Up
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f caddy   # certificate issuance
+docker compose -f compose.prod.yaml ps       # all services Up
+docker compose -f compose.prod.yaml logs -f caddy   # certificate issuance
 
 curl -I https://eboom.example.com            # 200, valid certificate
 curl    https://api.eboom.example.com/health # backend health check
@@ -193,7 +239,7 @@ Then sign up in the browser and confirm the verification email arrives.
 Because the compose commands are long, export the flags once per shell:
 
 ```bash
-alias dcp='docker compose -f docker-compose.yml -f docker-compose.prod.yml'
+alias dcp='docker compose -f compose.prod.yaml'
 ```
 
 | Task | Command |
@@ -202,6 +248,7 @@ alias dcp='docker compose -f docker-compose.yml -f docker-compose.prod.yml'
 | Tail logs | `dcp logs -f backend` |
 | Restart one service | `dcp restart backend` |
 | Stop the stack | `dcp down` (add `-v` to also delete the database volume) |
+| Apply new migrations | `dcp exec backend node dist/db/migrate.js` (back up first) |
 | Back up the database | `dcp exec -T postgres pg_dump -U eboom eboom \| gzip > backup-$(date +%F).sql.gz` |
 | Restore a backup | `gunzip -c backup.sql.gz \| dcp exec -T postgres psql -U eboom eboom` |
 | Load demo data | `dcp exec backend node dist/db/seed/seed.js` |
@@ -226,5 +273,4 @@ After changing any `NEXT_PUBLIC_*` value in `.env`, redeploy with `--build` — 
 - No OAuth / social login
 - No bank sync or payment processor integration
 - No live FX rate feeds (currencies are seeded statically)
-- Package naming inconsistency: backend is `pfm-backend`, frontend is `eboom-frontend`
 - Role auth middleware is a stub
